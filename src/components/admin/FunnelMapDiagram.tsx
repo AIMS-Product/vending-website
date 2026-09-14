@@ -1,422 +1,407 @@
 import Link from "next/link";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
-import {
-  anchor,
-  busStops,
-  corners,
-  nodeById,
-  orthPath,
-  CANVAS,
-  CONNECTOR_BAND,
-  CONNECTORS,
-  EDGES,
-  NODES,
-  SOURCE_BUS_X,
-  type MapNode,
-  type Side,
-} from "@/components/admin/funnel-map-graph";
-import type { SyncHealthRow } from "@/lib/services/channel-report-rollup";
+import { adminEyebrowClass, adminLinkClass } from "@/components/admin/AdminUi";
+import type {
+  ChannelReport,
+  FunnelStage,
+  SyncHealthRow,
+} from "@/lib/services/channel-report-rollup";
 
 /**
- * The diagram: one SVG of orthogonal edges with HTML boxes positioned over it
- * on a shared coordinate grid, so wrapping, links and live numbers stay
- * markup while the SVG draws only the wiring.
+ * The journey, top to bottom: what we send out, what happens to the person,
+ * and where each number came from.
  *
- * The two fan-ins are drawn as buses rather than one curve per source. Six
- * curves into a box and eleven into a table is spaghetti; a stub into a trunk
- * into a single arrow is a wiring diagram.
+ * This was a node-and-edge canvas once, and it read as a systems diagram —
+ * which table writes to which — rather than as a journey. A journey is a
+ * chain, not a graph, so it is laid out as aligned rows instead of plotted
+ * coordinates. That deleted the routing, the crossings and the empty canvas
+ * in one go: a chain cannot cross itself.
+ *
+ * Every number comes from the same rollup the Channels tab reads. A metric
+ * nobody observed renders "—", never a zero.
  */
 
-const TONE_CLASS: Record<MapNode["tone"], string> = {
-  source: "border-ui-line bg-ui-surface",
-  hub: "border-ui-accent/40 bg-ui-accent/5",
-  site: "border-ui-line bg-ui-surface",
-  store: "border-ui-line-strong border-dashed bg-ui-canvas",
-  external: "border-ui-line bg-ui-canvas",
+type SourceBox = {
+  title: string;
+  note: string;
+  logos: string[];
+  channels: string[];
 };
 
-export function FunnelMapDiagram({
-  metrics,
-  runs,
-  hrefs,
+/** What goes out, and what each one is. */
+const GOING_OUT: SourceBox[] = [
+  {
+    title: "Webinars",
+    note: "Ads and posts drive registration, GHL hosts the form",
+    logos: ["webinar"],
+    channels: ["Webinar"],
+  },
+  {
+    title: "YouTube",
+    note: "Link in the description and pinned comment",
+    logos: ["youtube"],
+    channels: ["YouTube"],
+  },
+  {
+    title: "Organic social",
+    note: "Brand and personal accounts, scheduled in Metricool",
+    logos: ["instagram", "tiktok", "x", "linkedin"],
+    channels: ["Instagram", "TikTok", "X", "LinkedIn", "Meta"],
+  },
+  {
+    title: "Paid ads",
+    note: "Spend lands on the row that spent it",
+    logos: ["meta ads", "google ads"],
+    channels: ["Meta Ads", "Google Ads"],
+  },
+  {
+    title: "Email and SMS",
+    note: "GoHighLevel workflows, plus the newsletter",
+    logos: ["ghl"],
+    channels: ["Email", "SMS", "Newsletter"],
+  },
+  {
+    title: "VSL and low-ticket",
+    note: "Their own opt-in pages, hosted in GHL",
+    logos: ["vsl"],
+    channels: ["VSL", "Low ticket funnel"],
+  },
+  {
+    title: "Instagram DM setter",
+    note: "Pearl sends a calendar link, skipping the site entirely",
+    logos: ["manychat"],
+    channels: ["Instagram DM"],
+  },
+];
+
+/** What actually happens at each step, in the order a person meets them. */
+const HOW: Record<string, { title: string; body: string; logos?: string[] }> = {
+  impressions: {
+    title: "We publish",
+    body: "Posts, videos, ads, emails and DMs go out on the surfaces above.",
+  },
+  clicks: {
+    title: "They click a tagged link",
+    body: "Five UTMs on every link: source, medium, campaign, content, and term for the destination. An untagged link produces a lead nobody can credit.",
+  },
+  visits: {
+    title: "They land on the site",
+    body: "A landing or SEO page. GA4 records the session against the link's own tags.",
+    logos: ["website"],
+  },
+  leads: {
+    title: "They identify themselves",
+    body: "The lead form, or the chatbot capturing mid-conversation. Stored with its origin and pushed to Close every 2 minutes.",
+    logos: ["chatbot", "form"],
+  },
+  booked: {
+    title: "They take a slot",
+    body: "Calendly. A DM or chatbot link can book with no lead form behind it.",
+    logos: ["calendly"],
+  },
+  showed: {
+    title: "They turn up",
+    body: "Close decides: showed, no-show or cancelled. There is no attended field, so it is derived.",
+    logos: ["close"],
+  },
+  won: {
+    title: "They buy",
+    body: "The Close opportunity, reconciled back onto the lead with its value.",
+    logos: ["close"],
+  },
+};
+
+/** Connector id to the label, and the mark, a non-engineer can read. */
+const CONNECTORS: Array<{ connector: string; label: string; logo: string }> = [
+  { connector: "ga4-visits", label: "GA4 visits", logo: "ga4" },
+  { connector: "leads", label: "Our lead forms", logo: "form" },
+  { connector: "ghl-forms", label: "GHL forms", logo: "ghl" },
+  { connector: "ghl-email", label: "GHL email", logo: "ghl" },
+  { connector: "bitly-clicks", label: "Bitly clicks", logo: "bitly" },
+  { connector: "metricool-posts", label: "Metricool posts", logo: "metricool" },
+  { connector: "metricool-ads", label: "Metricool spend", logo: "metricool" },
+  {
+    connector: "youtube-analytics",
+    label: "YouTube Analytics",
+    logo: "youtube",
+  },
+  { connector: "webinar-ingest", label: "vp-webinars", logo: "webinar" },
+  { connector: "manychat-ingest", label: "ManyChat", logo: "manychat" },
+  { connector: "close-lead-funnel", label: "Close outcomes", logo: "close" },
+];
+
+export function FunnelJourney({
+  report,
+  health,
+  rangeLabel,
+  sourceSummary,
+  channelHref,
 }: {
-  /** Live text to print inside a box, by node id. */
-  metrics: Record<string, string | undefined>;
-  runs: SyncHealthRow[];
-  hrefs: Record<string, string | undefined>;
+  report: ChannelReport;
+  health: SyncHealthRow[];
+  rangeLabel: string;
+  /** "3,774 leads · 332 booked · 1.0M seen" for a group of channels. */
+  sourceSummary: (channels: string[]) => string;
+  channelHref: (channel?: string) => string;
 }) {
-  const runByConnector = new Map(runs.map((run) => [run.connector, run]));
-  const stops = busStops();
-  const link = nodeById("link");
-  const spine = nodeById("spine");
-
-  const busTop = Math.min(...stops.map((stop) => stop.y));
-  const busBottom = Math.max(...stops.map((stop) => stop.y));
-  const linkEntry = link.y + link.h / 2;
-
-  const rowLanes = connectorRowLanes();
-  const riserTop = Math.min(...rowLanes);
+  // Reach is what a platform reported about its own surface; the funnel is
+  // what happened on ours. One chain, but the join is not a strict subset,
+  // which is why the first gaps carry no percentage.
+  const stages = [...report.reach, ...report.funnel];
+  const directBooked = sumObserved(report.rows.map((row) => row.directBooked));
+  const byConnector = new Map(health.map((run) => [run.connector, run]));
 
   return (
-    <div className="border-ui-line bg-ui-surface shadow-ui rounded-ui-lg overflow-x-auto">
-      <div
-        className="relative"
-        style={{ width: CANVAS.width, height: CANVAS.height }}
+    <div className="space-y-3">
+      <Band
+        eyebrow="1. What goes out"
+        title="Seven surfaces, one tagging standard"
+        caption={
+          <>
+            Everything starts here. Each surface carries a link built in{" "}
+            <Link href="/admin/links" className={adminLinkClass}>
+              Links
+            </Link>
+            , and a link that is not tagged produces a lead nobody can credit.
+          </>
+        }
       >
-        <svg
-          className="text-ui-text-subtle absolute inset-0"
-          width={CANVAS.width}
-          height={CANVAS.height}
-          viewBox={`0 0 ${CANVAS.width} ${CANVAS.height}`}
-          aria-hidden
-        >
-          <defs>
-            <marker
-              id="funnel-arrow"
-              viewBox="0 0 10 10"
-              refX="9"
-              refY="5"
-              markerWidth="6"
-              markerHeight="6"
-              orient="auto-start-reverse"
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-7">
+          {GOING_OUT.map((source) => (
+            <Link
+              key={source.title}
+              href={channelHref(
+                source.channels.length === 1 ? source.channels[0] : undefined,
+              )}
+              className="border-ui-line bg-ui-surface rounded-ui hover:border-ui-accent block border p-2.5 transition"
             >
-              <path d="M 0 1 L 9 5 L 0 9 z" fill="currentColor" />
-            </marker>
-          </defs>
-
-          <GroupBox
-            x={8}
-            y={32}
-            width={284}
-            height={832}
-            label="Going out — every surface we publish to"
-          />
-          <GroupBox
-            x={584}
-            y={212}
-            width={248}
-            height={374}
-            label="vendingpreneurs.com"
-          />
-          <GroupBox
-            x={8}
-            y={872}
-            width={932}
-            height={248}
-            label="Connectors — each platform reports on its own surface, once a day"
-          />
-
-          {/* Source bus: six stubs, one trunk, one arrow into the link. */}
-          {stops.map((stop) => {
-            const node = nodeById(stop.id);
-            return (
-              <line
-                key={stop.id}
-                x1={node.x + node.w}
-                y1={stop.y}
-                x2={SOURCE_BUS_X}
-                y2={stop.y}
-                stroke="currentColor"
-                strokeWidth={1.5}
-              />
-            );
-          })}
-          <line
-            x1={SOURCE_BUS_X}
-            y1={busTop}
-            x2={SOURCE_BUS_X}
-            y2={busBottom}
-            stroke="currentColor"
-            strokeWidth={1.5}
-          />
-          <line
-            x1={SOURCE_BUS_X}
-            y1={linkEntry}
-            x2={link.x}
-            y2={linkEntry}
-            stroke="currentColor"
-            strokeWidth={1.5}
-            markerEnd="url(#funnel-arrow)"
-          />
-          {stops.map((stop) => (
-            <circle
-              key={`dot-${stop.id}`}
-              cx={SOURCE_BUS_X}
-              cy={stop.y}
-              r={2.5}
-              fill="currentColor"
-            />
+              <div className="flex items-center gap-1">
+                {source.logos.map((logo) => (
+                  <ChannelLogo key={logo} label={logo} />
+                ))}
+              </div>
+              <p className="text-ui-text mt-1.5 text-xs leading-4 font-semibold">
+                {source.title}
+              </p>
+              <p className="text-ui-text mt-1 text-[0.8125rem] leading-4 font-semibold tabular-nums">
+                {sourceSummary(source.channels)}
+              </p>
+              <p className="text-ui-text-muted mt-1 text-[0.6875rem] leading-4">
+                {source.note}
+              </p>
+            </Link>
           ))}
+        </div>
+      </Band>
 
-          {EDGES.map((edge) => {
-            const from = nodeById(edge.from);
-            const to = nodeById(edge.to);
-            const fromSide: Side = edge.fromSide ?? "right";
-            const toSide: Side = edge.toSide ?? "left";
-            const start = anchor(from, fromSide, edge.fromOffset ?? 0);
-            const end = anchor(to, toSide, edge.toOffset ?? 0);
-            const isBack = edge.kind === "back";
+      <DownArrow label="every tagged link leads here" />
+
+      <Band
+        eyebrow="2. The journey"
+        title={`One person, left to right, ${rangeLabel.toLowerCase()}`}
+        caption="Each step shows the count that reached it and the share carried over from the step before. A share is measured only where both steps were seen on the same link, so the two sides are one population."
+        emphasis
+      >
+        <div className="overflow-x-auto pb-1">
+          <ol className="flex min-w-[62rem] items-stretch">
+            {stages.map((stage, index) => (
+              <li key={stage.key} className="flex flex-1 items-stretch">
+                {index > 0 ? <StepGap stage={stage} /> : null}
+                <StageCard stage={stage} />
+              </li>
+            ))}
+          </ol>
+        </div>
+      </Band>
+
+      <Band
+        eyebrow="3. What happens at each step"
+        title="The same seven steps, in plain English"
+        caption="Where a number is softer than it looks, it says so here rather than on the chart."
+      >
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          {stages.map((stage) => {
+            const how = HOW[stage.key];
+            if (!how) return null;
             return (
-              <g key={`${edge.from}-${edge.to}`}>
-                <path
-                  d={orthPath(corners(start, end, fromSide, toSide, edge.via))}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={1.5}
-                  strokeDasharray={isBack ? "5 4" : undefined}
-                  markerEnd="url(#funnel-arrow)"
-                  opacity={isBack ? 0.7 : 1}
-                />
-                {edge.label && edge.labelAt ? (
-                  <EdgeLabel
-                    text={edge.label}
-                    x={edge.labelAt.x}
-                    y={edge.labelAt.y}
-                  />
-                ) : null}
-              </g>
-            );
-          })}
-
-          {/* Connector bus: each row drops into its own lane, both lanes ride
-              one riser down into the spine. */}
-          {CONNECTORS.map((entry, index) => {
-            const box = connectorRect(index);
-            const lane = rowLanes[Math.floor(index / CONNECTOR_BAND.perRow)]!;
-            return (
-              <g key={`drop-${entry.connector}`}>
-                <line
-                  x1={box.x + box.w / 2}
-                  y1={box.y + box.h}
-                  x2={box.x + box.w / 2}
-                  y2={lane}
-                  stroke="currentColor"
-                  strokeWidth={1.25}
-                />
-                <circle
-                  cx={box.x + box.w / 2}
-                  cy={lane}
-                  r={2.5}
-                  fill="currentColor"
-                />
-              </g>
-            );
-          })}
-          {rowLanes.map((lane) => (
-            <line
-              key={`lane-${lane}`}
-              x1={CONNECTOR_BAND.x + CONNECTOR_BAND.width / 2}
-              y1={lane}
-              x2={CONNECTOR_BAND.riserX}
-              y2={lane}
-              stroke="currentColor"
-              strokeWidth={1.25}
-            />
-          ))}
-          <line
-            x1={CONNECTOR_BAND.riserX}
-            y1={riserTop}
-            x2={CONNECTOR_BAND.riserX}
-            y2={spine.y}
-            stroke="currentColor"
-            strokeWidth={1.5}
-            markerEnd="url(#funnel-arrow)"
-          />
-        </svg>
-
-        {NODES.map((node) => (
-          <NodeBox
-            key={node.id}
-            node={node}
-            metric={metrics[node.id]}
-            href={hrefs[node.id]}
-          />
-        ))}
-
-        {CONNECTORS.map((entry, index) => {
-          const box = connectorRect(index);
-          const run = runByConnector.get(entry.connector);
-          const status = run?.status ?? "never";
-          return (
-            <div
-              key={entry.connector}
-              className="border-ui-line bg-ui-surface rounded-ui absolute border px-2 py-1.5"
-              style={{ left: box.x, top: box.y, width: box.w, height: box.h }}
-            >
-              <div className="flex items-center gap-1.5">
-                <ChannelLogo label={entry.logo} />
-                <p className="text-ui-text truncate text-[0.6875rem] leading-4 font-medium">
-                  {entry.label}
+              <div
+                key={stage.key}
+                className="border-ui-line bg-ui-canvas rounded-ui border p-2.5"
+              >
+                <div className="flex items-center gap-1.5">
+                  {how.logos?.map((logo) => (
+                    <ChannelLogo key={logo} label={logo} />
+                  ))}
+                  <p className={adminEyebrowClass}>{stage.label}</p>
+                </div>
+                <p className="text-ui-text mt-1 text-xs leading-4 font-semibold">
+                  {how.title}
                 </p>
+                <p className="text-ui-text-muted mt-1 text-[0.6875rem] leading-4">
+                  {how.body}
+                </p>
+                {stage.key === "booked" && directBooked != null ? (
+                  <Caveat>
+                    {directBooked.toLocaleString()} of these booked straight
+                    from a link, with no lead form behind them.
+                  </Caveat>
+                ) : null}
+                {stage.key === "showed" ? (
+                  <Caveat>
+                    An upper bound. A booked call counts as shown unless Close
+                    says no-show or cancelled, and many never get an outcome.
+                  </Caveat>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      </Band>
+
+      <Band
+        eyebrow="4. Where the numbers come from"
+        title="Each platform reports on its own surface, once a day"
+        caption={
+          <>
+            Every connector writes one row per day per link into{" "}
+            <code className="text-ui-text">channel_daily</code>, the single
+            table this page reads. A connector that fails leaves its step
+            unobserved rather than writing a zero, which is why a dash above
+            matters.
+          </>
+        }
+      >
+        <div className="flex flex-wrap gap-2">
+          {CONNECTORS.map((entry) => {
+            const run = byConnector.get(entry.connector);
+            const status = run?.status ?? "never";
+            return (
+              <div
+                key={entry.connector}
+                className="border-ui-line bg-ui-surface rounded-ui flex items-center gap-2 border px-2.5 py-1.5"
+              >
+                <ChannelLogo label={entry.logo} />
+                <div>
+                  <p className="text-ui-text text-[0.6875rem] leading-4 font-medium">
+                    {entry.label}
+                  </p>
+                  <p className="text-ui-text-subtle text-[0.625rem] leading-4 tabular-nums">
+                    {run?.finishedAt
+                      ? `${run.rowsWritten.toLocaleString()} rows`
+                      : "never run"}
+                  </p>
+                </div>
                 <StatusDot status={status} />
               </div>
-              <p className="text-ui-text-subtle mt-1 text-[0.625rem] leading-4 tabular-nums">
-                {run?.finishedAt
-                  ? `${run.rowsWritten.toLocaleString()} rows`
-                  : "never run"}
-              </p>
-              {status === "failed" || status === "stale" ? (
-                <p
-                  className={`text-[0.625rem] leading-4 font-medium ${
-                    status === "failed" ? "text-ui-bad" : "text-ui-warn"
-                  }`}
-                >
-                  {status === "failed" ? "failing" : "stale"}
-                </p>
-              ) : null}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function connectorRect(index: number) {
-  const column = index % CONNECTOR_BAND.perRow;
-  const row = Math.floor(index / CONNECTOR_BAND.perRow);
-  return {
-    x: CONNECTOR_BAND.x + column * (CONNECTOR_BAND.width + CONNECTOR_BAND.gap),
-    y: CONNECTOR_BAND.y + row * (CONNECTOR_BAND.height + CONNECTOR_BAND.rowGap),
-    w: CONNECTOR_BAND.width,
-    h: CONNECTOR_BAND.height,
-  };
-}
-
-/** Row 1 drops into the gap above row 2; row 2 drops below the band. */
-function connectorRowLanes(): number[] {
-  const rows = Math.ceil(CONNECTORS.length / CONNECTOR_BAND.perRow);
-  return Array.from({ length: rows }, (_, row) => {
-    const bottom =
-      CONNECTOR_BAND.y +
-      row * (CONNECTOR_BAND.height + CONNECTOR_BAND.rowGap) +
-      CONNECTOR_BAND.height;
-    return bottom + CONNECTOR_BAND.rowGap / 2;
-  });
-}
-
-function NodeBox({
-  node,
-  metric,
-  href,
-}: {
-  node: MapNode;
-  metric?: string;
-  href?: string;
-}) {
-  const inner = (
-    <>
-      <div className="flex items-center gap-1.5">
-        {node.logos?.map((logo) => (
-          <ChannelLogo key={logo} label={logo} />
-        ))}
-        <p className="text-ui-text truncate text-xs leading-4 font-semibold">
-          {node.title}
-        </p>
-      </div>
-      {metric ? (
-        <p className="text-ui-text mt-1 text-[0.8125rem] leading-4 font-semibold tabular-nums">
-          {metric}
-        </p>
-      ) : null}
-      {node.body ? (
-        <p className="text-ui-text-muted mt-1 text-[0.6875rem] leading-4">
-          {node.body}
-        </p>
-      ) : null}
-      {node.id === "link" ? <UtmList /> : null}
-    </>
-  );
-
-  const className = `absolute overflow-hidden rounded-ui border p-2.5 ${TONE_CLASS[node.tone]}`;
-  const style = { left: node.x, top: node.y, width: node.w, height: node.h };
-
-  return href ? (
-    <Link
-      href={href}
-      className={`${className} hover:border-ui-accent block transition`}
-      style={style}
-    >
-      {inner}
-    </Link>
-  ) : (
-    <div className={className} style={style}>
-      {inner}
-    </div>
-  );
-}
-
-/** The one rule, written where the link is. */
-function UtmList() {
-  return (
-    <dl className="mt-2 space-y-1 text-[0.625rem] leading-4">
-      {[
-        ["utm_source", "the platform"],
-        ["utm_medium", "paid / organic / email / dm"],
-        ["utm_campaign", "the thing promoted"],
-        ["utm_content", "the post, ad or video"],
-        ["utm_term", "the destination, never inferred"],
-      ].map(([field, meaning]) => (
-        <div key={field}>
-          <dt className="text-ui-text font-mono">{field}</dt>
-          <dd className="text-ui-text-muted">{meaning}</dd>
+            );
+          })}
         </div>
-      ))}
-    </dl>
+      </Band>
+    </div>
   );
 }
 
-function GroupBox({
-  x,
-  y,
-  width,
-  height,
-  label,
+function StageCard({ stage }: { stage: FunnelStage }) {
+  return (
+    <div className="border-ui-line bg-ui-surface rounded-ui flex-1 border p-3">
+      <p className={adminEyebrowClass}>{stage.label}</p>
+      <p className="text-ui-text mt-1 text-[1.375rem] leading-7 font-semibold tracking-[-0.01em] tabular-nums">
+        {stage.value == null ? "—" : stage.value.toLocaleString()}
+      </p>
+      {stage.deltaPct != null ? (
+        <p className="text-ui-text-subtle mt-0.5 text-[0.6875rem] leading-4 tabular-nums">
+          {stage.deltaPct >= 0 ? "+" : ""}
+          {Math.round(stage.deltaPct)}% vs prior
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/** The gap between two steps is where the story is: what fell out. */
+function StepGap({ stage }: { stage: FunnelStage }) {
+  return (
+    <div
+      className="flex w-16 shrink-0 flex-col items-center justify-center gap-1 px-1"
+      title={
+        stage.ofPreviousLabel
+          ? `of ${stage.ofPreviousLabel.toLowerCase()}`
+          : undefined
+      }
+    >
+      <span className="text-ui-text-muted text-[0.6875rem] leading-4 font-semibold tabular-nums">
+        {stage.ofPreviousPct == null ? "" : `${stage.ofPreviousPct}%`}
+      </span>
+      <svg viewBox="0 0 32 8" className="text-ui-text-subtle w-8" aria-hidden>
+        <path
+          d="M0 4h26M22 1l4 3-4 3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function Band({
+  eyebrow,
+  title,
+  caption,
+  emphasis,
+  children,
 }: {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  label: string;
+  eyebrow: string;
+  title: string;
+  caption?: React.ReactNode;
+  emphasis?: boolean;
+  children: React.ReactNode;
 }) {
   return (
-    <g>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        rx={10}
-        fill="none"
-        stroke="currentColor"
-        strokeDasharray="3 5"
-        opacity={0.5}
-      />
-      <text
-        x={x + 10}
-        y={y - 7}
-        className="fill-current text-[10px] font-semibold tracking-[0.08em] uppercase"
-      >
-        {label}
-      </text>
-    </g>
+    <section
+      className={`rounded-ui-lg shadow-ui border p-4 ${
+        emphasis
+          ? "border-ui-accent/30 bg-ui-accent-soft"
+          : "border-ui-line bg-ui-surface"
+      }`}
+    >
+      <p className={adminEyebrowClass}>{eyebrow}</p>
+      <h3 className="text-ui-text mt-1 text-sm font-semibold">{title}</h3>
+      {caption ? (
+        <p className="text-ui-text-muted mt-1.5 mb-3 max-w-4xl text-xs leading-5">
+          {caption}
+        </p>
+      ) : null}
+      {children}
+    </section>
   );
 }
 
-/** A halo keeps the label legible where it sits on its own edge. */
-function EdgeLabel({ text, x, y }: { text: string; x: number; y: number }) {
+function DownArrow({ label }: { label: string }) {
   return (
-    <text
-      x={x}
-      y={y}
-      textAnchor="middle"
-      className="fill-current text-[10px]"
-      stroke="var(--color-ui-surface, #fff)"
-      strokeWidth={4}
-      paintOrder="stroke"
-    >
-      {text}
-    </text>
+    <div className="text-ui-text-subtle flex items-center justify-center gap-2 text-[0.6875rem]">
+      <svg viewBox="0 0 8 24" className="h-5" aria-hidden>
+        <path
+          d="M4 0v18M1 15l3 3 3-3"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.25"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {label}
+    </div>
+  );
+}
+
+function Caveat({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-ui-warn border-ui-line mt-2 border-t pt-2 text-[0.6875rem] leading-4">
+      {children}
+    </p>
   );
 }
 
@@ -431,8 +416,15 @@ function StatusDot({ status }: { status: string }) {
           : "bg-ui-line-strong";
   return (
     <span
-      className={`ml-auto size-1.5 shrink-0 rounded-full ${tone}`}
+      className={`ml-1 size-1.5 shrink-0 rounded-full ${tone}`}
       title={status}
     />
+  );
+}
+
+function sumObserved(values: Array<number | null>): number | null {
+  return values.reduce<number | null>(
+    (total, value) => (value == null ? total : (total ?? 0) + value),
+    null,
   );
 }

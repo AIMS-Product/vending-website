@@ -7,8 +7,7 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { channelsHref } from "@/components/admin/ChannelsPanels";
-import { FunnelMapDiagram } from "@/components/admin/FunnelMapDiagram";
-import { NODES } from "@/components/admin/funnel-map-graph";
+import { FunnelJourney } from "@/components/admin/FunnelMapDiagram";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type { FunnelMapData, GhlSummary } from "@/lib/services/funnel-map";
 import type {
@@ -57,85 +56,27 @@ export function FunnelMapTab({
   }
 
   const report = channels.report;
-  const stageValue = (key: string) =>
-    report.funnel.find((entry) => entry.key === key)?.value ?? null;
-
-  // One line of live text per box. Source boxes carry their channels' totals;
-  // the spine boxes carry the funnel stage they hold.
-  const metrics: Record<string, string | undefined> = {};
-  for (const node of NODES) {
-    if (node.channels) {
-      metrics[node.id] = sourceSummary(report, node.channels);
-    } else if (node.stage) {
-      metrics[node.id] =
-        `${formatNumber(stageValue(node.stage))} ${STAGE_WORD[node.stage]}`;
-    }
-  }
-  metrics.close = `${formatNumber(stageValue("leads"))} leads pushed`;
-  metrics.outcome = `${formatNumber(stageValue("showed"))} showed · ${formatNumber(stageValue("won"))} won`;
-
-  const hrefs: Record<string, string | undefined> = {
-    link: "/admin/links",
-    dashboard: channelsHref(range, includeInternal),
-  };
-  for (const node of NODES) {
-    if (node.channels?.length === 1) {
-      hrefs[node.id] = channelsHref(range, includeInternal, node.channels[0]);
-    }
-  }
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <p className="text-ui-text-muted max-w-3xl text-sm leading-6">
-          How a stranger becomes a booked call, end to end. Every number is{" "}
-          {channels.range.label.toLowerCase()}, read from the same tables the
-          Channels tab reads, so the two can never disagree. A dash means nobody
-          measured it, not zero.
-        </p>
-        <Legend />
-      </div>
+    <div className="space-y-4">
+      <p className="text-ui-text-muted max-w-4xl text-sm leading-6">
+        How a stranger becomes a booked call, end to end. Every number is{" "}
+        {channels.range.label.toLowerCase()}, read from the same tables the
+        Channels tab reads, so the two can never disagree. A dash means nobody
+        measured it, not zero.
+      </p>
 
-      <FunnelMapDiagram
-        metrics={metrics}
-        runs={channels.syncHealth}
-        hrefs={hrefs}
+      <FunnelJourney
+        report={report}
+        health={channels.syncHealth}
+        rangeLabel={channels.range.label}
+        sourceSummary={(group) => sourceSummary(report, group)}
+        channelHref={(channel) =>
+          channelsHref(range, includeInternal, channel ?? null)
+        }
       />
 
       <GhlSection ghl={ghl} rangeLabel={channels.range.label} />
-    </div>
-  );
-}
-
-const STAGE_WORD: Record<string, string> = {
-  visits: "visits",
-  leads: "leads",
-  booked: "booked",
-};
-
-function Legend() {
-  return (
-    <div className="text-ui-text-subtle flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-      <span className="flex items-center gap-1.5">
-        <span className="bg-ui-ok size-1.5 rounded-full" /> collecting
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="bg-ui-warn size-1.5 rounded-full" /> stale
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="bg-ui-bad size-1.5 rounded-full" /> failing
-      </span>
-      <span className="flex items-center gap-1.5">
-        <svg viewBox="0 0 24 6" className="w-6" aria-hidden>
-          <path
-            d="M0 3 H24"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeDasharray="5 4"
-          />
-        </svg>
-        written back
-      </span>
     </div>
   );
 }
