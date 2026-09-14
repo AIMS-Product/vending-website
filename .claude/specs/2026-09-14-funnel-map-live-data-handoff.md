@@ -117,6 +117,40 @@ Coincidence to avoid: the capacity dashboard's "Total Meetings Booked 34" for
 today is 24 new + 7 follow-ups + 3 reschedules **scheduled today**. It is not
 the same 34.
 
+### Forward capacity gaps (Adam's ask, 2026-09-14)
+
+Calls already on the calendar, looking ahead. Goal 42/day from the capacity
+dashboard. `first` = `close_lead_funnel.first_sales_call_booked_date`
+(the 800/mo plan basis); `all` = active `calendly_bookings` by `event_start_at`
+(includes follow-ups and reschedules).
+
+| day   | dow | first | all | short of 42 |
+| ----- | --- | ----- | --- | ----------- |
+| 09-14 | Mon | 24    | 37  | 18          |
+| 09-15 | Tue | 21    | 36  | 21          |
+| 09-16 | Wed | 12    | 24  | 30          |
+| 09-17 | Thu | 8     | 12  | 34          |
+| 09-18 | Fri | 2     | 6   | 40          |
+| 09-19 | Sat | 1     | 5   | n/a         |
+| 09-20 | Sun | 0     | 2   | n/a         |
+| 09-21 | Mon | 0     | 0   | 42          |
+
+Wed and Thu are the real gaps — inside the booking window and still far short.
+Fri onward is mostly the window not being open, not a shortfall.
+
+**A flat 42 is the wrong yardstick for a day several days out.** The number
+Adam actually wants is _how far behind this day is versus where days normally
+sit at this lead time_. The raw material exists: Calendly
+`payload.created_at` (booked-on) plus `event_start_at` (lands-on) gives the
+lead-time distribution — today's 34 bookings landed 9/14:2, 9/15:13, 9/16:7,
+9/17:5, 9/18:3, and further. Build that baseline curve, then express each
+forward day as ahead/behind its own normal. That is the slice that turns this
+table into an alarm worth acting on.
+
+**Open slots are not available.** No `CALENDLY_*` credentials in `.env.local`,
+so calendar availability cannot be read. Demand-vs-goal is possible today;
+demand-vs-capacity is not. See §6.2.
+
 ## 4. What is missing — the actual work
 
 ### 4.1 Click-through rate is not on the map at all
