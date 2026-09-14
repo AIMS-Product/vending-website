@@ -856,6 +856,7 @@ export type Database = {
         Row: {
           attendees: number | null;
           attendees_at_offer: number | null;
+          booked_ever: number | null;
           booked_night_of: number | null;
           booked_within_7d: number | null;
           booking_maturing: boolean;
@@ -872,6 +873,7 @@ export type Database = {
           registrations_ad_attributed: number | null;
           revenue: number | null;
           revenue_maturing: boolean;
+          show_no_booking: number | null;
           showed: number | null;
           spend: number | null;
           won: number | null;
@@ -879,6 +881,7 @@ export type Database = {
         Insert: {
           attendees?: number | null;
           attendees_at_offer?: number | null;
+          booked_ever?: number | null;
           booked_night_of?: number | null;
           booked_within_7d?: number | null;
           booking_maturing: boolean;
@@ -895,6 +898,7 @@ export type Database = {
           registrations_ad_attributed?: number | null;
           revenue?: number | null;
           revenue_maturing: boolean;
+          show_no_booking?: number | null;
           showed?: number | null;
           spend?: number | null;
           won?: number | null;
@@ -902,6 +906,7 @@ export type Database = {
         Update: {
           attendees?: number | null;
           attendees_at_offer?: number | null;
+          booked_ever?: number | null;
           booked_night_of?: number | null;
           booked_within_7d?: number | null;
           booking_maturing?: boolean;
@@ -918,6 +923,7 @@ export type Database = {
           registrations_ad_attributed?: number | null;
           revenue?: number | null;
           revenue_maturing?: boolean;
+          show_no_booking?: number | null;
           showed?: number | null;
           spend?: number | null;
           won?: number | null;

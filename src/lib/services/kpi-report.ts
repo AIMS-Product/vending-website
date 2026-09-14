@@ -53,10 +53,14 @@ export type WebinarEventRow = Pick<
   | "registrations"
   | "attendees"
   | "booked_night_of"
+  | "booked_ever"
   | "showed"
+  | "show_no_booking"
   | "won"
   | "revenue"
   | "spend"
+  | "booking_maturing"
+  | "revenue_maturing"
 >;
 
 export type EmailSnapshotRow = Pick<
@@ -145,9 +149,11 @@ const WEBINAR_COLUMNS: KpiColumn[] = [
   { key: "attendanceRate", label: "Attendance", format: "percent" },
   { key: "attendees", label: "Attendees", format: "number" },
   { key: "regToBook", label: "Reg → book", format: "percent" },
-  { key: "booked", label: "Booked", format: "number" },
+  { key: "booked", label: "Booked (ever)", format: "number" },
+  { key: "bookedNightOf", label: "Booked night of", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
   { key: "showed", label: "Shown", format: "number" },
+  { key: "showNoBooking", label: "Shown, no booking", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
   { key: "won", label: "Won", format: "number" },
   { key: "regToClose", label: "Reg → close", format: "percent" },
@@ -339,7 +345,7 @@ function buildWebinarSection(input: KpiInput): KpiSection {
     key: "webinar",
     title: "Webinar funnel",
     basis:
-      "One row per event. Booked = calls booked the night of; registration page visits are not observed (the page is GHL-hosted).",
+      "One row per event. Booked = every call this cohort ever booked, which is the population Shown and Won are counted over, so every rate here is a real fraction; Booked night of is the same cohort's offer conversion on the night and is a subset, never the denominator. Shown counts booked leads only — a rep marking a lead shown with no booked date lands in Shown, no booking and is never added to Shown. A cohort still inside its booking window shows dashes for the rates that window decides rather than a rate computed from an unfinished cohort; the counts beside them are real, just not final. Registration page visits are not observed (the page is GHL-hosted).",
     columns: WEBINAR_COLUMNS,
     rows,
     hidden: 0,
@@ -347,6 +353,19 @@ function buildWebinarSection(input: KpiInput): KpiSection {
   };
 }
 
+/**
+ * One event or the whole set. Every rate divides numbers counted over the same population.
+ *
+ * `booked_ever` is the denominator, not `booked_night_of` and not `booked_within_7d`: Shown, Won and
+ * Revenue are lifetime cohort numbers, and dividing them by a night-of or seven-day count published a 335%
+ * show rate for june16 (87 shown over 26 booked that night) on this page until 2026-09-13.
+ *
+ * A cohort inside its booking or revenue window has not finished booking or closing, so the rates those
+ * windows decide are withheld rather than computed from a partial cohort — a five-day-old webinar showing a
+ * confident 0% close rate is the same lie as a 335% show rate, pointed the other way. The counts stay
+ * visible because they are real, just not final. One maturing event contaminates an aggregate row, so the
+ * aggregate is gated on any of its events being maturing, not all.
+ */
 function webinarValues(
   events: WebinarEventRow[],
 ): Record<string, number | null> {
@@ -354,24 +373,31 @@ function webinarValues(
     sumObserved(events.map((event) => event[key] as number | null));
   const registrations = sum("registrations");
   const attendees = sum("attendees");
-  const booked = sum("booked_night_of");
+  const booked = sum("booked_ever");
+  const bookedNightOf = sum("booked_night_of");
   const showed = sum("showed");
   const won = sum("won");
   const spend = sum("spend");
+  const bookingOpen = events.some((event) => event.booking_maturing);
+  const revenueOpen = events.some((event) => event.revenue_maturing);
+  const final = <T>(open: boolean, value: T | null): T | null =>
+    open ? null : value;
   return {
     registrations,
     attendanceRate: rate(pct(attendees, registrations)),
     attendees,
-    regToBook: rate(pct(booked, registrations)),
+    regToBook: final(bookingOpen, rate(pct(booked, registrations))),
     booked,
-    showRate: rate(pct(showed, booked)),
+    bookedNightOf,
+    showRate: final(bookingOpen, rate(pct(showed, booked))),
     showed,
-    closeRate: rate(pct(won, showed)),
+    showNoBooking: sum("show_no_booking"),
+    closeRate: final(revenueOpen, rate(pct(won, showed))),
     won,
-    regToClose: rate(pct(won, registrations)),
+    regToClose: final(revenueOpen, rate(pct(won, registrations))),
     revenue: sum("revenue"),
     spend,
-    costPerBooked: ratio(spend, booked),
+    costPerBooked: final(bookingOpen, ratio(spend, booked)),
   };
 }
 

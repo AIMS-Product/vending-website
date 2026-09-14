@@ -96,10 +96,14 @@ const input: KpiInput = {
       registrations: 1000,
       attendees: 300,
       booked_night_of: 30,
+      booked_ever: 40,
       showed: 20,
+      show_no_booking: 3,
       won: 5,
       revenue: 50000,
       spend: 6000,
+      booking_maturing: false,
+      revenue_maturing: false,
     },
     {
       date: "2026-09-01",
@@ -108,10 +112,14 @@ const input: KpiInput = {
       registrations: 800,
       attendees: null,
       booked_night_of: 20,
+      booked_ever: 25,
       showed: 10,
+      show_no_booking: 0,
       won: 2,
       revenue: null,
       spend: 4000,
+      booking_maturing: false,
+      revenue_maturing: false,
     },
   ],
   emailSnapshots: [
@@ -224,14 +232,51 @@ describe("buildKpiReport", () => {
     expect(webinar!.rows[0]!.values).toMatchObject({
       registrations: 1800,
       attendees: 300,
-      booked: 50,
-      showRate: 60,
+      // booked_ever (40 + 25), not booked_night_of (30 + 20): Shown and Won are lifetime
+      // cohort numbers, so the denominator has to be lifetime too.
+      booked: 65,
+      bookedNightOf: 50,
+      showRate: 46.2, // 30 shown over 65 booked-ever, not over 50 booked night-of
+      showNoBooking: 3,
       won: 7,
       revenue: 50000,
       spend: 10000,
-      costPerBooked: 200,
+      costPerBooked: 154, // $10,000 over 65 booked-ever, was $200 over 50 night-of
     });
     expect(webinar!.rows[1]!.label).toBe("Sept 8");
+  });
+
+  it("never reports more shows than bookings", () => {
+    for (const row of webinar!.rows) {
+      const { showed, booked } = row.values;
+      if (typeof showed === "number" && typeof booked === "number") {
+        expect(showed).toBeLessThanOrEqual(booked);
+      }
+    }
+  });
+
+  it("withholds the rates a still-open window decides, and keeps the counts", () => {
+    const open = buildKpiReport({
+      ...input,
+      webinars: [
+        {
+          ...input.webinars[0]!,
+          booking_maturing: true,
+          revenue_maturing: true,
+        },
+      ],
+    }).sections.find((section) => section.key === "webinar")!;
+    const values = open.rows[0]!.values;
+    // A cohort still booking has no final rate; a confident 0% is the same lie as a 335%.
+    expect(values.showRate).toBeNull();
+    expect(values.regToBook).toBeNull();
+    expect(values.costPerBooked).toBeNull();
+    expect(values.closeRate).toBeNull();
+    expect(values.regToClose).toBeNull();
+    // The counts are real, just not final.
+    expect(values.booked).toBe(40);
+    expect(values.showed).toBe(20);
+    expect(values.won).toBe(5);
   });
 
   it("differences GHL lifetime totals and drops single snapshots", () => {

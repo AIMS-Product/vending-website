@@ -93,7 +93,7 @@ async function fetchWebinars(
     const { data, error } = await client
       .from("webinar_events")
       .select(
-        "date,label,format,registrations,attendees,booked_night_of,showed,won,revenue,spend",
+        "date,label,format,registrations,attendees,booked_night_of,booked_ever,showed,show_no_booking,won,revenue,spend,booking_maturing,revenue_maturing",
       )
       .gte("date", startDay)
       .lte("date", endDay)

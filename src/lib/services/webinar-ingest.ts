@@ -33,8 +33,13 @@ const webinarSchema = z.object({
   peakAttendees: count,
   attendeesAtOffer: count,
   bookedWithin7d: count,
+  // Lifetime bookings. THE denominator for showed/won/revenue, which are all lifetime numbers.
+  // Optional so a sender older than 2026-09-13 still validates; it lands null and the rate stays a dash.
+  bookedEver: count.optional(),
   bookedNightOf: count,
   showed: count,
+  // Leads a rep marked shown with no booked date. Disclosed, never added to showed.
+  showNoBooking: count.optional(),
   won: count,
   revenue: money,
   pitchStartMin: z.number().int().nullable(),
@@ -145,8 +150,10 @@ async function write(
         peak_attendees: w.peakAttendees,
         attendees_at_offer: w.attendeesAtOffer,
         booked_within_7d: w.bookedWithin7d,
+        booked_ever: w.bookedEver ?? null,
         booked_night_of: w.bookedNightOf,
         showed: w.showed,
+        show_no_booking: w.showNoBooking ?? null,
         won: w.won,
         revenue: w.revenue,
         pitch_start_min: w.pitchStartMin,
