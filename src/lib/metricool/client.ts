@@ -67,6 +67,14 @@ export type MetricoolCampaign = {
 
 export type AdNetwork = "googleads" | "facebookads";
 
+/** One video's activity in a date range, from Metricool's YouTube analytics. */
+export type MetricoolYouTubeVideo = {
+  videoId: string;
+  title: string;
+  publishedAt: string | null;
+  views: number | null;
+};
+
 export type MetricoolClient = {
   /**
    * Posts a brand published in [from, to], dates as YYYY-MM-DD, interpreted in
@@ -88,6 +96,16 @@ export type MetricoolClient = {
     from: string;
     to: string;
   }): Promise<MetricoolCampaign[]>;
+  /**
+   * Every video with activity in [from, to] and its views in that range.
+   * Asked for one day (from = to) it is a per-video-per-day series, which is
+   * what the YouTube Analytics API needs OAuth for.
+   */
+  fetchYouTubeVideos(range: {
+    blogId: string;
+    from: string;
+    to: string;
+  }): Promise<MetricoolYouTubeVideo[]>;
 };
 
 export class MetricoolApiError extends Error {
@@ -239,7 +257,48 @@ export function createMetricoolClient(options: {
     clicks?: number | null;
   };
 
+  type RawYouTubeVideo = {
+    videoId?: string;
+    title?: string;
+    publishedAt?: string | { dateTime?: string; timezone?: string };
+    views?: number | null;
+  };
+
   return {
+    async fetchYouTubeVideos(range) {
+      let body: { data?: RawYouTubeVideo[] };
+      try {
+        body = await get<{ data?: RawYouTubeVideo[] }>(
+          analyticsUrl("posts/youtube", range),
+        );
+      } catch (error) {
+        if (error instanceof MetricoolApiError && error.status === 403)
+          return [];
+        throw error;
+      }
+      return (body.data ?? []).flatMap((raw) => {
+        if (!raw.videoId) return [];
+        const published =
+          typeof raw.publishedAt === "string"
+            ? raw.publishedAt
+            : raw.publishedAt?.dateTime;
+        return [
+          {
+            videoId: raw.videoId,
+            title: raw.title ?? "",
+            publishedAt: published
+              ? toIso(
+                  published,
+                  typeof raw.publishedAt === "object"
+                    ? raw.publishedAt.timezone
+                    : undefined,
+                )
+              : null,
+            views: number(raw.views),
+          },
+        ];
+      });
+    },
     async fetchCampaigns(range) {
       let body: { data?: RawCampaign[] };
       try {

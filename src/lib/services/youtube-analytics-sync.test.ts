@@ -5,7 +5,10 @@ import type { YouTubeAnalyticsClient } from "@/lib/youtube-analytics/client";
 
 vi.mock("@/lib/config", () => ({ config: {} }));
 
-import { syncYouTubeAnalytics } from "./youtube-analytics-sync";
+import {
+  metricoolYouTubeClient,
+  syncYouTubeAnalytics,
+} from "./youtube-analytics-sync";
 
 const now = new Date("2026-09-11T11:40:00.000Z");
 
@@ -52,7 +55,7 @@ describe("syncYouTubeAnalytics", () => {
   it("is skipped until the refresh token exists", async () => {
     const { client, runs } = buildClient();
     const result = await syncYouTubeAnalytics({ client, youtube: null, now });
-    expect(result.connector.error).toMatch(/^skipped: YouTube OAuth/);
+    expect(result.connector.error).toMatch(/^skipped: Neither YouTube OAuth/);
     expect(runs).toHaveLength(1);
   });
 
@@ -108,13 +111,57 @@ describe("syncYouTubeAnalytics", () => {
         clicks: 2,
       }),
     );
+    // No thumbnail impressions reported, so the day's views stand in as Seen.
     expect(upserts.channel_daily).toContainEqual(
       expect.objectContaining({
         content: "vid9",
         campaign: "(not set)",
-        impressions: null,
+        impressions: 1,
         clicks: 0,
       }),
     );
+  });
+});
+
+describe("metricoolYouTubeClient", () => {
+  it("asks Metricool for one day and keeps only videos that were watched", async () => {
+    const fetchYouTubeVideos = vi.fn(async () => [
+      { videoId: "a", title: "A", publishedAt: null, views: 5 },
+      { videoId: "b", title: "B", publishedAt: null, views: 40 },
+      { videoId: "c", title: "C", publishedAt: null, views: 0 },
+      { videoId: "d", title: "D", publishedAt: null, views: null },
+    ]);
+    const youtube = metricoolYouTubeClient(
+      {
+        fetchPosts: async () => [],
+        fetchCampaigns: async () => [],
+        fetchYouTubeVideos,
+      },
+      "6626386",
+    );
+    const rows = await youtube.fetchVideoDay("2026-08-20");
+    expect(fetchYouTubeVideos).toHaveBeenCalledWith({
+      blogId: "6626386",
+      from: "2026-08-20",
+      to: "2026-08-20",
+    });
+    expect(rows).toEqual([
+      {
+        videoId: "b",
+        day: "2026-08-20",
+        views: 40,
+        impressions: null,
+        cardImpressions: null,
+        cardClicks: null,
+      },
+      {
+        videoId: "a",
+        day: "2026-08-20",
+        views: 5,
+        impressions: null,
+        cardImpressions: null,
+        cardClicks: null,
+      },
+    ]);
   });
 });

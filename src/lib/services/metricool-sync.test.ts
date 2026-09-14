@@ -38,6 +38,15 @@ const untagged: MetricoolPost = {
   metrics: { impressions: 300 },
 };
 
+const ytVideo: MetricoolPost = {
+  id: "WNdORD-DJGQ",
+  network: "youtube",
+  text: "The worst vending locations",
+  permalink: "https://www.youtube.com/watch?v=WNdORD-DJGQ",
+  publishedAt: "2026-08-28T17:00:38.000Z",
+  metrics: { impressions: 7869 },
+};
+
 const noLink: MetricoolPost = {
   id: "tt-3",
   network: "twitter",
@@ -213,7 +222,11 @@ describe("syncMetricool", () => {
     expect(result.connector.error).toMatch(/^skipped:/);
     const noBrands = await syncMetricool({
       client,
-      metricool: { fetchPosts: async () => [tagged], fetchCampaigns: noAds },
+      metricool: {
+        fetchPosts: async () => [tagged],
+        fetchCampaigns: noAds,
+        fetchYouTubeVideos: noAds,
+      },
       blogIds: [],
       now,
     });
@@ -227,7 +240,11 @@ describe("syncMetricool", () => {
     );
     await syncMetricool({
       client,
-      metricool: { fetchPosts, fetchCampaigns: noAds },
+      metricool: {
+        fetchPosts,
+        fetchCampaigns: noAds,
+        fetchYouTubeVideos: noAds,
+      },
       blogIds: ["6626386", "6633336"],
       now,
     });
@@ -248,8 +265,9 @@ describe("syncMetricool", () => {
   it("stores posts, writes the spine and reports non-compliant links", async () => {
     const { client, upserts } = buildClient();
     const metricool: MetricoolClient = {
-      fetchPosts: async () => [tagged, untagged, noLink],
+      fetchPosts: async () => [tagged, untagged, noLink, ytVideo],
       fetchCampaigns: noAds,
+      fetchYouTubeVideos: noAds,
     };
     const result = await syncMetricool({
       client,
@@ -259,10 +277,14 @@ describe("syncMetricool", () => {
     });
     expect(result.connector).toMatchObject({
       connector: "metricool-posts",
-      rowsWritten: 6,
+      rowsWritten: 7,
       error: "1 posts link somewhere without the standard UTMs.",
     });
-    expect(upserts.metricool_posts).toHaveLength(3);
+    // The YouTube video is stored but its Seen is youtube-analytics' to write.
+    expect(upserts.metricool_posts).toHaveLength(4);
+    expect(
+      upserts.channel_daily?.some((row) => row.content === "WNdORD-DJGQ"),
+    ).toBe(false);
     expect(upserts.channel_daily).toContainEqual(
       expect.objectContaining({
         channel: "Instagram",
@@ -291,7 +313,11 @@ describe("syncMetricool", () => {
     );
     const result = await syncMetricool({
       client,
-      metricool: { fetchPosts: async () => [], fetchCampaigns },
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns,
+        fetchYouTubeVideos: noAds,
+      },
       blogIds: ["6626386", "6633336"],
       now,
       days: 1,

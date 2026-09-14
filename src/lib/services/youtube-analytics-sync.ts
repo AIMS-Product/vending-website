@@ -14,6 +14,11 @@ import {
   type SyncRunOutcome,
 } from "@/lib/services/channel-daily";
 import { skipped } from "@/lib/services/channel-sync";
+import type { MetricoolClient } from "@/lib/metricool/client";
+import {
+  blogIdsFromConfig,
+  metricoolFromConfig,
+} from "@/lib/services/metricool-sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -55,7 +60,7 @@ export async function syncYouTubeAnalytics(
     async () => {
       if (!youtube) {
         return skipped(
-          "YouTube OAuth is not connected. Run scripts/youtube-oauth-token.mjs once and set YOUTUBE_REFRESH_TOKEN.",
+          "Neither YouTube OAuth nor Metricool is configured. Set METRICOOL_API_KEY / METRICOOL_USER_ID / METRICOOL_BLOG_IDS, or run scripts/youtube-oauth-token.mjs and set YOUTUBE_REFRESH_TOKEN.",
         );
       }
       const campaigns = await campaignByVideoId(client);
@@ -105,7 +110,10 @@ export async function syncYouTubeAnalytics(
   return { endDate, connector };
 }
 
-/** Spine row: Seen = thumbnail impressions, Clicked = card clicks. */
+/**
+ * Spine row: Seen = thumbnail impressions when the OAuth client reports them,
+ * otherwise the day's views (all Metricool has). Clicked = card clicks.
+ */
 export function channelRow(
   row: YouTubeVideoDayRow,
   campaign: string | null,
@@ -117,8 +125,39 @@ export function channelRow(
     campaign,
     content: row.videoId,
     term: null,
-    impressions: row.impressions,
+    impressions: row.impressions ?? row.views,
     clicks: row.cardClicks,
+  };
+}
+
+/**
+ * Metricool as the source of per-video daily views, so the table fills
+ * without a Google OAuth grant. Thumbnail impressions and card clicks are not
+ * in Metricool and stay unobserved.
+ */
+export function metricoolYouTubeClient(
+  metricool: MetricoolClient,
+  blogId: string,
+): YouTubeAnalyticsClient {
+  return {
+    async fetchVideoDay(day) {
+      const videos = await metricool.fetchYouTubeVideos({
+        blogId,
+        from: day,
+        to: day,
+      });
+      return videos
+        .filter((video) => video.views != null && video.views > 0)
+        .sort((a, b) => (b.views ?? 0) - (a.views ?? 0))
+        .map((video) => ({
+          videoId: video.videoId,
+          day,
+          views: video.views,
+          impressions: null,
+          cardImpressions: null,
+          cardClicks: null,
+        }));
+    },
   };
 }
 
@@ -141,6 +180,7 @@ async function campaignByVideoId(
   );
 }
 
+/** The OAuth client when its grant exists, else Metricool's YouTube analytics. */
 function youtubeFromConfig(): YouTubeAnalyticsClient | null {
   const {
     GOOGLE_OAUTH_CLIENT_ID,
@@ -151,8 +191,13 @@ function youtubeFromConfig(): YouTubeAnalyticsClient | null {
     !GOOGLE_OAUTH_CLIENT_ID ||
     !GOOGLE_OAUTH_CLIENT_SECRET ||
     !YOUTUBE_REFRESH_TOKEN
-  )
-    return null;
+  ) {
+    const metricool = metricoolFromConfig();
+    const [blogId] = blogIdsFromConfig();
+    return metricool && blogId
+      ? metricoolYouTubeClient(metricool, blogId)
+      : null;
+  }
   return createYouTubeAnalyticsClient({
     clientId: GOOGLE_OAUTH_CLIENT_ID,
     clientSecret: GOOGLE_OAUTH_CLIENT_SECRET,

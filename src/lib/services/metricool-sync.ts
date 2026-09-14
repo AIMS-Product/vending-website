@@ -157,9 +157,14 @@ export async function syncMetricool(
       if (error)
         throw new Error(`metricool_posts upsert failed: ${error.message}`);
 
-      const result = await upsertChannelDaily(client, rows.map(channelRow), {
-        now,
-      });
+      // YouTube's Seen is written per video per day by youtube-analytics.
+      // A post row here would stamp the video's lifetime views on its publish
+      // day and count them again.
+      const result = await upsertChannelDaily(
+        client,
+        rows.filter((row) => row.network !== "youtube").map(channelRow),
+        { now },
+      );
       const nonCompliant = rows.filter(
         (row) => row.link_compliant === false,
       ).length;
@@ -330,7 +335,7 @@ function hostOf(url: string | null): string | null {
   }
 }
 
-function metricoolFromConfig(): MetricoolClient | null {
+export function metricoolFromConfig(): MetricoolClient | null {
   const { METRICOOL_API_KEY, METRICOOL_USER_ID } = config;
   if (!METRICOOL_API_KEY || !METRICOOL_USER_ID) return null;
   return createMetricoolClient({
@@ -340,7 +345,7 @@ function metricoolFromConfig(): MetricoolClient | null {
 }
 
 /** `METRICOOL_BLOG_IDS` comma list, else the single `METRICOOL_BLOG_ID`. */
-function blogIdsFromConfig(): string[] {
+export function blogIdsFromConfig(): string[] {
   const list = (config.METRICOOL_BLOG_IDS ?? config.METRICOOL_BLOG_ID ?? "")
     .split(",")
     .map((id) => id.trim())
