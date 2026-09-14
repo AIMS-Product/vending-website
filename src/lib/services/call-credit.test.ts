@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   SETTER_NAMES,
+  setsCalls,
   setterBookingUrl,
   setterTag,
   buildCalendlyDirectory,
@@ -195,8 +196,17 @@ describe("resolveCallCredit", () => {
 
 describe("repRole", () => {
   it("reads the roster both ways and leaves the rest unclassified", () => {
-    expect(repRole("Connor George")).toBe("setter");
+    expect(repRole("Connor George")).toBe("scraper");
+    expect(repRole("Charlie Ingram")).toBe("setter");
+    expect(repRole("Ariella Irvine")).toBe("setter_closer");
+    expect(repRole("William Nowak")).toBe("setter");
     expect(repRole("stephen olivas")).toBe("not_setter");
+    // Books calls, but the roster sheet does not say which job, so the page
+    // shows no role rather than inventing one.
+    expect(repRole("Josh Stoffel")).toBe("unclassified");
+    expect(setsCalls("Josh Stoffel")).toBe(true);
+    expect(setsCalls("Connor George")).toBe(true);
+    expect(setsCalls("Robin Perkins")).toBe(false);
     // A closer wrongly counted as a setter is the exact mistake this page
     // exists to stop, so an unknown name stays unknown.
     expect(repRole("Robin Perkins")).toBe("unclassified");
@@ -225,7 +235,7 @@ describe("summarizeCallCredits", () => {
     });
     expect(summary.people[0]).toEqual({
       who: "Connor George",
-      role: "setter",
+      role: "scraper",
       calls: 2,
     });
     expect(summary.unclassified).toEqual(["Calendly user robin"]);
@@ -333,7 +343,7 @@ describe("setter booking links", () => {
       );
       expect(credit.kind).toBe("rep");
       expect(credit.who).toBe(name);
-      expect(repRole(credit.who)).toBe("setter");
+      expect(setsCalls(credit.who)).toBe(true);
     }
   });
 

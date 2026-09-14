@@ -39,6 +39,8 @@ const RANGES = [
 
 const ROLE_LABEL: Record<RepRole, string> = {
   setter: "Setter",
+  scraper: "Scraper",
+  setter_closer: "Setter / closer",
   not_setter: "Not a setter",
   unclassified: "Unclassified",
 };

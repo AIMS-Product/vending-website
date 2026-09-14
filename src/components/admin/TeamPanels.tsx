@@ -65,11 +65,15 @@ function Rate({
 
 const ROLE_LABEL: Record<RepRole, string> = {
   setter: "Setter",
+  scraper: "Scraper",
+  setter_closer: "Setter / closer",
   not_setter: "Not a setter",
   unclassified: "Unclassified",
 };
 const ROLE_TONE: Record<RepRole, "ok" | "warn" | "idle"> = {
   setter: "ok",
+  scraper: "ok",
+  setter_closer: "ok",
   not_setter: "warn",
   unclassified: "idle",
 };
@@ -126,8 +130,8 @@ export function SettersTable({
   const rows = [...report.rows, report.selfBooked];
   return (
     <Panel
-      title="Setters"
-      note="Booked is a Close first sales call booked in the period. Set adds the calls a setter booked that Close does not hold as a first call. Recorded means Calendly or Close named the setter; tagged means their own booking link; inferred means the last setter to call or text before the booking."
+      title="Setters and scrapers"
+      note="Setters and scrapers both book Lane 2 calls; the Role column says which job each person holds, from the Lane 2 roster. Booked is a Close first sales call booked in the period. Set adds the calls a person booked that Close does not hold as a first call. Recorded means Calendly or Close named them; tagged means their own booking link; inferred means the last rep to call or text before the booking."
       footer={
         <>
           {report.target != null ? (
@@ -140,7 +144,7 @@ export function SettersTable({
               <span className="text-ui-text font-semibold tabular-nums">
                 {report.total.booked.toLocaleString()}
               </span>{" "}
-              credited to a setter.
+              credited to a setter or scraper.
             </p>
           ) : null}
           {report.unclassified.length > 0 ? (
@@ -169,7 +173,7 @@ export function SettersTable({
         <table className="w-full text-[0.8125rem]">
           <thead>
             <tr className={THEAD}>
-              <th className={TH_LEFT}>Setter</th>
+              <th className={TH_LEFT}>Who</th>
               <th className={TH}>Set</th>
               <th className={TH}>Recorded</th>
               <th className={TH}>Tagged</th>

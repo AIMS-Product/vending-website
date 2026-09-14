@@ -189,14 +189,14 @@ describe("buildSetters", () => {
 
   it("names setters who are on neither roster list instead of guessing a role", () => {
     const report = buildSetters({
-      leads: [lead({ email: "a@x.com", setter_name: "William Nowak" })],
+      leads: [lead({ email: "a@x.com", setter_name: "Robin Perkins" })],
       bookings: [],
       period: september,
       months: 1,
       targetsApply: false,
     });
     expect(report.rows[0].role).toBe("unclassified");
-    expect(report.unclassified).toEqual(["William Nowak"]);
+    expect(report.unclassified).toEqual(["Robin Perkins"]);
   });
 });
 

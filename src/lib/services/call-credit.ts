@@ -295,37 +295,74 @@ const NOT_SETTERS = new Set([
   "stephen olivas",
 ]);
 
-/** The people who set calls, as their name reads in Calendly and Close. */
-export const SETTER_NAMES = [
-  "Ariella",
-  "August Young",
-  "Beatrice Braescu Cojocaru",
-  "Cassie Caraballo",
-  "Charlie Ingram",
-  "Connor George",
-  "Jessica Zatkin",
-  "Josh Stoffel",
-  "Kelly Schrader",
-  "Melia King",
-  "Naria Torres",
-  "Pearl Sathekge",
-  "Spencer Reynolds",
-  "Vince Bartolini",
-] as const;
+/**
+ * The Lane 2 roster and what each person actually does, from Adam's Lane 2
+ * Roster sheet (as of 2026-09-11). Setters and scrapers both book calls, so
+ * both count for attribution, but they are not the same job and the team page
+ * must not print one as the other. Ariella works both sides.
+ */
+export const LANE2_ROSTER = {
+  Ariella: "setter_closer",
+  "Ariella Irvine": "setter_closer",
+  "August Young": "scraper",
+  "Cassie Caraballo": "scraper",
+  "Charlie Ingram": "setter",
+  "Connor George": "scraper",
+  "Jessica Zatkin": "scraper",
+  "Kelly Schrader": "scraper",
+  "Melia King": "scraper",
+  "Naria Torres": "scraper",
+  "Pearl Sathekge": "setter",
+  "Spencer Reynolds": "scraper",
+  "Vince Bartolini": "scraper",
+  "William Nowak": "setter",
+} as const satisfies Record<string, "setter" | "scraper" | "setter_closer">;
 
-const SETTERS = new Set([
-  ...SETTER_NAMES.map((name) => name.toLowerCase()),
-  // Calendly shows her first name only; Close carries the full one.
-  "pearl",
+/**
+ * Credited with booking calls but absent from the roster sheet, so they keep
+ * earning credit while the team page shows them as unclassified until someone
+ * says which job they hold. Guessing is what this page exists to stop.
+ */
+const OFF_ROSTER_BOOKERS = ["Beatrice Braescu Cojocaru", "Josh Stoffel"];
+
+/** Everyone who books Lane 2 calls, as their name reads in Calendly and Close. */
+export const SETTER_NAMES = [
+  ...new Set([...Object.keys(LANE2_ROSTER), ...OFF_ROSTER_BOOKERS]),
+]
+  .filter((name) => name !== "Ariella")
+  .sort() as readonly string[];
+
+const ROSTER_ROLES = new Map<string, RepRole>(
+  Object.entries(LANE2_ROSTER).map(([name, role]) => [
+    name.toLowerCase(),
+    role,
+  ]),
+);
+// Calendly shows her first name only; Close carries the full one.
+ROSTER_ROLES.set("pearl", "setter");
+
+const BOOKS_CALLS = new Set([
+  ...ROSTER_ROLES.keys(),
+  ...OFF_ROSTER_BOOKERS.map((name) => name.toLowerCase()),
 ]);
 
-export type RepRole = "setter" | "not_setter" | "unclassified";
+export type RepRole =
+  "setter" | "scraper" | "setter_closer" | "not_setter" | "unclassified";
 
 export function repRole(name: string): RepRole {
   const key = name.trim().toLowerCase();
-  if (SETTERS.has(key)) return "setter";
+  const roster = ROSTER_ROLES.get(key);
+  if (roster) return roster;
   if (NOT_SETTERS.has(key)) return "not_setter";
   return "unclassified";
+}
+
+/**
+ * Does this person book Lane 2 calls at all? Setters, scrapers and Ariella all
+ * do, so attribution asks this rather than `repRole(name) === "setter"`.
+ */
+export function setsCalls(name: string): boolean {
+  return BOOKS_CALLS.has(name.trim().toLowerCase());
 }
 
 export type CallCreditRow = {

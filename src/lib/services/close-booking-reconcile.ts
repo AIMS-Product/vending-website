@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createCloseClient, type CloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
 import { resolveSetterTouch, type SetterTouch } from "@/lib/close/setter-touch";
-import { repRole } from "@/lib/services/call-credit";
+import { setsCalls } from "@/lib/services/call-credit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -586,11 +586,7 @@ async function fetchSetterTouch(
     const bookedAt = await fetchBookingTime(client, leadSubmissionId);
     if (!bookedAt) return null;
     const { data } = await closeClient.listLeadActivities(closeLeadId);
-    return resolveSetterTouch(
-      data ?? [],
-      bookedAt,
-      (name) => repRole(name) === "setter",
-    );
+    return resolveSetterTouch(data ?? [], bookedAt, (name) => setsCalls(name));
   } catch {
     return null;
   }
