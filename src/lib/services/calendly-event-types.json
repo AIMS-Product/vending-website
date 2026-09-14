@@ -110,7 +110,8 @@
       "eventTypeUris": [
         "https://api.calendly.com/event_types/bee355cd-8997-4bd7-b955-e7f39ce0e1dd",
         "https://api.calendly.com/event_types/ec745169-8bd3-46de-93d4-1802fb524c78"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vendingpreneur Next Steps",
@@ -120,7 +121,8 @@
       "observed": 228,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/4d509762-5ff6-46fe-aa8f-abc6637de9b1"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "30 Minute Meeting",
@@ -173,7 +175,8 @@
       "eventTypeUris": [
         "https://api.calendly.com/event_types/06afca7d-1d7b-497e-9ee7-6a25c9cc2a46",
         "https://api.calendly.com/event_types/3a7c5ce4-d934-4dfb-a091-da40468541fc"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vendingpreneurs Call - Next Steps",
@@ -183,7 +186,8 @@
       "observed": 128,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/77cc8b1a-509b-4927-a34b-68d6e27998f9"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vendingpreneurs Follow-Up",
@@ -219,14 +223,15 @@
       "observed": 72,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/ee8dd996-a128-476b-8bf3-d36d66b61c76"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vending Discovery Call - Next Steps",
       "class": "follow_up",
       "reviewedBy": null,
       "reviewedOn": null,
-      "note": "CONFIRM: spec asks whether this is a first call with a bad name. 64 bookings.",
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way.",
       "observed": 64,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/21b16701-c53d-4357-853d-237ef2b7349f"
@@ -251,7 +256,8 @@
       "eventTypeUris": [
         "https://api.calendly.com/event_types/a1697cf6-715e-4afe-9b93-1bf882068be6",
         "https://api.calendly.com/event_types/d2c37677-124b-4a61-bcbd-643955ab9523"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vendingprenuers Consultation",
@@ -344,7 +350,8 @@
       "observed": 21,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/a51bcf0b-7dd5-479f-860a-60f5e00bddd0"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vending Opportunity - Next Steps",
@@ -354,7 +361,8 @@
       "observed": 18,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/5c77941b-521f-45b8-8e98-fcf02f95d4bf"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vendingpreneur Follow-up",
@@ -385,7 +393,8 @@
       "observed": 10,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/59fda1bf-d664-4c01-981e-c0843744666d"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vending Discovery - Next Steps",
@@ -395,7 +404,8 @@
       "observed": 8,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/1c6cadb7-358d-4a5d-bd68-93105f29e6de"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "AI Operator Collective Consult Call",
@@ -425,7 +435,8 @@
       "observed": 6,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/12293c42-94c0-4ced-9ce5-7f991e346694"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "One-off meeting",
@@ -492,7 +503,8 @@
       "observed": 2,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/cfc2d03c-27ec-4cac-a9f7-2d407c26e29f"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Vending Route Consultation",
@@ -554,7 +566,8 @@
       "observed": 1,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/f7d1a5cf-1406-46e5-a3aa-c5533fefcc5e"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "Kickoff Call",
@@ -575,7 +588,8 @@
       "observed": 1,
       "eventTypeUris": [
         "https://api.calendly.com/event_types/31d7363e-c138-477e-b2a7-00631c799dcd"
-      ]
+      ],
+      "note": "CONFIRM: evidence says this is a FIRST call, not a follow-up. Across the 987 \"Next Steps\" bookings, 74.8% have no earlier booking at all and only 14.6% follow an earlier new call (the \"Follow-Up\" calendars, the control group, run 47.9%). 95.7% belong to Reactivation Scrapers, so these look like Lane 2 first-call calendars. Reclassifying to new moves the marketing pace number by 0-3 a day, because Lane 2 is excluded from it either way."
     },
     {
       "name": "VendHub | VendScout Demo",

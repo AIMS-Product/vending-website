@@ -360,6 +360,16 @@ export function BookedForward({ pace }: { pace: BookedPace }) {
 export function BookedMappingReview({ pace }: { pace: BookedPace }) {
   const { review } = pace;
   if (review.draft === 0) return null;
+  // Biggest first, capped: 20 open questions is a backlog, not a panel.
+  const SHOWN = 8;
+  const ranked = [...review.needsDecision].sort(
+    (a, b) => b.observed - a.observed,
+  );
+  const shown = ranked.slice(0, SHOWN);
+  const hidden = ranked.length - shown.length;
+  const hiddenBookings = ranked
+    .slice(SHOWN)
+    .reduce((sum, entry) => sum + entry.observed, 0);
   return (
     <section
       className={adminPanelClass}
@@ -375,7 +385,7 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
           label={`${review.reviewed} of ${review.total} signed off`}
         />
       </div>
-      {review.needsDecision.length > 0 ? (
+      {shown.length > 0 ? (
         <div className="overflow-x-auto">
           <table className="w-full text-[0.8125rem]">
             <thead>
@@ -389,7 +399,7 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
-              {review.needsDecision.map((entry) => (
+              {shown.map((entry) => (
                 <tr key={entry.name}>
                   <td className="text-ui-text px-4 py-2.5">{entry.name}</td>
                   <td className="text-ui-text px-3 py-2.5 text-right tabular-nums">
@@ -409,6 +419,13 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
               ))}
             </tbody>
           </table>
+          {hidden > 0 ? (
+            <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
+              {hidden} more {hidden === 1 ? "calendar needs" : "calendars need"}{" "}
+              a ruling, covering {hiddenBookings.toLocaleString()} bookings.
+              Full list in calendly-event-types.json.
+            </p>
+          ) : null}
         </div>
       ) : null}
     </section>

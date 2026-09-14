@@ -62,7 +62,7 @@ export default async function AdminTeamPage({
       activeSection="team"
       eyebrow="Reporting"
       title="Team"
-      description="Setters and closers by name, then the webinar, social and paid programs that feed them. Booked calls are Close first sales calls, the same count the goals page uses."
+      description="Setters and closers by name, then the webinar, social and paid programs that feed them. Booked calls are Close first sales calls, dated by the day the call is scheduled for — the goals page's monthly plan basis, not its daily pace number."
       userEmail={user.email}
       userRole={role}
     >

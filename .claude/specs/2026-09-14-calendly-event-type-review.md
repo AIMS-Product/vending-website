@@ -22,7 +22,36 @@ also moves silently the moment someone renames a calendar in Calendly. This
 list replaces the guess, and anything not on it is counted as nothing rather
 than assumed to be a new call.
 
-## The six that most need a ruling
+## The one that matters most: is "Next Steps" a first call?
+
+Fifteen calendars have "Next Steps" in the name, 987 bookings. The draft calls
+them follow-ups. **The data says they are first calls.**
+
+| Evidence                                        | "Next Steps" | "Follow-Up" calendars (control) |
+| ----------------------------------------------- | ------------ | ------------------------------- |
+| Has an earlier new call for the same person     | 14.6%        | 47.9%                           |
+| No earlier booking at all                       | 74.8%        | —                               |
+| Lands on Close's recorded first-sales-call date | 61-91%       | 0-3%                            |
+
+Three quarters of these people have no earlier booking anywhere in our records,
+and Close records the call as their first sales call. The "Follow-Up" calendars,
+measured the same way, behave like real second calls. The two groups are not the
+same thing and the draft lumps them together.
+
+**95.7% of them belong to Reactivation Scrapers.** That is the likely
+explanation: these are Lane 2's own first-call calendars, where a setter books a
+prospect after a cold conversation that never existed as a Calendly event.
+
+If that is right, "Next Steps" should be classed **new**, and Lane 2 should be
+excluded because of _whose_ call it is, not by mislabelling _what kind_ of call
+it is. Practical effect on the marketing pace number is small — 0 to 3 a day,
+since Lane 2 is excluded either way — but it changes the Team and Booked pages,
+and it changes any count of new calls for the business as a whole.
+
+**Question for you:** when a setter books a prospect onto a "Next Steps"
+calendar, is that the prospect's first sales call?
+
+## The others that need a ruling
 
 These change the number the most, or nobody could agree on them:
 
