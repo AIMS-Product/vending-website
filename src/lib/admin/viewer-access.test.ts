@@ -7,7 +7,7 @@ import { isViewerReadableHref } from "./viewer-access";
 const ADMIN_APP_DIR = path.resolve(process.cwd(), "src/app/admin");
 
 /**
- * The four pages a read-only viewer may open. Anything else must deny them.
+ * The reporting pages a read-only viewer may open. Anything else must deny them.
  * Written out by hand rather than derived from the module under test, so a
  * change to the allowlist has to be made twice and thought about once.
  */
@@ -17,6 +17,7 @@ const READ_ONLY_PAGES = [
   "goals/page.tsx",
   "bookings/page.tsx",
   "attribution/page.tsx",
+  "team/page.tsx",
 ];
 
 /** Sign-in surfaces are reachable before there is a session at all. */
@@ -36,11 +37,12 @@ function adminPageFiles(dir = ADMIN_APP_DIR): string[] {
 }
 
 describe("isViewerReadableHref", () => {
-  it("admits exactly the four reporting pages", () => {
+  it("admits exactly the reporting pages", () => {
     expect(isViewerReadableHref("/admin")).toBe(true);
     expect(isViewerReadableHref("/admin/analytics")).toBe(true);
     expect(isViewerReadableHref("/admin/bookings")).toBe(true);
     expect(isViewerReadableHref("/admin/attribution")).toBe(true);
+    expect(isViewerReadableHref("/admin/team?tab=closers")).toBe(true);
   });
 
   it("refuses the surfaces holding lead PII, transcripts and edit access", () => {

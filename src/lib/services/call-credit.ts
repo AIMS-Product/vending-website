@@ -30,8 +30,13 @@ import { describeTouchGap } from "@/lib/close/setter-touch";
 /** Kinds ordered by strength of evidence, strongest first. */
 export type CallCreditKind = "rep" | "chatbot" | "channel" | "untagged";
 
+/** Where a `rep` answer came from: a record, a link tag, or an inference. */
+export type CallCreditBasis = "calendly" | "tag" | "close" | "touch";
+
 export type CallCredit = {
   kind: CallCreditKind;
+  /** Set on `rep` answers only, so a leaderboard can split recorded / tagged / inferred. */
+  basis?: CallCreditBasis;
   /** Display name: "Connor George", "Website chatbot", "YouTube", "No tag". */
   who: string;
   /** One line naming the evidence, shown next to the answer in the UI. */
@@ -79,6 +84,7 @@ export function resolveCallCredit(
     const known = directory.get(uri);
     return {
       kind: "rep",
+      basis: "calendly",
       who: known?.name ?? unknownRepLabel(uri),
       evidence: "Calendly recorded this person as the one who booked the call.",
       repUri: uri,
@@ -97,6 +103,7 @@ export function resolveCallCredit(
     return taggedSetter
       ? {
           kind: "rep",
+          basis: "tag",
           who: taggedSetter,
           evidence: "Booked from this person's own tagged booking link.",
           repUri: null,
@@ -137,6 +144,7 @@ export function resolveCallCredit(
   if (closeSetter) {
     return {
       kind: "rep",
+      basis: "close",
       who: closeSetter,
       evidence: "Recorded in Close as the setter who booked this call.",
       repUri: null,
@@ -151,6 +159,7 @@ export function resolveCallCredit(
   if (touch?.name) {
     return {
       kind: "rep",
+      basis: "touch",
       who: touch.name,
       evidence: `Called or texted them ${describeTouchGap(touch.minutesBefore)} (from Close activity, not a record of the booking).`,
       repUri: null,

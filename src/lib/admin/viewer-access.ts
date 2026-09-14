@@ -18,6 +18,7 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/goals",
   "/admin/bookings",
   "/admin/attribution",
+  "/admin/team",
 ]);
 
 export function isViewerReadableHref(href: string): boolean {

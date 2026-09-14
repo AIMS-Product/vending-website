@@ -25,6 +25,7 @@ type AdminSection =
   | "analytics"
   | "goals"
   | "bookings"
+  | "team"
   | "links"
   | "media"
   | "libraries"
@@ -140,6 +141,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/bookings",
     description: "Who set each call",
     icon: "target",
+  },
+  {
+    id: "team",
+    label: "Team",
+    href: "/admin/team",
+    description: "Setters, closers, webinars, socials, ads",
+    icon: "crown",
   },
   {
     id: "links",
