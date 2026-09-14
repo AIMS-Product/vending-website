@@ -16,6 +16,13 @@ import {
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
+import {
+  buildCohort,
+  MATURITY_RULE,
+  type Cohort,
+  type CohortRow,
+} from "@/lib/services/funnel-cohort";
+import type { FunnelActuals } from "@/lib/services/funnel-forecast";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -67,6 +74,22 @@ export type GhlSummary = {
 export type FunnelMapData = {
   channels: ChannelsTabData;
   ghl: GhlSummary;
+  /** Null when the Close mirror table is not there yet. */
+  cohort: Cohort | null;
+  /**
+   * What the funnel rail and the forecast are seeded from.
+   *
+   * Visits and leads come from `channel_daily`: a visit and the lead it
+   * produces happen the same day, so summing them by day is the same
+   * population either way. Booked, showed and won come from the cohort
+   * instead, because they do not -- a call booked in June can be won in
+   * September, and dividing September's wins by September's bookings is the
+   * ratio of two unrelated groups of people. The rail would rather be built
+   * from two sources than from one wrong one.
+   */
+  actuals: FunnelActuals;
+  /** The sentence printed under the rail saying where its numbers came from. */
+  actualsBasis: string;
 };
 
 export async function getFunnelMap(
@@ -83,11 +106,84 @@ export async function getFunnelMap(
   const endDay = dayKey(now);
   const startDay = dayKey(new Date(now.getTime() - (days - 1) * DAY_MS));
 
-  const [channels, ghl] = await Promise.all([
+  const [channels, ghl, cohortRows] = await Promise.all([
     getChannelsTab({ range, client, now }),
     getGhlSummary(client, startDay, endDay),
+    fetchCohortRows(client, startDay, endDay),
   ]);
-  return { channels, ghl };
+
+  const cohort = cohortRows
+    ? buildCohort(cohortRows, { start: startDay, end: endDay }, now)
+    : null;
+  const stage = (key: string) =>
+    channels.report.funnel.find((entry) => entry.key === key)?.value ?? null;
+
+  return {
+    channels,
+    ghl,
+    cohort,
+    actuals: {
+      visits: stage("visits"),
+      leads: stage("leads"),
+      booked: cohort ? cohort.booked : null,
+      showed: cohort ? cohort.held : null,
+      won: cohort ? cohort.won : null,
+      // Close's deal value is not mirrored, so this stays unknown rather than
+      // borrowing the calendar-dated revenue column and calling it cohort
+      // revenue. The page says so out loud.
+      revenuePerWin: null,
+    },
+    actualsBasis: cohort
+      ? `Visits and leads from the channel spine. Booked, showed and won from Close, counted as a cohort: everyone whose first sales call was booked in this range, with their later outcome joined back to the day they booked. ${MATURITY_RULE}`
+      : "Visits and leads from the channel spine. The Close mirror is not connected, so booked, showed and won are unavailable rather than zero.",
+  };
+}
+
+const MIRROR_PAGE_SIZE = 1000;
+/** A year at the plan's 800 booked calls a month is ~9,600; this is headroom. */
+const MIRROR_MAX_ROWS = 50_000;
+
+/**
+ * Null (not empty) when the mirror table is missing, so the page can say so.
+ *
+ * Paged, because PostgREST caps a plain select at 1,000 rows and says nothing
+ * about it. The plan alone is 800 booked calls a month, so an unpaged read
+ * would quietly truncate the cohort at six weeks and every rate below it would
+ * be computed on a fraction of the people.
+ */
+async function fetchCohortRows(
+  client: MapClient,
+  startDay: string,
+  endDay: string,
+): Promise<CohortRow[] | null> {
+  const rows: CohortRow[] = [];
+  try {
+    for (let from = 0; from < MIRROR_MAX_ROWS; from += MIRROR_PAGE_SIZE) {
+      const { data, error } = await client
+        .from("close_lead_funnel")
+        .select(
+          "funnel,first_sales_call_booked_date,first_call_show_up,status_label",
+        )
+        .gte("first_sales_call_booked_date", startDay)
+        .lte("first_sales_call_booked_date", endDay)
+        .order("first_sales_call_booked_date")
+        .order("lead_id")
+        .range(from, from + MIRROR_PAGE_SIZE - 1);
+      if (error) {
+        console.error("close_lead_funnel read failed", {
+          code: error.code,
+          message: error.message,
+        });
+        return null;
+      }
+      const batch = (data ?? []) as CohortRow[];
+      rows.push(...batch);
+      if (batch.length < MIRROR_PAGE_SIZE) break;
+    }
+  } catch {
+    return null;
+  }
+  return rows;
 }
 
 type Route = { source: string; medium: string; content: string };

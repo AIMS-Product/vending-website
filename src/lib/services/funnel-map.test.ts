@@ -7,7 +7,10 @@ vi.mock("@/lib/config", () => ({ config: {} }));
 // channel_daily is the one under test.
 vi.mock("@/lib/services/channel-report", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./channel-report")>()),
-  getChannelsTab: async () => ({ connected: true, report: { rows: [] } }),
+  getChannelsTab: async () => ({
+    connected: true,
+    report: { rows: [], funnel: [] },
+  }),
 }));
 
 import { getFunnelMap } from "./funnel-map";
@@ -22,6 +25,7 @@ function buildClient({
   snapshotDays = [{ snapshot_day: "2026-09-14" }],
   workflows = [] as Row[],
   spine = [] as Row[],
+  cohort = [] as Row[],
 }) {
   const from = vi.fn((name: string) => {
     let filteredToOneDay = false;
@@ -46,9 +50,13 @@ function buildClient({
           ? page
             ? spine.slice(page[0], page[1] + 1)
             : spine
-          : filteredToOneDay
-            ? workflows
-            : snapshotDays;
+          : name === "close_lead_funnel"
+            ? page
+              ? cohort.slice(page[0], page[1] + 1)
+              : cohort
+            : filteredToOneDay
+              ? workflows
+              : snapshotDays;
       return Promise.resolve({ data, error: null }).then(resolve);
     };
     return builder;
@@ -170,5 +178,55 @@ describe("getFunnelMap", () => {
     expect(ghl.workflows[0].sentInRange).toBeNull();
     expect(ghl.inRange.sent).toBeNull();
     expect(ghl.lifetime.sent).toBe(10);
+  });
+});
+
+describe("getFunnelMap cohort", () => {
+  it("pages past the PostgREST cap instead of truncating the cohort", async () => {
+    // 1,200 booked calls is under three months at the plan's rate. An unpaged
+    // read returns 1,000 of them and every rate below is computed on 83% of
+    // the people, with nothing anywhere saying so.
+    const cohort = Array.from({ length: 1_200 }, () => ({
+      funnel: "YouTube",
+      first_sales_call_booked_date: "2026-09-10",
+      first_call_show_up: "Yes",
+      status_label: null,
+    }));
+    const data = await getFunnelMap({
+      client: buildClient({ cohort }),
+      now: new Date("2026-09-14T12:00:00Z"),
+    });
+    expect(data.cohort?.booked).toBe(1_200);
+    expect(data.actuals.booked).toBe(1_200);
+    expect(data.actuals.showed).toBe(1_200);
+  });
+
+  it("leaves booked unavailable, not zero, when the mirror is missing", async () => {
+    const client = buildClient({});
+    const broken = {
+      from: (name: string) =>
+        name === "close_lead_funnel"
+          ? {
+              select: () => broken.from(name),
+              order: () => broken.from(name),
+              gte: () => broken.from(name),
+              lte: () => broken.from(name),
+              range: () => broken.from(name),
+              then: (resolve: (value: unknown) => unknown) =>
+                Promise.resolve({
+                  data: null,
+                  error: { code: "42P01", message: "does not exist" },
+                }).then(resolve),
+            }
+          : client.from(name as never),
+    };
+    const data = await getFunnelMap({
+      client: broken as never,
+      now: new Date("2026-09-14T12:00:00Z"),
+    });
+    expect(data.cohort).toBeNull();
+    expect(data.actuals.booked).toBeNull();
+    expect(data.actuals.won).toBeNull();
+    expect(data.actualsBasis).toMatch(/unavailable rather than zero/);
   });
 });

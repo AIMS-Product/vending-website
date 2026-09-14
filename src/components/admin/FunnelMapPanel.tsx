@@ -9,9 +9,11 @@ import {
 import { channelsHref } from "@/components/admin/ChannelsPanels";
 import { FunnelJourney } from "@/components/admin/FunnelMapDiagram";
 import { FunnelMapCanvas } from "@/components/admin/FunnelMapCanvas";
+import { FunnelRail } from "@/components/admin/FunnelRail";
 import { NODES } from "@/components/admin/funnel-map-graph";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type { FunnelMapData, GhlSummary } from "@/lib/services/funnel-map";
+import type { Cohort } from "@/lib/services/funnel-cohort";
 import type {
   ChannelReport,
   ChannelReportRow,
@@ -45,7 +47,7 @@ export function FunnelMapTab({
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
 }) {
-  const { channels, ghl } = data;
+  const { channels, ghl, cohort, actuals, actualsBasis } = data;
   if (!channels.connected) {
     return (
       <div className={adminCardClass}>
@@ -73,7 +75,9 @@ export function FunnelMapTab({
     }
   }
   metrics.close = `${formatNumber(stageValue("leads"))} leads pushed`;
-  metrics.outcome = `${formatNumber(stageValue("showed"))} showed · ${formatNumber(stageValue("won"))} won`;
+  // Cohort, not calendar: the same basis the rail below uses, so a number does
+  // not change meaning between the picture and the strip.
+  metrics.outcome = `${formatNumber(actuals.showed)} showed · ${formatNumber(actuals.won)} won`;
 
   const hrefs: Record<string, string | undefined> = {
     link: "/admin/links",
@@ -100,6 +104,14 @@ export function FunnelMapTab({
         hrefs={hrefs}
       />
 
+      <FunnelRail
+        actuals={actuals}
+        rangeLabel={channels.range.label}
+        basis={actualsBasis}
+      />
+
+      {cohort ? <CohortNote cohort={cohort} /> : null}
+
       <FunnelJourney
         report={report}
         health={channels.syncHealth}
@@ -112,6 +124,36 @@ export function FunnelMapTab({
 
       <GhlSection ghl={ghl} rangeLabel={channels.range.label} />
     </div>
+  );
+}
+
+/**
+ * What the cohort could not see, printed rather than absorbed.
+ *
+ * A show rate computed over the calls somebody remembered to log is an upper
+ * bound, not a measurement, and the only honest way to show one is next to the
+ * share of the cohort it left out.
+ */
+function CohortNote({ cohort }: { cohort: Cohort }) {
+  const { coverage, pendingShow, showUnlogged, booked } = cohort;
+  if (!booked) return null;
+  return (
+    <p className="text-ui-text-muted text-xs leading-5">
+      Of {booked.toLocaleString()} calls booked in this range,{" "}
+      {coverage.showUp.known.toLocaleString()} are old enough to judge and carry
+      an answer
+      {coverage.showUp.pct != null
+        ? ` (${Math.round(coverage.showUp.pct)}% of the cohort)`
+        : ""}
+      .{" "}
+      {pendingShow > 0
+        ? `${pendingShow.toLocaleString()} are still too new to count. `
+        : ""}
+      {showUnlogged > 0
+        ? `${showUnlogged.toLocaleString()} have had their call and nobody logged the outcome, so they are left out of the rate rather than counted as a no-show. `
+        : ""}
+      Every rate above is therefore an upper bound.
+    </p>
   );
 }
 
