@@ -7,17 +7,40 @@
  * `requireReadAccess()` (allow) inside the pages themselves; hiding a link is
  * not access control. This list exists so the UI matches what the gate does.
  *
+ * A viewer may read the whole studio. What stays shut is everything that
+ * writes: the autosaving editors (`/admin/pages/[id]`, `/admin/news/[id]`,
+ * `/admin/case-studies/[id]` and the three `new` pages) mutate on mount, so
+ * opening them read-only would fire writes that fail; `/admin/settings/users`
+ * is the staff roster and role control; `/admin/reset-password` would let a
+ * shared account change its own password out from under everyone.
+ *
  * Matching is exact on purpose. A child route added under one of these paths
  * later is hidden from viewers until someone adds it here deliberately, which
- * keeps deny the default — `/admin/bookings/some-lead` inheriting access from
- * `/admin/bookings` is exactly the accident this prevents.
+ * keeps deny the default — a future `/admin/bookings/export` inheriting access
+ * from `/admin/bookings` is exactly the accident this prevents.
  */
 const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin",
   "/admin/analytics",
-  "/admin/goals",
-  "/admin/bookings",
   "/admin/attribution",
+  "/admin/bookings",
+  "/admin/case-studies",
+  "/admin/chatbot",
+  "/admin/chatbot/conversations",
+  "/admin/chatbot/insights",
+  "/admin/chatbot/settings",
+  "/admin/forms",
+  "/admin/goals",
+  "/admin/leads",
+  "/admin/libraries",
+  "/admin/links",
+  "/admin/media",
+  "/admin/news",
+  "/admin/pages",
+  "/admin/pages/block-preview-audit",
+  "/admin/pages/redirects",
+  "/admin/popups",
+  "/admin/settings/routes",
   "/admin/team",
 ]);
 

@@ -8,7 +8,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { AdminLeadDetailView } from "@/components/admin/AdminLeadsManager";
 import { adminGetLeadDetail } from "@/lib/services/lead-admin";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 type Params = {
   id: string;
@@ -25,7 +25,7 @@ export default async function AdminLeadDetailPage({
   params: Promise<Params>;
 }) {
   const [{ user, role }, resolvedParams] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     params,
   ]);
   const lead = await adminGetLeadDetail({ leadId: resolvedParams.id });

@@ -22,7 +22,7 @@ import {
   type AdminUnknownQuestion,
   type ChatbotInsightsKpis,
 } from "@/lib/services/chatbot-insights";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Chatbot insights",
@@ -55,7 +55,7 @@ export default async function AdminChatbotInsightsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const range = parseRange(params.range);
@@ -100,7 +100,10 @@ export default async function AdminChatbotInsightsPage({
       userEmail={user.email}
       userRole={role}
       actions={
-        <Link href="/admin/chatbot/settings" className={adminSecondaryButtonClass}>
+        <Link
+          href="/admin/chatbot/settings"
+          className={adminSecondaryButtonClass}
+        >
           <span aria-hidden="true">
             <AdminIcon icon="settings" />
           </span>

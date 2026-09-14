@@ -5,7 +5,7 @@ import {
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
 import { adminListBuilderRedirects } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import { RedirectCreateForm } from "./RedirectCreateForm";
 import { RedirectRow } from "./RedirectRow";
 
@@ -25,7 +25,7 @@ export default async function RedirectManagerPage({
   }>;
 }) {
   const [{ user, role }, params, redirects] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
     adminListBuilderRedirects(),
   ]);

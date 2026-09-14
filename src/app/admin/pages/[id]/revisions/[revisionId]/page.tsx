@@ -14,7 +14,7 @@ import {
   adminGetSeoPageById,
   adminGetSeoPageRevision,
 } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import type { Json } from "@/types/database";
 
 type Params = { id: string; revisionId: string };
@@ -29,7 +29,10 @@ export default async function AdminRevisionPreviewPage({
 }: {
   params: Promise<Params>;
 }) {
-  const [, { id, revisionId }] = await Promise.all([requireAdmin(), params]);
+  const [, { id, revisionId }] = await Promise.all([
+    requireReadAccess(),
+    params,
+  ]);
   const [page, revision] = await Promise.all([
     adminGetSeoPageById(id),
     adminGetSeoPageRevision(id, revisionId),

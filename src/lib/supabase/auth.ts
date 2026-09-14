@@ -7,9 +7,10 @@ import { getDevAdminContext } from "./dev-auth";
 import type { Database } from "@/types/database";
 
 /**
- * `viewer` is read-only reporting access and nothing else. It exists so
- * people who need the numbers can have their own login instead of a shared
- * password: a shared password has no audit trail and survives offboarding.
+ * `viewer` is read-only access and nothing else: it may open the studio but
+ * may not change anything. It backs the shared team login, so treat anything
+ * a viewer can read as readable by everyone who has that password — and give
+ * a person their own `admin` account when you need an audit trail.
  */
 export type AdminRole = "viewer" | "admin" | "super_admin";
 
@@ -105,9 +106,9 @@ export async function getAuthorizedAdmin(
  * Server Components and Server Actions.
  *
  * Viewers are turned away here. That is deliberate: `requireAdmin()` stays
- * the default gate on every existing page and every page written from now
- * on, so a surface nobody thought about is closed to viewers for free. Only
- * the four reporting pages opt in to `requireReadAccess()` below.
+ * the default gate on every page written from now on, so a surface nobody
+ * thought about is closed to viewers for free. Read-only pages opt in to
+ * `requireReadAccess()` below, one at a time.
  */
 export async function requireAdmin(
   opts: ResolveOptions = {},
@@ -124,10 +125,12 @@ export async function requireAdmin(
 
 /**
  * The read-only gate: signed in and on the `app_users` allowlist, any role.
- * Used only by the four pages a viewer may open (`/admin`,
- * `/admin/analytics`, `/admin/bookings`, `/admin/attribution`) and by sign
- * out — a viewer who cannot sign out is stuck in a session they can only
- * clear from browser settings.
+ * Used by every page a viewer may open and by sign out — a viewer who cannot
+ * sign out is stuck in a session they can only clear from browser settings.
+ *
+ * Do NOT put this on a page that writes during render. The news, case-study
+ * and SEO-page editors autosave on mount, so they stay on `requireAdmin()`;
+ * `src/lib/admin/viewer-access.test.ts` fails if that slips.
  */
 export async function requireReadAccess(
   opts: ResolveOptions = {},

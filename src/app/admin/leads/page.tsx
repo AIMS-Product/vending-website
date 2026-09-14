@@ -7,7 +7,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { AdminLeadsManager } from "@/components/admin/AdminLeadsManager";
 import { adminListLeads } from "@/lib/services/lead-admin";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 type SearchParams = {
   lifecycle?: string | string[];
@@ -26,7 +26,7 @@ export default async function AdminLeadsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const lifecycleStatus = singleParam(params.lifecycle) ?? "all";

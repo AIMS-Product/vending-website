@@ -12,7 +12,7 @@ import {
   loadChatbotConfigFresh,
   type ChatbotConfig,
 } from "@/lib/chatbot/config";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Chatbot settings",
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminChatbotSettingsPage() {
-  const { user, role } = await requireAdmin();
+  const { user, role } = await requireReadAccess();
 
   // The chatbot migration ships ahead of being applied in every environment
   // (see the spec) — a missing table reads as "off, no activity" rather than

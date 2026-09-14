@@ -39,7 +39,7 @@ import {
   adminListMediaAssets,
   publicMediaAssetUrl,
 } from "@/lib/services/media-assets";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Media library admin",
@@ -52,7 +52,7 @@ export default async function AdminMediaPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const listParams = parseMediaListParams(params);

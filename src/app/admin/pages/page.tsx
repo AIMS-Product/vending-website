@@ -30,7 +30,7 @@ import {
 } from "@/lib/admin/seo-pages-list";
 import { assessSeoReadiness } from "@/lib/page-builder/seo-readiness";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import {
   pageStatusDotTone,
   pageStatusLabel,
@@ -103,7 +103,7 @@ export default async function AdminPagesPage({
   searchParams: Promise<AdminPagesSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const listParams = parseSeoPageListParams(params);

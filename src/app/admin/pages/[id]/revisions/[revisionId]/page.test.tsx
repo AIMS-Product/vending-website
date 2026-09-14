@@ -5,7 +5,7 @@ import {
   adminGetSeoPageById,
   adminGetSeoPageRevision,
 } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 vi.mock("@/lib/services/seo-pages", async () => {
   const actual = await vi.importActual<
@@ -18,7 +18,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
   };
 });
 
-vi.mock("@/lib/supabase/auth", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/supabase/auth", () => ({ requireReadAccess: vi.fn() }));
 
 vi.mock("@/components/sections/ResourcePageRenderer", () => ({
   ResourcePageRenderer: () => null,
@@ -44,7 +44,7 @@ const content = {
 describe("AdminRevisionPreviewPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireAdmin).mockResolvedValue({
+    vi.mocked(requireReadAccess).mockResolvedValue({
       user: { id: "admin_1", email: "a@example.com" },
       role: "super_admin",
     });

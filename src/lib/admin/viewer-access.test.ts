@@ -7,16 +7,42 @@ import { isViewerReadableHref } from "./viewer-access";
 const ADMIN_APP_DIR = path.resolve(process.cwd(), "src/app/admin");
 
 /**
- * The reporting pages a read-only viewer may open. Anything else must deny them.
+ * Every page a read-only viewer may open. Anything else must deny them.
  * Written out by hand rather than derived from the module under test, so a
  * change to the allowlist has to be made twice and thought about once.
+ *
+ * Detail routes appear here but not in the nav allowlist in `viewer-access.ts`:
+ * this list is the gate (what may be opened), that one is presentation (what
+ * gets rendered as a link). A viewer reaches `leads/[id]` from the lead list.
  */
 const READ_ONLY_PAGES = [
   "page.tsx",
   "analytics/page.tsx",
-  "goals/page.tsx",
-  "bookings/page.tsx",
   "attribution/page.tsx",
+  "bookings/page.tsx",
+  "case-studies/page.tsx",
+  "chatbot/page.tsx",
+  "chatbot/conversations/page.tsx",
+  "chatbot/conversations/[id]/page.tsx",
+  "chatbot/insights/page.tsx",
+  "chatbot/settings/page.tsx",
+  "forms/page.tsx",
+  "forms/[id]/page.tsx",
+  "goals/page.tsx",
+  "leads/page.tsx",
+  "leads/[id]/page.tsx",
+  "libraries/page.tsx",
+  "links/page.tsx",
+  "media/page.tsx",
+  "news/page.tsx",
+  "pages/page.tsx",
+  "pages/block-preview-audit/page.tsx",
+  "pages/redirects/page.tsx",
+  "pages/[id]/source/page.tsx",
+  "pages/[id]/revisions/[revisionId]/page.tsx",
+  "popups/page.tsx",
+  "popups/[id]/page.tsx",
+  "settings/routes/page.tsx",
   "team/page.tsx",
 ];
 
@@ -37,7 +63,7 @@ function adminPageFiles(dir = ADMIN_APP_DIR): string[] {
 }
 
 describe("isViewerReadableHref", () => {
-  it("admits exactly the reporting pages", () => {
+  it("admits the reporting pages", () => {
     expect(isViewerReadableHref("/admin")).toBe(true);
     expect(isViewerReadableHref("/admin/analytics")).toBe(true);
     expect(isViewerReadableHref("/admin/bookings")).toBe(true);
@@ -45,17 +71,25 @@ describe("isViewerReadableHref", () => {
     expect(isViewerReadableHref("/admin/team?tab=closers")).toBe(true);
   });
 
-  it("refuses the surfaces holding lead PII, transcripts and edit access", () => {
-    expect(isViewerReadableHref("/admin/leads")).toBe(false);
-    expect(isViewerReadableHref("/admin/chatbot")).toBe(false);
-    expect(isViewerReadableHref("/admin/chatbot/conversations/abc")).toBe(
-      false,
-    );
-    expect(isViewerReadableHref("/admin/pages")).toBe(false);
-    expect(isViewerReadableHref("/admin/news")).toBe(false);
-    expect(isViewerReadableHref("/admin/media")).toBe(false);
+  it("admits the content and lead sections a viewer may now read", () => {
+    expect(isViewerReadableHref("/admin/leads")).toBe(true);
+    expect(isViewerReadableHref("/admin/chatbot")).toBe(true);
+    expect(isViewerReadableHref("/admin/chatbot/conversations")).toBe(true);
+    expect(isViewerReadableHref("/admin/pages")).toBe(true);
+    expect(isViewerReadableHref("/admin/news")).toBe(true);
+    expect(isViewerReadableHref("/admin/media")).toBe(true);
+    expect(isViewerReadableHref("/admin/settings/routes")).toBe(true);
+  });
+
+  it("refuses the surfaces that write or manage access", () => {
+    // The editors autosave, so opening one read-only would fire denied writes.
+    expect(isViewerReadableHref("/admin/pages/new")).toBe(false);
+    expect(isViewerReadableHref("/admin/news/new")).toBe(false);
+    expect(isViewerReadableHref("/admin/case-studies/new")).toBe(false);
+    // The staff roster and role control.
     expect(isViewerReadableHref("/admin/settings/users")).toBe(false);
-    expect(isViewerReadableHref("/admin/settings/routes")).toBe(false);
+    // A shared account must not change the password everyone else uses.
+    expect(isViewerReadableHref("/admin/reset-password")).toBe(false);
   });
 
   it("reads through a query string and a trailing slash", () => {
@@ -71,6 +105,9 @@ describe("isViewerReadableHref", () => {
     // record. It stays denied until someone lists it deliberately.
     expect(isViewerReadableHref("/admin/bookings/lead_1")).toBe(false);
     expect(isViewerReadableHref("/admin/analytics/export")).toBe(false);
+    // The list is readable; the editor behind it is not.
+    expect(isViewerReadableHref("/admin/news/abc")).toBe(false);
+    expect(isViewerReadableHref("/admin/pages/abc")).toBe(false);
   });
 
   it("is not fooled by a path that merely starts with an allowed one", () => {
@@ -84,8 +121,8 @@ describe("every admin page picks a gate deliberately", () => {
   // that calls it is closed to them for free — including pages written after
   // this slice, by someone who never heard of the viewer role. The failure
   // this prevents is the opposite one: a new page shipped with NO gate, or a
-  // page quietly switched to requireReadAccess and handed a viewer the lead
-  // table.
+  // page quietly switched to requireReadAccess and handed a viewer an editor
+  // that writes on mount.
   const files = adminPageFiles();
 
   it("finds the admin pages at all", () => {

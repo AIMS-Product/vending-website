@@ -8,7 +8,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { QualificationFormEditor } from "@/components/admin/QualificationFormEditor";
 import { adminGetQualificationForm } from "@/lib/services/qualification-forms";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 type Params = { id: string };
 
@@ -22,7 +22,10 @@ export default async function EditQualificationFormPage({
 }: {
   params: Promise<Params>;
 }) {
-  const [{ user, role }, { id }] = await Promise.all([requireAdmin(), params]);
+  const [{ user, role }, { id }] = await Promise.all([
+    requireReadAccess(),
+    params,
+  ]);
   const form = await adminGetQualificationForm({ formId: id });
   if (!form) notFound();
 

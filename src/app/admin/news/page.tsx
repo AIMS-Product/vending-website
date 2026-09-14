@@ -21,7 +21,7 @@ import {
   type NewsSearchParams,
   type NewsSortKey,
 } from "@/lib/admin/news-list";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import { adminListPosts } from "@/lib/services/news";
 import { NewsBulkArchiveControls } from "@/app/admin/news/NewsBulkArchiveControls";
 import { archivePostFromList } from "@/app/admin/news/list-actions";
@@ -46,7 +46,7 @@ export default async function AdminNewsPage({
   searchParams: Promise<AdminNewsSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const listParams = parseNewsListParams(params);

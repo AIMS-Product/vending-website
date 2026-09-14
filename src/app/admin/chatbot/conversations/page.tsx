@@ -11,7 +11,7 @@ import {
   type AdminChatbotConversationsResult,
   type AdminChatbotSort,
 } from "@/lib/services/chatbot-admin";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Chatbot conversations",
@@ -88,7 +88,7 @@ export default async function AdminChatbotConversationsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const q = singleParam(params.q) ?? "";

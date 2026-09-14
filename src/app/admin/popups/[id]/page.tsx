@@ -10,7 +10,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { PopupEditor } from "@/components/admin/PopupEditor";
 import { adminGetPopup, adminPopupEventTotals } from "@/lib/services/popups";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 type Params = { id: string };
 
@@ -24,7 +24,10 @@ export default async function EditPopupPage({
 }: {
   params: Promise<Params>;
 }) {
-  const [{ user, role }, { id }] = await Promise.all([requireAdmin(), params]);
+  const [{ user, role }, { id }] = await Promise.all([
+    requireReadAccess(),
+    params,
+  ]);
   const [entry, totalsMap] = await Promise.all([
     // A load failure (e.g. table not provisioned yet) reads as "no such
     // popup" rather than a hard error page.

@@ -21,7 +21,7 @@ import {
   type CaseStudiesSearchParams,
   type CaseStudySortKey,
 } from "@/lib/admin/case-studies-list";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import { adminListCaseStudies } from "@/lib/services/case-studies";
 import { CaseStudyBulkArchiveControls } from "@/app/admin/case-studies/CaseStudyBulkArchiveControls";
 import { archiveCaseStudyFromList } from "@/app/admin/case-studies/list-actions";
@@ -46,7 +46,7 @@ export default async function AdminCaseStudiesPage({
   searchParams: Promise<AdminCaseStudiesSearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const listParams = parseCaseStudiesListParams(params);
@@ -93,7 +93,10 @@ export default async function AdminCaseStudiesPage({
             </span>
             Blog and news
           </Link>
-          <Link href="/admin/case-studies/new" className={adminPrimaryButtonClass}>
+          <Link
+            href="/admin/case-studies/new"
+            className={adminPrimaryButtonClass}
+          >
             <span aria-hidden="true">
               <AdminIcon icon="plus" />
             </span>

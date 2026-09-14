@@ -7,7 +7,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { QualificationFormsManager } from "@/components/admin/QualificationFormsManager";
 import { adminListQualificationForms } from "@/lib/services/qualification-forms";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Qualification forms admin",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default async function AdminQualificationFormsPage() {
   const [{ user, role }, forms] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     adminListQualificationForms(),
   ]);
 

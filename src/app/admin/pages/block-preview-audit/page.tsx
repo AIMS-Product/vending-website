@@ -7,7 +7,7 @@ import {
   blockPreviewCases,
   getBlockPreviewParityMarkers,
 } from "@/lib/page-builder/block-preview-cases";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Block preview audit",
@@ -19,7 +19,7 @@ export default async function BlockPreviewAuditPage() {
     notFound();
   }
 
-  const { user, role } = await requireAdmin();
+  const { user, role } = await requireReadAccess();
 
   return (
     <>

@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import AdminPagesPage from "./page";
 import { adminListSeoPages } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import type { Tables } from "@/types/database";
 
 vi.mock("@/app/admin/pages/actions", () => ({
@@ -18,13 +18,13 @@ vi.mock("@/lib/services/seo-pages", () => ({
 }));
 
 vi.mock("@/lib/supabase/auth", () => ({
-  requireAdmin: vi.fn(),
+  requireReadAccess: vi.fn(),
 }));
 
 describe("AdminPagesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireAdmin).mockResolvedValue({
+    vi.mocked(requireReadAccess).mockResolvedValue({
       user: { id: "admin_1", email: "admin@example.com" },
       role: "super_admin",
     });

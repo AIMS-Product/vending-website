@@ -22,7 +22,7 @@ import {
   type AdminChatbotRange,
   type ChatbotInsightsKpis,
 } from "@/lib/services/chatbot-insights";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Chatbot",
@@ -53,7 +53,7 @@ export default async function AdminChatbotPage({
   searchParams: Promise<SearchParams>;
 }) {
   const [{ user, role }, params] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     searchParams,
   ]);
   const range = parseRange(params.range);

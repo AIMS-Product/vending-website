@@ -8,7 +8,7 @@ import {
   type AdminPopup,
   type PopupEventTotals,
 } from "@/lib/services/popups";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Popups admin",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminPopupsPage() {
-  const { user, role } = await requireAdmin();
+  const { user, role } = await requireReadAccess();
 
   // Until the popups migration is applied the table does not exist; the page
   // should explain that instead of hard-erroring.

@@ -12,7 +12,7 @@ import { pagePathForSlug } from "@/lib/page-builder/page-paths";
 import { renderReadableResourceHtml } from "@/lib/page-builder/readable-source";
 import { adminGetSeoPageById } from "@/lib/services/seo-pages";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 import { absoluteUrl } from "@/lib/site";
 
 type Params = { id: string };
@@ -46,7 +46,10 @@ export default async function SeoPageSourcePage({
 }: {
   params: Promise<Params>;
 }) {
-  const [{ user, role }, { id }] = await Promise.all([requireAdmin(), params]);
+  const [{ user, role }, { id }] = await Promise.all([
+    requireReadAccess(),
+    params,
+  ]);
   const { contentError, page, publicPath, sourceBlocks } =
     await loadReadableSourcePageData(id);
 

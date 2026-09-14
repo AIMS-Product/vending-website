@@ -12,7 +12,7 @@ import { LibrariesWorkspace } from "./LibrariesWorkspace";
 import { toEditorMediaAsset } from "@/lib/media/editor-asset";
 import { adminListMediaAssets } from "@/lib/services/media-assets";
 import { adminListPageBuilderLibraries } from "@/lib/services/page-builder-libraries";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Reusable content libraries",
@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 };
 
 export default async function AdminLibrariesPage() {
-  const { user, role } = await requireAdmin();
+  const { user, role } = await requireReadAccess();
   const [libraries, mediaAssets] = await Promise.all([
     adminListPageBuilderLibraries(),
     adminListMediaAssets({ assetTypes: ["image"] }),

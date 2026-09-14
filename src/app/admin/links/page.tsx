@@ -5,7 +5,7 @@ import {
   bitlyConnected,
   listMarketingLinks,
 } from "@/lib/services/marketing-links";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Links",
@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminLinksPage() {
   const [{ user, role }, links] = await Promise.all([
-    requireAdmin(),
+    requireReadAccess(),
     listMarketingLinks(),
   ]);
 

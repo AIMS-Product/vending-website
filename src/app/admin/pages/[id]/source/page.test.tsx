@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import SeoPageSourcePage from "./page";
 import { adminGetSeoPageById } from "@/lib/services/seo-pages";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { requireReadAccess } from "@/lib/supabase/auth";
 
 vi.mock("@/lib/services/seo-pages", async () => {
   const actual = await vi.importActual<
@@ -14,7 +14,7 @@ vi.mock("@/lib/services/seo-pages", async () => {
   };
 });
 
-vi.mock("@/lib/supabase/auth", () => ({ requireAdmin: vi.fn() }));
+vi.mock("@/lib/supabase/auth", () => ({ requireReadAccess: vi.fn() }));
 
 vi.mock("@/components/admin/AdminShell", () => ({
   AdminShell: ({
@@ -67,7 +67,7 @@ const publishedContent = {
 describe("SeoPageSourcePage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(requireAdmin).mockResolvedValue({
+    vi.mocked(requireReadAccess).mockResolvedValue({
       user: { id: "admin_1", email: "admin@example.com" },
       role: "super_admin",
     });

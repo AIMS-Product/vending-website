@@ -144,7 +144,13 @@ describe("AdminShell navigation for a read-only viewer", () => {
   // Hiding a link is not access control — requireAdmin() on each page is.
   // These assertions only prove the nav agrees with the gate, so a viewer is
   // not handed a sidebar of links that all bounce them back to /admin.
-  const denied = [
+  // Managing who has access is the one section a viewer never sees.
+  const denied = ["/admin/settings/users"];
+
+  const readable = [
+    "/admin/analytics",
+    "/admin/bookings",
+    "/admin/attribution",
     "/admin/leads",
     "/admin/chatbot",
     "/admin/pages",
@@ -155,17 +161,16 @@ describe("AdminShell navigation for a read-only viewer", () => {
     "/admin/links",
     "/admin/media",
     "/admin/libraries",
-    "/admin/settings/users",
     "/admin/settings/routes",
   ];
 
-  it("renders only the four reporting sections", () => {
+  it("renders every section a viewer may read", () => {
     const html = renderShell("overview", "viewer");
 
     expect(html).toContain('href="/admin"');
-    expect(html).toContain('href="/admin/analytics"');
-    expect(html).toContain('href="/admin/bookings"');
-    expect(html).toContain('href="/admin/attribution"');
+    readable.forEach((href) => {
+      expect(html).toContain(`href="${href}"`);
+    });
 
     denied.forEach((href) => {
       expect(html).not.toContain(`href="${href}"`);
