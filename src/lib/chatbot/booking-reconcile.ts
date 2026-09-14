@@ -51,6 +51,12 @@ const MAX_LOOKBACK_DAYS = 90;
 
 export type ReconcileChatbotBookingsOptions = {
   lookbackDays?: number;
+  /**
+   * An explicit window of call start times, ISO dates or instants, for a
+   * historical backfill. Overrides lookbackDays and the forward window.
+   */
+  from?: string;
+  to?: string;
   dryRun?: boolean;
   /**
    * HTTP call ceiling. Left at the client default for the daily cron; raised
@@ -130,7 +136,19 @@ function toWebhookEvent(
     // booking would be stamped with the sweep's run time and land in the
     // wrong funnel window.
     inviteeCreatedAt: invitee.created_at ?? null,
-    rawPayload: { invitee, scheduledEvent: event },
+    // The same shape the live webhook stores, so every reader of raw_payload
+    // (booked-at, invitee_scheduled_by, the hosts on the scheduled event) reads
+    // a backfilled row exactly like a live one. The first sweep stored
+    // { invitee, scheduledEvent } and left 1,180 rows with no readable rep.
+    rawPayload: {
+      event: "invitee.created",
+      created_by: "backfill",
+      payload: {
+        ...invitee,
+        invitee_scheduled_by: invitee.scheduled_by ?? null,
+        scheduled_event: event,
+      },
+    },
   };
 }
 
@@ -238,12 +256,12 @@ export async function reconcileChatbotBookings(
   // calls that have already happened and miss every upcoming one, which is
   // most of what a booking sweep exists to find: someone booking today books
   // for next week. So the window reaches forward as well as back.
-  const minStartTime = new Date(
-    now.getTime() - lookbackDays * DAY_MS,
-  ).toISOString();
-  const maxStartTime = new Date(
-    now.getTime() + FORWARD_WINDOW_DAYS * DAY_MS,
-  ).toISOString();
+  const minStartTime = options.from
+    ? new Date(options.from).toISOString()
+    : new Date(now.getTime() - lookbackDays * DAY_MS).toISOString();
+  const maxStartTime = options.to
+    ? new Date(options.to).toISOString()
+    : new Date(now.getTime() + FORWARD_WINDOW_DAYS * DAY_MS).toISOString();
 
   const realClient = deps.supabaseClient ?? createAdminClient();
   const writeClient = dryRun ? createDryRunClient(realClient) : realClient;

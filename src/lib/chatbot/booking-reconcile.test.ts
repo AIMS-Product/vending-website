@@ -279,6 +279,43 @@ describe("reconcileChatbotBookings", () => {
     expect(stampCloseNote).not.toHaveBeenCalled();
   });
 
+  it("honours an explicit window and stores the webhook payload shape", async () => {
+    const calendlyFetch = buildCalendlyFetch([
+      {
+        uri: "https://api.calendly.com/scheduled_events/e1/invitees/i1",
+        email: "june@example.com",
+        name: "June Lead",
+        status: "active",
+        created_at: "2026-06-20T10:00:00Z",
+        scheduled_by: "https://api.calendly.com/users/rep-1",
+        tracking: null,
+      },
+    ]);
+    const { client, calls } = buildFakeSupabase({});
+    await reconcileChatbotBookings(
+      { from: "2026-06-01", to: "2026-07-01" },
+      { fetchImpl: calendlyFetch, supabaseClient: client, token: "tok" },
+    );
+    const listUrl = (
+      calendlyFetch as unknown as { mock: { calls: Array<[string]> } }
+    ).mock.calls
+      .map(([url]) => String(url))
+      .find((url) => url.includes("/scheduled_events?"))!;
+    expect(listUrl).toContain("min_start_time=2026-06-01T00%3A00%3A00.000Z");
+    expect(listUrl).toContain("max_start_time=2026-07-01T00%3A00%3A00.000Z");
+    const booking = calls.upserts.find((row) =>
+      (row as { invitee_uri?: string }).invitee_uri?.endsWith("/i1"),
+    ) as { raw_payload: { event: string; payload: Record<string, unknown> } };
+    expect(booking.raw_payload.event).toBe("invitee.created");
+    expect(booking.raw_payload.payload.invitee_scheduled_by).toBe(
+      "https://api.calendly.com/users/rep-1",
+    );
+    expect(booking.raw_payload.payload.created_at).toBe("2026-06-20T10:00:00Z");
+    expect(
+      (booking.raw_payload.payload.scheduled_event as { uri: string }).uri,
+    ).toBe(EVENT_URI);
+  });
+
   it("skips a canceled invitee without recording it as booked", async () => {
     const canceledInvitee = {
       uri: "https://api.calendly.com/scheduled_events/e1/invitees/1",

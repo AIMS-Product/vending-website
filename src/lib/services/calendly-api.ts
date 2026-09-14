@@ -41,7 +41,15 @@ export type CalendlyInvitee = {
   created_at: string;
   /** Absolute URI of the scheduled event this invitee belongs to. */
   event?: string | null;
+  /** The Calendly user who booked on the invitee's behalf, when a rep did. */
+  scheduled_by?: string | null;
   tracking?: CalendlyTracking | null;
+};
+
+export type CalendlyUser = {
+  uri: string;
+  name: string | null;
+  email: string | null;
 };
 
 export type CalendlyScheduledEvent = {
@@ -285,6 +293,21 @@ export function createCalendlyApiClient({
     async getInvitee(inviteeUri: string): Promise<CalendlyInvitee | null> {
       const data: { resource?: CalendlyInvitee } = await request(inviteeUri);
       return data.resource ?? null;
+    },
+
+    /** One organization member by user URI or uuid: the name behind a scheduled_by. */
+    async getUser(userUriOrId: string): Promise<CalendlyUser | null> {
+      const path = userUriOrId.startsWith("http")
+        ? userUriOrId
+        : `/users/${userUriOrId}`;
+      const data: { resource?: CalendlyUser } = await request(path);
+      return data.resource
+        ? {
+            uri: data.resource.uri,
+            name: data.resource.name ?? null,
+            email: data.resource.email ?? null,
+          }
+        : null;
     },
 
     /** One scheduled event by its absolute URI. */
