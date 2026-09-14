@@ -1,5 +1,6 @@
 import "server-only";
 
+import { safeTimeZone, upcomingDays } from "@/lib/chatbot/availability";
 import { CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
 import { SITE_KNOWLEDGE_BLOCK } from "@/lib/chatbot/site-knowledge";
 
@@ -40,6 +41,10 @@ export type ChatbotPromptInput = {
   userTurnsSinceCalendar?: number | null;
   /** True once a Calendly webhook has confirmed a booking into this transcript. */
   hasConfirmedBooking?: boolean;
+  /** IANA zone from the visitor's browser; today's date is stated in it. */
+  timeZone?: string | null;
+  /** Injectable clock for tests. */
+  now?: Date;
 };
 
 /**
@@ -66,6 +71,7 @@ export function buildChatbotSystemPrompt(input: ChatbotPromptInput): string {
     SITE_KNOWLEDGE_BLOCK,
     knowledgeBaseSection(input.knowledgeBase),
     ctaSection(),
+    dateSection(input),
     visitorContextSection(input),
     nameSection(input.capturedName ?? null, input.personaName),
     GOAL_SECTION,
@@ -109,6 +115,32 @@ function ctaSection(): string {
     `- Book a call: ONLY through the show_booking_calendar tool. Never paste ${CHATBOT_BOOKING_URL} or /book-now into the chat; a link sends them away from this conversation and most never come back.`,
     "- 90-Day Roadmap: /resources/roadmap",
     "- Finance Templates: /resources/finance-templates",
+  ].join("\n");
+}
+
+/**
+ * The model was never told the date. On 2026-09-11 it called Tuesday the 15th
+ * "Monday" (true in 2025), asked the calendar for 2025 dates, and told a
+ * visitor every day she picked was full while the live calendar had them open.
+ * Placed after the static blocks so the cacheable prompt prefix stays intact.
+ */
+function dateSection(input: ChatbotPromptInput): string {
+  const tz = safeTimeZone(input.timeZone);
+  const now = input.now ?? new Date();
+  const today = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(now);
+  return [
+    `TODAY: ${today}, in the visitor's time zone (${tz.replace(/_/g, " ")}). This line is the only source of today's date; your own sense of the date and year is wrong. A date the visitor names ("the 15th", "Tuesday", "next week") is the next one on or after today.`,
+    "The next two weeks, with the exact YYYY-MM-DD to pass to get_available_times. Take every weekday from this list; never work one out yourself:",
+    ...upcomingDays(tz, now).map(
+      (day, i) =>
+        `${day.label} = ${day.iso}${i === 0 ? " (today)" : i === 1 ? " (tomorrow)" : ""}`,
+    ),
   ].join("\n");
 }
 
@@ -229,7 +261,7 @@ function toolsSection(hasSeenCalendar: boolean): string {
 const FORMATTING_SECTION = `FORMATTING:
 Plain prose only. No markdown, no asterisks, no em dashes or en dashes, no bullets, no headers. Short sentences. One to three sentences per reply, then stop and let them respond. Never dump everything at once.
 
-LINKS: when pointing at a page, always embed it as a markdown link with short natural anchor text inside the sentence, like "we've got a free [90-day roadmap](/resources/roadmap) that walks through it" or "[her story](/case-studies/mallorie-rauch) is the closest one to what you described". Never write a bare URL, path, or slug in the visible text — link syntax is the one exception to "no markdown".
+LINKS: when pointing at a page, always embed it as a markdown link with short natural anchor text inside the sentence, like "we've got a free [90-day roadmap](/resources/roadmap) that walks through it" or "[her story](/case-studies/mallerie-rouch) is the closest one to what you described". Never write a bare URL, path, or slug in the visible text — link syntax is the one exception to "no markdown".
 Booking is the one thing that is never a link. The calendar comes from show_booking_calendar and appears inside this chat, so there is no page to point at and no anchor text to write for it.`;
 
 const PERSONA_SECTION = `PERSONA:
@@ -285,7 +317,7 @@ const BRANCH_A_SECTION = `CONVERSION BEHAVIOR — contact info is already captur
 Their contact info is done; the only thing left to win is the call. Never re-ask for contact info. Ask about current work, capital comfort range, timeline, and motivation — one question at a time — and after one or two real answers, open the calendar and invite them to grab a time. If they show any call intent at all ("talk to someone", "book", "call", "how do I start"), open the calendar immediately, no toll, no further questions first.`;
 
 const TESTIMONIAL_MATCHING_SECTION = `TESTIMONIAL MATCHING (this business's special move):
-Only bring up a member story after the visitor has actually shared something about their background or situation. A one-word or vague answer like "I'm currently working" gets a natural follow-up ("oh nice, what kind of work?"), never a story. But the moment they DO name their job, situation, or ask "is this for someone like me", you MUST answer with a specific named member from the index above, their real result, and the link. Generic reassurance ("many teachers have found success") is a failure. There will rarely be an exact occupation match; pick the CLOSEST SITUATION instead and say why it maps: full-time job needing flexible hours -> Mallorie Rauch, physician assistant with a full-time job and two kids, $4K/mo on the side; steady salaried job -> Andy Kunselman, corporate retail exec, $10K/mo from 2 locations; no sales background -> Lane, mine geologist, $200K/yr; no experience at all -> Shan, $25K/mo. Direct matches when they exist: corporate sales -> Matt Dicks $20K/mo; law enforcement -> Manuel Duval; stay-at-home parent -> Madison; blue-collar -> Michael D $600K/yr. Weave it in casually ("funny enough, one of our members is a PA who built this around a full-time job...") and ALWAYS bridge it to what they told you ("so a busy teaching schedule fits this well"). MANDATORY: every member story mention includes its case-study markdown link in the same breath, like [her story](/case-studies/mallorie-rauch) — a story with no link is a failure, the link is the proof. One story, not a list.`;
+Only bring up a member story after the visitor has actually shared something about their background or situation. A one-word or vague answer like "I'm currently working" gets a natural follow-up ("oh nice, what kind of work?"), never a story. But the moment they DO name their job, situation, or ask "is this for someone like me", you MUST answer with a specific named member from the index above, their real result, and the link. Generic reassurance ("many teachers have found success") is a failure. There will rarely be an exact occupation match; pick the CLOSEST SITUATION instead and say why it maps: full-time job needing flexible hours -> Mallorie Rauch, physician assistant with a full-time job and two kids, $4K/mo on the side; steady salaried job -> Andy Kunselman, corporate retail exec, $10K/mo from 2 locations; no sales background -> Lane, mine geologist, $200K/yr; no experience at all -> Shan, $25K/mo. Direct matches when they exist: corporate sales -> Matt Dicks $20K/mo; law enforcement -> Manuel Duval; stay-at-home parent -> Madison; blue-collar -> Michael D $600K/yr. Weave it in casually ("funny enough, one of our members is a PA who built this around a full-time job...") and ALWAYS bridge it to what they told you ("so a busy teaching schedule fits this well"). MANDATORY: every member story mention includes its case-study markdown link in the same breath, like [her story](/case-studies/mallerie-rouch) — a story with no link is a failure, the link is the proof. One story, not a list.`;
 
 const COLLATERAL_SECTION = `COLLATERAL OFFERS:
 When relevant, offer the 90-Day Roadmap or Finance Templates by name — as the deliverable that justifies the email ask described above.`;

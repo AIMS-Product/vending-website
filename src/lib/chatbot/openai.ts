@@ -79,14 +79,57 @@ export type StreamChatbotReplyOptions = {
 const STREAM_TIMEOUT_MS = 30_000;
 const EXTRACTION_TIMEOUT_MS = 15_000;
 
+/** Longest OpenAI-named wait worth taking inside one turn (route maxDuration is 90s). */
+const MAX_RATE_LIMIT_WAIT_MS = 8_000;
+
 export async function streamChatbotReply(
   options: StreamChatbotReplyOptions,
 ): Promise<Response> {
   const apiKey = resolveApiKey(options.apiKey);
 
-  let response: Response;
+  // One retry on a 429. The org's gpt-4.1 cap is 30K tokens a minute and a
+  // turn sends ~9.5K, so one visitor typing fast hits it. OpenAI names the
+  // wait (0.5s to 6s on 4 of the 5 failures in the week to 2026-09-11), and
+  // taking it beats "Sorry, something glitched on my end".
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await sendChatRequest(apiKey, options);
+    if (response.ok && response.body) return response;
+
+    const detail = await safeErrorDetail(response);
+    const waitMs =
+      response.status === 429 && attempt === 0
+        ? rateLimitWaitMs(response.headers, detail)
+        : null;
+    if (waitMs === null || waitMs > MAX_RATE_LIMIT_WAIT_MS) {
+      throw new ChatbotOpenAiError(
+        `OpenAI rejected the chat request${detail}.`,
+        { status: response.status },
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+}
+
+/**
+ * The wait OpenAI asks for on a rate limit, from a header when present, else
+ * from its "Please try again in 1.672s" / "in 538ms" message. Null when it
+ * names none (an exhausted quota is also a 429 and must not be retried).
+ */
+export function rateLimitWaitMs(headers: Headers, detail: string): number | null {
+  const headerMs = Number(headers.get("retry-after-ms"));
+  if (headerMs > 0) return headerMs;
+  const match = /try again in (\d+(?:\.\d+)?)(ms|s)\b/i.exec(detail);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Math.ceil(match[2].toLowerCase() === "ms" ? value : value * 1000) + 250;
+}
+
+async function sendChatRequest(
+  apiKey: string,
+  options: StreamChatbotReplyOptions,
+): Promise<Response> {
   try {
-    response = await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
+    return await (options.fetchFn ?? fetch)(CHAT_COMPLETIONS_URL, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -120,15 +163,6 @@ export async function streamChatbotReply(
         : `OpenAI chat request failed: ${errorMessage(error)}.`,
     );
   }
-
-  if (!response.ok || !response.body) {
-    throw new ChatbotOpenAiError(
-      `OpenAI rejected the chat request${await safeErrorDetail(response)}.`,
-      { status: response.status },
-    );
-  }
-
-  return response;
 }
 
 export type ExtractJsonOptions = {

@@ -192,7 +192,7 @@ function buildRouteMap(): string {
 const PROGRAM_FACTS = `Vendingpreneurs is a mentorship community and accelerator program (founded by Mike Hoffman) that teaches people how to launch and scale a vending machine or micro-market route, from zero experience through full-time income. The program includes step-by-step training, weekly group coaching plus 1-on-1 ambassador sessions, pre-negotiated discounts on machines and bulk product, and a community of active operators.
 Typical member proof points: 850+ entrepreneurs launched, 3,000+ locations placed, $3 million+ in vending sales. Program averages: 2-15 hours a week to run a route, under 90 days to place a first machine (results vary by market, capital, and effort, and are never guarantees).
 COST AND PRICING: you do not know what anything costs and there is no published number. There are several different plans, and a lot of financing partners, so what someone actually pays depends entirely on which plan fits their goals. Nobody can quote that in a chat, and no figure you might infer from the numbers above is a price. The only correct answer to any cost question is the plans-and-financing line plus the calendar.
-How to get started: the visitor books a free strategy call at /contact (also reachable at /book-now). There is a short qualification quiz first; after it they're offered a call time. No purchase is required to book or take the call.`;
+How to get started: the visitor books a free call with the team, right here in the chat through the booking calendar. No purchase is required to book or take the call.`;
 
 /**
  * The full static context block, assembled once at module load and reused

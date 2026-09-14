@@ -3,6 +3,7 @@ import {
   describeAvailability,
   fetchChatbotAvailability,
   safeTimeZone,
+  upcomingDays,
 } from "./availability";
 
 describe("describeAvailability", () => {
@@ -28,15 +29,65 @@ describe("describeAvailability", () => {
       "2026-08-31T21:00:00Z", // 2:00pm PT
       "2026-09-01T19:00:00Z",
     ];
+    const now = new Date("2026-08-30T12:00:00Z");
     const text = describeAvailability(slots, "America/Los_Angeles", {
       day: "2026-08-31",
+      now,
     });
     expect(text).toContain("12:00 pm, 12:15 pm, 12:30 pm, 2:00 pm");
     expect(text).toMatch(/complete for that day/);
     expect(text).not.toContain("Sep 1");
     expect(
-      describeAvailability(slots, "America/Los_Angeles", { day: "2026-09-05" }),
+      describeAvailability(slots, "America/Los_Angeles", {
+        day: "2026-09-05",
+        now,
+      }),
     ).toMatch(/No open times on 2026-09-05/);
+  });
+
+  // The 2026-09-11 bug: the model asked for last year's date and relayed
+  // "No open times" as "the 15th is full" while the 15th had 41 open slots.
+  it("never reports a wrong-year or out-of-window day as having no open times", () => {
+    const now = new Date("2026-09-11T12:37:00Z");
+    const past = describeAvailability([], "America/New_York", {
+      day: "2025-09-15",
+      now,
+    });
+    expect(past).toMatch(/in the past: today is 2026-09-11/);
+    expect(past).not.toMatch(/No open times/);
+
+    const beyond = describeAvailability([], "America/New_York", {
+      day: "2026-10-02",
+      now,
+    });
+    expect(beyond).toMatch(/Never say it is unavailable/);
+    expect(beyond).not.toMatch(/No open times/);
+
+    expect(
+      describeAvailability(["2026-09-15T14:00:00Z"], "America/New_York", {
+        day: "2026-09-15",
+        now,
+      }),
+    ).toContain("10:00 am");
+  });
+});
+
+describe("upcomingDays", () => {
+  it("labels real weekdays in the visitor's zone", () => {
+    const days = upcomingDays("America/New_York", new Date("2026-09-11T12:37:00Z"));
+    expect(days).toHaveLength(14);
+    expect(days[0]).toEqual({ iso: "2026-09-11", label: "Fri, Sep 11" });
+    expect(days[4]).toEqual({ iso: "2026-09-15", label: "Tue, Sep 15" });
+    // 8pm Friday in LA is already Saturday in UTC.
+    expect(
+      upcomingDays("America/Los_Angeles", new Date("2026-09-12T03:00:00Z"))[0].iso,
+    ).toBe("2026-09-11");
+  });
+
+  it("neither skips nor repeats a day across a DST change", () => {
+    const days = upcomingDays("America/New_York", new Date("2026-11-01T04:30:00Z"));
+    expect(new Set(days.map((d) => d.iso)).size).toBe(14);
+    expect(days[1].iso).toBe("2026-11-02");
   });
 
   it("warns the model that the summary is capped", () => {

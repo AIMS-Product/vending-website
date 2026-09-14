@@ -40,6 +40,16 @@ describe("stripChatbotFormatting", () => {
     );
   });
 
+  // 33d96433: "2–4 machines" reached a visitor as "2, 4 machines".
+  it("turns a dash between numbers into a range, not a comma", () => {
+    expect(stripChatbotFormatting("most start with 2–4 machines")).toBe(
+      "most start with 2 to 4 machines",
+    );
+    expect(stripChatbotFormatting("Tuesday at 10 — 10:45 am")).toBe(
+      "Tuesday at 10 to 10:45 am",
+    );
+  });
+
   it("does not treat an absolute https link as line-leading bullet punctuation", () => {
     const input = "[book a call](https://www.vendingpreneurs.com/book-now)";
     expect(stripChatbotFormatting(input)).toBe(input);
