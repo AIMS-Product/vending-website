@@ -131,6 +131,13 @@ export const preCallOperators = {
       blurb:
         "A 22-year law enforcement veteran and detective sergeant built a 10-location vending route around his full-time job, with one location on track for $8K.",
     },
+    {
+      id: "madison-g",
+      name: "Madison G.",
+      embedId: "mLCe2YfuWrE0CJHN",
+      blurb:
+        "A stay-at-home mom of five years pushed her husband for three months to back a vending business, and ten months later runs six locations doing $10-12K a month.",
+    },
   ],
   moreCta: { label: "View More Case Studies", href: "/case-studies" },
 } as const;
