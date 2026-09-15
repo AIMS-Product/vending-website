@@ -1,33 +1,28 @@
-import { Button } from "@/components/ui/Button";
+import Image from "next/image";
 import Link from "next/link";
-import { ApplyVsl } from "./apply/ApplyVsl";
-import { QuoteTestimonialCard, VideoTestimonialCard } from "./Testimonials";
-import { caseStudyQuotes, caseStudyVideos } from "@/lib/content/case-studies";
+import { Button } from "@/components/ui/Button";
+import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import {
   preCallHero,
   preCallNext,
+  preCallOperators,
   preCallPrep,
-  preCallProof,
-  preCallVsl,
+  preCallResources,
+  preCallWins,
 } from "@/lib/content/pre-call-resources";
 
 // /pre-call-resources — the one link sales sends after a call is booked.
-// Order is deliberate: framing, video, proof, prep checklist (Alysia + Kody,
-// Slack 2026-08-17). Type scale, dotted hero wash and centered eyebrow/heading
-// pattern all mirror /apply so a prospect moving between the two pages sees one
-// site rather than two.
-//
-// VSL SWAP: the video band is the shared ApplyVsl frame pointed at Mike's
-// YouTube VSL. When Alysia hands over the Vidalytics embed, replace this one
-// <ApplyVsl> with the Vidalytics div + its per-video script; fast.vidalytics.com
-// is already allowed in src/lib/content-security-policy.ts and the global
-// player script already loads site-wide from TrackingScripts.
+// Order is marketing's (Google Doc, 2026-09-15): framing video, the six
+// objection answers, operator stories, live wins, prep checklist, booking CTA.
+// Type scale, dotted hero wash and centered eyebrow/heading pattern all mirror
+// /apply so a prospect moving between the two pages sees one site.
 export function PreCallResourcesPage() {
   return (
     <>
       <PreCallHero />
-      <ApplyVsl vsl={preCallVsl} />
-      <PreCallProof />
+      <PreCallResources />
+      <PreCallOperators />
+      <PreCallWins />
       <PreCallPrep />
       <PreCallNext />
     </>
@@ -47,71 +42,204 @@ function PreCallHero() {
           backgroundSize: "22px 22px",
         }}
       />
-      <div className="relative mx-auto max-w-[1180px] px-5 pt-28 pb-16 lg:px-10 lg:pt-32 lg:pb-20">
-        <div className="mx-auto max-w-3xl text-center">
+      <div className="relative mx-auto max-w-[940px] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
+        <div className="text-center">
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {preCallHero.eyebrow}
           </p>
-          <h1 className="mx-auto mt-5 max-w-[18ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
+          <h1 className="mx-auto mt-5 max-w-[20ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
             {preCallHero.title}
           </h1>
-          {preCallHero.paragraphs.map((paragraph) => (
-            <p
-              key={paragraph}
-              className="mx-auto mt-5 max-w-[58ch] text-[17px] leading-relaxed font-semibold text-slate-700"
-            >
-              {paragraph}
-            </p>
-          ))}
-          <p className="mx-auto mt-7 max-w-[52ch] text-[17px] leading-relaxed font-black text-balance text-[#111111]">
-            {preCallHero.kicker}
+        </div>
+        <VidalyticsPlayer embedId={preCallHero.embedId} className="mt-10" />
+        {preCallHero.paragraphs.map((paragraph) => (
+          <p
+            key={paragraph}
+            className="mx-auto mt-6 max-w-[64ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700"
+          >
+            {paragraph}
           </p>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function PreCallResources() {
+  return (
+    <section className="border-t-2 border-[#111111] bg-white px-5 py-24 lg:px-10">
+      <div className="mx-auto max-w-[940px]">
+        <h2 className="text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
+          {preCallResources.title}
+        </h2>
+        <div className="mt-14 space-y-20">
+          {preCallResources.items.map((item) => (
+            <article key={item.id}>
+              <h3 className="mx-auto max-w-[28ch] text-center text-[clamp(1.4rem,2.4vw,1.9rem)] leading-[1.15] font-black text-balance text-[#111111]">
+                {item.question}
+              </h3>
+              <VidalyticsPlayer embedId={item.embedId} className="mt-7" />
+              <p className="mx-auto mt-6 max-w-[64ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
+                {item.answer}
+              </p>
+            </article>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
-function PreCallProof() {
-  const quotes = preCallProof.quoteIds
-    .map((id) => caseStudyQuotes.find((quote) => quote.id === id))
-    .filter((quote) => quote !== undefined);
+function PreCallOperators() {
+  return (
+    <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-24 lg:px-10">
+      <div className="mx-auto max-w-[1180px]">
+        <h2 className="mx-auto max-w-[24ch] text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
+          {preCallOperators.title}
+        </h2>
+        <ul className="mt-14 grid gap-x-8 gap-y-14 lg:grid-cols-2">
+          {preCallOperators.items.map((operator) => (
+            <li key={operator.id} className="min-w-0">
+              <h3 className="text-[clamp(1.25rem,2vw,1.6rem)] leading-tight font-black text-[#111111]">
+                {operator.name}
+              </h3>
+              <VidalyticsPlayer embedId={operator.embedId} className="mt-5" />
+              <p className="mt-5 text-[16px] leading-relaxed font-semibold text-slate-700">
+                {operator.blurb}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-14 text-center">
+          <Link
+            href={preCallOperators.moreCta.href}
+            className="text-base font-black text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
+          >
+            {preCallOperators.moreCta.label}
+          </Link>
+        </p>
+      </div>
+    </section>
+  );
+}
+
+/** One card in the wins preview, as served by wins.vendingpreneurs.com. */
+type WinPreview = {
+  id: string;
+  name: string;
+  avatar: string | null;
+  image: string | null;
+  excerpt: string;
+  winType: string | null;
+  postedAt: string | null;
+};
+
+/**
+ * Live preview of the community wins board.
+ *
+ * The feed is a static, already-public JSON route on wins.vendingpreneurs.com
+ * that serves the same approval-gated list the wins wall renders. Revalidated
+ * hourly. A failure here renders the section's heading and its link-out and
+ * nothing else — a wins board being briefly unreachable must never take down
+ * the page sales sends to every booked prospect.
+ */
+/** How many cards the preview grid shows — two full rows of three on desktop. */
+const PREVIEW_COUNT = 6;
+
+async function fetchWins(): Promise<WinPreview[]> {
+  try {
+    const response = await fetch(preCallWins.feedUrl, {
+      next: { revalidate: 3600 },
+    });
+    if (!response.ok) {
+      console.error(
+        `Wins feed returned ${response.status} for ${preCallWins.feedUrl}`,
+      );
+      return [];
+    }
+    const payload: unknown = await response.json();
+    const wins =
+      typeof payload === "object" && payload !== null && "wins" in payload
+        ? (payload as { wins: unknown }).wins
+        : null;
+    return Array.isArray(wins)
+      ? (wins as WinPreview[]).slice(0, PREVIEW_COUNT)
+      : [];
+  } catch (error) {
+    console.error("Wins feed unreachable:", error);
+    return [];
+  }
+}
+
+async function PreCallWins() {
+  const wins = await fetchWins();
 
   return (
     <section className="border-t-2 border-[#111111] bg-white px-5 py-24 lg:px-10">
       <div className="mx-auto max-w-[1180px]">
         <p className="text-center text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-          {preCallProof.eyebrow}
+          {preCallWins.eyebrow}
         </p>
         <h2 className="mx-auto mt-4 max-w-[20ch] text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
-          {preCallProof.title}
+          {preCallWins.title}
         </h2>
-        <p className="mx-auto mt-5 max-w-[50ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
-          {preCallProof.body}
+        <p className="mx-auto mt-5 max-w-[56ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
+          {preCallWins.body}
         </p>
 
-        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {caseStudyVideos.map((video) => (
-            <li key={video.id} className="min-w-0">
-              <VideoTestimonialCard video={video} />
-            </li>
-          ))}
-        </ul>
+        {wins.length > 0 ? (
+          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {wins.map((win) => (
+              <li
+                key={win.id}
+                className="flex h-full min-w-0 flex-col overflow-hidden rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]"
+              >
+                {win.image ? (
+                  <div className="relative aspect-[4/3] border-b-2 border-[#111111]">
+                    <Image
+                      src={win.image}
+                      alt=""
+                      fill
+                      sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
+                  </div>
+                ) : null}
+                <div className="flex flex-1 flex-col gap-3 p-6">
+                  <div className="flex items-center gap-3">
+                    {win.avatar ? (
+                      <Image
+                        src={win.avatar}
+                        alt=""
+                        width={36}
+                        height={36}
+                        className="size-9 shrink-0 rounded-full border-2 border-[#111111] object-cover"
+                      />
+                    ) : null}
+                    <span className="text-sm font-black text-[#111111]">
+                      {win.name}
+                    </span>
+                  </div>
+                  {win.winType ? (
+                    <span className="w-fit rounded-full border-2 border-[#111111] bg-[#55b8e8] px-3 py-1 text-[11px] font-black tracking-[0.08em] text-[#111111] uppercase">
+                      {win.winType}
+                    </span>
+                  ) : null}
+                  <p className="text-[15px] leading-relaxed font-semibold text-slate-700">
+                    {win.excerpt}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
-        <ul className="mt-6 grid gap-6 lg:grid-cols-3">
-          {quotes.map((quote) => (
-            <li key={quote.id} className="min-w-0">
-              <QuoteTestimonialCard quote={quote} />
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-10 text-center text-base font-semibold text-slate-600">
+        <p className="mt-12 text-center">
           <Link
-            href={preCallProof.moreCta.href}
-            className="font-black text-[#066a99] underline underline-offset-2 hover:text-[#111111]"
+            href={preCallWins.cta.href}
+            className="text-base font-black text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
           >
-            {preCallProof.moreCta.label}
+            {preCallWins.cta.label}
           </Link>
         </p>
       </div>
@@ -122,7 +250,7 @@ function PreCallProof() {
 function PreCallPrep() {
   return (
     <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-24 lg:px-10">
-      <div className="mx-auto max-w-[1000px]">
+      <div className="mx-auto max-w-[1100px]">
         <p className="text-center text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
           {preCallPrep.eyebrow}
         </p>
@@ -132,7 +260,7 @@ function PreCallPrep() {
         <p className="mx-auto mt-5 max-w-[52ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
           {preCallPrep.body}
         </p>
-        <ul className="mt-12 grid gap-6 sm:grid-cols-3">
+        <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {preCallPrep.items.map((item, index) => (
             <li
               key={item}

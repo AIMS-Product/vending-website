@@ -214,6 +214,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "i.ytimg.com",
       },
+      // Community wins board — win photos mirrored onto the wins site, and the
+      // Mighty avatars its feed points at. Both render in the wins preview on
+      // /pre-call-resources.
+      {
+        protocol: "https",
+        hostname: "wins.vendingpreneurs.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media2-production.mightynetworks.com",
+      },
     ],
   },
 };
