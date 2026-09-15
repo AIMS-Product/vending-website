@@ -66,8 +66,10 @@ export const preCallResources = {
         "Financing is available through lending partners set up specifically for this program, with options that can include little to nothing down. Your credit profile plays a role in which options are available to you.",
     },
     {
-      id: "what-youll-learn",
-      question: "What Will I Actually Learn From My Vending Business?",
+      // Jess, Slack 2026-09-15: the heading said "Learn" but Mike answers
+      // "Earn", which is also what the copy below it is about.
+      id: "what-youll-earn",
+      question: "What Will I Actually Earn From My Vending Business?",
       embedId: "BPOJ0S_nf2M5B8IP",
       answer:
         "Earnings vary based on your locations, product mix, and how many machines you're running. The bigger numbers you've likely heard about come from routes (multiple machines in multiple locations) built over time, not a single machine, and there's a consistent formula behind every one of them.",
