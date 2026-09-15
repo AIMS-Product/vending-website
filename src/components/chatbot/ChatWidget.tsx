@@ -26,6 +26,7 @@ import {
 } from "@/components/chatbot/ChatLauncher";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 import { playReceiveSound, playSendSound } from "@/lib/chatbot/sounds";
+import { goToPreCallResources } from "@/lib/booking/post-booking-redirect";
 
 const SESSION_STORAGE_KEY = "vp_chat_session_id";
 const TEASER_DISMISSED_KEY = "vp_chat_teaser_dismissed";
@@ -350,6 +351,12 @@ export function ChatWidget() {
       setCaptured(true);
       writeSessionFlag(CAPTURED_KEY);
       setShowInlineCapture(false);
+      // Kody, Slack 2026-09-15: everyone who books lands on the pre-call
+      // resources page, chat bookings included. The confirm request above is
+      // sent with keepalive, so navigating away cannot cancel it — without
+      // that, this navigation would drop the only in-session proof of the
+      // booking and the reconciler cron would have to catch it minutes later.
+      goToPreCallResources();
     };
 
     window.addEventListener("message", onCalendlyMessage);
@@ -991,6 +998,11 @@ async function confirmBookingInChat(
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, inviteeUri }),
+      // The booking listener navigates to /pre-call-resources immediately after
+      // firing this, and an in-flight fetch is cancelled on navigation. This is
+      // the only in-session record that the booking happened, so it has to
+      // outlive the page that started it.
+      keepalive: true,
     });
     if (!response.ok)
       throw new Error(`booked request failed ${response.status}`);

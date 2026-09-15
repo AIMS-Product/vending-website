@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect } from "react";
+import {
+  goToPreCallResources,
+  PRE_CALL_RESOURCES_PATH,
+} from "@/lib/booking/post-booking-redirect";
 
 /**
  * Sends a visitor to the pre-call resources page the moment they finish
@@ -18,12 +22,10 @@ import { useEffect } from "react";
  * an arbitrary route. Only calendly.com may trigger this navigation, and the
  * destination is a hardcoded internal path — never anything read off the event.
  *
- * Navigates rather than router-pushes: this is a funnel handoff, not in-app
- * routing, so a clean document load is the right behaviour (and it keeps the
- * component renderable outside a mounted app router).
+ * The navigation itself lives in lib/booking/post-booking-redirect, shared with
+ * the chat widget's calendar so both surfaces send bookers to the same place.
  */
 
-const DESTINATION = "/pre-call-resources";
 const CALENDLY_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*calendly\.com$/;
 
 function isEventScheduled(event: MessageEvent): boolean {
@@ -40,24 +42,7 @@ export function CalendlyBookingRedirect() {
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (!isEventScheduled(event)) return;
-      // The calendar can sit inside an iframe on a page we do not own (none
-      // today, but the embed is reusable) — send the top window, not the frame,
-      // so the resources page never renders letterboxed inside the embed.
-      // Cross-origin tops throw on access, so fall back to this window.
-      try {
-        if (window.top && window.top !== window.self) {
-          window.top.location.assign(DESTINATION);
-          return;
-        }
-      } catch {
-        // Top is cross-origin and unreachable; navigate this window instead.
-      }
-      // A router push would make this component require a mounted app router,
-      // which every server-render test of a page carrying a calendar would then
-      // have to stub. This is a funnel handoff to a page that fetches its own
-      // data, so a document load is the right behaviour anyway.
-      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-      window.location.assign(DESTINATION);
+      goToPreCallResources();
     }
 
     window.addEventListener("message", onMessage);
@@ -69,4 +54,7 @@ export function CalendlyBookingRedirect() {
 
 // Exported for the test — the guard is the security boundary, so it is worth
 // asserting directly rather than only through a rendered component.
-export const __testing = { isEventScheduled, DESTINATION };
+export const __testing = {
+  isEventScheduled,
+  DESTINATION: PRE_CALL_RESOURCES_PATH,
+};
