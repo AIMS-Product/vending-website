@@ -1,4 +1,5 @@
 import { buildCalendlySrc } from "@/lib/content/lead-embed";
+import { CalendlyBookingRedirect } from "./CalendlyBookingRedirect";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 
 type CalendlyEmbedProps = {
@@ -14,6 +15,10 @@ type CalendlyEmbedProps = {
  * Inline Calendly scheduler rendered in the branded conversion shell. UTM
  * attribution is passed through as native Calendly utm_* params so bookings
  * stay attributed to the originating campaign.
+ *
+ * Every booking surface on the site renders its calendar through here, so the
+ * post-booking redirect to /pre-call-resources is mounted here too rather than
+ * repeated per page.
  */
 export function CalendlyEmbed({
   url,
@@ -31,6 +36,7 @@ export function CalendlyEmbed({
         src={src}
         title={title}
       />
+      <CalendlyBookingRedirect />
     </div>
   );
 }

@@ -583,6 +583,43 @@ describe("PublicLeadForm", () => {
     expect(html).not.toContain("<form");
   });
 
+  // --- social-ad booking pages: one-shot form, calendar in place ----------
+  // These four routes used to hand the visitor off to calendly.com with a
+  // full-page navigation, because only the two-stage funnel had anywhere to put
+  // a calendar. They now embed it like every other booking surface, so the
+  // visitor stays on the site and the post-booking redirect can fire.
+  it("shows the booking calendar in place of the success panel on a one-shot form", () => {
+    const html = renderToStaticMarkup(
+      createElement(PublicLeadForm, {
+        action,
+        attribution,
+        idempotencyKey: "lead-booking-ad-page",
+        intent: "contact",
+        simpleContact: true,
+        bookingEmbedUrl:
+          "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+        submitLabel: "Submit",
+        initialState: {
+          status: "success" as const,
+          message: "Thanks!",
+          leadId: "lead_one_shot",
+        },
+        initialSubmittedValues: {
+          email: "buyer@example.com",
+          full_name: "Casey Buyer",
+        },
+      }),
+    );
+
+    // The calendar, prefilled, rather than the generic contact success panel.
+    expect(html).toMatch(/<iframe[^>]+src="https:\/\/calendly\.com\/[^"]+"/);
+    expect(html).toContain("embed_type=Inline");
+    expect(html).toContain("Casey+Buyer");
+    expect(html).toContain("buyer%40example.com");
+    // And no form left to fill in.
+    expect(html).not.toContain("<form");
+  });
+
   it("still collects both consents before showing the booking calendar", () => {
     const html = renderToStaticMarkup(
       createElement(PublicLeadForm, {

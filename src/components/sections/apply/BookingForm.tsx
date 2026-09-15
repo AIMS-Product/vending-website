@@ -8,15 +8,16 @@ type BookingFormProps = {
   attribution: LeadAttribution;
   idempotencyKey: string;
   // The calendar this page books. On a successful submit the lead is captured
-  // (with UTM attribution) and then handed off to this Calendly.
+  // (with UTM attribution) and this Calendly replaces the form inline — the
+  // visitor never leaves the site, matching /contact and /book-now.
   calendlyUrl: string;
 };
 
 // The "Book Your Call" band for the social-ad booking pages. Same dark
 // two-panel shell as the qualification quiz, but the left card holds the
-// simplified contact form (name/email/phone only) and, on submit, redirects
-// straight to the page's Calendly instead of scoring or routing. Shares the
-// APPLY_QUIZ_ANCHOR so every on-page "Book Your Call" CTA scrolls here.
+// simplified contact form (name/email/phone only) and, on submit, swaps in the
+// page's Calendly instead of scoring or routing. Shares the APPLY_QUIZ_ANCHOR
+// so every on-page "Book Your Call" CTA scrolls here.
 export function BookingForm({
   attribution,
   idempotencyKey,
@@ -45,7 +46,7 @@ export function BookingForm({
             <PublicLeadForm
               action={submitBookingLead}
               attribution={attribution}
-              bookingRedirectUrl={calendlyUrl}
+              bookingEmbedUrl={calendlyUrl}
               idempotencyKey={idempotencyKey}
               intent="contact"
               simpleContact

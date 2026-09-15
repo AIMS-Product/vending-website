@@ -239,9 +239,18 @@ export function PublicLeadForm({
         })
       : undefined;
 
-  const transition = bookingHref
-    ? null
-    : resolveLeadSuccessTransition(activeState, intent, submittedEmail);
+  // A one-shot form (the social-ad booking pages) with an embed URL shows the
+  // calendar in place of the success panel, the same way the two-stage funnel
+  // does after stage 1. Before this, only the two-stage flow had anywhere to
+  // put a calendar, which is why those pages fell back to sending the visitor
+  // to calendly.com and off the site entirely.
+  const showBookingEmbedOneShot =
+    Boolean(bookingEmbedUrl) && !isTwoStage && activeState.status === "success";
+
+  const transition =
+    bookingHref || showBookingEmbedOneShot
+      ? null
+      : resolveLeadSuccessTransition(activeState, intent, submittedEmail);
   const redirectHref =
     transition?.kind === "redirect" ? transition.href : undefined;
 
@@ -395,11 +404,12 @@ export function PublicLeadForm({
     );
   }
 
-  // /book-now: stage 1 succeeded, so the lead is captured and opted in. Show
-  // the calendar in place of the questions. Prefilled and UTM-tagged the same
-  // way FitResultPanel does it, so the Calendly booking webhook still joins
-  // back to this lead.
-  if (atStageTwo && bookingEmbedUrl) {
+  // The lead is captured and opted in, so show the calendar in place of the
+  // form — after stage 1 on the two-stage funnel (/book-now), or after the only
+  // submit on a one-shot form (the social-ad booking pages). Prefilled and
+  // UTM-tagged the same way FitResultPanel does it, so the Calendly booking
+  // webhook still joins back to this lead.
+  if ((atStageTwo || showBookingEmbedOneShot) && bookingEmbedUrl) {
     return (
       <div role="status" aria-live="polite" className="grid gap-4">
         <p className="inline-flex w-fit rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
@@ -1375,8 +1385,7 @@ function TextField({
 }
 
 type SelectFieldOption =
-  | string
-  | { readonly value: string; readonly label: string };
+  string | { readonly value: string; readonly label: string };
 
 function SelectField({
   name,
