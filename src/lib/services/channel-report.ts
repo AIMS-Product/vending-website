@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import {
-  ADMIN_ANALYTICS_RANGES,
+  resolveAdminAnalyticsRange,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -99,13 +99,13 @@ export async function getChannelsTab(
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
   const rangeKey = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
-  const { label, days } = ADMIN_ANALYTICS_RANGES[rangeKey];
+  const { label, days, endsAt } = resolveAdminAnalyticsRange(rangeKey, now);
   const channel = input.channel?.trim() || null;
 
-  const endDay = dayKey(now);
-  const startDay = dayKey(new Date(now.getTime() - (days - 1) * DAY_MS));
+  const endDay = dayKey(endsAt);
+  const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
   const priorStartDay = dayKey(
-    new Date(now.getTime() - (2 * days - 1) * DAY_MS),
+    new Date(endsAt.getTime() - (2 * days - 1) * DAY_MS),
   );
 
   const [facts, runs, goingOut, fixLinks, sources] = await Promise.all([

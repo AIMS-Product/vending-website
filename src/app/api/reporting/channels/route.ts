@@ -3,7 +3,7 @@ import { hasValidBearer } from "@/lib/bearer-auth";
 import { config } from "@/lib/config";
 import {
   ADMIN_ANALYTICS_RANGE_KEYS,
-  type AdminAnalyticsRangeKey,
+  isAdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
 import { getChannelsTab } from "@/lib/services/channel-report";
 
@@ -41,16 +41,16 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   const rangeParam = url.searchParams.get("range") ?? "30d";
-  if (!(ADMIN_ANALYTICS_RANGE_KEYS as readonly string[]).includes(rangeParam)) {
+  if (!isAdminAnalyticsRangeKey(rangeParam)) {
     return NextResponse.json(
       {
         ok: false,
-        message: `Unknown range. Use one of: ${ADMIN_ANALYTICS_RANGE_KEYS.join(", ")}.`,
+        message: `Unknown range. Use one of: ${ADMIN_ANALYTICS_RANGE_KEYS.join(", ")}, or custom:YYYY-MM-DD:YYYY-MM-DD.`,
       },
       { status: 400 },
     );
   }
-  const range = rangeParam as AdminAnalyticsRangeKey;
+  const range = rangeParam;
   const channel = url.searchParams.get("channel");
 
   try {

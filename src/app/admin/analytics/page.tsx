@@ -7,6 +7,7 @@ import {
   AnalyticsFunnel,
   AnalyticsInternalToggle,
   AnalyticsKpiCard,
+  AnalyticsCustomRange,
   AnalyticsRangeTabs,
   AnalyticsTabs,
   AnalyticsTrend,
@@ -39,7 +40,10 @@ import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getBookedCalls } from "@/lib/services/booked-calls-data";
 import { getFunnelMap } from "@/lib/services/funnel-map";
-import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
+import {
+  parseAdminAnalyticsRange,
+  toCustomRangeKey,
+} from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -60,7 +64,12 @@ export default async function AdminAnalyticsPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
-  const range = parseAdminAnalyticsRange(singleParam(params.range));
+  // A submitted from/to pair wins over `range`, then every link the page
+  // renders carries the window as one `range=custom:...` key.
+  const range = parseAdminAnalyticsRange(
+    toCustomRangeKey(singleParam(params.from), singleParam(params.to)) ??
+      singleParam(params.range),
+  );
   const includeInternal = singleParam(params.internal) === "1";
   const tab = parseAnalyticsTab(singleParam(params.tab));
   const videoSort = parseYouTubeVideoSort(singleParam(params.sort));
@@ -105,11 +114,19 @@ export default async function AdminAnalyticsPage({
           excludedCount={internalExcluded}
           tab={tab}
         />
-        <AnalyticsRangeTabs
-          active={range}
-          includeInternal={includeInternal}
-          tab={tab}
-        />
+        <div className="flex flex-wrap items-center gap-2">
+          <AnalyticsCustomRange
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+            today={new Date().toISOString().slice(0, 10)}
+          />
+          <AnalyticsRangeTabs
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+          />
+        </div>
       </div>
 
       <AnalyticsTabs

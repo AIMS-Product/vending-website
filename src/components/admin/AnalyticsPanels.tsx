@@ -20,6 +20,7 @@ import type {
 import {
   ADMIN_ANALYTICS_RANGES,
   ADMIN_ANALYTICS_RANGE_KEYS,
+  resolveAdminAnalyticsRange,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
 
@@ -64,6 +65,97 @@ export function AnalyticsRangeTabs({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Explicit start/end window. A plain GET form with two native date inputs: no
+ * picker library, no client component, and the browser does the validation.
+ * The reply carries `from`/`to`, which the page folds back into a single
+ * `range=custom:...` key so every tab and toggle link keeps the window.
+ */
+export function AnalyticsCustomRange({
+  active,
+  includeInternal = false,
+  tab = "overview",
+  today,
+  action = "/admin/analytics",
+}: {
+  active: AdminAnalyticsRangeKey;
+  includeInternal?: boolean;
+  tab?: string;
+  /** Latest selectable day, passed in so the server renders one stable value. */
+  today: string;
+  action?: string;
+}) {
+  const resolved = resolveAdminAnalyticsRange(
+    active,
+    new Date(`${today}T00:00:00.000Z`),
+  );
+  const endDay = resolved.endDay ?? today;
+  const startDay =
+    resolved.startDay ??
+    new Date(
+      Date.parse(`${endDay}T00:00:00.000Z`) - (resolved.days - 1) * 86_400_000,
+    )
+      .toISOString()
+      .slice(0, 10);
+  const isCustom = Boolean(resolved.startDay);
+
+  return (
+    <form
+      method="get"
+      action={action}
+      className="border-ui-line rounded-ui bg-ui-surface shadow-ui flex items-center gap-1.5 border px-2 py-1"
+      aria-label="Custom date range"
+    >
+      {tab && tab !== "overview" ? (
+        <input type="hidden" name="tab" value={tab} />
+      ) : null}
+      {includeInternal ? (
+        <input type="hidden" name="internal" value="1" />
+      ) : null}
+      <label
+        className="text-ui-text-subtle text-[0.75rem] font-medium"
+        htmlFor="range-from"
+      >
+        From
+      </label>
+      <input
+        id="range-from"
+        type="date"
+        name="from"
+        required
+        max={today}
+        defaultValue={startDay}
+        className="border-ui-line text-ui-text rounded-[4px] border bg-transparent px-1.5 py-0.5 text-[0.8125rem]"
+      />
+      <label
+        className="text-ui-text-subtle text-[0.75rem] font-medium"
+        htmlFor="range-to"
+      >
+        to
+      </label>
+      <input
+        id="range-to"
+        type="date"
+        name="to"
+        required
+        max={today}
+        defaultValue={endDay}
+        className="border-ui-line text-ui-text rounded-[4px] border bg-transparent px-1.5 py-0.5 text-[0.8125rem]"
+      />
+      <button
+        type="submit"
+        className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] font-medium transition ${
+          isCustom
+            ? "bg-ui-accent-soft text-ui-accent"
+            : "text-ui-text-muted hover:text-ui-text"
+        }`}
+      >
+        Apply
+      </button>
+    </form>
   );
 }
 

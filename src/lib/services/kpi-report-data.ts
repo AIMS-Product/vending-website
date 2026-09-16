@@ -4,7 +4,7 @@ import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
-  ADMIN_ANALYTICS_RANGES,
+  resolveAdminAnalyticsRange,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -49,10 +49,10 @@ export async function getKpiTab(
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
   const rangeKey = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
-  const { label, days } = ADMIN_ANALYTICS_RANGES[rangeKey];
-  const endDay = dayKey(now);
-  const startDay = dayKey(new Date(now.getTime() - (days - 1) * DAY_MS));
-  const endExclusive = `${dayKey(new Date(now.getTime() + DAY_MS))}T00:00:00.000Z`;
+  const { label, days, endsAt } = resolveAdminAnalyticsRange(rangeKey, now);
+  const endDay = dayKey(endsAt);
+  const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
+  const endExclusive = `${dayKey(new Date(endsAt.getTime() + DAY_MS))}T00:00:00.000Z`;
 
   const [facts, runs, webinars, emailSnapshots, setterBookings] =
     await Promise.all([

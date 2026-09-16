@@ -12,7 +12,7 @@ import {
   type ChannelFact,
 } from "@/lib/services/channel-report-rollup";
 import {
-  ADMIN_ANALYTICS_RANGES,
+  resolveAdminAnalyticsRange,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -102,9 +102,9 @@ export async function getFunnelMap(
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
   const range = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
-  const days = ADMIN_ANALYTICS_RANGES[range].days;
-  const endDay = dayKey(now);
-  const startDay = dayKey(new Date(now.getTime() - (days - 1) * DAY_MS));
+  const { days, endsAt } = resolveAdminAnalyticsRange(range, now);
+  const endDay = dayKey(endsAt);
+  const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
 
   const [channels, ghl, cohortRows] = await Promise.all([
     getChannelsTab({ range, client, now }),

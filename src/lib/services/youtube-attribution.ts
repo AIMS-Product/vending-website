@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
-  ADMIN_ANALYTICS_RANGES,
+  resolveAdminAnalyticsRange,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -94,8 +94,8 @@ export async function getYouTubeAttribution(
   const rangeKey = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
   const includeInternal = input.includeInternal ?? false;
 
-  const { label, days } = ADMIN_ANALYTICS_RANGES[rangeKey];
-  const end = now;
+  const { label, days, endsAt } = resolveAdminAnalyticsRange(rangeKey, now);
+  const end = endsAt;
   const start = new Date(end.getTime() - days * DAY_MS);
   const startIso = start.toISOString();
 

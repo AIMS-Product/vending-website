@@ -18,7 +18,7 @@ import {
   type QualityRollup,
 } from "@/lib/services/admin-analytics-detail";
 import {
-  ADMIN_ANALYTICS_RANGES,
+  resolveAdminAnalyticsRange,
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -179,8 +179,8 @@ export async function getAdminAnalytics(
   const rangeKey = input.range ?? DEFAULT_ADMIN_ANALYTICS_RANGE;
   const includeInternal = input.includeInternal ?? false;
 
-  const { label, days } = ADMIN_ANALYTICS_RANGES[rangeKey];
-  const end = now;
+  const { label, days, endsAt } = resolveAdminAnalyticsRange(rangeKey, now);
+  const end = endsAt;
   const start = new Date(end.getTime() - days * DAY_MS);
   const priorStart = new Date(start.getTime() - days * DAY_MS);
 
