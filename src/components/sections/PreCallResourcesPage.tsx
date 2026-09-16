@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
+import {
+  VidalyticsGlobalTag,
+  VidalyticsPlayer,
+} from "@/components/media/VidalyticsPlayer";
 import {
   preCallHero,
   preCallNext,
   preCallOperators,
+  preCallOperatorTiers,
   preCallPrep,
   preCallResources,
   preCallWins,
@@ -19,6 +23,7 @@ import {
 export function PreCallResourcesPage() {
   return (
     <>
+      <VidalyticsGlobalTag />
       <PreCallHero />
       <PreCallResources />
       <PreCallOperators />
@@ -97,19 +102,32 @@ function PreCallOperators() {
         <h2 className="mx-auto max-w-[24ch] text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
           {preCallOperators.title}
         </h2>
-        <ul className="mt-14 grid gap-x-8 gap-y-14 lg:grid-cols-2">
-          {preCallOperators.items.map((operator) => (
-            <li key={operator.id} className="min-w-0">
-              <h3 className="text-[clamp(1.25rem,2vw,1.6rem)] leading-tight font-black text-[#111111]">
-                {operator.name}
+        <p className="mx-auto mt-6 max-w-[62ch] text-center text-[16px] leading-relaxed font-semibold text-slate-700">
+          {preCallOperators.disclaimer}
+        </p>
+        {preCallOperatorTiers.map((tier) => {
+          const items = preCallOperators.items.filter(
+            (operator) => operator.tier === tier.id,
+          );
+          if (items.length === 0) return null;
+          return (
+            <div key={tier.id} className="mt-16">
+              <h3 className="text-[clamp(1.4rem,2.2vw,1.9rem)] leading-tight font-black text-[#111111] uppercase">
+                {tier.label}
               </h3>
-              <VidalyticsPlayer embedId={operator.embedId} className="mt-5" />
-              <p className="mt-5 text-[16px] leading-relaxed font-semibold text-slate-700">
-                {operator.blurb}
+              <p className="mt-3 max-w-[62ch] text-[16px] leading-relaxed font-semibold text-slate-700">
+                {tier.note}
               </p>
-            </li>
-          ))}
-        </ul>
+              <ul className="mt-10 grid gap-x-8 gap-y-14 lg:grid-cols-2">
+                {items.map((operator) => (
+                  <li key={operator.id} className="min-w-0">
+                    <OperatorCard operator={operator} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
         <p className="mt-14 text-center">
           <Link
             href={preCallOperators.moreCta.href}
@@ -120,6 +138,53 @@ function PreCallOperators() {
         </p>
       </div>
     </section>
+  );
+}
+
+/**
+ * One operator. Most are a Vidalytics video; the hardest-start tier includes
+ * members whose story is a published /case-studies article rather than a
+ * video, so those render their pull quote and link to the article instead.
+ */
+function OperatorCard({
+  operator,
+}: {
+  operator: (typeof preCallOperators.items)[number];
+}) {
+  const embedId = "embedId" in operator ? operator.embedId : null;
+  const href = "href" in operator ? operator.href : null;
+  const quote = "quote" in operator ? operator.quote : null;
+
+  return (
+    <>
+      <h4 className="text-[clamp(1.25rem,2vw,1.6rem)] leading-tight font-black text-[#111111]">
+        {operator.name}
+      </h4>
+      {embedId ? (
+        <VidalyticsPlayer embedId={embedId} className="mt-5" />
+      ) : (
+        quote && (
+          <blockquote className="mt-5 rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[8px_8px_0_#111111]">
+            <p className="text-[18px] leading-relaxed font-black text-[#111111]">
+              &ldquo;{quote}&rdquo;
+            </p>
+          </blockquote>
+        )
+      )}
+      <p className="mt-5 text-[16px] leading-relaxed font-semibold text-slate-700">
+        {operator.blurb}
+      </p>
+      {href && (
+        <p className="mt-4">
+          <Link
+            href={href}
+            className="text-base font-black text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
+          >
+            Read {operator.name}&rsquo;s story
+          </Link>
+        </p>
+      )}
+    </>
   );
 }
 

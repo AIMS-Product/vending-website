@@ -49,3 +49,32 @@ export function VidalyticsPlayer({
     </div>
   );
 }
+
+/**
+ * Vidalytics' global tag.
+ *
+ * The per-video snippet above renders and plays a video; this is the separate
+ * account-level script that ties those plays to a visitor across the session,
+ * which is what makes Vidalytics' own analytics (plays, watch time, drop-off)
+ * report a person rather than fifteen unrelated embeds.
+ *
+ * It was removed sitewide on 2026-08-31 when no page had an embed, with a note
+ * to re-add it scoped to the pages that do. That is this: render it ONCE per
+ * page, above the players. Gated on the same `NEXT_PUBLIC_TRACKING_ENABLED`
+ * flag as every other tag in TrackingScripts so preview and dev traffic stay
+ * out of the real numbers.
+ *
+ * `fast.vidalytics.com` is already allowed in script-src / connect-src /
+ * frame-src — see src/lib/content-security-policy.ts.
+ */
+export function VidalyticsGlobalTag() {
+  if (process.env.NEXT_PUBLIC_TRACKING_ENABLED !== "1") return null;
+
+  return (
+    <Script
+      id={`vid_glb_${ACCOUNT_ID}`}
+      src="https://fast.vidalytics.com/js/global.min.js"
+      strategy="afterInteractive"
+    />
+  );
+}

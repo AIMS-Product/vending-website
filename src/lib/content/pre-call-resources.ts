@@ -78,42 +78,54 @@ export const preCallResources = {
 } as const;
 
 /**
- * Operator stories. These are a different, newer set from the four videos on
- * /case-studies — that page keeps its own list; this one links out to it.
+ * Operator stories, grouped by outcome.
+ *
+ * Grouped rather than listed flat (2026-09-16, Adam): a page of eight winners
+ * reads as a page of eight winners. Showing the ceiling, the middle and the
+ * slowest starts together is the thing that makes any of it believable — the
+ * reader can see we did not hide the bottom of the range.
+ *
+ * The three `hardest` entries with an `href` instead of an `embedId` are
+ * existing published articles on /case-studies, not new videos. Nothing here
+ * is invented: every figure is the member's own, already published.
+ *
+ * Videos are marketing's set from the 2026-09-15 rewrite; their eight blurbs
+ * are reproduced verbatim as before. Tier labels, notes, the disclaimer and
+ * the three article blurbs are new copy and need Jess's sign-off before live.
  */
+export const preCallOperatorTiers = [
+  {
+    id: "high",
+    label: "The high end",
+    note: "The three biggest routes on this page. This is the top of what we publish, not what a first year looks like.",
+  },
+  {
+    id: "middle",
+    label: "Where most of these stories land",
+    note: "The middle of our published range \u2014 routes built around a job, a family, or both.",
+  },
+  {
+    id: "hardest",
+    label: "The hardest starts",
+    note: "The ones that took the longest, or nearly did not happen at all. We publish these for the same reason we publish the rest.",
+  },
+] as const;
+
+export type PreCallOperatorTierId = (typeof preCallOperatorTiers)[number]["id"];
+
 export const preCallOperators = {
   title: "Hear From Current VendingPreneur Operators",
+  /**
+   * Sits under the h2, above the first tier. Ranking stories by revenue
+   * invites the reader to read a tier as a promise, so say plainly what the
+   * numbers are: one member's topline, in their words.
+   */
+  disclaimer:
+    "Every number below is that member\u2019s own topline revenue, in their own words on camera. What a route earns depends on its locations, its machines, and the work behind it.",
   items: [
     {
-      id: "shannon-r",
-      name: "Shannon R.",
-      embedId: "9fJu4zEUU2VSjD1K",
-      blurb:
-        "Shannon relocated to Seattle for her husband's job, started vending to help fund a home remodel, and turned one micro market into $22-25K a month.",
-    },
-    {
-      id: "jesse-lee",
-      name: "Jesse Lee",
-      embedId: "VhBEa5DZsGtnKkHJ",
-      blurb:
-        "A food-truck owner, facing a saturated, seasonal market, bought an 18-location drink route, doing $7,000/month within his first 30 days in vending.",
-    },
-    {
-      id: "graham-katie-parker",
-      name: "Graham & Katie Parker",
-      embedId: "RwOUq4VZcQtFH_yk",
-      blurb:
-        "A 20-year medical device sales rep and his stay-at-home wife, both once burned flipping houses, built a vending route to $36K/month in about a year.",
-    },
-    {
-      id: "joe-h",
-      name: "Joe H.",
-      embedId: "ulQZmXSCqGGiSrrg",
-      blurb:
-        "A 66-year-old retiring from auto sales built a 15-location vending route mostly on his own, drawn in by vending's low capital threshold.",
-    },
-    {
       id: "matthew-morrison",
+      tier: "high",
       name: "Matthew Morrison",
       embedId: "pW5bzDBuhVIVe6fD",
       blurb:
@@ -121,34 +133,84 @@ export const preCallOperators = {
     },
     {
       id: "musa-sadi",
+      tier: "high",
       name: "Musa Sadi",
       embedId: "TVEcsYOkteZsDDSK",
       blurb:
-        "Musa Sadi was a burned-out hospitality manager who tragically lost his mother and brother in 2025. He binged every video on our founder Mike Hoffman's YouTube channel in one overnight sitting and less than a year after joining Vendingpreneurs, he hit $41,000 a month.",
+        "Musa Sadi was a burned-out hospitality manager who tragically lost his mother and brother in 2025. He binged every video on our founder Mike Hoffman\u2019s YouTube channel in one overnight sitting and less than a year after joining Vendingpreneurs, he hit $41,000 a month.",
+    },
+    {
+      id: "graham-katie-parker",
+      tier: "high",
+      name: "Graham & Katie Parker",
+      embedId: "RwOUq4VZcQtFH_yk",
+      blurb:
+        "A 20-year medical device sales rep and his stay-at-home wife, both once burned flipping houses, built a vending route to $36K/month in about a year.",
+    },
+    {
+      id: "shannon-r",
+      tier: "middle",
+      name: "Shannon R.",
+      embedId: "9fJu4zEUU2VSjD1K",
+      blurb:
+        "Shannon relocated to Seattle for her husband\u2019s job, started vending to help fund a home remodel, and turned one micro market into $22-25K a month.",
+    },
+    {
+      id: "madison-g",
+      tier: "middle",
+      name: "Madison G.",
+      embedId: "mLCe2YfuWrE0CJHN",
+      blurb:
+        "A stay-at-home mom of five years pushed her husband for three months to back a vending business, and ten months later runs six locations doing $10-12K a month.",
     },
     {
       id: "manuel-duval",
+      tier: "middle",
       name: "Manuel Duval",
       embedId: "FXc8GUF0L3jwq2Z4",
       blurb:
         "A 22-year law enforcement veteran and detective sergeant built a 10-location vending route around his full-time job, with one location on track for $8K.",
     },
     {
-      id: "madison-g",
-      name: "Madison G.",
-      embedId: "mLCe2YfuWrE0CJHN",
+      id: "jesse-lee",
+      tier: "middle",
+      name: "Jesse Lee",
+      embedId: "VhBEa5DZsGtnKkHJ",
       blurb:
-        "A stay-at-home mom of five years pushed her husband for three months to back a vending business, and ten months later runs six locations doing $10-12K a month.",
+        "A food-truck owner, facing a saturated, seasonal market, bought an 18-location drink route, doing $7,000/month within his first 30 days in vending.",
+    },
+    {
+      id: "tyrone-lewis",
+      tier: "hardest",
+      name: "Thyrone Lewis",
+      href: "/case-studies/tyrone-lewis",
+      blurb:
+        "Four months of pop-ins without landing a single location. He joined in August and his first install did not come until mid-December. His route is seven locations doing about $12,000 a month now.",
+      quote:
+        "I\u2019m not going to lie to you, I almost gave up\u2026 Before that I felt like I was just walking against the wind.",
+    },
+    {
+      id: "joe-h",
+      tier: "hardest",
+      name: "Joe H.",
+      embedId: "ulQZmXSCqGGiSrrg",
+      blurb:
+        "A 66-year-old retiring from auto sales built a 15-location vending route mostly on his own, drawn in by vending\u2019s low capital threshold.",
+    },
+    {
+      id: "mallorie-rauch",
+      tier: "hardest",
+      name: "Mallorie Rauch",
+      href: "/case-studies/mallerie-rouch",
+      blurb:
+        "A physician assistant with two kids and a full-time job. Her first two machines sat in storage before she turned them into a six-location route doing $4K a month.",
+      quote:
+        "When everybody tells me \u2018I don\u2019t have time for this,\u2019 I\u2019m like, \u2018Call me. Let me tell you about time.\u2019",
     },
   ],
   moreCta: { label: "View More Case Studies", href: "/case-studies" },
 } as const;
 
-/**
- * Live preview of the community wins board. Cards are fetched at render time
- * from wins.vendingpreneurs.com's public feed — see PreCallWins. That board
- * only publishes rows a human approved, so nothing unreviewed can appear here.
- */
 export const preCallWins = {
   eyebrow: "Recent wins",
   title: "Posted by members this month.",
