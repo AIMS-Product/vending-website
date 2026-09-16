@@ -11,7 +11,7 @@
 export const preCallMeta = {
   title: "Pre-Call Resources",
   description:
-    "Watch these before your vending advising session — what the program costs, what you get, how locations and financing work, and how real operators built their routes.",
+    "Watch these before your vending advising session: what the program costs, what you get, how locations and financing work, and how real operators built their routes.",
 } as const;
 
 export const preCallHero = {
@@ -102,7 +102,7 @@ export const preCallOperatorTiers = [
   {
     id: "middle",
     label: "Where most of these stories land",
-    note: "The middle of our published range \u2014 routes built around a job, a family, or both.",
+    note: "The middle of our published range: routes built around a job, a family, or both.",
   },
   {
     id: "hardest",
@@ -120,11 +120,19 @@ export const preCallOperators = {
    * invites the reader to read a tier as a promise, so say plainly what the
    * numbers are: one member's topline, in their words.
    */
+  /**
+   * `stats` is the scannable version of what each blurb already says. Every
+   * value is cross-checked against that member's own blurb and their
+   * data/case-studies entry, so the row can never contradict the prose next to
+   * it. A member with no published figure for an axis simply has a shorter
+   * row — never a placeholder, never a rounded-up guess.
+   */
   disclaimer:
     "Every number below is that member\u2019s own topline revenue, in their own words on camera. What a route earns depends on its locations, its machines, and the work behind it.",
   items: [
     {
       id: "matthew-morrison",
+      stats: ["$43K/mo", "40 machines", "20 locations"],
       tier: "high",
       name: "Matthew Morrison",
       embedId: "pW5bzDBuhVIVe6fD",
@@ -133,6 +141,7 @@ export const preCallOperators = {
     },
     {
       id: "musa-sadi",
+      stats: ["$41K/mo", "22 locations", "11 months in"],
       tier: "high",
       name: "Musa Sadi",
       embedId: "TVEcsYOkteZsDDSK",
@@ -141,6 +150,7 @@ export const preCallOperators = {
     },
     {
       id: "graham-katie-parker",
+      stats: ["$36K/mo", "16 machines", "About a year in"],
       tier: "high",
       name: "Graham & Katie Parker",
       embedId: "RwOUq4VZcQtFH_yk",
@@ -149,6 +159,7 @@ export const preCallOperators = {
     },
     {
       id: "shannon-r",
+      stats: ["$22\u201325K/mo", "4 locations", "18 months in"],
       tier: "middle",
       name: "Shannon R.",
       embedId: "9fJu4zEUU2VSjD1K",
@@ -157,6 +168,7 @@ export const preCallOperators = {
     },
     {
       id: "madison-g",
+      stats: ["$10\u201312K/mo", "6 locations", "10 months in"],
       tier: "middle",
       name: "Madison G.",
       embedId: "mLCe2YfuWrE0CJHN",
@@ -165,6 +177,7 @@ export const preCallOperators = {
     },
     {
       id: "manuel-duval",
+      stats: ["$10.5K/mo", "10 locations", "Around a full-time job"],
       tier: "middle",
       name: "Manuel Duval",
       embedId: "FXc8GUF0L3jwq2Z4",
@@ -173,6 +186,7 @@ export const preCallOperators = {
     },
     {
       id: "jesse-lee",
+      stats: ["$7K/mo", "18 locations", "30 days in"],
       tier: "middle",
       name: "Jesse Lee",
       embedId: "VhBEa5DZsGtnKkHJ",
@@ -181,6 +195,7 @@ export const preCallOperators = {
     },
     {
       id: "tyrone-lewis",
+      stats: ["$12K/mo", "7 locations", "4 months to his first install"],
       tier: "hardest",
       name: "Thyrone Lewis",
       href: "/case-studies/tyrone-lewis",
@@ -191,6 +206,7 @@ export const preCallOperators = {
     },
     {
       id: "joe-h",
+      stats: ["$5.5K/mo", "15 locations", "Three years in"],
       tier: "hardest",
       name: "Joe H.",
       embedId: "ulQZmXSCqGGiSrrg",
@@ -199,6 +215,7 @@ export const preCallOperators = {
     },
     {
       id: "mallorie-rauch",
+      stats: ["$4K/mo", "6 locations", "Around a full-time job"],
       tier: "hardest",
       name: "Mallorie Rauch",
       href: "/case-studies/mallerie-rouch",

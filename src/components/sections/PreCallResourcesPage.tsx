@@ -102,7 +102,7 @@ function PreCallOperators() {
         <h2 className="mx-auto max-w-[24ch] text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
           {preCallOperators.title}
         </h2>
-        <p className="mx-auto mt-6 max-w-[62ch] text-center text-[16px] leading-relaxed font-semibold text-slate-700">
+        <p className="mx-auto mt-5 max-w-[62ch] text-center text-[16px] leading-relaxed font-semibold text-slate-700">
           {preCallOperators.disclaimer}
         </p>
         {preCallOperatorTiers.map((tier) => {
@@ -111,14 +111,23 @@ function PreCallOperators() {
           );
           if (items.length === 0) return null;
           return (
-            <div key={tier.id} className="mt-16">
-              <h3 className="text-[clamp(1.4rem,2.2vw,1.9rem)] leading-tight font-black text-[#111111] uppercase">
-                {tier.label}
-              </h3>
-              <p className="mt-3 max-w-[62ch] text-[16px] leading-relaxed font-semibold text-slate-700">
+            <div key={tier.id} className="mt-14">
+              {/* The rule is what makes a left-aligned h3 read as a deliberate
+                  rail under the centered h2, rather than as a third alignment
+                  the page forgot about. The count tells a skimmer how much of
+                  the section each tier actually is. */}
+              <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b-2 border-[#111111] pb-3">
+                <h3 className="text-[clamp(1.4rem,2.2vw,1.9rem)] leading-tight font-black text-[#111111] uppercase">
+                  {tier.label}
+                </h3>
+                <p className="text-[13px] font-black tracking-[0.12em] text-slate-500 uppercase">
+                  {items.length} {items.length === 1 ? "story" : "stories"}
+                </p>
+              </div>
+              <p className="mt-4 max-w-[62ch] text-[16px] leading-relaxed font-semibold text-slate-700">
                 {tier.note}
               </p>
-              <ul className="mt-10 grid gap-x-8 gap-y-14 lg:grid-cols-2">
+              <ul className="mt-8 grid gap-x-8 gap-y-12 lg:grid-cols-2">
                 {items.map((operator) => (
                   <li key={operator.id} className="min-w-0">
                     <OperatorCard operator={operator} />
@@ -160,6 +169,9 @@ function OperatorCard({
       <h4 className="text-[clamp(1.25rem,2vw,1.6rem)] leading-tight font-black text-[#111111]">
         {operator.name}
       </h4>
+      <p className="mt-2 text-[13px] font-black tracking-[0.08em] text-[#111111] uppercase">
+        {operator.stats.join(" \u00b7 ")}
+      </p>
       {embedId ? (
         <VidalyticsPlayer embedId={embedId} className="mt-5" />
       ) : (

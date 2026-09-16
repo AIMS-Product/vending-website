@@ -25,6 +25,15 @@ describe("pre-call operator tiers", () => {
     }
   });
 
+  it("gives every operator a non-empty stat row", () => {
+    for (const operator of preCallOperators.items) {
+      expect(operator.stats.length).toBeGreaterThan(0);
+      for (const stat of operator.stats) {
+        expect(stat.trim()).not.toBe("");
+      }
+    }
+  });
+
   it("gives every operator either a video or a linked, quoted article", () => {
     for (const operator of preCallOperators.items) {
       const hasVideo = "embedId" in operator;
