@@ -96,18 +96,18 @@ export const preCallResources = {
 export const preCallOperatorTiers = [
   {
     id: "high",
-    label: "The high end",
-    note: "The three biggest routes on this page. This is the top of what we publish, not what a first year looks like.",
+    label: "Top success stories",
+    note: "$20K a month and up. The top of what we publish, not what a first year looks like.",
   },
   {
     id: "middle",
-    label: "Where most of these stories land",
-    note: "The middle of our published range: routes built around a job, a family, or both.",
+    label: "Middle of the road",
+    note: "$10K to $20K a month. Routes built around a job, a family, or both.",
   },
   {
     id: "hardest",
-    label: "The hardest starts",
-    note: "The ones that took the longest, or nearly did not happen at all. We publish these for the same reason we publish the rest.",
+    label: "Rocky starts",
+    note: "Under $10K a month, and most of them are still early. These took the longest, or nearly did not happen at all. We publish them for the same reason we publish the rest.",
   },
 ] as const;
 
@@ -132,7 +132,7 @@ export const preCallOperators = {
   items: [
     {
       id: "matthew-morrison",
-      stats: ["$43K/mo", "40 machines", "20 locations"],
+      stats: ["$43K/mo", "40 machines", "20 locations", "About two years in"],
       tier: "high",
       name: "Matthew Morrison",
       embedId: "pW5bzDBuhVIVe6fD",
@@ -160,11 +160,22 @@ export const preCallOperators = {
     {
       id: "shannon-r",
       stats: ["$22\u201325K/mo", "4 locations", "18 months in"],
-      tier: "middle",
+      tier: "high",
       name: "Shannon R.",
       embedId: "9fJu4zEUU2VSjD1K",
       blurb:
         "Shannon relocated to Seattle for her husband\u2019s job, started vending to help fund a home remodel, and turned one micro market into $22-25K a month.",
+    },
+    {
+      id: "tyrone-lewis",
+      stats: ["$12K/mo", "7 locations", "4 months to his first install"],
+      tier: "middle",
+      name: "Thyrone Lewis",
+      href: "/case-studies/tyrone-lewis",
+      blurb:
+        "Four months of pop-ins without landing a single location. He joined in August and his first install did not come until mid-December. His route is seven locations doing about $12,000 a month now.",
+      quote:
+        "I\u2019m not going to lie to you, I almost gave up\u2026 Before that I felt like I was just walking against the wind.",
     },
     {
       id: "madison-g",
@@ -187,22 +198,25 @@ export const preCallOperators = {
     {
       id: "jesse-lee",
       stats: ["$7K/mo", "18 locations", "30 days in"],
-      tier: "middle",
+      tier: "hardest",
       name: "Jesse Lee",
       embedId: "VhBEa5DZsGtnKkHJ",
       blurb:
         "A food-truck owner, facing a saturated, seasonal market, bought an 18-location drink route, doing $7,000/month within his first 30 days in vending.",
     },
     {
-      id: "tyrone-lewis",
-      stats: ["$12K/mo", "7 locations", "4 months to his first install"],
+      // Adam spells him "Evan Thammahong"; his published article and its JSON
+      // say "Evan Tomahong". The card uses the article's spelling so the link
+      // does not read as a different person -- fix both together, not one.
+      id: "evan-tomahong",
       tier: "hardest",
-      name: "Thyrone Lewis",
-      href: "/case-studies/tyrone-lewis",
+      name: "Evan Tomahong",
+      stats: ["$7K/mo", "6 months to his first placement"],
+      href: "/case-studies/evan-tomahong",
       blurb:
-        "Four months of pop-ins without landing a single location. He joined in August and his first install did not come until mid-December. His route is seven locations doing about $12,000 a month now.",
+        "A law-school graduate who left investment banking compliance work, then spent six months before he secured a single placement. His route was doing close to $7K a month inside the first year.",
       quote:
-        "I\u2019m not going to lie to you, I almost gave up\u2026 Before that I felt like I was just walking against the wind.",
+        "Although it\u2019s scary and there\u2019s a lot of risk involved, you\u2019re the one that\u2019s in control of your own journey.",
     },
     {
       id: "joe-h",
@@ -215,7 +229,12 @@ export const preCallOperators = {
     },
     {
       id: "mallorie-rauch",
-      stats: ["$4K/mo", "6 locations", "Around a full-time job"],
+      stats: [
+        "$4K/mo",
+        "6 locations",
+        "Around a full-time job",
+        "Joined March 2025",
+      ],
       tier: "hardest",
       name: "Mallorie Rauch",
       href: "/case-studies/mallerie-rouch",
@@ -226,16 +245,6 @@ export const preCallOperators = {
     },
   ],
   moreCta: { label: "View More Case Studies", href: "/case-studies" },
-} as const;
-
-export const preCallWins = {
-  eyebrow: "Recent wins",
-  title: "Posted by members this month.",
-  body: "Straight from the community feed — first contracts, first machines live, and new locations, in members' own words.",
-  // The feed takes no parameters — it serves a fixed window that consumers
-  // slice. See `PREVIEW_COUNT` in PreCallResourcesPage.
-  feedUrl: "https://wins.vendingpreneurs.com/api/wins",
-  cta: { label: "Browse every win", href: "https://wins.vendingpreneurs.com" },
 } as const;
 
 export const preCallPrep = {

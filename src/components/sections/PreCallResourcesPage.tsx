@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import {
@@ -12,7 +11,6 @@ import {
   preCallOperatorTiers,
   preCallPrep,
   preCallResources,
-  preCallWins,
 } from "@/lib/content/pre-call-resources";
 
 // /pre-call-resources — the one link sales sends after a call is booked.
@@ -27,7 +25,6 @@ export function PreCallResourcesPage() {
       <PreCallHero />
       <PreCallResources />
       <PreCallOperators />
-      <PreCallWins />
       <PreCallPrep />
       <PreCallNext />
     </>
@@ -197,130 +194,6 @@ function OperatorCard({
         </p>
       )}
     </>
-  );
-}
-
-/** One card in the wins preview, as served by wins.vendingpreneurs.com. */
-type WinPreview = {
-  id: string;
-  name: string;
-  avatar: string | null;
-  image: string | null;
-  excerpt: string;
-  winType: string | null;
-  postedAt: string | null;
-};
-
-/**
- * Live preview of the community wins board.
- *
- * The feed is a static, already-public JSON route on wins.vendingpreneurs.com
- * that serves the same approval-gated list the wins wall renders. Revalidated
- * hourly. A failure here renders the section's heading and its link-out and
- * nothing else — a wins board being briefly unreachable must never take down
- * the page sales sends to every booked prospect.
- */
-/** How many cards the preview grid shows — two full rows of three on desktop. */
-const PREVIEW_COUNT = 6;
-
-async function fetchWins(): Promise<WinPreview[]> {
-  try {
-    const response = await fetch(preCallWins.feedUrl, {
-      next: { revalidate: 3600 },
-    });
-    if (!response.ok) {
-      console.error(
-        `Wins feed returned ${response.status} for ${preCallWins.feedUrl}`,
-      );
-      return [];
-    }
-    const payload: unknown = await response.json();
-    const wins =
-      typeof payload === "object" && payload !== null && "wins" in payload
-        ? (payload as { wins: unknown }).wins
-        : null;
-    return Array.isArray(wins)
-      ? (wins as WinPreview[]).slice(0, PREVIEW_COUNT)
-      : [];
-  } catch (error) {
-    console.error("Wins feed unreachable:", error);
-    return [];
-  }
-}
-
-async function PreCallWins() {
-  const wins = await fetchWins();
-
-  return (
-    <section className="border-t-2 border-[#111111] bg-white px-5 py-24 lg:px-10">
-      <div className="mx-auto max-w-[1180px]">
-        <p className="text-center text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-          {preCallWins.eyebrow}
-        </p>
-        <h2 className="mx-auto mt-4 max-w-[20ch] text-center text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.05] font-black text-balance text-[#111111] uppercase">
-          {preCallWins.title}
-        </h2>
-        <p className="mx-auto mt-5 max-w-[56ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
-          {preCallWins.body}
-        </p>
-
-        {wins.length > 0 ? (
-          <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {wins.map((win) => (
-              <li
-                key={win.id}
-                className="flex h-full min-w-0 flex-col overflow-hidden rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8]"
-              >
-                {win.image ? (
-                  <div className="relative aspect-[4/3] border-b-2 border-[#111111]">
-                    <Image
-                      src={win.image}
-                      alt=""
-                      fill
-                      sizes="(min-width: 1024px) 380px, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
-                    />
-                  </div>
-                ) : null}
-                <div className="flex flex-1 flex-col gap-3 p-6">
-                  <div className="flex items-center gap-3">
-                    {win.avatar ? (
-                      <Image
-                        src={win.avatar}
-                        alt=""
-                        width={36}
-                        height={36}
-                        className="size-9 shrink-0 rounded-full border-2 border-[#111111] object-cover"
-                      />
-                    ) : null}
-                    <span className="text-sm font-black text-[#111111]">
-                      {win.name}
-                    </span>
-                  </div>
-                  {win.winType ? (
-                    <span className="w-fit rounded-full border-2 border-[#111111] bg-[#55b8e8] px-3 py-1 text-[11px] font-black tracking-[0.08em] text-[#111111] uppercase">
-                      {win.winType}
-                    </span>
-                  ) : null}
-                  <p className="text-[15px] leading-relaxed font-semibold text-slate-700">
-                    {win.excerpt}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-
-        <p className="mt-12 text-center">
-          <Link
-            href={preCallWins.cta.href}
-            className="text-base font-black text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
-          >
-            {preCallWins.cta.label}
-          </Link>
-        </p>
-      </div>
-    </section>
   );
 }
 
