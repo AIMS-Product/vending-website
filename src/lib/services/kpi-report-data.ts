@@ -90,17 +90,23 @@ async function fetchWebinars(
   endDay: string,
 ): Promise<WebinarEventRow[]> {
   try {
-    const { data, error } = await client
-      .from("webinar_events")
-      .select(
-        "date,label,format,registrations,attendees,booked_night_of,booked_ever,showed,show_no_booking,won,revenue,spend,booking_maturing,revenue_maturing",
-      )
-      .gte("date", startDay)
-      .lte("date", endDay)
-      .order("date", { ascending: false })
-      .limit(500);
+    // Requested with `booked_calls` first and retried without: the column ships in migration
+    // 20260917140000 ahead of being applied, and an unknown column 400s the whole select, which would
+    // blank the Webinar lane rather than leave one rate as a dash.
+    const base =
+      "date,label,format,registrations,attendees,booked_night_of,booked_ever,showed,show_no_booking,won,revenue,spend,booking_maturing,revenue_maturing";
+    const read = (columns: string) =>
+      client
+        .from("webinar_events")
+        .select(columns)
+        .gte("date", startDay)
+        .lte("date", endDay)
+        .order("date", { ascending: false })
+        .limit(500);
+    let { data, error } = await read(`${base},booked_calls`);
+    if (error) ({ data, error } = await read(base));
     if (error) return [];
-    return (data ?? []) as WebinarEventRow[];
+    return (data ?? []) as unknown as WebinarEventRow[];
   } catch {
     return [];
   }

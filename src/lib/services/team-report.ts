@@ -448,8 +448,10 @@ export type WebinarEventRow = {
   registrations: number | null;
   attendees: number | null;
   attendees_at_offer: number | null;
-  /** Absent until the booked_ever migration is applied in production. */
+  /** Absent until the booked_ever migration is applied in production. Close's tag cohort, never a denominator. */
   booked_ever?: number | null;
+  /** The count of record: rows on the Booked Calls sheet. Absent until 20260917140000 is applied. */
+  booked_calls?: number | null;
   showed: number | null;
   won: number | null;
 };
@@ -508,7 +510,9 @@ export function buildWebinars(input: {
         .filter((fact) => fact.day >= spendFrom && fact.day <= event.date)
         .map((fact) => fact.spend),
     );
-    const booked = event.booked_ever ?? null;
+    // The count of record. Close's tag cohort (`booked_ever`) misses the bookers whose event tag went
+    // missing, so cost per booked over it read $290 for Sept 1 where the real figure is $677.
+    const booked = event.booked_calls ?? null;
     rows.push({
       date: event.date,
       label: event.label,

@@ -33,9 +33,14 @@ const webinarSchema = z.object({
   peakAttendees: count,
   attendeesAtOffer: count,
   bookedWithin7d: count,
-  // Lifetime bookings. THE denominator for showed/won/revenue, which are all lifetime numbers.
+  // Close's tag cohort. Disclosed for comparison, never a denominator: the event tag goes missing on
+  // precisely the people who book, so it is a different population from the outcomes below.
   // Optional so a sender older than 2026-09-13 still validates; it lands null and the rate stays a dash.
   bookedEver: count.optional(),
+  // The count of record: rows on the Booked Calls sheet. `showed`, `won` and `revenue` are counted over
+  // THIS population, so it is their denominator. Optional so a sender older than 2026-09-17 still
+  // validates; it lands null and the rate stays a dash rather than dividing by the tag cohort again.
+  bookedCalls: count.optional(),
   bookedNightOf: count,
   showed: count,
   // Leads a rep marked shown with no booked date. Disclosed, never added to showed.
@@ -151,6 +156,7 @@ async function write(
         attendees_at_offer: w.attendeesAtOffer,
         booked_within_7d: w.bookedWithin7d,
         booked_ever: w.bookedEver ?? null,
+        booked_calls: w.bookedCalls ?? null,
         booked_night_of: w.bookedNightOf,
         showed: w.showed,
         show_no_booking: w.showNoBooking ?? null,

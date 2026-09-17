@@ -279,9 +279,11 @@ function hostNames(memberships: unknown): string[] {
 }
 
 /**
- * Requested with `booked_ever` first and retried without: the column ships in
- * migration 20260913140000 ahead of being applied, and an unknown column 400s
- * the whole select, which would blank the tab rather than one cell.
+ * Requested with the booking columns first and retried without: each ships in a
+ * migration ahead of being applied (20260913140000, 20260917140000), and an
+ * unknown column 400s the whole select, which would blank the tab rather than
+ * one cell. `booked_calls` is the count of record, so it is tried first and
+ * alone before falling back to the tag cohort.
  */
 async function fetchWebinarEvents(
   client: Client,
@@ -299,7 +301,8 @@ async function fetchWebinarEvents(
       .order("date")
       .limit(500);
   try {
-    let result = await read(`${base},booked_ever`);
+    let result = await read(`${base},booked_ever,booked_calls`);
+    if (result.error) result = await read(`${base},booked_ever`);
     if (result.error) result = await read(base);
     if (result.error) return [];
     return (result.data ?? []) as unknown as WebinarEventRow[];

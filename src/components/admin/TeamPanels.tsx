@@ -363,9 +363,11 @@ export function WebinarsTable({ report }: { report: WebinarsReport }) {
       note={`Attendance target ${ATTENDANCE_TARGET_PCT}% of registrations; ${OFFER_TARGET_PCT}% of attendees still there at the offer. Spend is every Webinar-channel ad dollar from the day after the previous webinar through this one.`}
       footer={
         <p>
-          Booked is the cohort&apos;s lifetime bookings (booked_ever). A dash
-          there means the column has not reached production yet, so cost per
-          booked is not observed either.
+          Booked is the count of record: rows on the Booked Calls sheet
+          (booked_calls). Close&apos;s tag cohort is a different population
+          because the event tag goes missing on the people who book, so it is
+          not used here. A dash means the column has not reached production yet,
+          so cost per booked is not observed either.
         </p>
       }
     >

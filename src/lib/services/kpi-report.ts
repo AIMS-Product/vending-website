@@ -54,6 +54,7 @@ export type WebinarEventRow = Pick<
   | "attendees"
   | "booked_night_of"
   | "booked_ever"
+  | "booked_calls"
   | "showed"
   | "show_no_booking"
   | "won"
@@ -149,8 +150,9 @@ const WEBINAR_COLUMNS: KpiColumn[] = [
   { key: "attendanceRate", label: "Attendance", format: "percent" },
   { key: "attendees", label: "Attendees", format: "number" },
   { key: "regToBook", label: "Reg → book", format: "percent" },
-  { key: "booked", label: "Booked (ever)", format: "number" },
+  { key: "booked", label: "Booked", format: "number" },
   { key: "bookedNightOf", label: "Booked night of", format: "number" },
+  { key: "bookedEver", label: "Booked (Close tag)", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
   { key: "showed", label: "Shown", format: "number" },
   { key: "showNoBooking", label: "Shown, no booking", format: "number" },
@@ -356,8 +358,15 @@ function buildWebinarSection(input: KpiInput): KpiSection {
 /**
  * One event or the whole set. Every rate divides numbers counted over the same population.
  *
- * `booked_ever` is the denominator, not `booked_night_of` and not `booked_within_7d`: Shown, Won and
- * Revenue are lifetime cohort numbers, and dividing them by a night-of or seven-day count published a 335%
+ * `booked_calls` is the denominator. Shown, Won and Revenue come from vp-webinars' booking-link join --
+ * the people on the Booked Calls sheet -- because Close only sees a booking whose lead still carries the
+ * event tag, and the tag goes missing on precisely the people who book. `booked_ever` is the tag cohort:
+ * a different set of people that crosses the sheet in both directions, so dividing by it published a 25.7%
+ * show rate for Sept 1 against a real 60%, and 21.7% for Aug 18 against 45.5%, on this page from
+ * 2026-09-16 to 2026-09-17. It stays visible as its own column and is divided into nothing.
+ *
+ * Before that it was `booked_night_of` and `booked_within_7d`: Shown, Won and Revenue are lifetime
+ * numbers, and dividing them by a night-of or seven-day count published a 335%
  * show rate for june16 (87 shown over 26 booked that night) on this page until 2026-09-13.
  *
  * A cohort inside its booking or revenue window has not finished booking or closing, so the rates those
@@ -373,7 +382,10 @@ function webinarValues(
     sumObserved(events.map((event) => event[key] as number | null));
   const registrations = sum("registrations");
   const attendees = sum("attendees");
-  const booked = sum("booked_ever");
+  // Null when no event in the set reports one, which leaves every rate below as a dash. Never falls back
+  // to `booked_ever`: a rate over the wrong population reads as confident and is the defect being fixed.
+  const booked = sum("booked_calls");
+  const bookedEver = sum("booked_ever");
   const bookedNightOf = sum("booked_night_of");
   const showed = sum("showed");
   const won = sum("won");
@@ -388,6 +400,7 @@ function webinarValues(
     attendees,
     regToBook: final(bookingOpen, rate(pct(booked, registrations))),
     booked,
+    bookedEver,
     bookedNightOf,
     showRate: final(bookingOpen, rate(pct(showed, booked))),
     showed,
