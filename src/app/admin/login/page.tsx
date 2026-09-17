@@ -47,6 +47,7 @@ export default async function AdminLoginPage({
         <div className="rounded-ui-lg border-ui-line bg-ui-surface shadow-ui border p-5">
           <LoginForm
             defaultEmail={defaultEmail}
+            guestEnabled={Boolean(process.env.ADMIN_GUEST_EMAIL?.trim())}
             initialError={authErrorMessage(params.error)}
             nextPath={nextPath}
           />
