@@ -33,6 +33,8 @@ export type CacRouteInput = {
   readonly closedWon: number | null;
   readonly marchCac: number | null;
   readonly notes: string | null;
+  /** The row version the browser loaded, sent back on save so a stale write is refused. */
+  readonly updatedAt: string;
 };
 
 export type CacMonthInput = {

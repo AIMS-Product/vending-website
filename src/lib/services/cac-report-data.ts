@@ -34,6 +34,7 @@ type RouteRow = {
   closed_won: number | null;
   march_cac: number | null;
   notes: string | null;
+  updated_at: string;
 };
 
 export type CacMonthOption = {
@@ -131,7 +132,7 @@ export async function getCacPageData(
   const { data: routeRows } = await client
     .from("cac_routes")
     .select(
-      "id,group_label,route,owner,sort_order,fixed_monthly_cost,variable_spend,spend_channel,spend_source,closed_won,march_cac,notes",
+      "id,group_label,route,owner,sort_order,fixed_monthly_cost,variable_spend,spend_channel,spend_source,closed_won,march_cac,notes,updated_at",
     )
     .eq("month", selected)
     .order("sort_order")
@@ -157,6 +158,7 @@ export async function getCacPageData(
       closedWon: row.closed_won,
       marchCac: row.march_cac,
       notes: row.notes,
+      updatedAt: row.updated_at,
     }),
   );
 

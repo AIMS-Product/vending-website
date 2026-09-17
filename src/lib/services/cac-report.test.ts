@@ -27,6 +27,7 @@ const route = (over: Partial<CacRouteInput> = {}): CacRouteInput => ({
   closedWon: 3,
   marchCac: 3953,
   notes: null,
+  updatedAt: "2026-09-17T00:00:00Z",
   ...over,
 });
 

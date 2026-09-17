@@ -2,7 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminPanelClass } from "@/components/admin/AdminUi";
-import { CacMonthControls, CacTable } from "@/components/admin/CacPanels";
+import {
+  CacAutoRefresh,
+  CacMonthControls,
+  CacTable,
+} from "@/components/admin/CacPanels";
 import { getCacPageData } from "@/lib/services/cac-report-data";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -75,40 +79,41 @@ export default async function AdminCacPage({
         <>
           <CacMonthControls report={data.report} />
 
-          {data.daysInMonthLooksWrong ? (
-            <p className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              Days in month does not match the calendar for this month. The
-              spreadsheet carried this over, and it prorates every fixed cost on
-              the page, so it is worth correcting above before reading the
-              numbers.
-            </p>
-          ) : null}
-
-          {data.report.total.routesWithSpendDisagreement > 0 ? (
-            <p className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              {data.report.total.routesWithSpendDisagreement}{" "}
-              {data.report.total.routesWithSpendDisagreement === 1
-                ? "route has"
-                : "routes have"}{" "}
-              a typed spend that disagrees with the ads data. Both numbers are
-              on the row. The spreadsheet resolved this by typing over the
-              total, which hid the gap; nothing here picks one for you.
-            </p>
-          ) : null}
-
-          {data.report.total.routesWithoutCostModel > 0 ? (
-            <p className="mb-4 rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-              {data.report.total.routesWithoutCostModel}{" "}
-              {data.report.total.routesWithoutCostModel === 1
-                ? "route"
-                : "routes"}{" "}
-              carry closes with no cost model. Those closes sit in the blended
-              CAC below while contributing no cost, which pulls it down. Give
-              them a fixed monthly cost to fix that.
-            </p>
-          ) : null}
+          {(() => {
+            const notices = [
+              data.daysInMonthLooksWrong
+                ? "Days in month does not match the calendar, and it prorates every fixed cost on this page. Worth correcting above before reading the numbers."
+                : null,
+              data.report.total.routesWithSpendDisagreement > 0
+                ? `${data.report.total.routesWithSpendDisagreement} ${data.report.total.routesWithSpendDisagreement === 1 ? "route has a typed spend that disagrees" : "routes have typed spend that disagrees"} with the ads feed. Both numbers are on the row; nothing here picks one for you.`
+                : null,
+              data.report.total.routesWithoutCostModel > 0
+                ? `${data.report.total.routesWithoutCostModel} ${data.report.total.routesWithoutCostModel === 1 ? "route carries closes" : "routes carry closes"} with no cost model, so those closes pull the blended CAC down while adding no cost.`
+                : null,
+            ].filter((notice): notice is string => notice != null);
+            if (!notices.length) return null;
+            return (
+              <div className="border-ui-line bg-ui-surface rounded-ui-lg mb-5 border p-4">
+                <h2 className="text-ui-text mb-2 text-sm font-semibold">
+                  Worth knowing before you read these numbers
+                </h2>
+                <ul className="text-ui-text-muted space-y-1.5 text-sm">
+                  {notices.map((notice) => (
+                    <li key={notice} className="flex gap-2">
+                      <span
+                        aria-hidden
+                        className="bg-ui-warn mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                      />
+                      <span>{notice}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })()}
 
           <CacTable report={data.report} />
+          <CacAutoRefresh />
 
           <section className={`${adminPanelClass} mt-6 p-4`}>
             <h2 className="text-ui-text mb-2 text-sm font-semibold">

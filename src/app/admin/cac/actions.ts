@@ -7,6 +7,7 @@ import { AdminAuthorizationError, requireAdmin } from "@/lib/supabase/auth";
 export type CacActionState =
   | { status: "idle" }
   | { status: "saved"; message: string }
+  | { status: "conflict"; message: string }
   | { status: "error"; message: string };
 
 const CAC_PATH = "/admin/cac";
