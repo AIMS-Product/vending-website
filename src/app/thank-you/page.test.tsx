@@ -23,9 +23,14 @@ describe("ThankYouPage", () => {
 
   // The three call-worthy bands book inline: the band's Calendly calendar
   // replaces the fit message and CTA button (per Kody, 2026-08-07).
+  //
+  // Both Lane 1 bands book the SAME weighted round robin (Adam, 2026-09-17).
+  // Strong fit used to book d/cxfn-hh2-h8g, an event type capped so tightly it
+  // offered one open day in five weeks, so a qualified lead reached a calendar
+  // it could not book. Same closers behind both links; only availability moved.
   it.each([
     ["good_potential", "cvsd-wxt-cvb"] as const,
-    ["strong_fit", "cxfn-hh2-h8g"] as const,
+    ["strong_fit", "cvr6-cfd-zgd"] as const,
     ["perfect_fit", "cvr6-cfd-zgd"] as const,
   ])(
     "renders the %s state's headline with its inline calendar",
@@ -83,15 +88,31 @@ describe("ThankYouPage", () => {
     expect(html).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
   });
 
-  it("routes each fit band to its own Calendly destination", async () => {
+  /*
+    The contract is by CALL TYPE, not one event type per band. The setter band
+    books the 15-minute Lane 2 discovery call; both Lane 1 bands book the
+    closers' weighted round robin. Asserting the starved d/cxfn-hh2-h8g is gone
+    is the point of the last case — a qualified lead must never be handed a
+    calendar with no availability again.
+  */
+  it("routes the setter band to Lane 2 and both Lane 1 bands to the closers", async () => {
     const good = await renderPage({ state: "good_potential" });
     expect(good).toContain("cvsd-wxt-cvb/vendingpreneurs-quick-discovery");
 
     const strong = await renderPage({ state: "strong_fit" });
-    expect(strong).toContain("cxfn-hh2-h8g/vendingpreneurs-consultation");
+    expect(strong).toContain("cvr6-cfd-zgd/vendingpreneurs-consultation-call");
 
     const perfect = await renderPage({ state: "perfect_fit" });
     expect(perfect).toContain("cvr6-cfd-zgd/vendingpreneurs-consultation-call");
+  });
+
+  it("no longer books any band onto the starved Lane 1 event type", async () => {
+    for (const state of ["good_potential", "strong_fit", "perfect_fit"]) {
+      const html = await renderPage({ state });
+      expect(html, `${state} must not book cxfn-hh2-h8g`).not.toContain(
+        "cxfn-hh2-h8g",
+      );
+    }
   });
 
   it("carries an optional score through as a hidden debug value", async () => {

@@ -10,8 +10,13 @@
  *   Not the right time (0-40):  primary  -> free 90-Day Vending Roadmap
  *                               secondary-> setter call (quick discovery)
  *   Good potential   (41-64):  primary  -> setter call (quick discovery)
- *   Strong fit       (65-84):  primary  -> Lane 1 consultation
- *   Perfect fit      (85-100): primary  -> Lane 1 top-closer consultation
+ *   Strong fit       (65-84):  primary  -> Lane 1 closers' round robin
+ *   Perfect fit      (85-100): primary  -> Lane 1 closers' round robin
+ *
+ * Both call-worthy Lane 1 bands book the same weighted round robin (Adam,
+ * 2026-09-17). The weighting inside Calendly is what favours the top closers;
+ * splitting the bands across two event types did not change who took the call,
+ * only how much availability the lead was offered. See LANE_1_CALENDLY_URL.
  */
 
 import type { ThankYouStateKey } from "@/lib/qualification/scoring";
@@ -31,10 +36,20 @@ export const SETTER_CALENDLY_URL =
   process.env.NEXT_PUBLIC_SETTER_CALENDLY_URL ??
   "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery";
 
-// Lane 1 consultation — strong-fit leads.
+// Lane 1 consultation — strong-fit leads. Repointed at the same weighted round
+// robin the top band books (Adam, 2026-09-17). It used to book its own event
+// type, d/cxfn-hh2-h8g, which is capped so tightly that it offered ONE open day
+// across the next five weeks when this changed, and showed nothing at all for
+// five weeks in August — src/lib/chatbot/booking.ts moved the chat assistant
+// off it for exactly that reason. Same seven closers behind both links, so this
+// does not hand strong-fit leads to different people; it stops sending a
+// qualified lead to a calendar it mostly cannot book.
+//
+// Kept as its own constant with its own env var so this band can be repointed
+// without moving perfect-fit with it.
 const LANE_1_CALENDLY_URL =
   process.env.NEXT_PUBLIC_LANE_1_CALENDLY_URL ??
-  "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
+  "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
 
 // Lane 1 top-closer consultation — perfect-fit leads.
 const LANE_1_TOP_CALENDLY_URL =
