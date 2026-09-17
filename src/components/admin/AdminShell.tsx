@@ -24,6 +24,7 @@ type AdminSection =
   | "chatbot"
   | "analytics"
   | "goals"
+  | "cac"
   | "bookings"
   | "team"
   | "links"
@@ -133,6 +134,13 @@ const contentSections: AdminNavSection[] = [
     label: "Goals",
     href: "/admin/goals",
     description: "Targets, pace and actuals",
+    icon: "target",
+  },
+  {
+    id: "cac",
+    label: "CAC",
+    href: "/admin/cac",
+    description: "Cost per acquisition by route",
     icon: "target",
   },
   {

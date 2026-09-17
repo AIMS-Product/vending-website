@@ -39,6 +39,81 @@ export type Database = {
   };
   public: {
     Tables: {
+      cac_months: {
+        Row: {
+          days_elapsed: number | null;
+          days_in_month: number;
+          month: string;
+          note: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          days_elapsed?: number | null;
+          days_in_month: number;
+          month: string;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          days_elapsed?: number | null;
+          days_in_month?: number;
+          month?: string;
+          note?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      cac_routes: {
+        Row: {
+          closed_won: number | null;
+          fixed_monthly_cost: number | null;
+          group_label: string;
+          id: string;
+          march_cac: number | null;
+          month: string;
+          notes: string | null;
+          owner: string | null;
+          sort_order: number;
+          spend_channel: string | null;
+          spend_source: string;
+          updated_at: string;
+          variable_spend: number | null;
+          route: string;
+        };
+        Insert: {
+          closed_won?: number | null;
+          fixed_monthly_cost?: number | null;
+          group_label: string;
+          id?: string;
+          march_cac?: number | null;
+          month: string;
+          notes?: string | null;
+          owner?: string | null;
+          sort_order?: number;
+          spend_channel?: string | null;
+          spend_source?: string;
+          updated_at?: string;
+          variable_spend?: number | null;
+          route: string;
+        };
+        Update: {
+          closed_won?: number | null;
+          fixed_monthly_cost?: number | null;
+          group_label?: string;
+          id?: string;
+          march_cac?: number | null;
+          month?: string;
+          notes?: string | null;
+          owner?: string | null;
+          sort_order?: number;
+          spend_channel?: string | null;
+          spend_source?: string;
+          updated_at?: string;
+          variable_spend?: number | null;
+          route?: string;
+        };
+        Relationships: [];
+      };
       app_user_emails: {
         Row: {
           added_at: string;
