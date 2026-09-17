@@ -5,12 +5,16 @@ import { usePathname } from "next/navigation";
 import { SocialLinks } from "./SocialLinks";
 import { Wordmark } from "./Wordmark";
 import { footerColumns, type NavItem } from "@/lib/content/nav";
+import { isChromelessRoute } from "@/lib/content/chromeless-routes";
 import { cn } from "@/lib/utils";
 
 export function Footer() {
   const pathname = usePathname();
 
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
+  // The booking funnels render bare (Adam, 2026-09-17): every link in the
+  // site footer is a way off a page whose only job is the form.
+  if (isChromelessRoute(pathname)) return null;
 
   return (
     <footer className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-14 lg:px-10">

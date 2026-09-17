@@ -45,11 +45,11 @@ function PreCallHero() {
         }}
       />
       <div className="relative mx-auto max-w-[940px] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
-        <div className="text-center">
+        <div>
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {preCallHero.eyebrow}
           </p>
-          <h1 className="mx-auto mt-5 max-w-[20ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
+          <h1 className="mt-5 max-w-[20ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
             {preCallHero.title}
           </h1>
         </div>
@@ -57,7 +57,7 @@ function PreCallHero() {
         {preCallHero.paragraphs.map((paragraph) => (
           <p
             key={paragraph}
-            className="mx-auto mt-6 max-w-[64ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700"
+            className="mt-6 max-w-[64ch] text-[17px] leading-relaxed font-semibold text-slate-700"
           >
             {paragraph}
           </p>

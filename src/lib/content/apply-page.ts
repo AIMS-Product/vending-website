@@ -178,7 +178,9 @@ export const applyRoadmap = {
 export type SuccessStoryCard = {
   readonly name: string;
   readonly image: string;
-  readonly youtubeUrl: string;
+  // Played in a dialog on the page (Adam, 2026-09-17) rather than opened on
+  // youtube.com, so a booking page has no card that navigates the visitor away.
+  readonly youtubeId: string;
   readonly alt: string;
 };
 
@@ -189,20 +191,20 @@ export const applyMembers = {
     {
       name: "Anthony Kolodziej",
       image: "/apply/stories/anthony.png",
-      youtubeUrl: "https://youtu.be/fsRX7K_Hg08",
-      alt: "Success story — Anthony Kolodziej: laid off from a 14-year real estate career with zero vending experience, he used personal 0% APR credit cards for his first machines and scaled to a sustainable multi-site operation — $102K/month across 45 locations in about a year, at roughly 10 hours a week. “I built something my kids can see me build — and get the time and freedom to actually be there for them while I do it.” Watch his story on YouTube.",
+      youtubeId: "fsRX7K_Hg08",
+      alt: "Success story — Anthony Kolodziej: laid off from a 14-year real estate career with zero vending experience, he used personal 0% APR credit cards for his first machines and scaled to a sustainable multi-site operation — $102K/month across 45 locations in about a year, at roughly 10 hours a week. “I built something my kids can see me build — and get the time and freedom to actually be there for them while I do it.” Watch his story.",
     },
     {
       name: "Mallorie Rauch",
       image: "/apply/stories/mallerie.png",
-      youtubeUrl: "https://youtu.be/io1Jkei-yFs",
-      alt: "Success story — Mallorie Rauch: working a full-time job and a mother of two, she and her husband bet on themselves and built a vending route to $4K/month across 6 locations in 8 months, at 5–6 hours a week part-time. “This is the right community to have access to people who've been insanely successful — to build this business right and avoid the mistakes people make without mentors.” Watch her story on YouTube.",
+      youtubeId: "io1Jkei-yFs",
+      alt: "Success story — Mallorie Rauch: working a full-time job and a mother of two, she and her husband bet on themselves and built a vending route to $4K/month across 6 locations in 8 months, at 5–6 hours a week part-time. “This is the right community to have access to people who've been insanely successful — to build this business right and avoid the mistakes people make without mentors.” Watch her story.",
     },
     {
       name: "Musa Sadi",
       image: "/apply/stories/moosa.png",
-      youtubeUrl: "https://youtu.be/kb8ryBm6g9k",
-      alt: "Success story — Musa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story on YouTube.",
+      youtubeId: "kb8ryBm6g9k",
+      alt: "Success story — Musa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story.",
     },
   ] satisfies SuccessStoryCard[],
 } as const;
@@ -247,51 +249,6 @@ export const applyQuiz = {
     ],
     availabilityNote: "Availability is capped by market.",
   },
-} as const;
-
-export const applyYouTube = {
-  eyebrow: "Free on YouTube",
-  title: "Prefer to learn before you talk to anyone?",
-  channelLabel: "youtube.com/@Vendingpreneurs",
-  channelHref: "https://youtube.com/@Vendingpreneurs",
-  ctaLabel: "Book Your Call",
-  groups: [
-    {
-      title: "Getting Started",
-      videos: [
-        {
-          title:
-            "How To Start A Vending Machine Business Step-By-Step (With $0)",
-          url: "https://www.youtube.com/watch?v=5_3p_j5tFfw",
-        },
-        {
-          title: "Everything You Need to Purchase Your First Vending Machine",
-          url: "https://www.youtube.com/watch?v=3HDu68I0_-o",
-        },
-        {
-          title: "How Much Does It REALLY Cost To Run A Vending Business?",
-          url: "https://www.youtube.com/watch?v=N_ngRamnoTE",
-        },
-      ],
-    },
-    {
-      title: "Real People. Real Success.",
-      videos: [
-        {
-          title: "What His First 30 Days in Vending Really Looked Like",
-          url: "https://www.youtube.com/watch?v=MmVigkdyzL4",
-        },
-        {
-          title: "Full-Time Job, Two Kids… Now It's $4K/Month",
-          url: "https://www.youtube.com/watch?v=io1Jkei-yFs",
-        },
-        {
-          title: "How She Turned One Vending Location Into $25K/Month",
-          url: "https://www.youtube.com/watch?v=yP4Y_BBAvq4",
-        },
-      ],
-    },
-  ],
 } as const;
 
 export const applyFooter = {

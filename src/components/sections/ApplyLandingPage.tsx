@@ -7,7 +7,6 @@ import { ApplyRoadmap } from "./apply/ApplyRoadmap";
 import { ApplyMembers } from "./apply/ApplyMembers";
 import { ApplyFaq } from "./apply/ApplyFaq";
 import { ApplyQuiz } from "./apply/ApplyQuiz";
-import { ApplyYouTube } from "./apply/ApplyYouTube";
 import { ApplyDisclaimer } from "./apply/ApplyDisclaimer";
 import { ApplyStickyCta } from "./apply/ApplyStickyCta";
 
@@ -37,24 +36,27 @@ export function ApplyLandingPage({
 }: ApplyLandingPageProps) {
   return (
     <>
-      <ApplyHero accent={accent} />
-      <ApplyVsl />
-      {/* The form sits directly under the video (Kody, 2026-07-28): at the
-          bottom of the page it was losing visitors who never scrolled that far.
-          Every CTA still anchors here, so the deep-scroll path is unchanged. */}
-      <ApplyQuiz
-        attribution={attribution}
-        idempotencyKey={idempotencyKey}
-        bookingEmbedUrl={bookingEmbedUrl}
-        title={quizTitle}
-        accent={accent}
+      {/* The form rides in the hero's right column (Adam, 2026-09-17): under
+          the video it still cost bookings from visitors who never scrolled.
+          Every CTA anchors to it, so the deep-scroll path is unchanged, and the
+          video keeps its place directly below the hero. */}
+      <ApplyHero
+        aside={
+          <ApplyQuiz
+            attribution={attribution}
+            idempotencyKey={idempotencyKey}
+            bookingEmbedUrl={bookingEmbedUrl}
+            title={quizTitle}
+            accent={accent}
+          />
+        }
       />
+      <ApplyVsl />
       <ApplyTools />
       <ApplyTestimonials />
       <ApplyRoadmap />
       <ApplyMembers />
       <ApplyFaq />
-      <ApplyYouTube />
       <ApplyDisclaimer />
       <ApplyStickyCta />
     </>

@@ -11,7 +11,6 @@ import { ApplyRoadmap } from "./apply/ApplyRoadmap";
 import { ApplyMembers } from "./apply/ApplyMembers";
 import { ApplyFaq } from "./apply/ApplyFaq";
 import { BookingForm } from "./apply/BookingForm";
-import { ApplyYouTube } from "./apply/ApplyYouTube";
 import { ApplyDisclaimer } from "./apply/ApplyDisclaimer";
 import { ApplyStickyCta } from "./apply/ApplyStickyCta";
 
@@ -37,19 +36,24 @@ export function BookingLandingPage({
 
   return (
     <>
-      <ApplyHero body={copy.heroBody} ctaLabel={BOOK_CTA} />
+      {/* The booking card sits beside the hero copy (Adam, 2026-09-17), not in
+          a band near the bottom of the page; the VSL follows directly under. */}
+      <ApplyHero
+        body={copy.heroBody}
+        aside={
+          <BookingForm
+            attribution={attribution}
+            idempotencyKey={idempotencyKey}
+            calendlyUrl={config.calendlyUrl}
+          />
+        }
+      />
       <ApplyVsl vsl={copy.vsl} />
       <ApplyTools ctaLabel={BOOK_CTA} />
       <ApplyTestimonials />
       <ApplyRoadmap ctaLabel={BOOK_CTA} />
       <ApplyMembers />
       <ApplyFaq items={copy.faqItems} />
-      <BookingForm
-        attribution={attribution}
-        idempotencyKey={idempotencyKey}
-        calendlyUrl={config.calendlyUrl}
-      />
-      <ApplyYouTube ctaLabel={BOOK_CTA} />
       <ApplyDisclaimer />
       <ApplyStickyCta ctaLabel={BOOK_CTA} />
     </>
