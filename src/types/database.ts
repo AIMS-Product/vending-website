@@ -856,6 +856,7 @@ export type Database = {
         Row: {
           attendees: number | null;
           attendees_at_offer: number | null;
+          booked_calls: number | null;
           booked_ever: number | null;
           booked_night_of: number | null;
           booked_within_7d: number | null;
@@ -881,6 +882,7 @@ export type Database = {
         Insert: {
           attendees?: number | null;
           attendees_at_offer?: number | null;
+          booked_calls?: number | null;
           booked_ever?: number | null;
           booked_night_of?: number | null;
           booked_within_7d?: number | null;
@@ -906,6 +908,7 @@ export type Database = {
         Update: {
           attendees?: number | null;
           attendees_at_offer?: number | null;
+          booked_calls?: number | null;
           booked_ever?: number | null;
           booked_night_of?: number | null;
           booked_within_7d?: number | null;

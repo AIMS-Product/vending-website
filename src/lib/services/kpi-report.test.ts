@@ -97,6 +97,7 @@ const input: KpiInput = {
       attendees: 300,
       booked_night_of: 30,
       booked_ever: 40,
+      booked_calls: 32,
       showed: 20,
       show_no_booking: 3,
       won: 5,
@@ -113,6 +114,7 @@ const input: KpiInput = {
       attendees: null,
       booked_night_of: 20,
       booked_ever: 25,
+      booked_calls: 16,
       showed: 10,
       show_no_booking: 0,
       won: 2,
@@ -232,16 +234,18 @@ describe("buildKpiReport", () => {
     expect(webinar!.rows[0]!.values).toMatchObject({
       registrations: 1800,
       attendees: 300,
-      // booked_ever (40 + 25), not booked_night_of (30 + 20): Shown and Won are lifetime
-      // cohort numbers, so the denominator has to be lifetime too.
-      booked: 65,
+      // booked_calls (32 + 16), the count of record. Shown and Won come from the booking-link join, so
+      // the denominator is the population they are counted over -- not booked_ever (65, Close's tag
+      // cohort, a different set of people) and not booked_night_of (50, a subset of one night).
+      booked: 48,
+      bookedEver: 65,
       bookedNightOf: 50,
-      showRate: 46.2, // 30 shown over 65 booked-ever, not over 50 booked night-of
+      showRate: 62.5, // 30 shown over 48 booked calls; 46.2% over booked_ever, 60% over night-of
       showNoBooking: 3,
       won: 7,
       revenue: 50000,
       spend: 10000,
-      costPerBooked: 154, // $10,000 over 65 booked-ever, was $200 over 50 night-of
+      costPerBooked: 208, // $10,000 over 48 booked calls, was $154 over the tag cohort
     });
     expect(webinar!.rows[1]!.label).toBe("Sept 8");
   });
@@ -253,6 +257,31 @@ describe("buildKpiReport", () => {
         expect(showed).toBeLessThanOrEqual(booked);
       }
     }
+  });
+
+  it("divides shows by the population they were counted over, never by the tag cohort", () => {
+    // Sept 8 alone: 20 shown, 32 booked calls, 40 in Close's tag cohort. The two booking numbers cross in
+    // both directions across the quarter, so a wrong denominator is wrong in both directions too -- this
+    // page published 25.7% for Sept 1 against a real 60%, and 51.1% for Sept 8 against a real 65.7%.
+    const one = buildKpiReport({
+      ...input,
+      webinars: [input.webinars[0]!],
+    }).sections.find((section) => section.key === "webinar")!;
+    expect(one.rows[0]!.values.showRate).toBe(62.5);
+    expect(one.rows[0]!.values.showRate).not.toBe(50);
+
+    // A sender too old to carry the count of record leaves the rate a dash. Falling back to `booked_ever`
+    // is what produced the wrong rate in the first place, and a wrong rate reads as confident.
+    const legacy = buildKpiReport({
+      ...input,
+      webinars: [{ ...input.webinars[0]!, booked_calls: null }],
+    }).sections.find((section) => section.key === "webinar")!;
+    expect(legacy.rows[0]!.values.booked).toBeNull();
+    expect(legacy.rows[0]!.values.showRate).toBeNull();
+    expect(legacy.rows[0]!.values.costPerBooked).toBeNull();
+    // The tag cohort stays visible as its own number; it is just never divided into anything.
+    expect(legacy.rows[0]!.values.bookedEver).toBe(40);
+    expect(legacy.rows[0]!.values.showed).toBe(20);
   });
 
   it("withholds the rates a still-open window decides, and keeps the counts", () => {
@@ -274,7 +303,9 @@ describe("buildKpiReport", () => {
     expect(values.closeRate).toBeNull();
     expect(values.regToClose).toBeNull();
     // The counts are real, just not final.
-    expect(values.booked).toBe(40);
+    // The count of record, not the tag cohort (40). A maturing window withholds the rates, never the counts.
+    expect(values.booked).toBe(32);
+    expect(values.bookedEver).toBe(40);
     expect(values.showed).toBe(20);
     expect(values.won).toBe(5);
   });

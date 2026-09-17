@@ -281,6 +281,9 @@ describe("buildWebinars", () => {
           registrations: 800,
           attendees: 200,
           attendees_at_offer: 140,
+          // Both populations present and different on purpose: `booked_calls` is the count of record and
+          // `booked_ever` is Close's tag cohort, which misses the bookers whose event tag went missing.
+          booked_calls: 25,
           booked_ever: 40,
           showed: 20,
           won: 2,
@@ -313,7 +316,7 @@ describe("buildWebinars", () => {
     expect(sept1.attendanceRate).toBe(25);
     expect(sept1.offerRate).toBe(70);
     expect(sept1.costPerRegistration).toBe(2.5);
-    expect(sept1.costPerBooked).toBe(50);
+    expect(sept1.costPerBooked).toBe(80); // $2,000 over 25 booked calls, not $50 over the 40-lead tag cohort
     const sept8 = report.rows[0];
     expect(sept8.spend).toBe(300);
     // More attendees than registrations is not a rate.
@@ -322,7 +325,7 @@ describe("buildWebinars", () => {
     expect(sept8.costPerBooked).toBeNull();
     expect(report.total?.registrations).toBe(1300);
     expect(report.total?.spend).toBe(2300);
-    expect(report.total?.booked).toBe(40);
+    expect(report.total?.booked).toBe(25);
   });
 });
 
