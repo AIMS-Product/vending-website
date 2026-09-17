@@ -34,3 +34,40 @@ const BOOKING_FUNNEL_PATH_SET: ReadonlySet<string> = new Set(
 export function isBookingFunnelPath(pathname: string): boolean {
   return BOOKING_FUNNEL_PATH_SET.has(pathname);
 }
+
+/**
+ * The surfaces a lead reaches *after* the form: the scored result page (its
+ * four fit states are query params on one route), the apply thank-you, and the
+ * qualification questionnaire between them.
+ *
+ * Deliberately NOT in BOOKING_FUNNEL_PATHS. That list also drives UTM
+ * preservation on links pointing at a route, and these are redirect targets —
+ * nothing links to them from an ad, so claiming them as attribution
+ * destinations would be a lie. `/qualify` already earns its attribution
+ * separately, as a LEAD_DESTINATION_PREFIX in lead-attribution-links.ts.
+ *
+ * Chrome comes off for the same reason it does on the funnels (Adam,
+ * 2026-09-17): the lead's next step is the calendar embed or their inbox, and
+ * a nav bar reopens the whole site the moment they convert.
+ */
+const POST_CONVERSION_PATHS = [
+  "/thank-you",
+  "/thank-you-for-applying",
+] as const;
+
+const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(
+  POST_CONVERSION_PATHS,
+);
+
+/**
+ * True anywhere the site chrome stays off: the booking funnels and everything
+ * after the form. Header, footer and the chatbot's unprompted teaser all key
+ * off this. Attribution keys off `isBookingFunnelPath` instead — the two
+ * questions have different answers and must not be collapsed.
+ */
+export function isFunnelChromePath(pathname: string): boolean {
+  if (isBookingFunnelPath(pathname)) return true;
+  if (POST_CONVERSION_PATH_SET.has(pathname)) return true;
+  // The questionnaire is one dynamic route per session token.
+  return pathname.startsWith("/qualify/");
+}

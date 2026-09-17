@@ -28,11 +28,7 @@ export default async function QualificationPage({
 
   if (session.status === "unavailable") {
     return (
-      <div
-        className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-slate-950"
-        data-hide-site-header="true"
-        data-hide-site-footer="true"
-      >
+      <div className="mx-auto flex min-h-screen max-w-2xl flex-col justify-center px-6 py-16 text-slate-950">
         <p className="text-sm font-semibold text-[#0b63f6]">Vendingpreneurs</p>
         <h1 className="mt-3 text-3xl font-semibold">
           Qualification unavailable
@@ -46,7 +42,7 @@ export default async function QualificationPage({
   }
 
   return (
-    <div data-hide-site-header="true" data-hide-site-footer="true">
+    <div>
       <QualificationRuntime
         session={session}
         sessionToken={sessionToken}

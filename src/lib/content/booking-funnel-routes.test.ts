@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import {
   BOOKING_FUNNEL_PATHS,
   isBookingFunnelPath,
+  isFunnelChromePath,
 } from "./booking-funnel-routes";
 import { bookingPages } from "./booking-pages";
 import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
@@ -58,9 +59,9 @@ describe("booking funnel routes", () => {
       "/news",
       "/resources/roadmap",
       "/pre-call-resources",
-      "/thank-you",
     ]) {
       expect(isBookingFunnelPath(route)).toBe(false);
+      expect(isFunnelChromePath(route)).toBe(false);
     }
   });
 
@@ -83,7 +84,7 @@ describe("booking funnel routes", () => {
       ),
       "utf8",
     );
-    expect(source).toContain("isBookingFunnelPath(pathname)");
+    expect(source).toContain("isFunnelChromePath(pathname)");
     expect(source).toContain("if (suppressIdleTeaser) return;");
   });
 
@@ -95,7 +96,54 @@ describe("booking funnel routes", () => {
       path.resolve(__dirname, "../../../", file),
       "utf8",
     );
-    expect(source).toContain("isBookingFunnelPath(pathname)");
+    expect(source).toContain("isFunnelChromePath(pathname)");
     expect(source).toContain("return null");
+  });
+
+  /*
+    Sealing the pages after the form (Adam, 2026-09-17). The funnels had no way
+    out until a lead converted, and then /thank-you handed them a full nav bar
+    and footer — 24 links — at the exact moment their next step is the calendar
+    embed in front of them.
+  */
+  describe("post-conversion surfaces", () => {
+    const POST_CONVERSION = [
+      "/thank-you",
+      "/thank-you-for-applying",
+      "/qualify/some-session-token",
+    ];
+
+    it("drops the chrome on every one of them", () => {
+      for (const route of POST_CONVERSION) {
+        expect(isFunnelChromePath(route), `${route} must render bare`).toBe(
+          true,
+        );
+      }
+    });
+
+    it("keeps every booking funnel covered too", () => {
+      for (const path of BOOKING_FUNNEL_PATHS) {
+        expect(isFunnelChromePath(path)).toBe(true);
+      }
+    });
+
+    /*
+      The list that drives chrome is NOT the list that drives attribution.
+      BOOKING_FUNNEL_PATHS also decides whether a link keeps its UTMs, and
+      these are redirect targets: nothing points an ad at /thank-you. Folding
+      them into one list would silently claim them as ad destinations.
+    */
+    it("does not make them booking funnels", () => {
+      for (const route of POST_CONVERSION) {
+        expect(isBookingFunnelPath(route)).toBe(false);
+      }
+      expect(BOOKING_FUNNEL_PATHS).not.toContain("/thank-you");
+    });
+
+    it("does not match a path that merely starts with one", () => {
+      expect(isFunnelChromePath("/thank-you-for-reading")).toBe(false);
+      expect(isFunnelChromePath("/resources/roadmap-thank-you")).toBe(false);
+      expect(isFunnelChromePath("/qualify")).toBe(false);
+    });
   });
 });

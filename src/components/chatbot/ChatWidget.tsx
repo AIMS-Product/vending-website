@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
+import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -179,9 +179,11 @@ export function ChatWidget() {
   // Booking funnels never open the conversation themselves (Adam, 2026-09-17).
   // These visitors arrive from an ad to do exactly one thing, and a bubble that
   // talks first pulls them out of the form — the same reason the header and
-  // footer are gone. The launcher still renders, so anyone who wants help can
-  // start the conversation; only the unprompted teaser is suppressed.
-  const suppressIdleTeaser = isBookingFunnelPath(pathname);
+  // footer are gone. It holds just as hard after the form: a teaser over the
+  // questionnaire or the confirmation calendar interrupts a lead mid-booking.
+  // The launcher still renders, so anyone who wants help can start the
+  // conversation; only the unprompted teaser is suppressed.
+  const suppressIdleTeaser = isFunnelChromePath(pathname);
 
   const setOpen = useCallback((value: boolean) => {
     setOpenState(value);
