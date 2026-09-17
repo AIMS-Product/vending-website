@@ -1,0 +1,36 @@
+import { bookingPages } from "./booking-pages";
+import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
+
+/**
+ * Every booking funnel: /contact, /book-now, the contact clones and the
+ * social-ad landers. One list, because two separate rules key off it.
+ *
+ * 1. No chrome (Adam, 2026-09-17). Every nav link, footer link and "Get in
+ *    touch" button on these pages is a way out, and their only job is the form.
+ *    Dropping the footer does not strand the Privacy Policy — PublicLeadForm
+ *    and ApplyDisclaimer both link it on all of them.
+ * 2. Links pointing at them keep their UTM attribution. This used to ride on
+ *    `legacyLeadRoutes`, so it silently covered only the pages that had not
+ *    been rebuilt yet: the four social-ad landers never qualified, and the
+ *    contact clones stopped qualifying the moment they became real routes.
+ *    Keying both rules off one list is what stops that drifting again.
+ *
+ * The clone and social-ad routes are read off their own registries so a new
+ * booking page is covered the day it is added.
+ */
+const HAND_WRITTEN_BOOKING_ROUTES = ["/contact", "/book-now"] as const;
+
+export const BOOKING_FUNNEL_PATHS: readonly string[] = [
+  ...HAND_WRITTEN_BOOKING_ROUTES,
+  ...CONTACT_CLONE_SLUGS.map((slug) => `/${slug}`),
+  ...Object.values(bookingPages).map((page) => page.path),
+];
+
+const BOOKING_FUNNEL_PATH_SET: ReadonlySet<string> = new Set(
+  BOOKING_FUNNEL_PATHS,
+);
+
+/** True on a booking funnel: no header, no footer, and links keep their UTMs. */
+export function isBookingFunnelPath(pathname: string): boolean {
+  return BOOKING_FUNNEL_PATH_SET.has(pathname);
+}

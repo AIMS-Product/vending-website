@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import { securityHeaders } from "./src/lib/security-headers";
+import { FUNNEL_REDIRECTS } from "./src/lib/content/funnel-redirects";
 
 const legacyLeadRedirects = [
   {
@@ -163,6 +164,12 @@ const nextConfig: NextConfig = {
         permanent: true,
       })),
       ...legacyLeadRedirects.map(({ source, destination }) => ({
+        source,
+        destination,
+        permanent: true,
+      })),
+      // Retired funnel URLs from the migration sheet.
+      ...FUNNEL_REDIRECTS.map(({ source, destination }) => ({
         source,
         destination,
         permanent: true,

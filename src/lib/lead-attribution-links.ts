@@ -1,6 +1,8 @@
 import type { AttributionSession } from "@/lib/attribution-session";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { legacyLeadRoutes } from "@/lib/content/legacy-routes";
+import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
+import { FUNNEL_REDIRECT_SOURCES } from "@/lib/content/funnel-redirects";
 
 export type LeadAttributionLinkContext = {
   sourcePath?: string | null;
@@ -13,6 +15,9 @@ export type LeadAttributionLinkContext = {
 };
 
 const LEGACY_LEAD_PATHS = new Set(legacyLeadRoutes.map((route) => route.path));
+// Retired funnel URLs 301 to a live funnel; the visitor's UTMs have to reach
+// the destination, so a link to one still carries attribution.
+const RETIRED_FUNNEL_PATHS = new Set<string>(FUNNEL_REDIRECT_SOURCES);
 const LEAD_DESTINATION_PREFIXES = ["/apply", "/contact", "/qualify"] as const;
 
 const LINK_ATTRIBUTION_FIELDS = [
@@ -48,6 +53,10 @@ export function shouldPreserveLeadAttribution(href: string) {
     return false;
   }
   if (LEGACY_LEAD_PATHS.has(parsed.url.pathname as `/${string}`)) return true;
+  // Booking funnels are lead destinations too; they used to be covered only
+  // while they still lived in legacyLeadRoutes.
+  if (isBookingFunnelPath(parsed.url.pathname)) return true;
+  if (RETIRED_FUNNEL_PATHS.has(parsed.url.pathname)) return true;
   return LEAD_DESTINATION_PREFIXES.some(
     (prefix) =>
       parsed.url.pathname === prefix ||

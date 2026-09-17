@@ -12,5 +12,5 @@ export default function Page({
 }: {
   searchParams: Promise<LeadSearchParams>;
 }) {
-  return renderContactClonePage("booking-youtube", searchParams);
+  return renderContactClonePage("booking-partner", searchParams);
 }

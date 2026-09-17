@@ -12,10 +12,8 @@ type ApplyQuizProps = {
   attribution: LeadAttribution;
   idempotencyKey: string;
   // /book-now drops the scoring stage: stage 1 submits and this calendar takes
-  // the card. The band heading changes with it, because "see if vending is
-  // right for you" describes questions that funnel no longer asks.
+  // the card.
   bookingEmbedUrl?: string;
-  title?: string;
   accent?: "blue" | "orange";
 };
 
@@ -31,11 +29,10 @@ export function ApplyQuiz({
   attribution,
   idempotencyKey,
   bookingEmbedUrl,
-  title = applyQuiz.title,
   accent = "blue",
 }: ApplyQuizProps) {
   return (
-    <HeroFormPanel title={title}>
+    <HeroFormPanel>
       <PublicLeadForm
         action={startInlineQualification}
         finishAction={finishInlineQualification}

@@ -7,22 +7,15 @@ import { LockIcon, StarRow } from "./icons";
 // social-ad booking form so the two never drift.
 //
 // Styled for the hero's light wash: PublicLeadForm already renders its own
-// white card, so this only adds the heading above it and the proof line under
-// it. The headline trust stats live in the hero's left column, so the old dark
-// rail's duplicate stat list is deliberately not repeated here.
-export function HeroFormPanel({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+// white card, so this only adds the proof line under it. The card carries no
+// heading of its own (Adam, 2026-09-17) — the hero headline beside it already
+// says what the page is for, and a second shouted line above the fields was
+// competing with it. The headline trust stats live in the hero's left column,
+// so the old dark rail's duplicate stat list is not repeated here either.
+export function HeroFormPanel({ children }: { children: React.ReactNode }) {
   return (
     <div className="w-full">
-      <h2 className="text-[clamp(1.35rem,2vw,1.7rem)] leading-[1.1] font-black tracking-tight text-[#111111] uppercase">
-        {title}
-      </h2>
-      <div className="mt-5">{children}</div>
+      {children}
 
       <figure className="mt-6 rounded-[12px] border-2 border-[#111111]/12 bg-white/70 p-5">
         <StarRow

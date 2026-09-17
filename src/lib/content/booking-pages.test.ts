@@ -6,29 +6,30 @@ import {
 } from "./booking-pages";
 import { applyFaq, applyHero, applyVsl } from "./apply-page";
 
-// Locks the social-ad booking pages (Kody's sheet rows 51-54): the right
-// persona and — safety-critical — the right calendar per page. A wrong Calendly
-// books a lead onto the wrong call lane.
+// Locks the social-ad booking pages: the right persona and — safety-critical —
+// the right calendar per page. A wrong Calendly books a lead onto the wrong
+// call lane.
+//
+// Adam's redirect sheet (2026-09-17) folded the two b5 pages into their t5
+// counterparts, so the general Lane 1 calendar is no longer reachable from a
+// social lander and every social lead books the top closer. The redirects that
+// replaced those pages are asserted in funnel-redirects.test.ts.
 describe("bookingPages config", () => {
   const TOP =
     "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
   const GENERAL =
     "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
 
-  it("defines exactly the four flagged new pages", () => {
+  it("defines exactly the two surviving social landers", () => {
     expect(Object.keys(bookingPages).sort()).toEqual([
-      "booking-ak-b5",
       "booking-ak-t5",
-      "booking-b5-socials",
       "booking-t5-socials",
     ]);
   });
 
   it.each([
     ["booking-t5-socials", "mike", TOP],
-    ["booking-b5-socials", "mike", GENERAL],
     ["booking-ak-t5", "anthony", TOP],
-    ["booking-ak-b5", "anthony", GENERAL],
   ] as const)(
     "routes %s to the right persona + calendar",
     (slug, persona, calendly) => {
@@ -39,16 +40,11 @@ describe("bookingPages config", () => {
     },
   );
 
-  it("sends t5 pages to the top-closer calendar and b5 to the general one", () => {
-    expect(bookingPages["booking-t5-socials"].calendlyUrl).toBe(
-      bookingPages["booking-ak-t5"].calendlyUrl,
-    );
-    expect(bookingPages["booking-b5-socials"].calendlyUrl).toBe(
-      bookingPages["booking-ak-b5"].calendlyUrl,
-    );
-    expect(bookingPages["booking-t5-socials"].calendlyUrl).not.toBe(
-      bookingPages["booking-b5-socials"].calendlyUrl,
-    );
+  it("books every social lander on the top-closer calendar", () => {
+    for (const config of Object.values(bookingPages)) {
+      expect(config.calendlyUrl).toBe(TOP);
+      expect(config.calendlyUrl).not.toBe(GENERAL);
+    }
   });
 });
 
@@ -84,7 +80,7 @@ describe("resolveBookingCopy", () => {
   });
 
   it("changes only the experience FAQ answer for Anthony (others intact)", () => {
-    const copy = resolveBookingCopy(bookingPages["booking-ak-b5"]);
+    const copy = resolveBookingCopy(bookingPages["booking-ak-t5"]);
     for (const item of copy.faqItems) {
       if (item.q === "Do I need experience?") continue;
       const original = applyFaq.items.find((i) => i.q === item.q);

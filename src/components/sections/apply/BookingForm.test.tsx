@@ -27,9 +27,12 @@ function render() {
 }
 
 describe("BookingForm", () => {
-  it("uses the Book Your Call header and Submit button", () => {
+  it("renders no heading of its own, just the form", () => {
     const html = render();
-    expect(html).toContain("Book Your Call");
+    // Adam, 2026-09-17: the card heading was removed — the hero headline beside
+    // it already says what the page is for, and a second shouted line above the
+    // fields competed with it.
+    expect(html).not.toContain("<h2");
     expect(html).toContain(">Submit<");
   });
 

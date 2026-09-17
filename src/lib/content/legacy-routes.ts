@@ -127,9 +127,13 @@ export const legacyLeadRoutes = [
   // the lead off-site). No `embed` => LegacyLeadPageContent renders the native
   // PublicLeadForm, which preserves UTM via hidden fields + the stored
   // first-touch attribution session.
-  advisory("booking-meta"),
-  advisory("booking-youtube"),
-  advisory("booking-reactivation-email"),
+  //
+  // Two groups have left this list (2026-09-17). The migration sheet's "Clone
+  // Contact" slugs are real routes under src/app now (contact-clone-pages.ts);
+  // they had no calendar here at all, so the form captured a lead, sent them to
+  // /thank-you-for-applying, and nobody could book from those channels. The
+  // redirect sheet's retired URLs now 301 from next.config (funnel-redirects.ts)
+  // and must not keep an entry here, which would never be reached.
   // booking-ig / booking-insta-b5: Action = "Redirects to Calendly only" —
   // embed the Calendly scheduler as the primary CTA.
   advisory("booking-ig", undefined, {
@@ -137,23 +141,11 @@ export const legacyLeadRoutes = [
       "https://calendly.com/d/dv5d-5zj-g8b/vendingpreneurs-consultation-session",
     ),
   }),
-  advisory("booking-insta-b5", undefined, {
-    embed: calendly(
-      "https://calendly.com/d/dz4t-wrw-3nk/vendingpreneurs-strategy-session",
-    ),
-  }),
-  advisory("booking-linkedin"),
   advisory("booking-x"),
-  advisory("booking-ak-x"),
-  advisory("booking-ak-linkedin"),
-  advisory("booking-internal-ltf"),
-  advisory("booking-passivepreneurs"),
   advisory(
     "booking-modern-entrepreneur-newsletter",
     "Modern Entrepreneur Newsletter",
   ),
-  advisory("booking-partner"),
-  advisory("booking-tiktok"),
   // --- Calendly advisory-call booking pages ---
   // Copy mirrors the live Webflow pages: setter is a 15-minute discovery call;
   // accelerator / l1 variants are the 45-minute advisory call.
@@ -166,18 +158,6 @@ export const legacyLeadRoutes = [
     {
       embed: calendly(
         "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
-      ),
-    },
-  ),
-  route(
-    "book-my-advisory-call-accelerator",
-    "Book Your Accelerator Call",
-    "Book Your Free Advisory Call",
-    "You've been dreaming about building something of your own. Let's get you an answer. In 45 minutes, we'll walk through your numbers, your schedule, and your market, and decide whether vending is a smart second income for you.",
-    "callBooking",
-    {
-      embed: calendly(
-        "https://calendly.com/d/cxv9-jg6-m53/vending-accelerator-call",
       ),
     },
   ),
@@ -226,12 +206,7 @@ export const legacyLeadRoutes = [
       ),
     },
   ),
-  market(
-    "start-your-route-ak-ig",
-    "Start Your Vending Route | Vendingpreneurs",
-  ),
   market("start-your-route-ak-tt", "Start Your Vending Route"),
-  market("start-my-vending-business", "Book Your Vending Route Advisory Call"),
   cashflow("vending-route-blueprint", "Vending Route Blueprint | Watch Now", {
     indexable: true,
   }),
@@ -243,7 +218,6 @@ export const legacyLeadRoutes = [
     "journey",
     { indexable: true },
   ),
-  advisory("apply-vendingpreneurs", "Book Your Free Vending Advisory Call"),
 ] satisfies readonly LegacyLeadRoute[];
 
 const legacyLeadRouteBySlug: ReadonlyMap<string, LegacyLeadRoute> = new Map(

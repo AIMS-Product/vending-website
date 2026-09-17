@@ -24,21 +24,21 @@ export function ApplyHero({
           backgroundSize: "22px 22px",
         }}
       />
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-start gap-12 px-5 py-20 lg:grid-cols-[1.05fr_minmax(0,460px)] lg:gap-14 lg:px-10 lg:py-24">
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-start gap-12 px-5 py-14 lg:grid-cols-[1.05fr_minmax(0,460px)] lg:gap-14 lg:px-10 lg:py-16">
         <div className="max-w-[640px]">
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {applyHero.eyebrow}
           </p>
-          <h1 className="mt-5 max-w-[16ch] text-[clamp(2.2rem,4vw,3.6rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111] uppercase">
+          <h1 className="mt-4 max-w-[19ch] text-[clamp(1.85rem,3.1vw,2.8rem)] leading-[1.06] font-black tracking-[-0.015em] text-balance text-[#111111] uppercase">
             {applyHero.headline}
           </h1>
           {/* Kody, 2026-08-11: the deep blue rather than ink, so the eye can
               tell the qualifier from the claim above it at a glance. Same
               #066a99 as the eyebrow and every other section eyebrow. */}
-          <p className="mt-4 max-w-[24ch] text-[clamp(1.5rem,2.6vw,2.3rem)] leading-[1.08] font-black tracking-tight text-balance text-[#066a99] uppercase">
+          <p className="mt-3.5 max-w-[34ch] text-[clamp(0.95rem,1.45vw,1.2rem)] leading-[1.3] font-black tracking-[0.02em] text-balance text-[#066a99] uppercase">
             {applyHero.subheadline}
           </p>
-          <p className="mt-6 max-w-[52ch] text-lg leading-relaxed font-semibold text-slate-700">
+          <p className="mt-5 max-w-[50ch] text-[17px] leading-[1.65] font-medium text-slate-600">
             {body}
           </p>
         </div>

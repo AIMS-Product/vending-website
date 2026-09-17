@@ -16,7 +16,6 @@ type ApplyLandingPageProps = {
   // Set by /book-now only. Replaces the scored stage 2 with this calendar; see
   // ApplyQuiz. Every other page leaves it undefined and keeps the scored funnel.
   bookingEmbedUrl?: string;
-  quizTitle?: string;
   // /contact only (Kody, 2026-08-24): keeps this funnel's own CTAs orange so
   // they read as distinct from the rest of the now-blue-accented site. Every
   // other page rendering this component (/book-now, /booking-youtube,
@@ -31,7 +30,6 @@ export function ApplyLandingPage({
   attribution,
   idempotencyKey,
   bookingEmbedUrl,
-  quizTitle,
   accent = "blue",
 }: ApplyLandingPageProps) {
   return (
@@ -46,7 +44,6 @@ export function ApplyLandingPage({
             attribution={attribution}
             idempotencyKey={idempotencyKey}
             bookingEmbedUrl={bookingEmbedUrl}
-            title={quizTitle}
             accent={accent}
           />
         }

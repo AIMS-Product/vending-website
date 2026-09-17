@@ -29,7 +29,11 @@ export const applyHero = {
   // in the h1; the qualifier drops to the old sub-headline size to break it up.
   headline: "Everyday People Are Building $5-$60k/Month Vending Routes",
   subheadline: "Without Quitting Their Job or Risking Savings",
-  body: "You can spend months figuring out vending, make costly mistakes, and wonder if you're on the right path. Or you can join people who've already proven the system works and reach profitability faster.",
+  // Adam, 2026-09-17: refocused from "the mistakes you will make without us"
+  // onto the route itself and what it could earn. Deliberately carries no
+  // figure — the income claim in `headline` is Kody's approved wording and is
+  // the only one on the page.
+  body: "Map out what your route could look like: how many machines to start with, where to place them, and what that could earn in your market.",
   ctaLabel: "Book Your Free Strategy Call",
   // Basic proof under the hero CTA (Kody, 2026-07-28). Same figures as the
   // quiz rail so the two never disagree.
@@ -237,8 +241,6 @@ export const applyFaq = {
 } as const;
 
 export const applyQuiz = {
-  eyebrow: "Join the Vending Accelerator Program",
-  title: "Book Your Call and see if vending is right for you",
   submitLabel: "Submit",
   rail: {
     quote: "“With just 4 locations, I'm doing $25,000 a month in revenue.”",

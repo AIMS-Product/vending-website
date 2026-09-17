@@ -6,7 +6,7 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Wordmark } from "./Wordmark";
 import { headerCta, primaryNav, type NavItem } from "@/lib/content/nav";
-import { isChromelessRoute } from "@/lib/content/chromeless-routes";
+import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
 
 // fallow-ignore-next-line complexity
 export function Header() {
@@ -16,7 +16,7 @@ export function Header() {
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return null;
   // The booking funnels render bare (Adam, 2026-09-17): every link in the
   // site header is a way off a page whose only job is the form.
-  if (isChromelessRoute(pathname)) return null;
+  if (isBookingFunnelPath(pathname)) return null;
 
   return (
     <header className="sticky inset-x-0 top-0 z-30 border-b-2 border-[#111111] bg-[#f5fbff]/95 backdrop-blur-md">

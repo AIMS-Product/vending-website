@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -175,6 +176,13 @@ export function ChatWidget() {
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
 
+  // Booking funnels never open the conversation themselves (Adam, 2026-09-17).
+  // These visitors arrive from an ad to do exactly one thing, and a bubble that
+  // talks first pulls them out of the form — the same reason the header and
+  // footer are gone. The launcher still renders, so anyone who wants help can
+  // start the conversation; only the unprompted teaser is suppressed.
+  const suppressIdleTeaser = isBookingFunnelPath(pathname);
+
   const setOpen = useCallback((value: boolean) => {
     setOpenState(value);
     if (value) writeSessionFlag(OPEN_KEY);
@@ -236,6 +244,7 @@ export function ChatWidget() {
   // dismissed this session or the panel is already open.
   useEffect(() => {
     if (!enabled || !config || open) return;
+    if (suppressIdleTeaser) return;
     if (config.idleTriggerSeconds <= 0) return;
     if (readSessionFlag(TEASER_DISMISSED_KEY)) return;
 
@@ -244,7 +253,7 @@ export function ChatWidget() {
       config.idleTriggerSeconds * 1000,
     );
     return () => clearTimeout(timer);
-  }, [enabled, config, open]);
+  }, [enabled, config, open, suppressIdleTeaser]);
 
   useEffect(() => {
     if (!open) return;

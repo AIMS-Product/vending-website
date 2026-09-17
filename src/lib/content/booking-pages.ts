@@ -26,13 +26,11 @@ export type BookingPageConfig = {
   readonly metaDescription: string;
 };
 
-// Lane 1 booking calendars (from the sheet). t5 pages send the top tier of
-// social leads to the top-closer calendar; b5 pages send everyone else to the
-// general Lane 1 calendar.
+// Lane 1 booking calendar. Adam's redirect sheet (2026-09-17) folded the b5
+// pages into their t5 counterparts, so every social lander now books the
+// top-closer calendar and the general Lane 1 link is no longer used here.
 const LANE_1_TOP_CALENDLY =
   "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
-const LANE_1_GENERAL_CALENDLY =
-  "https://calendly.com/d/cxfn-hh2-h8g/vendingpreneurs-consultation";
 
 const bookingMetaDescription =
   "Book your free vending route call. Get a clear read on your market, your startup position, and the next step to launch your route in 90 days.";
@@ -124,22 +122,10 @@ export const bookingPages = {
     LANE_1_TOP_CALENDLY,
     "Book Your Call | Vendingpreneurs",
   ),
-  "booking-b5-socials": bookingPage(
-    "booking-b5-socials",
-    "mike",
-    LANE_1_GENERAL_CALENDLY,
-    "Book Your Call | Vendingpreneurs",
-  ),
   "booking-ak-t5": bookingPage(
     "booking-ak-t5",
     "anthony",
     LANE_1_TOP_CALENDLY,
-    "Book Your Call | Vendingpreneurs",
-  ),
-  "booking-ak-b5": bookingPage(
-    "booking-ak-b5",
-    "anthony",
-    LANE_1_GENERAL_CALENDLY,
     "Book Your Call | Vendingpreneurs",
   ),
 } as const satisfies Record<string, BookingPageConfig>;

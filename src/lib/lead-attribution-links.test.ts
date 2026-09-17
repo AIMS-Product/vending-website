@@ -73,7 +73,12 @@ describe("lead attribution links", () => {
   });
 
   it("covers legacy lead routes and ignores external links", () => {
+    // /booking-meta is a real route now rather than a legacy one; it is a lead
+    // destination either way, so attribution must survive the move.
     expect(shouldPreserveLeadAttribution("/booking-meta")).toBe(true);
+    // Never covered while this keyed off legacyLeadRoutes alone.
+    expect(shouldPreserveLeadAttribution("/booking-t5-socials")).toBe(true);
+    expect(shouldPreserveLeadAttribution("/booking-partner")).toBe(true);
     expect(shouldPreserveLeadAttribution("https://example.com/apply")).toBe(
       false,
     );

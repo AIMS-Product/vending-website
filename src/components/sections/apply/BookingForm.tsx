@@ -22,7 +22,7 @@ export function BookingForm({
   calendlyUrl,
 }: BookingFormProps) {
   return (
-    <HeroFormPanel title="Book Your Call">
+    <HeroFormPanel>
       <PublicLeadForm
         action={submitBookingLead}
         attribution={attribution}
