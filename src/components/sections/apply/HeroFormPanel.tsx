@@ -1,39 +1,12 @@
-import { applyQuiz } from "@/lib/content/apply-page";
-import { LockIcon, StarRow } from "./icons";
-
 // The booking card that rides in the right column of the hero (Adam,
 // 2026-09-17): the form has to be on the first screen next to the pitch, not a
 // dark band further down the page. Shared by the qualification quiz and the
 // social-ad booking form so the two never drift.
 //
-// Styled for the hero's light wash: PublicLeadForm already renders its own
-// white card, so this only adds the proof line under it. The card carries no
-// heading of its own (Adam, 2026-09-17) — the hero headline beside it already
-// says what the page is for, and a second shouted line above the fields was
-// competing with it. The headline trust stats live in the hero's left column,
-// so the old dark rail's duplicate stat list is not repeated here either.
+// PublicLeadForm already renders its own white card, so this is only the
+// wrapper. The card carries no heading and no proof rail of its own: the hero
+// headline beside it says what the page is for, and the member quote and trust
+// stats sit in the left column where they balance the form's height.
 export function HeroFormPanel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="w-full">
-      {children}
-
-      <figure className="mt-6 rounded-[12px] border-2 border-[#111111]/12 bg-white/70 p-5">
-        <StarRow
-          className="mb-2.5 flex gap-0.5 text-[#2a8fcc]"
-          starClassName="size-[17px]"
-        />
-        <blockquote className="text-[15px] leading-snug font-black text-[#111111]">
-          {applyQuiz.rail.quote}
-        </blockquote>
-        <figcaption className="mt-2.5 text-[13px] font-semibold text-slate-600">
-          {applyQuiz.rail.attribution}
-        </figcaption>
-      </figure>
-
-      <p className="mt-4 flex items-center gap-2 text-[13px] font-semibold text-slate-600">
-        <LockIcon className="size-3.5 text-[#066a99]" />
-        {applyQuiz.rail.availabilityNote}
-      </p>
-    </div>
-  );
+  return <div className="w-full">{children}</div>;
 }

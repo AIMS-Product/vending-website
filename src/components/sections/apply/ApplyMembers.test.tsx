@@ -1,43 +1,62 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { ApplyMembers } from "./ApplyMembers";
-import { applyMembers } from "@/lib/content/apply-page";
-import anthonyKolodziej from "../../../../data/case-studies/anthony-kolodziej.json";
-import mallerieRouch from "../../../../data/case-studies/mallerie-rouch.json";
+import { preCallOperators } from "@/lib/content/pre-call-resources";
 import musaSadi from "../../../../data/case-studies/musa-sadi.json";
 
-const caseStudies = [anthonyKolodziej, mallerieRouch, musaSadi];
+/*
+  Adam, 2026-09-17: this section used to be three finished card graphics with
+  their figures baked into the PNGs, each linking out to youtube.com. It now
+  renders the same top-tier member stories the pre-call page uses, read off
+  preCallOperators, so a figure can never say one thing here and another there.
+*/
+const TOP = preCallOperators.items.filter(
+  (item) => item.tier === "high" && "embedId" in item,
+);
 
-// Locks the success-story cards: three cards, each playing the correct member's
-// video in the on-page dialog. A wrong id plays the wrong person's story, so
-// the name→id pairing is asserted explicitly.
-describe("ApplyMembers success-story cards", () => {
+/** "Graham & Katie Parker" renders as "Graham &amp; Katie Parker". */
+function escaped(text: string) {
+  return text.replace(/&/g, "&amp;");
+}
+
+describe("ApplyMembers success stories", () => {
   const html = renderToStaticMarkup(<ApplyMembers />);
 
-  it("renders exactly three story cards", () => {
-    expect(applyMembers.cards).toHaveLength(3);
-    // next/image URL-encodes the src (e.g. %2Fapply%2Fstories%2Fanthony.png),
-    // so assert each card's image basename is present in that encoded form.
-    for (const slug of ["anthony", "mallerie", "moosa"]) {
-      expect(html).toContain(`stories%2F${slug}.png`);
+  it("shows every top-tier story and no other tier", () => {
+    expect(TOP.length).toBeGreaterThanOrEqual(3);
+    for (const story of TOP) {
+      expect(html).toContain(escaped(story.name));
+    }
+    const otherTiers = preCallOperators.items.filter(
+      (item) => item.tier !== "high",
+    );
+    for (const story of otherTiers) {
+      expect(html, `${story.name} is not a top-tier story`).not.toContain(
+        escaped(story.name),
+      );
     }
   });
 
-  it.each([
-    ["Anthony Kolodziej", "fsRX7K_Hg08"],
-    ["Mallorie Rauch", "io1Jkei-yFs"],
-    ["Musa Sadi", "kb8ryBm6g9k"],
-  ])("pairs %s with their own story video", (name, videoId) => {
-    const card = applyMembers.cards.find((c) => c.name === name);
-    expect(card?.youtubeId).toBe(videoId);
-    expect(html).toContain(`Watch ${name.split(" ")[0]}`);
+  it("prints each member's figures as text, not baked into an image", () => {
+    for (const story of TOP) {
+      expect(html).toContain(story.stats.join(" · "));
+    }
   });
 
   /*
-    The booking funnels exist to get a form filled in. Adam, 2026-09-17: these
-    cards used to open youtube.com in a new tab, so the strongest proof on the
-    page was also its widest exit. They now play in a dialog over the page —
-    this asserts no card can quietly go back to navigating away.
+    Required wherever these figures appear. The pre-call content module says it
+    outright: ranking members by revenue invites the reader to take a tier as a
+    promise unless the page states what the numbers actually are. These pages
+    are paid ad destinations, so it matters more here, not less.
+  */
+  it("carries the revenue disclaimer", () => {
+    expect(html).toContain(preCallOperators.disclaimer);
+  });
+
+  /*
+    The booking funnels exist to get a form filled in. The old cards opened
+    youtube.com in a new tab, so the strongest proof on the page was also its
+    widest exit. Vidalytics plays in place.
   */
   it("never links off the page", () => {
     expect(html).not.toContain('target="_blank"');
@@ -45,45 +64,35 @@ describe("ApplyMembers success-story cards", () => {
     expect(html).not.toContain("youtube.com");
   });
 
-  it("opens the story with an on-page control, not a link", () => {
-    // Two controls per card (the art and the caption) = six buttons.
-    const buttonCount = (html.match(/<button/g) ?? []).length;
-    expect(buttonCount).toBeGreaterThanOrEqual(6);
-    expect(html).toContain("<dialog");
-  });
-
-  it("does not mount a player until a story is opened", () => {
-    // Three autoplaying iframes on load would be a real cost to every visitor.
-    expect(html).not.toContain("<iframe");
-  });
-
-  it("carries the transcribed story in each image's alt text", () => {
-    for (const card of applyMembers.cards) {
-      expect(card.alt).toMatch(/Success story/);
-      expect(card.alt.length).toBeGreaterThan(120);
+  it("gives every member a play control of their own", () => {
+    for (const story of TOP) {
+      // React escapes the apostrophe in the aria-label, so match the stem.
+      expect(html).toContain(`Play ${escaped(story.name)}`);
     }
   });
 
   /*
-    Root-cause guard. /apply and /case-studies both name the same members, and
-    they had drifted: /apply said "Mallerie Rouch" and "Moosa Sadi" while the
-    case studies said "Mallorie Rauch" and "Musa Sadi" — one person, two public
-    spellings. Asserting the two sources agree, joined on the video id, stops
-    a fix in one place from silently leaving the other wrong.
-
-    This locks them to each OTHER, not to a spelling. If a member tells us the
-    true spelling is different, change the case study and this test points at
-    whatever else still needs updating.
+    Vidalytics autoplays muted. That suits the pre-call page, whose visitor has
+    already booked; here it would put four videos talking at someone in the
+    middle of the form, and load four player scripts before anyone asked for
+    one. The players mount on click instead.
   */
-  it("spells every member the same way the case studies do", () => {
-    const byVideoId = new Map(
-      caseStudies.map((study) => [study.video_id, study.member_name]),
-    );
-    for (const card of applyMembers.cards) {
-      const canonical = byVideoId.get(card.youtubeId);
-      if (!canonical) continue; // not every apply card needs a case study
-      expect(card.name).toBe(canonical);
-      expect(card.alt).toContain(canonical);
+  it("mounts no player until a story is played", () => {
+    expect(html).not.toContain("vidalytics_embed_");
+    for (const story of TOP) {
+      expect(html).not.toContain((story as { embedId: string }).embedId);
     }
+  });
+
+  /*
+    Root-cause guard, inherited from the old test. /apply and /case-studies
+    both name the same members and had drifted ("Moosa Sadi" vs "Musa Sadi").
+    The story data now comes from one module, so this asserts that module
+    agrees with the case study rather than that two copies agree.
+  */
+  it("spells a member the same way the case study does", () => {
+    const musa = TOP.find((story) => story.id === "musa-sadi");
+    expect(musa?.name).toBe(musaSadi.member_name);
+    expect(html).toContain(escaped(musaSadi.member_name));
   });
 });
