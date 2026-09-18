@@ -33,12 +33,14 @@ describe("buildCloseWeeks", () => {
       calls: [
         {
           funnel: "YouTube",
+          status: null,
           bookedDate: "2026-09-12",
           showUp: "Yes",
           qualified: "Yes",
         },
         {
           funnel: "YouTube",
+          status: null,
           bookedDate: "2026-09-17",
           showUp: "No",
           qualified: null,
@@ -46,12 +48,14 @@ describe("buildCloseWeeks", () => {
         // Unlogged show-up is not a show.
         {
           funnel: "YouTube",
+          status: null,
           bookedDate: "2026-09-15",
           showUp: null,
           qualified: null,
         },
         {
           funnel: null,
+          status: null,
           bookedDate: "2026-09-16",
           showUp: "yes",
           qualified: "No",
@@ -59,6 +63,7 @@ describe("buildCloseWeeks", () => {
         // Outside the week.
         {
           funnel: "YouTube",
+          status: null,
           bookedDate: "2026-09-18",
           showUp: "Yes",
           qualified: "Yes",
@@ -121,6 +126,34 @@ describe("buildCloseWeeks", () => {
       },
     ]);
     expect(result!.unvalued).toBe(1);
+  });
+
+  it("leaves out canceled-by-lead, outside-the-US and quiz-funnel calls, and counts them", () => {
+    const call = (status: string | null, funnel = "Instagram") => ({
+      funnel,
+      status,
+      bookedDate: "2026-09-14",
+      showUp: "Yes",
+      qualified: "Yes",
+    });
+    const [result] = buildCloseWeeks({
+      weeks: [week],
+      today: "2026-09-19",
+      calls: [
+        call("🔻 Canceled (by Lead)"),
+        call("🌎 Outside the US"),
+        call("📞 Follow Up", "LTF - Quiz Funnel"),
+        call("👻 No Show"),
+        call("🕛 Reschedule"),
+      ],
+      deals: [],
+    });
+    expect(result!.totals).toMatchObject({
+      booked: 2,
+      showed: 2,
+      qualified: 2,
+    });
+    expect(result!.excluded).toBe(3);
   });
 
   it("returns an empty week rather than dropping it", () => {

@@ -182,6 +182,14 @@ export function CloseWeekTab({
           </table>
         </div>
         <div className="text-ui-text-subtle space-y-1 px-4 py-3 text-xs">
+          {week.excluded > 0 ? (
+            <p>
+              {week.excluded} first{" "}
+              {week.excluded === 1 ? "call is" : "calls are"} left out because
+              the lead is now Canceled (by Lead) or Outside the US, or in the
+              LTF Quiz Funnel. SteelTrap leaves the same calls out.
+            </p>
+          ) : null}
           {week.unvalued > 0 ? (
             <p>
               {week.unvalued} won{" "}

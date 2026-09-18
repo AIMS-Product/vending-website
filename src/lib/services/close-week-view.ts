@@ -7,7 +7,11 @@
  * webinar registrants). Rules, all read from Close fields as reps log them:
  *
  *   - First calls: leads whose "First Sales Call Booked Date" falls in the
- *     week. That field is the day the call is scheduled for.
+ *     week. That field is the day the call is scheduled for. Leads whose
+ *     current status is "Canceled (by Lead)" or "Outside the US", and the
+ *     "LTF - Quiz Funnel" funnel, are left out, as SteelTrap leaves them out
+ *     (crm_silver_to_gold_lakebase.py, DEFAULT_MEETING_BOOKED_EXCLUDED_*).
+ *     They are counted in `excluded` so the gap is shown, not hidden.
  *   - Showed: of those, "First Call Show Up (Opp)" = Yes. Unlogged is not shown.
  *   - Qualified (rep): of those, "Qualified (Opp)" = Yes. A rep's call after the
  *     meeting, not the site's online questions ("Qs done").
@@ -22,10 +26,16 @@ import type { CloseDeal } from "@/lib/services/close-wins";
 export const NO_SOURCE_LABEL = "No source";
 
 export const CLOSE_VIEW_SOURCE =
-  'Close: first calls by "First Sales Call Booked Date"; showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
+  'Close: first calls by "First Sales Call Booked Date", leaving out leads now "Canceled (by Lead)" or "Outside the US" and the "LTF - Quiz Funnel" funnel (the SteelTrap rule); showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
+
+/** Close lead statuses SteelTrap leaves out of booked, matched without emoji. */
+const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
+const EXCLUDED_FUNNELS = new Set(["ltf - quiz funnel"]);
 
 export type CloseCall = {
   funnel: string | null;
+  /** Close lead status label, e.g. "🔻 Canceled (by Lead)". */
+  status: string | null;
   bookedDate: string;
   showUp: string | null;
   qualified: string | null;
@@ -51,6 +61,8 @@ export type CloseWeek = {
   rows: CloseWeekRow[];
   /** Won deals with no value in Close: counted in won, not in revenue. */
   unvalued: number;
+  /** First calls left out: lead now canceled by lead, outside the US, or quiz funnel. */
+  excluded: number;
 };
 
 const DAY_MS = 86_400_000;
@@ -80,6 +92,21 @@ export function recentWeeks(today: string, count: number): string[] {
 
 function isYes(value: string | null): boolean {
   return value?.trim().toLowerCase() === "yes";
+}
+
+/** Drops a leading emoji and spacing so "🔻 Canceled (by Lead)" matches. */
+function bareStatus(status: string | null): string {
+  return (status ?? "")
+    .replace(/^[^\p{L}\p{N}(]+/u, "")
+    .trim()
+    .toLowerCase();
+}
+
+export function isExcludedCall(call: CloseCall): boolean {
+  return (
+    EXCLUDED_STATUSES.has(bareStatus(call.status)) ||
+    EXCLUDED_FUNNELS.has((call.funnel ?? "").trim().toLowerCase())
+  );
 }
 
 function labelOf(funnel: string | null): string {
@@ -118,7 +145,13 @@ export function buildCloseWeeks(input: {
     byWeek.set(week, rows);
   };
 
+  const excluded = new Map<string, number>();
   for (const call of input.calls) {
+    if (isExcludedCall(call)) {
+      const week = weekStartOf(call.bookedDate);
+      if (wanted.has(week)) excluded.set(week, (excluded.get(week) ?? 0) + 1);
+      continue;
+    }
     bump(weekStartOf(call.bookedDate), call.funnel, {
       booked: 1,
       showed: isYes(call.showUp) ? 1 : 0,
@@ -158,6 +191,7 @@ export function buildCloseWeeks(input: {
       totals,
       rows,
       unvalued: unvalued.get(key) ?? 0,
+      excluded: excluded.get(key) ?? 0,
     };
   });
 }

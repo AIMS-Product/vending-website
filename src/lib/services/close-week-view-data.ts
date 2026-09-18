@@ -42,7 +42,7 @@ export async function getCloseWeekView(
       const { data, error } = await client
         .from("close_lead_funnel")
         .select(
-          "lead_id,funnel,first_sales_call_booked_date,first_call_show_up,qualified,synced_at",
+          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at",
         )
         .gte("first_sales_call_booked_date", from)
         .lte("first_sales_call_booked_date", to)
@@ -54,6 +54,7 @@ export async function getCloseWeekView(
         if (!row.first_sales_call_booked_date) continue;
         calls.push({
           funnel: row.funnel,
+          status: row.status_label,
           bookedDate: row.first_sales_call_booked_date,
           showUp: row.first_call_show_up,
           qualified: row.qualified,
