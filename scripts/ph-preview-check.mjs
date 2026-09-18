@@ -1,4 +1,4 @@
-// Usage: VERCEL_AUTOMATION_BYPASS_SECRET=… node scripts/ph-preview-check.mjs <origin>
+// Usage: VERCEL_OIDC_TOKEN=… (or VERCEL_AUTOMATION_BYPASS_SECRET=…) node scripts/ph-preview-check.mjs <origin>
 // Loads /contact in headless Chromium, records every request to the PostHog
 // proxy, focuses a form field, navigates away, and prints what PostHog would
 // have received (event names + the stamped join properties).
@@ -14,12 +14,19 @@ if (!origin) throw new Error("preview origin required");
 const browser = await chromium.launch({
   args: ["--disable-blink-features=AutomationControlled"],
 });
+// Either a Protection Bypass secret or the local development OIDC token that
+// `vercel env pull` writes (Trusted Sources lets it reach same-project previews).
 const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+const oidc = process.env.VERCEL_OIDC_TOKEN;
+const authHeaders = {
+  ...(bypass ? { "x-vercel-protection-bypass": bypass } : {}),
+  ...(oidc ? { "x-vercel-trusted-oidc-idp-token": oidc } : {}),
+};
 const context = await browser.newContext({
   viewport: { width: 1280, height: 900 },
   userAgent:
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
-  extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass } : {},
+  extraHTTPHeaders: authHeaders,
 });
 await context.addInitScript(() => {
   Object.defineProperty(navigator, "webdriver", { get: () => false });

@@ -114,6 +114,19 @@ Two defects found and fixed by this pass: the proxy's trailing-slash 308 redirec
 `source_path` (stamped with the form's own URL now, 3312840). `$set` events are posthog-js's
 own initial-property events, no code here sets person properties.
 
+Preview, 2026-09-18 ~13:05 PT, branch alias at `ccd8e9e`, reached with the local development
+OIDC token (`vercel env pull` → `VERCEL_OIDC_TOKEN`, header `x-vercel-trusted-oidc-idp-token`;
+Trusted Sources admits same-project previews, no Protection Bypass secret was created):
+
+```
+/about/                -> 308 /about            /contact/?utm_source=x -> 308 /contact?utm_source=x
+POST /api/ph/e/ (one event) -> 200              GET /api/ph/static/array.js -> 200
+scripts/ph-preview-check.mjs -> 11 events, ALL carry vp_session_id, environment=preview:
+  $pageview /contact funnel · form_viewed · form_started first_field=first_name ·
+  form_field_completed · $autocapture ×2 · $pageview /privacy · $pageview / ·
+  form_abandoned source_path=/contact (beacon)
+```
+
 PostHog → Activity: `$pageview` from `/`, `/contact`, `/booking-youtube`, a `/news/*`
 post, `/start`, with `vp_session_id`, `source_path`, `page_group`, `environment=preview`.
 Fill a field on `/contact` and leave: `form_viewed → form_started → form_field_completed →
