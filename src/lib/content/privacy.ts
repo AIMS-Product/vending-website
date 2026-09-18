@@ -611,6 +611,10 @@ export const privacy: LegalDoc = {
           kind: "p",
           text: "We may use third-party analytics services (e.g., Google Analytics) that place cookies on your device. These third parties have their own privacy policies.",
         },
+        {
+          kind: "p",
+          text: "We also use PostHog for site analytics and session recording. It records page views, clicks, scrolling, and which form fields a visitor reaches, masks everything typed into a form, and does not receive your name or email.",
+        },
         { kind: "h3", text: "c. Your Cookie Choices" },
         {
           kind: "p",

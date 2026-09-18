@@ -22,6 +22,7 @@ import { isCodedRoutePath } from "@/lib/page-builder/coded-route-paths";
 import { isUnknownSingleSegmentPublicPath } from "@/lib/routing/single-segment-routes";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
+import { trailingSlashRedirectPath } from "@/lib/routing/trailing-slash";
 
 const NOT_FOUND_HTML = `<!doctype html>
 <html lang="en">
@@ -144,6 +145,19 @@ async function redirectOrNext(request: NextRequest, path: string) {
  */
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
+
+  // One canonical URL per page. Next's own trailing-slash redirect is off
+  // for the PostHog proxy (next.config.ts), so public pages do it here.
+  const canonicalPath = trailingSlashRedirectPath(path);
+  if (canonicalPath) {
+    // Not `nextUrl.clone()`: NextURL remembers the incoming trailing slash and
+    // re-appends it to any pathname assigned later, so the clone would redirect
+    // `/about/` to `/about/` forever. A plain URL keeps the path as written.
+    return NextResponse.redirect(
+      new URL(`${canonicalPath}${request.nextUrl.search}`, request.url),
+      308,
+    );
+  }
 
   if (path === "/") {
     const authErrorRedirect = supabaseAuthErrorRedirectPath(

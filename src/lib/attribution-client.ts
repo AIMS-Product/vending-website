@@ -1,8 +1,12 @@
 import {
   parseAttributionSession,
+  serializeAttributionSession,
+  updateAttributionSessionFromPage,
   VP_ATTRIBUTION_STORAGE_KEY,
+  VP_SESSION_COOKIE_NAME,
   type AttributionSession,
 } from "@/lib/attribution-session";
+import { captureEvent } from "@/lib/tracking/posthog";
 
 /**
  * Every event_type the attribution pipeline carries. One list feeds both the
@@ -57,6 +61,11 @@ export function emitAttributionEvent(
     }),
   };
   const body = JSON.stringify(payload);
+
+  // Mirrored into PostHog so popup and CTA behaviour sits next to the
+  // pageviews and form events there. The first-party route below stays the
+  // record; PostHog's copy is for funnels and replay filters.
+  captureEvent(eventType, payload.properties);
 
   if (navigator.sendBeacon) {
     const sent = navigator.sendBeacon(
@@ -154,4 +163,40 @@ function compact(input: Record<string, string | undefined>) {
   return Object.fromEntries(
     Object.entries(input).filter(([, value]) => value && value.trim()),
   );
+}
+
+/**
+ * Creates or updates the first-party attribution session for the current
+ * page and persists it (localStorage snapshot + `vp_sid` cookie). Called
+ * from instrumentation-client before PostHog boots, so the very first
+ * pageview already carries vp_session_id, and again from
+ * AttributionSessionTracker after hydration. Safe to call twice per load.
+ */
+export function refreshStoredSession(): AttributionSession | null {
+  try {
+    const session = updateAttributionSessionFromPage({
+      href: window.location.href,
+      referrer: document.referrer,
+      existing: readStoredAttributionSession(),
+      nowIso: new Date().toISOString(),
+      sessionIdFactory: browserSessionId,
+    });
+    window.localStorage.setItem(
+      VP_ATTRIBUTION_STORAGE_KEY,
+      serializeAttributionSession(session),
+    );
+    document.cookie = `${VP_SESSION_COOKIE_NAME}=${encodeURIComponent(
+      session.vp_session_id,
+    )}; Path=/; Max-Age=15552000; SameSite=Lax`;
+    return session;
+  } catch {
+    // Storage unavailable (private mode, blocked cookies): no session, and
+    // every caller already treats null as "attribute nothing".
+    return null;
+  }
+}
+
+function browserSessionId() {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  return `vp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
 }
