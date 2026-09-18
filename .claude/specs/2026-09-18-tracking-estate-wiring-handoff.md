@@ -54,44 +54,68 @@ bugs from here on will be somebody dividing one by another.
 
 ---
 
-## 1. THE GATE — do not put numbers in front of the CEO until this clears
+## 1. THE GATE — CLEARED 2026-09-18. The sync was double-counting.
 
-**Our session count does not match GA4's and we do not know why.**
+**Settled without the manual exports**: the GA4 service-account key in
+`.env.local` reads the same Data API the UI reads, so `scripts/ga4-reconcile.mjs`
+asks GA4 the Traffic-acquisition and Landing-page questions directly. Re-run it
+any time a number is disputed.
 
-Measured 2026-09-11 → 09-17 (our table, `resolveGa4Channel` applied) against the
-GA4 Home card for the same nominal week:
+Measured 2026-09-11 → 09-17:
 
-| Channel        | GA4 UI    | Ours             |
-| -------------- | --------- | ---------------- |
-| Paid Search    | 1,200     | Google Ads 1,302 |
-| Organic Search | 350       | 412              |
-| Organic Video  | 343       | YouTube 396      |
-| Email          | 188       | Newsletter 207   |
-| Referral       | 107       | 31               |
-| **Total**      | **3,067** | **4,867**        |
+| Instrument                                    | Sessions  |
+| --------------------------------------------- | --------- |
+| GA4 Data API, no dimensions (ground truth)    | **3,141** |
+| GA4 Landing page                              | 3,231     |
+| GA4 asked with the sync's own four dimensions | 3,284     |
+| Ours, `ga4_page_views`, before the repair     | **4,867** |
 
-Every channel runs ~10% high, Referral is 3x low, and the total is **59% above
-GA4's**. The per-channel drift could be date-range skew — the Home card does not
-state its exact window. The total gap is too large for that.
+**Root cause.** GA4 keeps moving a session between dimension keys for about two
+days after its day ends — one that first reports as `(not set)/(not set)` on a
+blank landing page later resolves to `google` / `VP | Brand` on `/about`. Both
+syncs upserted the settled key and left the provisional one in place, so the
+same sessions were counted under two keys. 333 of our 1,045 rows for that week
+were keys GA4 no longer reports, carrying the entire 1,591-session gap. 09-17,
+the only day pulled once, matched (552 vs 560).
 
-**Every opt-in rate on the dashboard divides by this number.** If our visits are
-inflated, every conversion rate we have shown is understated.
+**Both of Adam's hypotheses were wrong, and that is the useful part.** Channel
+grouping is not the gap — it explains only the Referral 107-vs-31 row and the
+Direct/Unassigned split, which are definitional and expected per section 0.
+Internal-traffic filtering is not the gap either: our sync reads the same API,
+so the property's data filters already apply to it.
 
-**To settle it, get from Adam** (GA4, date range set manually to
-**2026-09-11 → 2026-09-17**):
+**Fixed and live** (`bcb9abb`): `ga4_page_views` purges rows in the pulled range
+that the run did not rewrite, skipped entirely if a chunk failed.
+`channel_daily` cannot key on `synced_at` — three connectors share the row and
+each write bumps it — so the GA4 connector clears only the metric columns whose
+own write landed, to null rather than zero.
 
-1. **Reports → Acquisition → Traffic acquisition**, Sessions by _Session primary
-   channel group_.
-2. **Reports → Engagement → Landing page**, Sessions. This is the direct
-   analogue of `ga4_page_views`. **If these totals match ours, the sync is fine
-   and the gap is channel-grouping definitions. If they do not, the sync is
-   double-counting and every visit denominator is wrong.**
-3. Whether the GA4 property **filters internal traffic** (team IPs). Our sync
-   does not, and that alone could explain a chunk.
+**Repaired**: `scripts/ga4-repair-superseded.mjs` removed 376 rows carrying
+1,820 sessions from September. `ga4_page_views` now equals the GA4 four-
+dimension report exactly, and page views equal GA4's own total exactly.
 
-Do this before anything else in this file.
+**The residual 1–2% is GA4 disagreeing with itself** across grains: its
+four-dimension report sums to 3,284 where its no-dimension total is 3,141,
+because that many dimensions crosses the cardinality threshold and GA4 folds
+rows into `(other)`. Any export at that grain shows the same. Do not chase it.
 
----
+**Blast radius: September only.** The one-shot historical backfill wrote each
+key once. Feb–Jun reconcile at −3.4%, July −1.5%, August +0.8%.
+
+| Month     | Opt-in before | Opt-in after |
+| --------- | ------------- | ------------ |
+| July      | 5.21%         | **5.21%**    |
+| August    | 5.09%         | **5.09%**    |
+| September | 3.97%         | **4.47%**    |
+
+September was understated by half a point. **The trend is still a decline**,
+5.21 → 5.09 → 4.47, just a shallower one, and September is not a complete month.
+
+**Still outstanding:** `channel_daily.visits` reads 3,441 against GA4's 3,141
+for that week. The code fix is live but only self-heals its 3-day window, so
+2026-09-11..15 need a day-by-day repair — day by day because a wider GA4 report
+folds rows into `(other)`, and clearing against a folded key set would null
+visits that are real.
 
 ## 2. What is live and verified
 
@@ -127,9 +151,13 @@ September, 438 written. **Do not back-fill.**
 ## 3. What is NOT verified — say so out loud
 
 - **The GA4 reconciliation above.** The gate.
-- **`ga4-visits` reports "9 rows failed to write" every run.** Cause only reaches
-  the server log. Needs Vercel runtime logs for the cron. It silently shortens a
-  denominator.
+- **`ga4-visits`'s "9 rows failed to write" is SOLVED, not fixed**: it is the
+  `thankyou_visits` upsert. The column is in the generated types but was never
+  added to production, so migration `20260912110000_channel_daily_thankyou_visits.sql`
+  needs applying. The Supabase CLI in this checkout is not linked, so it needs
+  Adam's database password. Until then the GA4 connector deliberately declines
+  to clear that column, because clearing a column it could not write would
+  erase a number nothing was going to replace.
 - **`manychat-ingest` is stale: 167 hours, 2 rows.** Instagram DM is a live
   channel. Dead webhook or genuine silence — unconfirmed.
 - **Only August 2026 is a complete month** of lead history. July is the clipped
@@ -147,9 +175,23 @@ September, 438 written. **Do not back-fill.**
 
 ## 4. The work, in order
 
-### A. Clear the gate (section 1). Blocking.
+### A. Clear the gate (section 1). DONE 2026-09-18.
 
-### B. The executive rollup — what Adam actually asked for
+### B. The executive rollup — DONE 2026-09-18, `/admin/analytics?tab=exec`
+
+Built as `funnel-executive.ts` + `FunnelExecutivePanel.tsx`. It owns no funnel
+arithmetic: `buildFunnelMonthly` runs twice over one read, grouped by channel
+and by page. `MIN_WEIGHT`, `FLAT_BAND` and `trendTone` are imported from
+`FunnelMonthlyPanel.tsx`, not restated.
+
+Cost per lead is the only number added, and it is clipped to the days the month
+could capture a lead — July otherwise divided a whole month of spend by five
+days of leads and read $474 against August's $101. It reads $53. Spend is
+observed for Google Ads, Meta Ads and Webinar only; every other channel's cost
+per lead is a dash. Months from before lead capture existed are left out rather
+than shown as rows of dashes.
+
+The original ask, for reference:
 
 One view, one row per month, most recent first. Not per channel, not per page —
 those are the drill-down and already exist.
