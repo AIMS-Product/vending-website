@@ -63,6 +63,31 @@ from `lead_submissions`. The Funnel map already reads the Close cohort
 Never add them to Leads (not site leads); show them as won/revenue under
 the Webinar channel with the source named.
 
+## 1b. Reconcile with the SteelTrap weekly report (Close-based)
+
+Adam compared our dashboard with SteelTrap's "Week ending Sept 17" report
+(Sep 11–17: 162 booked, 97 showed, 62 qualified, 14 won, $87,134). The two are
+different questions, not a bug:
+
+- **Population:** SteelTrap = every first call in Close. 77 Reactivation
+  Scrapers + 37 Internal Webinar = 114 of 162 are people who never submit a
+  site form, so they are never our leads. ~48 are comparable.
+- **Dating:** SteelTrap buckets by the week each event happened (booked in
+  week, closed in week; avg 29.9 days to close). We credit outcomes to the
+  lead's cohort month.
+- **Qualified:** SteelTrap = rep disposition after the call. Ours "Qs done" =
+  finished the online questions. Different stage.
+- **Source labels:** SteelTrap = Close lead source field. Ours = site UTMs via
+  `resolveChannel`.
+
+**Build:** a "Close view" (Executive tab section or its own tab) that uses
+SteelTrap's rules: all Close first calls by booked week, showed / qualified /
+won / revenue by event week, grouped by the Close lead source field. Source:
+`close_lead_funnel` (+ Close API for opportunity won date/value). Acceptance:
+Sep 11–17 ties to 162 / 97 / 62 / 14 / $87,134 per source row, or every gap is
+named. This view also answers item 1 (webinar wins) for free. Keep the site
+funnel as is; label each view with the question it answers.
+
 ## 2. Channels + KPI "Visits" overstated ~43% (August 17,397 vs GA4 12,133)
 
 `channel_daily.visits` kept GA4's provisional dimension keys (same fault
