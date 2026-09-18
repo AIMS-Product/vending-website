@@ -198,6 +198,7 @@ export async function syncCloseLeadFunnel(
       // copy of the lead.
       const byLeadId = new Map<string, CloseLeadFunnelRow>();
       let cursor: string | null = null;
+      let walkedEveryPage = false;
       for (let page = 0; page < MAX_PAGES; page += 1) {
         const result = await close.searchLeads(
           buildSearchBody(fieldIds, cursor),
@@ -207,7 +208,10 @@ export async function syncCloseLeadFunnel(
           if (row && !byLeadId.has(row.lead_id)) byLeadId.set(row.lead_id, row);
         }
         cursor = result.cursor ?? null;
-        if (!cursor || (result.data ?? []).length === 0) break;
+        if (!cursor || (result.data ?? []).length === 0) {
+          walkedEveryPage = true;
+          break;
+        }
       }
       const rows = [...byLeadId.values()];
 
@@ -223,6 +227,23 @@ export async function syncCloseLeadFunnel(
           );
         }
         written += batch.length;
+      }
+
+      // Every lead Close still returns now carries this run's `synced_at`, so
+      // anything older is a lead whose booked date a rep cleared, or a lead
+      // deleted or merged in Close. Upsert alone kept those forever (Sep 11-17:
+      // 176 in the mirror, 171 in Close). Only after a walk that reached the
+      // last page and found leads: a cut-short or empty walk proves nothing.
+      if (walkedEveryPage && rows.length > 0) {
+        const { error } = await client
+          .from("close_lead_funnel")
+          .delete()
+          .lt("synced_at", syncedAt);
+        if (error) {
+          throw new Error(
+            `close_lead_funnel prune failed after ${written} rows: ${error.message}`,
+          );
+        }
       }
       return { rowsWritten: written };
     },

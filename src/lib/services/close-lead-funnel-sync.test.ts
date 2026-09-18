@@ -95,9 +95,17 @@ describe("syncCloseLeadFunnel", () => {
   function fakeSupabase() {
     const upserts: unknown[][] = [];
     const runs: unknown[] = [];
+    const prunes: Array<{ column: string; before: string }> = [];
     const client = {
       from(table: string) {
         return {
+          delete: () => ({
+            lt: async (column: string, before: string) => {
+              if (table !== "close_lead_funnel") throw new Error(table);
+              prunes.push({ column, before });
+              return { error: null };
+            },
+          }),
           upsert: async (rows: unknown[]) => {
             if (table !== "close_lead_funnel") throw new Error(table);
             upserts.push(rows);
@@ -110,7 +118,7 @@ describe("syncCloseLeadFunnel", () => {
         };
       },
     };
-    return { client, upserts, runs };
+    return { client, upserts, runs, prunes };
   }
 
   it("walks every cursor page and upserts one row per lead", async () => {
@@ -173,6 +181,40 @@ describe("syncCloseLeadFunnel", () => {
     expect(written.map((row) => row.lead_id)).toEqual(["lead_a", "lead_b"]);
     // First seen wins: the newest-first walk saw YouTube before Instagram.
     expect(written[0]!.funnel).toBe("YouTube");
+  });
+
+  it("drops leads Close no longer returns once the whole walk has finished", async () => {
+    // A rep clearing the booked date, or deleting the lead, takes it out of
+    // Close's search. Upsert alone left those rows behind: Sep 11-17 read 176
+    // booked calls against Close's 171.
+    const close = {
+      listCustomFields: async () => ({ data: definitions }),
+      searchLeads: async () => ({
+        data: [{ id: "lead_a", "custom.cf_funnel": "YouTube" }],
+        cursor: null,
+      }),
+    };
+    const { client, prunes } = fakeSupabase();
+    const now = new Date("2026-09-19T00:00:00.000Z");
+    const outcome = await syncCloseLeadFunnel({
+      client: client as never,
+      close,
+      now,
+    });
+    expect(outcome.error).toBeNull();
+    expect(prunes).toEqual([
+      { column: "synced_at", before: now.toISOString() },
+    ]);
+  });
+
+  it("never prunes when Close returned no leads at all", async () => {
+    const close = {
+      listCustomFields: async () => ({ data: definitions }),
+      searchLeads: async () => ({ data: [], cursor: null }),
+    };
+    const { client, prunes } = fakeSupabase();
+    await syncCloseLeadFunnel({ client: client as never, close });
+    expect(prunes).toEqual([]);
   });
 
   it("records a skipped run when Close is not configured", async () => {

@@ -20,7 +20,7 @@ const MAX_ROWS = 50_000;
 export const WEEKS_SHOWN = 6;
 
 export async function getBookedCalls(
-  input: { client?: Client; now?: Date } = {},
+  input: { client?: Client; now?: Date; includeInternal?: boolean } = {},
 ): Promise<BookedCallsReport> {
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
@@ -34,7 +34,12 @@ export async function getBookedCalls(
     fetchBookings(client, from),
     fetchFunnels(client),
   ]);
-  return buildBookedCalls({ bookings, funnels, weekStarts });
+  return buildBookedCalls({
+    bookings,
+    funnels,
+    weekStarts,
+    includeInternal: input.includeInternal,
+  });
 }
 
 /**
@@ -54,7 +59,7 @@ async function fetchBookings(
     const { data, error } = await client
       .from("calendly_bookings")
       .select(
-        "invitee_email,status,scheduled_event_name,created_at,bookedAt:raw_payload->payload->>created_at",
+        "invitee_email,invitee_name,status,scheduled_event_name,created_at,bookedAt:raw_payload->payload->>created_at",
       )
       .gte("created_at", since.toISOString())
       .order("created_at")
@@ -68,6 +73,7 @@ async function fetchBookings(
     }
     const batch = (data ?? []) as Array<{
       invitee_email: string | null;
+      invitee_name: string | null;
       status: string;
       scheduled_event_name: string | null;
       created_at: string;
@@ -76,6 +82,7 @@ async function fetchBookings(
     for (const row of batch) {
       rows.push({
         inviteeEmail: row.invitee_email,
+        inviteeName: row.invitee_name,
         status: row.status,
         eventName: row.scheduled_event_name,
         bookedAt: row.bookedAt,

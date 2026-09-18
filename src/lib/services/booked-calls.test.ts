@@ -109,6 +109,21 @@ describe("buildBookedCalls", () => {
     expect(report.weeks[1].marketing).toBe(0);
   });
 
+  it("leaves test and internal bookings out unless the toggle is on", () => {
+    const input = {
+      bookings: [
+        booking({ inviteeEmail: "a@x.com" }),
+        booking({ inviteeEmail: "qa@modern-amenities.com" }),
+      ],
+      funnels: [],
+      weekStarts,
+    };
+    expect(buildBookedCalls(input).weeks[0].marketing).toBe(1);
+    expect(
+      buildBookedCalls({ ...input, includeInternal: true }).weeks[0].marketing,
+    ).toBe(2);
+  });
+
   it("splits reactivation out and never counts it as marketing", () => {
     const report = buildBookedCalls({
       bookings: [

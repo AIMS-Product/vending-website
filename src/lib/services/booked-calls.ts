@@ -29,6 +29,7 @@
 // `calendly-event-types.json`, which fails closed on anything nobody has
 // classified. See `calendly-event-class.ts`.
 
+import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import { classifyEventType } from "@/lib/services/calendly-event-class";
 
 /** Close funnels owned by the reactivation team, not by marketing. */
@@ -40,6 +41,7 @@ const REACTIVATION_FUNNELS = new Set([
 
 export type BookingRow = {
   inviteeEmail: string | null;
+  inviteeName?: string | null;
   status: string;
   eventName: string | null;
   /** Calendly's own booked-at. Falls back to the mirror row's insert time. */
@@ -96,6 +98,8 @@ export function buildBookedCalls(input: {
   funnels: FunnelRow[];
   /** Mondays to report, oldest first. */
   weekStarts: string[];
+  /** Test and internal bookings count only when the page toggle is on. */
+  includeInternal?: boolean;
 }): BookedCallsReport {
   const funnelByEmail = new Map<string, string>();
   for (const row of input.funnels) {
@@ -125,6 +129,12 @@ export function buildBookedCalls(input: {
 
   for (const booking of input.bookings) {
     if (!isFirstCall(booking.eventName)) continue;
+    if (
+      !input.includeInternal &&
+      isInternalLead(booking.inviteeEmail, booking.inviteeName)
+    ) {
+      continue;
+    }
     const day = (booking.bookedAt ?? booking.createdAt).slice(0, 10);
     const weekStart = weekStartOf(day);
     if (!wanted.has(weekStart)) continue;

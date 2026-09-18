@@ -1,3 +1,4 @@
+import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -422,7 +423,7 @@ async function fetchSourceCounts(
         (from, to) =>
           client
             .from("calendly_bookings")
-            .select("created_at")
+            .select("created_at,invitee_email,invitee_name")
             .eq("status", "booked")
             // Only bookings the leads connector can see: linked to a lead, or
             // on a tagged link. Untagged bookings with no lead (next-steps,
@@ -432,7 +433,13 @@ async function fetchSourceCounts(
             .lt("created_at", endExclusive)
             .order("created_at")
             .range(from, to),
-        () => 1,
+        // Same population as the spine side: test and internal bookings are
+        // out unless the toggle is on, or they read as drift.
+        (row: { invitee_email: string | null; invitee_name: string | null }) =>
+          includeInternal ||
+          !isInternalLead(row.invitee_email, row.invitee_name)
+            ? 1
+            : 0,
       ),
     ]);
   return {

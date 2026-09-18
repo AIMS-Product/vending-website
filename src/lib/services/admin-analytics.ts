@@ -66,6 +66,7 @@ type BookingAnalyticsRow = Pick<
   | "status"
   | "scheduled_event_name"
   | "invitee_email"
+  | "invitee_name"
   | "lead_submission_id"
 >;
 
@@ -156,7 +157,7 @@ const TOP_N = 12;
 const LEAD_ANALYTICS_FIELDS =
   "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at,call_booked_at,metadata" as const;
 const BOOKING_ANALYTICS_FIELDS =
-  "id,created_at,status,scheduled_event_name,invitee_email,lead_submission_id" as const;
+  "id,created_at,status,scheduled_event_name,invitee_email,invitee_name,lead_submission_id" as const;
 
 /**
  * Read-only rollups powering /admin/analytics.
@@ -209,7 +210,12 @@ export async function getAdminAnalytics(
   );
 
   // Cancellations are not completed bookings, so they never count anywhere.
-  const booked = bookings.rows.filter((row) => row.status === "booked");
+  // Test and internal bookings follow the same toggle as the leads above.
+  const booked = bookings.rows.filter(
+    (row) =>
+      row.status === "booked" &&
+      (includeInternal || !isInternalLead(row.invitee_email, row.invitee_name)),
+  );
   const leadEmails = new Set(
     leads.map((lead) => lead.email?.trim().toLowerCase()).filter(Boolean),
   );

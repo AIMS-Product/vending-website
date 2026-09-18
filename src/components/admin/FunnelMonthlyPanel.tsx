@@ -821,8 +821,11 @@ function Caveats({ data }: { data: FunnelMonthlyReport }) {
         </li>
         <li>
           <strong className="text-ui-text">
-            Show rate covers {percent(data.showCoverage.pct ?? 0)} of booked
-            calls
+            Show rate covers{" "}
+            {data.showCoverage.pct === null
+              ? "—"
+              : percent(data.showCoverage.pct)}{" "}
+            of booked calls
           </strong>{" "}
           ({data.showCoverage.known} of {data.showCoverage.total} old enough to
           judge carry a yes/no in Close). The rest leave the denominator rather

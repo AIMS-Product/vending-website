@@ -129,6 +129,7 @@ function makeBooking(overrides: Partial<FakeRow> = {}): FakeRow {
     status: "booked",
     scheduled_event_name: "Discovery call",
     invitee_email: null,
+    invitee_name: null,
     lead_submission_id: null,
     ...overrides,
   };
@@ -372,6 +373,32 @@ describe("getAdminAnalytics", () => {
     // walk-in that belongs to no website lead.
     expect(analytics.bookingsTotal).toBe(3);
     expect(analytics.bookingsUnattributed).toBe(1);
+  });
+
+  it("leaves test and internal bookings out of the calendar counts unless the toggle is on", async () => {
+    const rows = {
+      lead_submissions: { rows: [] },
+      calendly_bookings: {
+        rows: [
+          makeBooking({ id: "b1", invitee_email: "buyer@aol.com" }),
+          makeBooking({ id: "b2", invitee_email: "qa@modern-amenities.com" }),
+          makeBooking({ id: "b3", invitee_email: "adam+vpstaging1@gmail.com" }),
+        ],
+      },
+    };
+    const off = await getAdminAnalytics({
+      client: buildClient(rows),
+      now: NOW,
+      range: "90d",
+    });
+    expect(off.bookingsTotal).toBe(1);
+    const on = await getAdminAnalytics({
+      client: buildClient(rows),
+      now: NOW,
+      range: "90d",
+      includeInternal: true,
+    });
+    expect(on.bookingsTotal).toBe(3);
   });
 
   it("never reports a booking rate above 100% when outside bookings outnumber leads", async () => {

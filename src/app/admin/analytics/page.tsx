@@ -49,6 +49,8 @@ import { getFunnelMap } from "@/lib/services/funnel-map";
 import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
 import { getFunnelExecutive } from "@/lib/services/funnel-executive";
 import { FunnelExecutiveTab } from "@/components/admin/FunnelExecutivePanel";
+import { CloseWeekTab } from "@/components/admin/CloseWeekPanel";
+import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
   parseAdminAnalyticsRange,
@@ -95,6 +97,7 @@ export default async function AdminAnalyticsPage({
   const isFunnelsTab = tab === "funnels";
   const isJourneysTab = tab === "journeys";
   const isExecTab = tab === "exec";
+  const isCloseTab = tab === "close";
   const [
     { user, role },
     analytics,
@@ -106,6 +109,7 @@ export default async function AdminAnalyticsPage({
     funnels,
     journeys,
     executive,
+    closeWeeks,
   ] = await Promise.all([
     requireReadAccess(),
     isYouTubeTab ||
@@ -115,7 +119,8 @@ export default async function AdminAnalyticsPage({
     isBookedTab ||
     isFunnelsTab ||
     isJourneysTab ||
-    isExecTab
+    isExecTab ||
+    isCloseTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -128,7 +133,7 @@ export default async function AdminAnalyticsPage({
       : null,
     isKpiTab ? getKpiTab({ range, includeInternal }) : null,
     isMapTab ? getFunnelMap({ range, includeInternal }) : null,
-    isBookedTab ? getBookedCalls() : null,
+    isBookedTab ? getBookedCalls({ includeInternal }) : null,
     // Deliberately ignores `range`: this tab IS the month-by-month series,
     // and a 30-day window would render one partial month.
     isFunnelsTab
@@ -141,6 +146,7 @@ export default async function AdminAnalyticsPage({
     // Same reason as the Funnels tab: this view IS the month series, so a
     // 30-day range would render one partial month and call it the trend.
     isExecTab ? getFunnelExecutive({ includeInternal }) : null,
+    isCloseTab ? getCloseWeekView() : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -184,7 +190,12 @@ export default async function AdminAnalyticsPage({
 
       <LeadDefinitionNote />
 
-      {executive ? (
+      {closeWeeks ? (
+        <CloseWeekTab
+          report={closeWeeks}
+          selected={singleParam(params.week) ?? null}
+        />
+      ) : executive ? (
         <FunnelExecutiveTab data={executive} />
       ) : journeys ? (
         <ChannelJourneysTab
