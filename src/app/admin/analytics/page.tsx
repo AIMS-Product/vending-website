@@ -35,13 +35,19 @@ import {
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
 import { BookedCallsPanel } from "@/components/admin/BookedCallsPanel";
 import { FunnelMapTab } from "@/components/admin/FunnelMapPanel";
-import { FunnelMonthlyTab } from "@/components/admin/FunnelMonthlyPanel";
+import {
+  FunnelMonthlyTab,
+  parseFunnelGrouping,
+  parseFunnelMetric,
+} from "@/components/admin/FunnelMonthlyPanel";
+import { ChannelJourneysTab } from "@/components/admin/ChannelJourneyPanel";
 import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getBookedCalls } from "@/lib/services/booked-calls-data";
 import { getFunnelMap } from "@/lib/services/funnel-map";
 import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
+import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
   parseAdminAnalyticsRange,
   toCustomRangeKey,
@@ -84,6 +90,7 @@ export default async function AdminAnalyticsPage({
   const isMapTab = tab === "map";
   const isBookedTab = tab === "booked";
   const isFunnelsTab = tab === "funnels";
+  const isJourneysTab = tab === "journeys";
   const [
     { user, role },
     analytics,
@@ -93,6 +100,7 @@ export default async function AdminAnalyticsPage({
     map,
     booked,
     funnels,
+    journeys,
   ] = await Promise.all([
     requireReadAccess(),
     isYouTubeTab ||
@@ -100,7 +108,8 @@ export default async function AdminAnalyticsPage({
     isKpiTab ||
     isMapTab ||
     isBookedTab ||
-    isFunnelsTab
+    isFunnelsTab ||
+    isJourneysTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -112,7 +121,13 @@ export default async function AdminAnalyticsPage({
     isBookedTab ? getBookedCalls() : null,
     // Deliberately ignores `range`: this tab IS the month-by-month series,
     // and a 30-day window would render one partial month.
-    isFunnelsTab ? getFunnelMonthly({ includeInternal }) : null,
+    isFunnelsTab
+      ? getFunnelMonthly({
+          includeInternal,
+          grouping: parseFunnelGrouping(singleParam(params.group)),
+        })
+      : null,
+    isJourneysTab ? getChannelJourneys({ range, includeInternal }) : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -154,8 +169,20 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {funnels ? (
-        <FunnelMonthlyTab data={funnels} />
+      {journeys ? (
+        <ChannelJourneysTab
+          data={journeys}
+          range={range}
+          includeInternal={includeInternal}
+          selected={singleParam(params.lane) ?? null}
+        />
+      ) : funnels ? (
+        <FunnelMonthlyTab
+          data={funnels}
+          range={range}
+          includeInternal={includeInternal}
+          metric={parseFunnelMetric(singleParam(params.metric))}
+        />
       ) : booked ? (
         <BookedCallsPanel report={booked} />
       ) : map ? (

@@ -507,6 +507,7 @@ export const ANALYTICS_TABS = [
   { key: "acquisition", label: "Acquisition" },
   { key: "pages", label: "Pages & funnel" },
   { key: "funnels", label: "Funnels by month" },
+  { key: "journeys", label: "Journeys" },
   { key: "quality", label: "Lead quality" },
   { key: "youtube", label: "YouTube" },
   { key: "channels", label: "Channels" },

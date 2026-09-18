@@ -6,6 +6,7 @@ import {
   UNKNOWN_CHANNEL,
   UNKNOWN_DESTINATION,
   WEBSITE_CHANNEL,
+  resolveGa4Channel,
 } from "./channel";
 
 describe("resolveChannel", () => {
@@ -183,5 +184,40 @@ describe("resolveDestination", () => {
     );
     expect(resolveDestination("")).toBe(UNKNOWN_DESTINATION);
     expect(resolveDestination(null)).toBe(UNKNOWN_DESTINATION);
+  });
+});
+
+describe("resolveGa4Channel", () => {
+  it("files a google session carrying a real campaign as Google Ads", () => {
+    expect(resolveGa4Channel("google", "VP | W2 | Consideration").channel).toBe(
+      "Google Ads",
+    );
+    expect(resolveGa4Channel("google", "24132629905").channel).toBe(
+      "Google Ads",
+    );
+  });
+
+  it("leaves GA4's own organic marker as organic search", () => {
+    expect(resolveGa4Channel("google", "(organic)").channel).toBe(
+      "Organic search",
+    );
+    expect(resolveGa4Channel("google", "(not set)").channel).toBe(
+      "Organic search",
+    );
+    expect(resolveGa4Channel("google", null).channel).toBe("Organic search");
+  });
+
+  it("does not guess at Meta, where GA4 marks nothing", () => {
+    // An Instagram bio link and an Instagram ad are indistinguishable on this
+    // table, so the row keeps the channel resolveChannel gives it.
+    expect(resolveGa4Channel("instagram", "link-in-bio").channel).toBe(
+      "Instagram",
+    );
+    expect(resolveGa4Channel("meta", "ltf_buyers").channel).toBe("Meta");
+  });
+
+  it("passes everything else straight through", () => {
+    expect(resolveGa4Channel("youtube", "whatever").channel).toBe("YouTube");
+    expect(resolveGa4Channel("(direct)", "(not set)").channel).toBe("Website");
   });
 });

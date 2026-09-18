@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildFunnelMonthly,
   type FunnelLeadRow,
+  type FunnelGrouping,
   type FunnelMonthlyReport,
   type FunnelSessionRow,
   type FunnelShowRow,
@@ -27,7 +28,12 @@ const MAX_ROWS = 200_000;
  * whose lead column is empty by construction.
  */
 export async function getFunnelMonthly(
-  input: { client?: Client; now?: Date; includeInternal?: boolean } = {},
+  input: {
+    client?: Client;
+    now?: Date;
+    includeInternal?: boolean;
+    grouping?: FunnelGrouping;
+  } = {},
 ): Promise<FunnelMonthlyReport> {
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
@@ -47,6 +53,7 @@ export async function getFunnelMonthly(
     sessions,
     now,
     includeInternal: input.includeInternal,
+    grouping: input.grouping,
   });
 }
 
@@ -72,7 +79,7 @@ async function fetchLeads(
       client
         .from("lead_submissions")
         .select(
-          "id,email,full_name,created_at,source_path,call_booked_at,closed_won_at,closed_won_value",
+          "id,email,full_name,created_at,source_path,utm_source,utm_medium,metadata,call_booked_at,closed_won_at,closed_won_value",
         )
         .gte("created_at", `${startDay}T00:00:00.000Z`)
         .order("created_at")
@@ -89,7 +96,7 @@ async function fetchVisits(
     (from, to) =>
       client
         .from("ga4_page_views")
-        .select("day,landing_page,sessions")
+        .select("day,landing_page,sessions,utm_source,utm_campaign")
         .gte("day", startDay)
         .order("day")
         .range(from, to),

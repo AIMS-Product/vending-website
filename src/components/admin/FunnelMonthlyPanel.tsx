@@ -1,18 +1,156 @@
+import Link from "next/link";
 import { adminCardClass, adminEyebrowClass } from "@/components/admin/AdminUi";
 import type {
+  FunnelGrouping,
   FunnelMonthlyReport,
   FunnelPeriod,
   FunnelPeriodRow,
 } from "@/lib/services/funnel-monthly";
+import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 
 /**
- * The Funnels tab: one row per page that captures leads, by month.
+ * The Funnels tab: one row per source (or per page), months running across,
+ * so a trend is read along a line rather than by scrolling between tables.
  *
- * The Channels tab answers "which traffic source converts". This answers
- * "which page converts", which is the question you can act on, because the
- * page is the thing we change. A dash is always "not observed", never zero.
+ * Green and red mark the change against the month to the left — a direction,
+ * never a benchmark. There is no honest fixed threshold for a good conversion
+ * rate, and colouring against an invented one would make every row lie in the
+ * same direction.
  */
-export function FunnelMonthlyTab({ data }: { data: FunnelMonthlyReport }) {
+
+type MetricKey =
+  | "leads"
+  | "visits"
+  | "optIn"
+  | "questions"
+  | "booked"
+  | "book"
+  | "show"
+  | "won"
+  | "revenue";
+
+type Metric = {
+  key: MetricKey;
+  label: string;
+  /** The number in the cell. */
+  value: (row: FunnelPeriodRow) => number | null;
+  /** How many observations the value rests on; a thin cell is not coloured. */
+  weight: (row: FunnelPeriodRow) => number;
+  format: (value: number) => string;
+  /** False where a fall is the good direction. Nothing here is yet. */
+  higherIsBetter: boolean;
+};
+
+const METRICS: Metric[] = [
+  {
+    key: "leads",
+    label: "Leads",
+    value: (row) => row.leads,
+    weight: (row) => row.leads,
+    format: count,
+    higherIsBetter: true,
+  },
+  {
+    key: "visits",
+    label: "Visits",
+    value: (row) => row.visits,
+    weight: (row) => row.visits ?? 0,
+    format: count,
+    higherIsBetter: true,
+  },
+  {
+    key: "optIn",
+    label: "Opt-in %",
+    value: (row) => row.rates.visitToLead,
+    weight: (row) => row.visits ?? 0,
+    format: percent,
+    higherIsBetter: true,
+  },
+  {
+    key: "questions",
+    label: "Qs done %",
+    value: (row) => row.rates.questionsCompleted,
+    weight: (row) => row.questionsOffered,
+    format: percent,
+    higherIsBetter: true,
+  },
+  {
+    key: "booked",
+    label: "Booked",
+    value: (row) => row.booked,
+    weight: (row) => row.booked,
+    format: count,
+    higherIsBetter: true,
+  },
+  {
+    key: "book",
+    label: "Book %",
+    value: (row) => row.rates.leadToBook,
+    weight: (row) => row.leads,
+    format: percent,
+    higherIsBetter: true,
+  },
+  {
+    key: "show",
+    label: "Show %",
+    value: (row) => row.rates.bookToShow,
+    weight: (row) => row.showable,
+    format: percent,
+    higherIsBetter: true,
+  },
+  {
+    key: "won",
+    label: "Won",
+    value: (row) => row.won,
+    weight: (row) => row.booked,
+    format: count,
+    higherIsBetter: true,
+  },
+  {
+    key: "revenue",
+    label: "Revenue",
+    value: (row) => row.revenue,
+    weight: (row) => row.won,
+    format: (value) => `$${Math.round(value).toLocaleString("en-US")}`,
+    higherIsBetter: true,
+  },
+];
+
+/**
+ * Below this many observations a month-on-month move is noise. Two leads
+ * becoming three is a 50% jump and means nothing; colouring it trains people
+ * to ignore the colour everywhere else.
+ */
+const MIN_WEIGHT = 8;
+/** Moves smaller than this are flat. Rates wobble a point either way. */
+const FLAT_BAND = 5;
+/** Rows below this many leads across every month fold into one tail row. */
+const TAIL_LEADS = 3;
+
+export function parseFunnelMetric(value: string | null | undefined): MetricKey {
+  const match = METRICS.find((metric) => metric.key === value?.trim());
+  return match ? match.key : "leads";
+}
+
+export function parseFunnelGrouping(
+  value: string | null | undefined,
+): FunnelGrouping {
+  return value?.trim() === "channel" ? "channel" : "page";
+}
+
+export function FunnelMonthlyTab({
+  data,
+  range,
+  includeInternal,
+  metric: metricKey,
+}: {
+  data: FunnelMonthlyReport;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+  metric: MetricKey;
+}) {
+  const metric =
+    METRICS.find((entry) => entry.key === metricKey) ?? METRICS[0]!;
   if (data.months.length === 0) {
     return (
       <div className={adminCardClass}>
@@ -22,29 +160,453 @@ export function FunnelMonthlyTab({ data }: { data: FunnelMonthlyReport }) {
       </div>
     );
   }
+
+  // Oldest first: a trend read left to right is a trend forward in time.
+  const months = [...data.months].reverse();
+  const rowKeys = orderedRowKeys(months);
+  const tailKeys = new Set(
+    rowKeys.filter(
+      (key) =>
+        months.every((month) => (find(month, key)?.leads ?? 0) < TAIL_LEADS) &&
+        key !== null,
+    ),
+  );
+  const mainKeys = rowKeys.filter((key) => !tailKeys.has(key));
+
   return (
     <div className="space-y-5">
+      <Controls
+        data={data}
+        range={range}
+        includeInternal={includeInternal}
+        metric={metric}
+      />
+
+      <section
+        className={adminCardClass}
+        aria-label={`${metric.label} by month`}
+      >
+        <h2 className={adminEyebrowClass}>
+          {metric.label} by {data.grouping === "channel" ? "source" : "page"},
+          by month
+        </h2>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Green and red are the change against the month to the left, not a
+          target. A move is left uncoloured when it rests on fewer than{" "}
+          {MIN_WEIGHT} observations or is smaller than {FLAT_BAND}%, because
+          below that the arithmetic moves more than the funnel does.
+          {data.grouping === "channel"
+            ? " Open a source for every page and link under it."
+            : " Open a page for the sources that sent it."}
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-[52rem] text-[0.8125rem]">
+            <thead>
+              <tr
+                className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+              >
+                <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
+                  {data.grouping === "channel" ? "Source" : "Page"}
+                </th>
+                {months.map((month) => (
+                  <th
+                    key={month.key}
+                    className="py-2 pr-3 text-right font-semibold whitespace-nowrap"
+                  >
+                    {month.label}
+                  </th>
+                ))}
+                <th className="py-2 text-right font-semibold whitespace-nowrap">
+                  Trend
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-ui-line divide-y">
+              {mainKeys.map((key) => (
+                <PivotRow
+                  key={key ?? "(none)"}
+                  rowKey={key}
+                  months={months}
+                  metric={metric}
+                />
+              ))}
+              <tr className="font-medium">
+                <td className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2.5 pr-4 pl-0">
+                  All {data.grouping === "channel" ? "sources" : "pages"}
+                </td>
+                {months.map((month, index) => (
+                  <Cell
+                    key={month.key}
+                    row={month.totals}
+                    previous={index > 0 ? months[index - 1]!.totals : null}
+                    metric={metric}
+                  />
+                ))}
+                <td />
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        {tailKeys.size > 0 ? (
+          <p className="text-ui-text-subtle mt-2 text-xs">
+            {tailKeys.size} more{" "}
+            {data.grouping === "channel" ? "sources" : "pages"} are hidden: they
+            never reached {TAIL_LEADS} leads in any month, so their rates move
+            entirely on single events.
+          </p>
+        ) : null}
+      </section>
+
+      {data.beforeAfter ? <BeforeAfter data={data} metric={metric} /> : null}
       <Caveats data={data} />
-      {data.beforeAfter ? <BeforeAfter data={data} /> : null}
-      {data.months.map((month) => (
-        <PeriodTable
-          key={month.key}
-          period={month}
-          title={month.label}
-          basis={`Leads captured between ${month.start} and ${month.end}, with every later stage counted for those same people whenever it happened. A call booked in this month by someone who arrived last month belongs to last month's row.`}
-        />
-      ))}
     </div>
   );
 }
 
+function Controls({
+  data,
+  range,
+  includeInternal,
+  metric,
+}: {
+  data: FunnelMonthlyReport;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+  metric: Metric;
+}) {
+  const href = (next: { metric?: MetricKey; group?: FunnelGrouping }) => {
+    const params = new URLSearchParams({ range, tab: "funnels" });
+    params.set("metric", next.metric ?? metric.key);
+    params.set("group", next.group ?? data.grouping);
+    if (includeInternal) params.set("internal", "1");
+    return `?${params.toString()}`;
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+      <div className="flex flex-wrap items-center gap-1">
+        <span className={`${adminEyebrowClass} mr-1`}>Rows</span>
+        {(["channel", "page"] as const).map((group) => (
+          <Pill
+            key={group}
+            href={href({ group })}
+            active={data.grouping === group}
+          >
+            {group === "channel" ? "By source" : "By page"}
+          </Pill>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1">
+        <span className={`${adminEyebrowClass} mr-1`}>Metric</span>
+        {METRICS.map((entry) => (
+          <Pill
+            key={entry.key}
+            href={href({ metric: entry.key })}
+            active={entry.key === metric.key}
+          >
+            {entry.label}
+          </Pill>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Pill({
+  href,
+  active,
+  children,
+}: {
+  href: string;
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={active ? "true" : undefined}
+      className={`rounded border px-2 py-1 text-xs transition ${
+        active
+          ? "border-ui-accent bg-ui-accent-soft text-ui-text font-medium"
+          : "border-ui-line text-ui-text-subtle hover:text-ui-text"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function PivotRow({
+  rowKey,
+  months,
+  metric,
+}: {
+  rowKey: string;
+  months: FunnelPeriod[];
+  metric: Metric;
+}) {
+  const rows = months.map((month) => find(month, rowKey));
+  const childKeys = orderedChildKeys(rows);
+
+  return (
+    <>
+      <tr>
+        <td className="bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[14rem] border-r py-2.5 pr-4 pl-0 align-middle">
+          {childKeys.length > 0 ? (
+            // Native disclosure: no client component, no hydration, and it
+            // keeps working with JavaScript off.
+            <details>
+              <summary className="text-ui-text hover:text-ui-accent cursor-pointer list-none font-medium">
+                <span className="text-ui-text-subtle mr-1 text-xs">▸</span>
+                {rowKey}
+              </summary>
+              <ul className="text-ui-text-subtle mt-1 ml-4 space-y-0.5 text-xs">
+                {childKeys.map((child) => (
+                  <li key={child} className="whitespace-nowrap">
+                    {child}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          ) : (
+            <span className="text-ui-text font-medium">{rowKey}</span>
+          )}
+        </td>
+        {months.map((month, index) => (
+          <Cell
+            key={month.key}
+            row={rows[index] ?? null}
+            previous={index > 0 ? (rows[index - 1] ?? null) : null}
+            metric={metric}
+          />
+        ))}
+        <td className="py-2.5 text-right align-middle">
+          <Sparkline rows={rows} metric={metric} />
+        </td>
+      </tr>
+      {childKeys.length > 0 ? (
+        <ChildRows
+          rowKey={rowKey}
+          childKeys={childKeys}
+          months={months}
+          metric={metric}
+        />
+      ) : null}
+    </>
+  );
+}
+
 /**
- * The three things a reader has to know before trusting a number here, said
- * once at the top rather than in a footnote under each table.
+ * The children of an open row, as their own rows.
+ *
+ * They are rendered inside a `<details>` in the first cell above rather than
+ * here, because a table row cannot live inside a disclosure element without
+ * breaking the column alignment that makes the whole table readable. So the
+ * summary lists the names and these rows carry the numbers, always visible.
+ * One list, two jobs — see the note in the panel header.
  */
+function ChildRows({
+  rowKey,
+  childKeys,
+  months,
+  metric,
+}: {
+  rowKey: string;
+  childKeys: string[];
+  months: FunnelPeriod[];
+  metric: Metric;
+}) {
+  return (
+    <>
+      {childKeys.map((child) => {
+        const rows = months.map(
+          (month) =>
+            find(month, rowKey)?.children?.find(
+              (candidate) => candidate.funnel === child,
+            ) ?? null,
+        );
+        return (
+          <tr key={`${rowKey}:${child}`} className="text-ui-text-subtle">
+            <td className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-1.5 pr-4 pl-4 text-xs">
+              <span className="text-ui-text-subtle mr-1">└</span>
+              {child}
+            </td>
+            {months.map((month, index) => (
+              <Cell
+                key={month.key}
+                row={rows[index] ?? null}
+                previous={index > 0 ? (rows[index - 1] ?? null) : null}
+                metric={metric}
+                small
+              />
+            ))}
+            <td />
+          </tr>
+        );
+      })}
+    </>
+  );
+}
+
+function Cell({
+  row,
+  previous,
+  metric,
+  small,
+}: {
+  row: FunnelPeriodRow | null;
+  previous: FunnelPeriodRow | null;
+  metric: Metric;
+  small?: boolean;
+}) {
+  const value = row ? metric.value(row) : null;
+  const before = previous ? metric.value(previous) : null;
+  const tone = trendTone({
+    value,
+    before,
+    weight: row ? metric.weight(row) : 0,
+    weightBefore: previous ? metric.weight(previous) : 0,
+    higherIsBetter: metric.higherIsBetter,
+  });
+
+  return (
+    <td
+      className={`pr-3 text-right align-middle whitespace-nowrap tabular-nums ${
+        small ? "py-1.5 text-xs" : "py-2.5"
+      } ${tone === "up" ? "text-ui-ok" : tone === "down" ? "text-ui-bad" : ""}`}
+      title={
+        tone === "flat" && value !== null && before !== null
+          ? "Change too small, or resting on too few observations, to call"
+          : undefined
+      }
+    >
+      {value === null ? "—" : metric.format(value)}
+    </td>
+  );
+}
+
+/** A bar per month, so the shape is readable without reading nine numbers. */
+function Sparkline({
+  rows,
+  metric,
+}: {
+  rows: Array<FunnelPeriodRow | null>;
+  metric: Metric;
+}) {
+  const values = rows.map((row) => (row ? metric.value(row) : null));
+  const peak = Math.max(...values.map((value) => value ?? 0), 0);
+  if (peak <= 0) return null;
+  return (
+    <span className="inline-flex h-5 items-end gap-0.5" aria-hidden>
+      {values.map((value, index) => (
+        <span
+          key={index}
+          className="bg-ui-line inline-block w-1 rounded-sm"
+          style={{
+            height: `${Math.max(2, ((value ?? 0) / peak) * 20)}px`,
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function trendTone(input: {
+  value: number | null;
+  before: number | null;
+  weight: number;
+  weightBefore: number;
+  higherIsBetter: boolean;
+}): "up" | "down" | "flat" {
+  const { value, before } = input;
+  if (value === null || before === null || before === 0) return "flat";
+  if (input.weight < MIN_WEIGHT || input.weightBefore < MIN_WEIGHT) {
+    return "flat";
+  }
+  const change = ((value - before) / before) * 100;
+  if (Math.abs(change) < FLAT_BAND) return "flat";
+  const better = change > 0 === input.higherIsBetter;
+  return better ? "up" : "down";
+}
+
+function BeforeAfter({
+  data,
+  metric,
+}: {
+  data: FunnelMonthlyReport;
+  metric: Metric;
+}) {
+  const { before, after, changedOn } = data.beforeAfter!;
+  const keys = orderedRowKeys([before, after]);
+
+  return (
+    <section
+      className={adminCardClass}
+      aria-label="Before and after the rebuild"
+    >
+      <h2 className={adminEyebrowClass}>Since the funnel rebuild</h2>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        {after.label} against {before.label} — the same weekdays a week apart,
+        because bookings are weekday-shaped. The rebuild shipped {changedOn}.
+        Far too short a window to conclude anything; it is here so the starting
+        point is on the record.
+      </p>
+      {after.visitsEnd && after.visitsEnd < after.end ? (
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Visit counts in the later window stop at {after.visitsEnd}, so it
+          holds fewer days of traffic. Rates are unaffected — both sides of each
+          division use the same days — but do not read the visit totals against
+          each other.
+        </p>
+      ) : null}
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full min-w-[34rem] text-[0.8125rem]">
+          <thead>
+            <tr
+              className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+            >
+              <th className="py-2 pr-4 font-semibold">
+                {data.grouping === "channel" ? "Source" : "Page"}
+              </th>
+              <th className="py-2 pr-3 text-right font-semibold">
+                {metric.label} before
+              </th>
+              <th className="py-2 text-right font-semibold">
+                {metric.label} after
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-ui-line divide-y">
+            {keys.map((key) => (
+              <tr key={key}>
+                <td className="py-2 pr-4">{key}</td>
+                <Cell row={find(before, key)} previous={null} metric={metric} />
+                <Cell
+                  row={find(after, key)}
+                  previous={find(before, key)}
+                  metric={metric}
+                />
+              </tr>
+            ))}
+            <tr className="font-medium">
+              <td className="py-2 pr-4">All</td>
+              <Cell row={before.totals} previous={null} metric={metric} />
+              <Cell
+                row={after.totals}
+                previous={before.totals}
+                metric={metric}
+              />
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 function Caveats({ data }: { data: FunnelMonthlyReport }) {
   return (
-    <div className={adminCardClass}>
+    <section className={adminCardClass} aria-label="How to read these">
       <h2 className={adminEyebrowClass}>Before you read these</h2>
       <ul className="text-ui-text-subtle mt-2 space-y-1.5 text-xs">
         <li>
@@ -60,273 +622,71 @@ function Caveats({ data }: { data: FunnelMonthlyReport }) {
         </li>
         <li>
           <strong className="text-ui-text">
-            Half-filled forms are counted after contact details, not before.
+            Grouped by source, visits cannot tell paid from organic.
           </strong>{" "}
-          The form writes a lead row at the first submit, so somebody who typed
-          and left before that leaves no trace anywhere. &ldquo;Qs&rdquo; below
-          is people who gave us their number and then abandoned the questions.
-        </li>
-        <li>
-          <strong className="text-ui-text">Win % waits 30 days.</strong> The Won
-          count does not — a sale is a fact the day it happens. The rate only
-          opens once the calls behind it are old enough that a missing sale
-          means something.
+          GA4 stores no medium on this table, so Google Ads traffic sits under
+          Organic search and Meta ad traffic under Meta. Leads are split
+          correctly because our own table keeps the medium. Read Opt-in % by
+          page, not by source.
         </li>
         <li>
           <strong className="text-ui-text">
-            Show rate covers {formatPct(data.showCoverage.pct)} of booked calls
+            Half-filled forms are counted after contact details, not before.
+          </strong>{" "}
+          The form writes a lead row at the first submit, so somebody who typed
+          and left before that leaves no trace anywhere.
+        </li>
+        <li>
+          <strong className="text-ui-text">Win % waits 30 days.</strong> The Won
+          count does not — a sale is a fact the day it happens.
+        </li>
+        <li>
+          <strong className="text-ui-text">
+            Show rate covers {percent(data.showCoverage.pct ?? 0)} of booked
+            calls
           </strong>{" "}
           ({data.showCoverage.known} of {data.showCoverage.total} old enough to
           judge carry a yes/no in Close). The rest leave the denominator rather
           than counting as no-shows.
         </li>
       </ul>
-    </div>
-  );
-}
-
-/**
- * The two windows either side of the rebuild, on the same weekdays.
- *
- * Four things shipped that day — the form moved onto the first screen, the
- * chrome came off, four dead routes got a calendar, eleven URLs redirected —
- * so this says what moved, not which change moved it.
- */
-function BeforeAfter({ data }: { data: FunnelMonthlyReport }) {
-  const { before, after, changedOn } = data.beforeAfter!;
-  const funnels = [
-    ...new Set([
-      ...after.rows.map((row) => row.funnel),
-      ...before.rows.map((row) => row.funnel),
-    ]),
-  ];
-  const rowFor = (period: FunnelPeriod, funnel: string) =>
-    period.rows.find((row) => row.funnel === funnel);
-
-  return (
-    <section
-      className={adminCardClass}
-      aria-label="Before and after the rebuild"
-    >
-      <h2 className={adminEyebrowClass}>Since the funnel rebuild</h2>
-      <p className="text-ui-text-subtle mt-1 text-xs">
-        {after.label} against {before.label} — the same weekdays a week apart,
-        because bookings are weekday-shaped. The rebuild shipped {changedOn}.
-        This is far too short a window to conclude anything; it is here so the
-        starting point is on the record.
-      </p>
-      {after.visitsEnd && after.visitsEnd < after.end ? (
-        <p className="text-ui-text-subtle mt-1 text-xs">
-          Visit counts in the later window stop at {after.visitsEnd}, so it
-          holds fewer days of traffic than the earlier one. The rates are not
-          affected — both sides of each division use the same days — but do not
-          read the two visit totals against each other.
-        </p>
-      ) : null}
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[46rem] text-[0.8125rem]">
-          <thead>
-            <tr
-              className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
-            >
-              <th className="py-2 pr-4 font-semibold">Funnel</th>
-              <Th>Leads before</Th>
-              <Th>Leads after</Th>
-              <Th>Book % before</Th>
-              <Th>Book % after</Th>
-            </tr>
-          </thead>
-          <tbody className="divide-ui-line divide-y">
-            {funnels.map((funnel) => {
-              const wasBefore = rowFor(before, funnel);
-              const isAfter = rowFor(after, funnel);
-              return (
-                <tr key={funnel}>
-                  <td className="py-2 pr-4 align-middle">
-                    <FunnelName
-                      funnel={funnel}
-                      isBookingFunnel={
-                        (isAfter ?? wasBefore)?.isBookingFunnel ?? false
-                      }
-                    />
-                  </td>
-                  <Td>{wasBefore?.leads ?? 0}</Td>
-                  <Td>{isAfter?.leads ?? 0}</Td>
-                  <Td>{formatPct(wasBefore?.rates.leadToBook ?? null)}</Td>
-                  <Td>{formatPct(isAfter?.rates.leadToBook ?? null)}</Td>
-                </tr>
-              );
-            })}
-            <tr className="font-medium">
-              <td className="py-2 pr-4">All funnels</td>
-              <Td>{before.totals.leads}</Td>
-              <Td>{after.totals.leads}</Td>
-              <Td>{formatPct(before.totals.rates.leadToBook)}</Td>
-              <Td>{formatPct(after.totals.rates.leadToBook)}</Td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
     </section>
   );
 }
 
-function PeriodTable({
-  period,
-  title,
-  basis,
-}: {
-  period: FunnelPeriod;
-  title: string;
-  basis: string;
-}) {
-  if (period.rows.length === 0) return null;
-  return (
-    <section className={adminCardClass} aria-label={title}>
-      <h2 className={adminEyebrowClass}>{title}</h2>
-      {period.visitsEnd && period.visitsEnd < period.end ? (
-        <p className="text-ui-text-subtle mt-1 text-xs">
-          Visits cover {period.start} to {period.visitsEnd}; leads and
-          everything after cover the full month. Rates are unaffected.
-        </p>
-      ) : null}
-      <p className="text-ui-text-subtle mt-1 text-xs">
-        <details className="inline">
-          <summary className="text-ui-text-muted hover:text-ui-text cursor-pointer list-none underline decoration-dotted underline-offset-2">
-            How this is measured
-          </summary>
-          <span className="mt-1 block">{basis}</span>
-        </details>
-      </p>
-      <div className="mt-3 overflow-x-auto">
-        <table className="w-full min-w-[68rem] text-[0.8125rem]">
-          <thead>
-            <tr
-              className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
-            >
-              <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
-                Funnel
-              </th>
-              <Th>Visits</Th>
-              <Th>Leads</Th>
-              <Th>Opt-in %</Th>
-              <Th>Qs offered</Th>
-              <Th>Qs left</Th>
-              <Th>Qs done %</Th>
-              <Th>Booked</Th>
-              <Th>Book %</Th>
-              <Th>Held</Th>
-              <Th>Show %</Th>
-              <Th>Won</Th>
-              <Th>Win %</Th>
-              <Th>Revenue</Th>
-            </tr>
-          </thead>
-          <tbody className="divide-ui-line divide-y">
-            {period.rows.map((row) => (
-              <Row key={row.funnel} row={row} />
-            ))}
-            <tr className="font-medium">
-              <td className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2.5 pr-4 pl-0">
-                All funnels
-              </td>
-              <Cells row={period.totals} />
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-  );
+/** Row order is decided once, by total leads, so it does not jump per metric. */
+function orderedRowKeys(months: FunnelPeriod[]): string[] {
+  const totals = new Map<string, number>();
+  for (const month of months) {
+    for (const row of month.rows) {
+      totals.set(row.funnel, (totals.get(row.funnel) ?? 0) + row.leads);
+    }
+  }
+  return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([key]) => key);
 }
 
-function Row({ row }: { row: FunnelPeriodRow }) {
-  return (
-    <tr>
-      <td
-        className="bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[14rem] border-r py-2.5 pr-4 pl-0 align-middle"
-        title={
-          row.pendingShow > 0 || row.showUnlogged > 0
-            ? `${row.pendingShow} call(s) not held yet, ${row.showUnlogged} held with no outcome logged — both are out of the show rate`
-            : undefined
-        }
-      >
-        <FunnelName funnel={row.funnel} isBookingFunnel={row.isBookingFunnel} />
-      </td>
-      <Cells row={row} />
-    </tr>
-  );
+function orderedChildKeys(rows: Array<FunnelPeriodRow | null>): string[] {
+  const totals = new Map<string, number>();
+  for (const row of rows) {
+    for (const child of row?.children ?? []) {
+      totals.set(child.funnel, (totals.get(child.funnel) ?? 0) + child.leads);
+    }
+  }
+  return [...totals.entries()]
+    .filter(([, leads]) => leads > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([key]) => key);
 }
 
-function Cells({ row }: { row: FunnelPeriodRow }) {
-  return (
-    <>
-      <Td>{row.visits ?? "—"}</Td>
-      <Td>{row.leads}</Td>
-      <Td>{formatPct(row.rates.visitToLead)}</Td>
-      <Td>{row.questionsOffered || "—"}</Td>
-      <Td>{row.questionsOffered ? row.questionsAbandoned : "—"}</Td>
-      <Td>{formatPct(row.rates.questionsCompleted)}</Td>
-      <Td>{row.booked}</Td>
-      <Td>{formatPct(row.rates.leadToBook)}</Td>
-      <Td>{row.showable ? row.held : "—"}</Td>
-      <Td>{formatPct(row.rates.bookToShow)}</Td>
-      <Td>{row.won}</Td>
-      <Td>{formatPct(row.rates.showToWin)}</Td>
-      <Td>
-        {row.revenue === null
-          ? "—"
-          : `$${row.revenue.toLocaleString("en-US", { maximumFractionDigits: 0 })}`}
-      </Td>
-    </>
-  );
+function find(period: FunnelPeriod, key: string): FunnelPeriodRow | null {
+  return period.rows.find((row) => row.funnel === key) ?? null;
 }
 
-/**
- * A registered booking funnel is marked, because the rest of the list is
- * pages that happen to carry a form — the homepage, a blog post, the
- * newsletter — and judging a news article by its booking rate is a category
- * error.
- */
-function FunnelName({
-  funnel,
-  isBookingFunnel,
-}: {
-  funnel: string;
-  isBookingFunnel: boolean;
-}) {
-  return (
-    <span className="flex items-center gap-2">
-      <span className="text-ui-text font-medium whitespace-nowrap">
-        {funnel}
-      </span>
-      {isBookingFunnel ? (
-        <span
-          className="border-ui-line text-ui-text-subtle rounded border px-1 text-[0.625rem] whitespace-nowrap"
-          title="A registered booking funnel"
-        >
-          funnel
-        </span>
-      ) : null}
-    </span>
-  );
+function count(value: number): string {
+  return Math.round(value).toLocaleString("en-US");
 }
 
-function Th({ children }: { children: React.ReactNode }) {
-  return (
-    <th className="py-2 pr-3 text-right font-semibold whitespace-nowrap">
-      {children}
-    </th>
-  );
-}
-
-function Td({ children }: { children: React.ReactNode }) {
-  return (
-    <td className="py-2.5 pr-3 text-right align-middle whitespace-nowrap tabular-nums">
-      {children}
-    </td>
-  );
-}
-
-function formatPct(value: number | null): string {
-  return value === null ? "—" : `${value.toFixed(1)}%`;
+function percent(value: number): string {
+  return `${value.toFixed(1)}%`;
 }

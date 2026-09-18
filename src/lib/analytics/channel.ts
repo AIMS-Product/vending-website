@@ -314,6 +314,44 @@ export function resolveChannel(
   return { channel: titleCase(raw), person: null };
 }
 
+/**
+ * The channel for a GA4 row, which carries a campaign but no medium.
+ *
+ * `ga4_page_views` has no `utm_medium` column, so `resolveChannel` alone files
+ * every Google Ads session under Organic search and the ad channels show
+ * thousands of leads against zero visits. GA4 does mark organic search
+ * explicitly, though: it writes the campaign `(organic)`. So a google session
+ * carrying any real campaign name or id came from a paid placement, and one
+ * carrying `(organic)`, `(not set)` or nothing did not.
+ *
+ * Deliberately narrow. It applies only to sources that have a paid twin, and
+ * only where GA4's own marker settles it. Meta is left alone: an Instagram
+ * `link-in-bio` campaign and an Instagram ad campaign look identical here, and
+ * guessing would trade a visible gap for an invisible error.
+ */
+export function resolveGa4Channel(
+  utmSource: string | null | undefined,
+  utmCampaign: string | null | undefined,
+): ChannelAttribution {
+  const source = utmSource?.trim().toLowerCase() ?? "";
+  const campaign = utmCampaign?.trim().toLowerCase() ?? "";
+  const paidTwin = PAID_CHANNEL[source];
+  const organicOnly = source === "google" || source === "bing";
+  if (
+    paidTwin &&
+    organicOnly &&
+    campaign &&
+    !GA4_UNSET_CAMPAIGN.test(campaign)
+  ) {
+    return { channel: paidTwin, person: null };
+  }
+  return resolveChannel(utmSource);
+}
+
+/** GA4's own markers for "this session carried no campaign". */
+const GA4_UNSET_CAMPAIGN =
+  /^\((organic|not set|direct|none|data not available)\)$/;
+
 function titleCase(value: string): string {
   return value
     .split(/[-_\s]+/)

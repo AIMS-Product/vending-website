@@ -27,7 +27,11 @@
 
 import { FUNNEL_REDIRECTS } from "@/lib/content/funnel-redirects";
 import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
-import { isInternalLead } from "@/lib/services/admin-analytics-internal";
+import {
+  isChatbotCapture,
+  isInternalLead,
+} from "@/lib/services/admin-analytics-internal";
+import { resolveChannel, resolveGa4Channel } from "@/lib/analytics/channel";
 import {
   CLOSE_MATURITY_DAYS,
   SHOW_GRACE_DAYS,
@@ -47,6 +51,9 @@ export const FUNNEL_REBUILD_DAY = "2026-09-17";
 export type FunnelLeadRow = {
   id: string;
   email: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  metadata?: unknown;
   full_name: string | null;
   created_at: string;
   source_path: string | null;
@@ -59,7 +66,21 @@ export type FunnelVisitRow = {
   day: string;
   landing_page: string;
   sessions: number;
+  /** Needed only when grouping by channel; GA4 stores no medium. */
+  utm_source?: string | null;
+  /** GA4's campaign, which is what separates paid google from organic. */
+  utm_campaign?: string | null;
 };
+
+/**
+ * What a row of the report is.
+ *
+ * "page" answers "which page converts" — the thing we change. "channel"
+ * answers "which source converts" — the thing we spend on. Same stages, same
+ * cohort rule, different question, so it is one switch rather than two tabs
+ * that would eventually disagree about what a lead is.
+ */
+export type FunnelGrouping = "page" | "channel";
 
 /**
  * One qualification session: the scored questions a lead is offered after
@@ -121,6 +142,8 @@ export type FunnelPeriodRow = {
   won: number;
   revenue: number | null;
   rates: FunnelRates;
+  /** The other dimension, one level down. Empty on a child row. */
+  children?: FunnelPeriodRow[];
 };
 
 export type FunnelPeriod = {
@@ -159,9 +182,12 @@ export type FunnelMonthlyReport = {
    * abandonment AFTER contact details, which is the part we can see.
    */
   formStartsTracked: false;
+  grouping: FunnelGrouping;
   generatedAt: string;
 };
 
+// The funnel a row belongs to. Shared with the browser-side PostHog stamp so
+// both sides of the vp_session_id seam agree on "which page".
 /** Old funnel URL -> the page it now renders, so a redirect keeps one history. */
 const REDIRECT_DESTINATIONS: ReadonlyMap<string, string> = new Map(
   FUNNEL_REDIRECTS.map((redirect) => [
@@ -172,14 +198,18 @@ const REDIRECT_DESTINATIONS: ReadonlyMap<string, string> = new Map(
 );
 
 /**
- * The funnel a row belongs to.
+ * The funnel a path belongs to: query stripped, lowercased, trailing slash
+ * removed, then folded through FUNNEL_REDIRECTS to the page it now renders.
  *
- * A redirected URL is folded into the page it now renders, because that is
- * what the visitor saw. Leaving them apart splits one funnel's history in
- * half on the day the redirect shipped: GA4 records the destination (it sees
- * the final URL) while the lead keeps `source_path` of the old one, so visits
- * and leads would land in different rows and every rate on both would be
- * wrong.
+ * A redirected URL folds into its destination because that is what the visitor
+ * saw. Leaving them apart splits one funnel's history in half on the day the
+ * redirect shipped: GA4 records the final URL while the lead keeps
+ * `source_path` of the old one, so visits and leads land in different rows and
+ * every rate on both is wrong.
+ *
+ * Anything reading paths on the client — a PostHog stamp, say — must fold them
+ * the same way or the two sides of the funnel cannot be joined. Import it from
+ * here rather than writing a second copy.
  */
 export function canonicalFunnelPath(
   path: string | null | undefined,
@@ -205,10 +235,12 @@ export function buildFunnelMonthly(input: {
   now: Date;
   includeInternal?: boolean;
   changedOn?: string;
+  grouping?: FunnelGrouping;
 }): FunnelMonthlyReport {
   const now = input.now;
   const today = dayKey(now);
   const changedOn = input.changedOn ?? FUNNEL_REBUILD_DAY;
+  const grouping = input.grouping ?? "page";
 
   const leads = input.leads.filter(
     (lead) =>
@@ -228,6 +260,7 @@ export function buildFunnelMonthly(input: {
       visits: input.visits,
       showByEmail,
       questionsByLead,
+      grouping,
       today,
       visitsThrough,
     }),
@@ -241,6 +274,7 @@ export function buildFunnelMonthly(input: {
       visits: input.visits,
       showByEmail,
       questionsByLead,
+      grouping,
       today,
       visitsThrough,
       changedOn,
@@ -248,6 +282,7 @@ export function buildFunnelMonthly(input: {
     visitsThrough,
     showCoverage: showCoverage(leads, showByEmail, today),
     formStartsTracked: false,
+    grouping,
     generatedAt: now.toISOString(),
   };
 }
@@ -262,6 +297,7 @@ function buildBeforeAfter(input: {
   visits: FunnelVisitRow[];
   showByEmail: Map<string, FunnelShowRow>;
   questionsByLead: Map<string, LeadQuestions>;
+  grouping: FunnelGrouping;
   today: string;
   visitsThrough: string | null;
   changedOn: string;
@@ -278,6 +314,7 @@ function buildBeforeAfter(input: {
     visits: input.visits,
     showByEmail: input.showByEmail,
     questionsByLead: input.questionsByLead,
+    grouping: input.grouping,
     today: input.today,
     visitsThrough: input.visitsThrough,
   };
@@ -309,57 +346,109 @@ function buildPeriod(input: {
   visits: FunnelVisitRow[];
   showByEmail: Map<string, FunnelShowRow>;
   questionsByLead: Map<string, LeadQuestions>;
+  grouping: FunnelGrouping;
   today: string;
   visitsThrough: string | null;
 }): FunnelPeriod {
-  const { start, end, today, visitsThrough } = input;
+  const { start, end, today, visitsThrough, grouping } = input;
   // Visit rates stop where GA4 stops, on both sides of the division.
   const visitEnd = visitsThrough && visitsThrough < end ? visitsThrough : end;
   const visitWindowOpen = visitsThrough !== null && visitEnd >= start;
 
-  const buckets = new Map<string, Mutable>();
-  const bucket = (funnel: string) => {
-    const existing = buckets.get(funnel);
-    if (existing) return existing;
-    const created = blank(funnel);
-    buckets.set(funnel, created);
-    return created;
+  // Two levels, always: the row is whichever dimension was asked for and the
+  // children are the other one. Grouping by channel without being able to open
+  // it is a number nobody can act on -- "Instagram converts at 38%" is only
+  // useful once you can see it is one lander doing the work.
+  const buckets = new Map<
+    string,
+    { own: Mutable; children: Map<string, Mutable> }
+  >();
+  const bucket = (row: string, child: string | null) => {
+    let entry = buckets.get(row);
+    if (!entry) {
+      entry = { own: blank(row), children: new Map() };
+      buckets.set(row, entry);
+    }
+    if (child === null) return entry.own;
+    let kid = entry.children.get(child);
+    if (!kid) {
+      kid = blank(child);
+      entry.children.set(child, kid);
+    }
+    return kid;
+  };
+  /** Applies a change to the row and to its child in one pass. */
+  const both = (
+    row: string,
+    child: string,
+    apply: (target: Mutable) => void,
+  ) => {
+    apply(bucket(row, null));
+    apply(bucket(row, child));
   };
 
   for (const visit of input.visits) {
     if (visit.day < start || visit.day > visitEnd) continue;
-    const funnel = canonicalFunnelPath(visit.landing_page);
-    if (!funnel) continue;
-    bucket(funnel).visits += visit.sessions;
+    const page = canonicalFunnelPath(visit.landing_page);
+    if (!page) continue;
+    // GA4 holds no medium, so the campaign is what separates a paid google
+    // session from an organic one. See resolveGa4Channel.
+    const channel = resolveGa4Channel(
+      visit.utm_source,
+      visit.utm_campaign,
+    ).channel;
+    const [row, child] =
+      grouping === "page" ? [page, channel] : [channel, page];
+    both(row, child, (target) => {
+      target.visits += visit.sessions;
+    });
   }
 
   for (const lead of input.leads) {
     const day = lead.created_at.slice(0, 10);
     if (day < start || day > end) continue;
-    const funnel = canonicalFunnelPath(lead.source_path);
-    if (!funnel) continue;
-    const row = bucket(funnel);
-    row.leads += 1;
-    if (day <= visitEnd) row.leadsInVisitWindow += 1;
+    const page = canonicalFunnelPath(lead.source_path);
+    if (!page) continue;
+    const channel = resolveChannel(lead.utm_source, {
+      medium: lead.utm_medium,
+      capturedByChatbot: isChatbotCapture(lead.metadata),
+    }).channel;
+    const [row, child] =
+      grouping === "page" ? [page, channel] : [channel, page];
     const questions = input.questionsByLead.get(lead.id);
-    if (questions) {
-      row.questionsOffered += 1;
-      if (questions.finished) row.questionsFinished += 1;
-    }
-    if (!lead.call_booked_at) continue;
-    row.booked += 1;
-    if (lead.closed_won_at) {
-      row.won += 1;
-      if (lead.closed_won_value !== null) {
-        row.revenue = (row.revenue ?? 0) + lead.closed_won_value;
+    const call = lead.call_booked_at
+      ? classifyBookedCall(lead.email, input.showByEmail, today)
+      : null;
+
+    both(row, child, (target) => {
+      target.leads += 1;
+      if (day <= visitEnd) target.leadsInVisitWindow += 1;
+      if (questions) {
+        target.questionsOffered += 1;
+        if (questions.finished) target.questionsFinished += 1;
       }
-    }
-    applyShow(row, lead, input.showByEmail, today);
+      if (!call) return;
+      target.booked += 1;
+      if (lead.closed_won_at) {
+        target.won += 1;
+        if (lead.closed_won_value !== null) {
+          target.revenue = (target.revenue ?? 0) + lead.closed_won_value;
+        }
+      }
+      applyCall(target, call, lead.closed_won_at !== null);
+    });
   }
 
+  const byLeads = (a: FunnelPeriodRow, b: FunnelPeriodRow) =>
+    b.leads - a.leads || (b.visits ?? 0) - (a.visits ?? 0);
   const rows = [...buckets.values()]
-    .map((row) => finalise(row, visitWindowOpen))
-    .sort((a, b) => b.leads - a.leads || (b.visits ?? 0) - (a.visits ?? 0));
+    .map((entry) => ({
+      ...finalise(entry.own, visitWindowOpen),
+      children: [...entry.children.values()]
+        .map((child) => finalise(child, visitWindowOpen))
+        .sort(byLeads),
+    }))
+    .sort(byLeads);
 
   return {
     key: input.key,
@@ -368,51 +457,73 @@ function buildPeriod(input: {
     end,
     visitsEnd: visitWindowOpen ? visitEnd : null,
     rows,
-    totals: finalise(sum(buckets.values()), visitWindowOpen),
+    totals: finalise(
+      sum([...buckets.values()].map((entry) => entry.own)),
+      visitWindowOpen,
+    ),
   };
 }
 
 /**
- * Splits a booked call into held / no-show / still-waiting / nobody-logged-it.
+ * What happened to one booked call: held, no-show, not yet, or nobody logged it.
  *
  * The scheduled date comes from the Close mirror, which is the only column
  * that holds when the call actually IS rather than when it was booked. A lead
- * the mirror has never seen cannot be judged either way, so it counts as
- * unlogged rather than as a no-show.
+ * the mirror has never seen cannot be judged either way, so it is "unlogged"
+ * rather than a no-show. `closeable` says the call is old enough that a
+ * missing sale means something.
+ *
+ * Exported because the channel journey report has to split calls the same way;
+ * two definitions of "showed up" would eventually disagree on one page.
  */
-function applyShow(
-  row: Mutable,
-  lead: FunnelLeadRow,
+export function classifyBookedCall(
+  email: string | null | undefined,
   showByEmail: Map<string, FunnelShowRow>,
   today: string,
-): void {
-  const mirror = showByEmail.get(emailKey(lead.email));
+): { state: "held" | "noShow" | "pending" | "unlogged"; closeable: boolean } {
+  const mirror = showByEmail.get(emailKey(email));
   const scheduled = mirror?.first_sales_call_booked_date ?? null;
-  if (!scheduled) {
-    row.showUnlogged += 1;
-    return;
-  }
+  if (!scheduled) return { state: "unlogged", closeable: false };
   if (scheduled > shiftDays(today, -SHOW_GRACE_DAYS)) {
-    row.pendingShow += 1;
-    return;
+    return { state: "pending", closeable: false };
   }
   const answer = mirror?.first_call_show_up?.trim().toLowerCase();
   if (answer === "yes") {
-    row.held += 1;
-    if (scheduled <= shiftDays(today, -CLOSE_MATURITY_DAYS)) {
-      row.closeable += 1;
-      if (lead.closed_won_at) row.wonOfCloseable += 1;
-    }
+    return {
+      state: "held",
+      closeable: scheduled <= shiftDays(today, -CLOSE_MATURITY_DAYS),
+    };
+  }
+  if (answer === "no") return { state: "noShow", closeable: false };
+  return { state: "unlogged", closeable: false };
+}
+
+function applyCall(
+  row: Mutable,
+  call: ReturnType<typeof classifyBookedCall>,
+  won: boolean,
+): void {
+  const { state, closeable } = call;
+  if (state === "pending") {
+    row.pendingShow += 1;
     return;
   }
-  if (answer === "no") {
+  if (state === "unlogged") {
+    row.showUnlogged += 1;
+    return;
+  }
+  if (state === "noShow") {
     row.noShow += 1;
     return;
   }
-  row.showUnlogged += 1;
+  row.held += 1;
+  if (closeable) {
+    row.closeable += 1;
+    if (won) row.wonOfCloseable += 1;
+  }
 }
 
-type LeadQuestions = { finished: boolean; furthest: number };
+export type LeadQuestions = { finished: boolean; furthest: number };
 
 type Mutable = {
   funnel: string;
@@ -531,7 +642,7 @@ function showCoverage(
  * the earliest scheduled call is their first, which is the one every rate here
  * is about.
  */
-function indexShows(rows: FunnelShowRow[]): Map<string, FunnelShowRow> {
+export function indexShows(rows: FunnelShowRow[]): Map<string, FunnelShowRow> {
   const index = new Map<string, FunnelShowRow>();
   for (const row of rows) {
     const key = emailKey(row.email);
@@ -556,7 +667,9 @@ function indexShows(rows: FunnelShowRow[]): Map<string, FunnelShowRow> {
  * abandoning and completing at once. Anyone with a completed session finished,
  * whichever attempt it was.
  */
-function indexSessions(rows: FunnelSessionRow[]): Map<string, LeadQuestions> {
+export function indexSessions(
+  rows: FunnelSessionRow[],
+): Map<string, LeadQuestions> {
   const index = new Map<string, LeadQuestions>();
   for (const row of rows) {
     const key = row.lead_submission_id;
