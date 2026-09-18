@@ -38,6 +38,11 @@ export function FormTracker() {
 
   useEffect(() => {
     const progress = new Map<HTMLFormElement, FormProgress>();
+    // The page the forms live on. A client-side navigation flushes
+    // `form_abandoned` from the cleanup below, when window.location already
+    // points at the next page; stamping the form's own URL keeps
+    // `source_path` / `page_group` on the page that lost the visitor.
+    const pageUrl = window.location.href;
 
     const viewport = new IntersectionObserver(
       (entries) => {
@@ -137,7 +142,11 @@ export function FormTracker() {
         );
         if (!properties) continue;
         progress.set(form, markAbandonReported(current));
-        captureEvent("form_abandoned", properties, SEND_NOW);
+        captureEvent(
+          "form_abandoned",
+          { ...properties, $current_url: pageUrl },
+          SEND_NOW,
+        );
       }
     };
 
