@@ -31,6 +31,8 @@ export type Ga4SyncResult = {
   written: number;
   /** Rows in a chunk whose write failed. */
   failed: number;
+  /** Superseded rows removed from the range. See the purge below. */
+  purged: number;
 };
 
 /**
@@ -69,6 +71,7 @@ export async function syncGa4PageViews(
     rows: 0,
     written: 0,
     failed: 0,
+    purged: 0,
   };
   if (!ga4Client) return empty;
 
@@ -100,11 +103,6 @@ export async function syncGa4PageViews(
 
     const { error } = await client.from("ga4_page_views").upsert(chunk, {
       // Correct a day rather than duplicate it. See the table's primary key.
-      //
-      // ponytail: a row GA4 stops reporting (thresholding can drop a small
-      // one) is left behind rather than deleted. Delete-then-insert would
-      // clear it but loses the range outright if the insert then fails.
-      // Revisit only if stale rows are ever observed.
       onConflict: "day,landing_page,utm_campaign,utm_source",
     });
 
@@ -126,7 +124,59 @@ export async function syncGa4PageViews(
     result.written += chunk.length;
   }
 
+  await purgeSuperseded(client, result, { startDate, endDate, syncedAt });
   return result;
+}
+
+/**
+ * Removes rows in the range that this run did not re-write.
+ *
+ * GA4 keeps moving a session between dimension keys for about two days after
+ * its day ends: a session that first reports as `(not set)/(not set)` on an
+ * empty landing page later resolves to `google` / `VP | Brand` on `/about`.
+ * The upsert writes the settled key and, on its own, leaves the provisional
+ * one behind, so the same session is counted twice under two keys.
+ *
+ * Measured against production on 2026-09-18 for 2026-09-11..17: 333 of our
+ * 1,045 stored rows were keys GA4 no longer reports, carrying 1,591 of our
+ * 4,867 sessions against GA4's own 3,141 — a 55% inflation of every visit
+ * denominator on the dashboard. The one day pulled only once, 09-17, matched.
+ *
+ * Every row this run wrote carries `syncedAt`, so anything older in the range
+ * is superseded. Skipped entirely when a chunk failed: "older than this run"
+ * would then include rows that are still live and simply were not rewritten.
+ */
+async function purgeSuperseded(
+  client: SyncClient,
+  result: Ga4SyncResult,
+  {
+    startDate,
+    endDate,
+    syncedAt,
+  }: Record<"startDate" | "endDate" | "syncedAt", string>,
+): Promise<void> {
+  if (result.failed > 0 || result.written === 0) return;
+
+  const { data, error } = await client
+    .from("ga4_page_views")
+    .delete()
+    .gte("day", startDate)
+    .lte("day", endDate)
+    .lt("synced_at", syncedAt)
+    .select("day");
+
+  if (error) {
+    // A failed purge leaves the range double-counted but never loses a row,
+    // so the run still reports what it wrote rather than throwing.
+    console.error("ga4 page view purge failed", {
+      startDate,
+      endDate,
+      code: error.code,
+      message: error.message,
+    });
+    return;
+  }
+  result.purged = data?.length ?? 0;
 }
 
 function buildClientFromConfig(): Ga4Client | null {

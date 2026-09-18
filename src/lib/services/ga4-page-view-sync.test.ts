@@ -20,11 +20,18 @@ function row(overrides: Partial<Ga4PageViewRow> = {}): Ga4PageViewRow {
   };
 }
 
-function buildClient(upsertError: unknown = null) {
+/** One recorded `delete().gte().lte().lt()` chain, in filter order. */
+type Purge = Record<string, unknown>;
+
+function buildClient(
+  upsertError: unknown = null,
+  { purgeError = null as unknown, purgedRows = 1 } = {},
+) {
   const batches: Array<{
     rows: Array<Record<string, unknown>>;
     options: Record<string, unknown> | undefined;
   }> = [];
+  const purges: Purge[] = [];
   const from = vi.fn((table: string) => {
     if (table !== "ga4_page_views") {
       throw new Error(`Unexpected table: ${table}`);
@@ -39,11 +46,40 @@ function buildClient(upsertError: unknown = null) {
           return { error: upsertError };
         },
       ),
+      delete: vi.fn(() => {
+        const filters: Purge = {};
+        purges.push(filters);
+        const chain = {
+          gte: (column: string, value: unknown) => {
+            filters[`gte:${column}`] = value;
+            return chain;
+          },
+          lte: (column: string, value: unknown) => {
+            filters[`lte:${column}`] = value;
+            return chain;
+          },
+          lt: (column: string, value: unknown) => {
+            filters[`lt:${column}`] = value;
+            return chain;
+          },
+          select: async () =>
+            purgeError
+              ? { data: null, error: purgeError }
+              : {
+                  data: Array.from({ length: purgedRows }, () => ({
+                    day: "2026-09-01",
+                  })),
+                  error: null,
+                },
+        };
+        return chain;
+      }),
     };
   });
   return {
     client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
     batches,
+    purges,
   };
 }
 
@@ -191,6 +227,59 @@ describe("syncGa4PageViews", () => {
     });
   });
 
+  it("purges rows this run did not rewrite, because GA4 moves a session between keys", async () => {
+    const { client, purges } = buildClient(null, { purgedRows: 333 });
+    const { ga4Client } = buildGa4([row()]);
+
+    const result = await syncGa4PageViews({
+      client,
+      ga4Client,
+      now: NOW,
+      days: 3,
+    });
+
+    expect(purges).toEqual([
+      {
+        "gte:day": "2026-09-07",
+        "lte:day": "2026-09-09",
+        "lt:synced_at": NOW.toISOString(),
+      },
+    ]);
+    expect(result.purged).toBe(333);
+  });
+
+  it("never purges after a failed chunk, because unwritten is not superseded", async () => {
+    const { client, purges } = buildClient({ message: "deadlock detected" });
+    const { ga4Client } = buildGa4([row(), row({ landingPage: "/b" })]);
+
+    const result = await syncGa4PageViews({
+      client,
+      ga4Client,
+      now: NOW,
+      days: 3,
+      chunkSize: 1,
+    });
+
+    expect(purges).toEqual([]);
+    expect(result.purged).toBe(0);
+  });
+
+  it("keeps the rows it wrote when the purge itself fails", async () => {
+    const { client } = buildClient(null, {
+      purgeError: { message: "timeout" },
+    });
+    const { ga4Client } = buildGa4([row()]);
+
+    const result = await syncGa4PageViews({
+      client,
+      ga4Client,
+      now: NOW,
+      days: 3,
+    });
+
+    expect(result).toMatchObject({ written: 1, failed: 0, purged: 0 });
+  });
+
   it("writes nothing when GA4 returns an empty range", async () => {
     const { client, batches } = buildClient();
     const { ga4Client } = buildGa4([]);
@@ -204,5 +293,14 @@ describe("syncGa4PageViews", () => {
 
     expect(batches).toHaveLength(0);
     expect(result).toMatchObject({ connected: true, rows: 0, written: 0 });
+  });
+
+  it("does not purge a range GA4 returned nothing for", async () => {
+    const { client, purges } = buildClient();
+    const { ga4Client } = buildGa4([]);
+
+    await syncGa4PageViews({ client, ga4Client, now: NOW, days: 3 });
+
+    expect(purges).toEqual([]);
   });
 });

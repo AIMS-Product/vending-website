@@ -44,6 +44,13 @@ function buildClient(data: {
   links?: unknown[];
   leads?: unknown[];
   bookings?: unknown[];
+  /** Rows already on the spine, for the superseded-metric sweep to read. */
+  channelDaily?: unknown[];
+  /**
+   * A metric column whose upsert fails, as `thankyou_visits` does in
+   * production where the column was never added.
+   */
+  missingColumn?: string;
 }) {
   const upserts: Array<Record<string, unknown>> = [];
   const runs: Array<Record<string, unknown>> = [];
@@ -51,7 +58,18 @@ function buildClient(data: {
     switch (name) {
       case "channel_daily":
         return {
+          ...table(data.channelDaily ?? []),
           upsert: vi.fn(async (rows: Array<Record<string, unknown>>) => {
+            if (
+              data.missingColumn &&
+              rows.some((row) => data.missingColumn! in row)
+            ) {
+              return {
+                error: {
+                  message: `column ${data.missingColumn} does not exist`,
+                },
+              };
+            }
             upserts.push(...rows);
             return { error: null };
           }),
@@ -421,5 +439,121 @@ describe("syncChannelDaily", () => {
     expect(upserts).toEqual([
       expect.objectContaining({ day: "2026-06-24", booked: 1 }),
     ]);
+  });
+
+  it("nulls visits on a link GA4 stopped reporting, because it moved the session", async () => {
+    const { client, upserts } = buildClient({
+      channelDaily: [
+        // The key GA4 still reports. Left alone.
+        {
+          day: "2026-09-10",
+          source: "youtube",
+          medium: "social",
+          campaign: "youtube-home",
+          content: "(not set)",
+          destination: "unknown",
+          visits: 12,
+          thankyou_visits: null,
+        },
+        // The provisional key the same sessions first landed on.
+        {
+          day: "2026-09-10",
+          source: "(not set)",
+          medium: "(not set)",
+          campaign: "(not set)",
+          content: "(not set)",
+          destination: "unknown",
+          visits: 9,
+          thankyou_visits: null,
+        },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: ga4([
+        {
+          day: "2026-09-10",
+          source: "youtube",
+          medium: "social",
+          campaign: "youtube-home",
+          content: "",
+          term: "",
+          campaignId: "",
+          sessions: 12,
+        },
+      ]),
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    const cleared = upserts.filter((row) => row.visits === null);
+    expect(cleared).toHaveLength(1);
+    expect(cleared[0]).toMatchObject({
+      day: "2026-09-10",
+      source: "(not set)",
+      visits: null,
+    });
+    // Null, not zero: the dashboard renders not-observed as a dash.
+    expect(cleared[0].visits).toBeNull();
+  });
+
+  it("clears only the column whose write landed, never one the run could not touch", async () => {
+    // Production shape on 2026-09-18: `thankyou_visits` is in the generated
+    // types but not in the database, so every confirmations upsert fails.
+    const { client, upserts } = buildClient({
+      missingColumn: "thankyou_visits",
+      channelDaily: [
+        {
+          day: "2026-09-10",
+          source: "(not set)",
+          medium: "(not set)",
+          campaign: "(not set)",
+          content: "(not set)",
+          destination: "unknown",
+          visits: 9,
+          thankyou_visits: 2,
+        },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: ga4(
+        [
+          {
+            day: "2026-09-10",
+            source: "youtube",
+            medium: "social",
+            campaign: "youtube-home",
+            content: "",
+            term: "",
+            campaignId: "",
+            sessions: 12,
+          },
+        ],
+        [
+          {
+            day: "2026-09-10",
+            source: "youtube",
+            medium: "social",
+            campaign: "youtube-home",
+            content: "",
+            term: "",
+            campaignId: "",
+            sessions: 3,
+          },
+        ],
+      ),
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    const cleared = upserts.filter((row) => row.visits === null);
+    expect(cleared).toHaveLength(1);
+    // visits was written this run, so a superseded key may be cleared.
+    expect(cleared[0]).toHaveProperty("visits", null);
+    // thankyou_visits was not, so it must not appear in the clearing payload.
+    expect(cleared[0]).not.toHaveProperty("thankyou_visits");
   });
 });

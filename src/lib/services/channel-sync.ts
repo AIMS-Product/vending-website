@@ -15,6 +15,7 @@ import {
   isInternalLead,
 } from "@/lib/services/admin-analytics-internal";
 import {
+  channelDailyKey,
   recordSyncRun,
   upsertChannelDaily,
   type ChannelDailyRow,
@@ -139,10 +140,136 @@ async function syncGa4Visits(
     { now },
   );
 
-  return written({
-    written: visits.written + confirmations.written,
-    failed: visits.failed + confirmations.failed,
+  // Only the columns whose write actually landed may be cleared. The
+  // confirmations upsert fails wherever `thankyou_visits` is missing from the
+  // database, and clearing a column this run could not write would erase a
+  // number nothing was going to replace.
+  const cleared = await clearSupersededGa4Metrics(client, {
+    startDate,
+    endDate,
+    now,
+    liveKeys: new Set(
+      [
+        ...(visits.failed === 0 ? sessions : []),
+        ...(confirmations.failed === 0 ? thankYou : []),
+      ].map((row) => keyId(channelDailyKey(key(row)))),
+    ),
+    columns: [
+      ...(visits.failed === 0 ? (["visits"] as const) : []),
+      ...(confirmations.failed === 0 ? (["thankyou_visits"] as const) : []),
+    ],
   });
+
+  return written({
+    written: visits.written + confirmations.written + cleared.written,
+    failed: visits.failed + confirmations.failed + cleared.failed,
+  });
+}
+
+/**
+ * Sets this connector's metrics back to null on link keys GA4 no longer
+ * reports in the window.
+ *
+ * GA4 keeps moving a session between dimension keys for about two days after
+ * its day ends, and an upsert writes the settled key without touching the
+ * provisional one, so the same sessions end up counted under both. Measured
+ * against production on 2026-09-18 for 2026-09-11..17: `channel_daily` held
+ * 3,441 visits against GA4's own 3,141.
+ *
+ * Null, not zero: a key GA4 stopped reporting was not observed this run, and
+ * the dashboard renders "not observed" as a dash. The row itself stays,
+ * because Bitly clicks and lead counts on that link are still true.
+ *
+ * `synced_at` cannot be the discriminator here the way it is for
+ * `ga4_page_views`: three connectors share this table and each one's write
+ * bumps the same column, so a row the leads connector touched a minute ago
+ * looks fresh while its visits are stale.
+ */
+async function clearSupersededGa4Metrics(
+  client: SyncClient,
+  {
+    startDate,
+    endDate,
+    now,
+    liveKeys,
+    columns,
+  }: {
+    startDate: string;
+    endDate: string;
+    now: Date;
+    liveKeys: ReadonlySet<string>;
+    columns: readonly ("visits" | "thankyou_visits")[];
+  },
+): Promise<{ written: number; failed: number }> {
+  if (columns.length === 0) return { written: 0, failed: 0 };
+
+  const stored = await pageAll<StoredKeyRow>((from, to) =>
+    client
+      .from("channel_daily")
+      .select(
+        `day,source,medium,campaign,content,destination,${columns.join(",")}`,
+      )
+      .gte("day", startDate)
+      .lte("day", endDate)
+      .order("day")
+      .order("source")
+      .range(from, to),
+  );
+
+  const superseded = stored.filter(
+    (row) =>
+      columns.some((column) => row[column] !== null) &&
+      !liveKeys.has(keyId(row)),
+  );
+  if (superseded.length === 0) return { written: 0, failed: 0 };
+
+  const blanks = Object.fromEntries(columns.map((column) => [column, null]));
+  return upsertChannelDaily(
+    client,
+    superseded.map((row) => ({
+      day: row.day,
+      source: row.source,
+      medium: row.medium,
+      campaign: row.campaign,
+      content: row.content,
+      // `destination` is what resolveDestination made of the term, and the
+      // key must round-trip through it unchanged, so it goes back as the term.
+      term: row.destination,
+      ...blanks,
+    })),
+    { now },
+  );
+}
+
+type StoredKeyRow = {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+  visits?: number | null;
+  thankyou_visits?: number | null;
+};
+
+/** The dimension key as one comparable string. NUL for the same reason the
+ * upsert merge uses it: campaign names carry pipes. */
+function keyId(row: {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+}): string {
+  return [
+    row.day,
+    row.source,
+    row.medium,
+    row.campaign,
+    row.content,
+    row.destination,
+  ].join("\u0000");
 }
 
 /**
