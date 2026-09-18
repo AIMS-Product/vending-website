@@ -1,4 +1,9 @@
-import { adminCardClass, adminEyebrowClass } from "@/components/admin/AdminUi";
+import {
+  adminCardClass,
+  adminEyebrowClass,
+  adminStickyHeadClass,
+  adminStickyTableWrapClass,
+} from "@/components/admin/AdminUi";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type { KpiTabData } from "@/lib/services/kpi-report-data";
 import type {
@@ -130,9 +135,9 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
           Nothing observed in this range.
         </p>
       ) : (
-        <div className="mt-3 overflow-x-auto">
+        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
           <table className="w-full min-w-[64rem] text-[0.8125rem]">
-            <thead>
+            <thead className={adminStickyHeadClass}>
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
               >

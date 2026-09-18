@@ -49,6 +49,17 @@ export const adminInputClass =
 export const adminTextareaClass =
   "mt-1.5 w-full rounded-ui border border-ui-line-strong bg-ui-surface px-2.5 py-1.5 text-sm leading-6 text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
 
+/**
+ * A wide report table whose header row stays put while you scroll. The table
+ * scrolls inside its own box (both directions) because a sticky header cannot
+ * stick to the page from inside a horizontal-only scroll container.
+ */
+export const adminStickyTableWrapClass =
+  "overflow-auto max-h-[calc(100vh-10rem)]";
+/** Put on <thead>: freezes it and paints each header cell so rows do not show through. */
+export const adminStickyHeadClass =
+  "sticky top-0 z-20 [&_th]:bg-ui-surface shadow-[0_1px_0_var(--color-ui-line)]";
+
 export const adminLabelClass = "text-sm font-medium text-ui-text";
 
 export const adminPrimaryButtonClass = `${BUTTON_BASE} bg-ui-accent text-white shadow-ui hover:bg-ui-accent-hover`;

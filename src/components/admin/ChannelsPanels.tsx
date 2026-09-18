@@ -8,6 +8,8 @@ import {
   AdminStatusBadge,
   adminCardClass,
   adminEyebrowClass,
+  adminStickyHeadClass,
+  adminStickyTableWrapClass,
 } from "@/components/admin/AdminUi";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type {
@@ -314,9 +316,9 @@ export function ChannelTable({
           Nothing observed in this range.
         </p>
       ) : (
-        <div className="mt-3 overflow-x-auto">
+        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
-            <thead>
+            <thead className={adminStickyHeadClass}>
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
               >
@@ -620,9 +622,9 @@ export function GoingOutTable({
           No links in the registry yet.
         </p>
       ) : (
-        <div className="mt-3 overflow-x-auto">
+        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
-            <thead>
+            <thead className={adminStickyHeadClass}>
               <tr
                 className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
               >

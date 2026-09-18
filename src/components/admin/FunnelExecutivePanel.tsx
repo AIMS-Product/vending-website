@@ -1,5 +1,10 @@
 import { Fragment } from "react";
-import { adminCardClass, adminEyebrowClass } from "@/components/admin/AdminUi";
+import {
+  adminCardClass,
+  adminEyebrowClass,
+  adminStickyHeadClass,
+  adminStickyTableWrapClass,
+} from "@/components/admin/AdminUi";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
   FLAT_BAND,
@@ -158,9 +163,9 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
           means zero.
         </p>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className={`mt-4 ${adminStickyTableWrapClass}`}>
           <table className="w-full min-w-[54rem] text-sm">
-            <thead>
+            <thead className={adminStickyHeadClass}>
               <tr className="text-ui-text-subtle border-ui-line border-b text-left text-xs">
                 <th scope="col" className="py-2 pr-3 font-medium">
                   Month
