@@ -53,6 +53,19 @@ Registries that feed it:
    bounces webinar traffic twice and changes its calendar. **Left `/start` live and
    working** (legacy page, Calendly `cxwj-zxk-2z4/vending-route-advisory-call`).
    `start-vending.com` redirects to it with UTMs intact.
+
+   **Resolved 2026-09-18 — Adam.** Sheet 1 wins: webinar traffic keeps landing on
+   `/start` and books there on `cxwj-zxk-2z4`. Sheet 2's `/start` -> accelerator hop is
+   dropped. The redirect sheet's accelerator -> `/contact` stands. No code change: both
+   were already the shipped state. Verified in production 2026-09-18 —
+   `/book-my-advisory-call-accelerator` 308s to
+   `/contact?source_path=%2Fbook-my-advisory-call-accelerator`, `/start` returns 200,
+   `start-vending.com` 302s to `/start` with its UTMs intact.
+
+   What the accelerator page was: the old Webflow 45-minute Vending Accelerator advisory
+   call, Calendly `cxv9-jg6-m53/vending-accelerator-call` (row 46 of Kody's migration
+   sheet). It was never rebuilt here — it exists only as the redirect above.
+
 2. **Unscored ad traffic outranks scored leads for top-closer time.** Reframed
    2026-09-17 after Adam pushed back — the first write-up asked "which calendar did
    these URLs lose", which is the wrong question. The real one:
