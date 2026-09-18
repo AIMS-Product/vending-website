@@ -9,8 +9,8 @@ import {
   adminCardClass,
   adminEyebrowClass,
   adminStickyHeadClass,
-  adminStickyTableWrapClass,
 } from "@/components/admin/AdminUi";
+import { FreezeTableHead } from "@/components/admin/FreezeTableHead";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import type {
   ChannelReport,
@@ -316,7 +316,8 @@ export function ChannelTable({
           Nothing observed in this range.
         </p>
       ) : (
-        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
+        <div className="mt-3 overflow-x-auto">
+          <FreezeTableHead />
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
             <thead className={adminStickyHeadClass}>
               <tr
@@ -622,7 +623,8 @@ export function GoingOutTable({
           No links in the registry yet.
         </p>
       ) : (
-        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
+        <div className="mt-3 overflow-x-auto">
+          <FreezeTableHead />
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
             <thead className={adminStickyHeadClass}>
               <tr

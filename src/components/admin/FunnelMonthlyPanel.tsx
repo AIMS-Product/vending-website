@@ -4,8 +4,8 @@ import {
   adminCardClass,
   adminEyebrowClass,
   adminStickyHeadClass,
-  adminStickyTableWrapClass,
 } from "@/components/admin/AdminUi";
+import { FreezeTableHead } from "@/components/admin/FreezeTableHead";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type {
   FunnelGrouping,
@@ -248,7 +248,8 @@ export function FunnelMonthlyTab({
             times over.
           </p>
         ) : null}
-        <div className={`mt-3 ${adminStickyTableWrapClass}`}>
+        <div className="mt-3 overflow-x-auto">
+          <FreezeTableHead />
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
             <thead className={adminStickyHeadClass}>
               <tr className={`text-left ${adminEyebrowClass}`}>

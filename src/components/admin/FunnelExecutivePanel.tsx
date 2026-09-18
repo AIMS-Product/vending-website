@@ -3,8 +3,8 @@ import {
   adminCardClass,
   adminEyebrowClass,
   adminStickyHeadClass,
-  adminStickyTableWrapClass,
 } from "@/components/admin/AdminUi";
+import { FreezeTableHead } from "@/components/admin/FreezeTableHead";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
   FLAT_BAND,
@@ -163,7 +163,8 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
           means zero.
         </p>
 
-        <div className={`mt-4 ${adminStickyTableWrapClass}`}>
+        <div className="mt-4 overflow-x-auto">
+          <FreezeTableHead />
           <table className="w-full min-w-[54rem] text-sm">
             <thead className={adminStickyHeadClass}>
               <tr className="text-ui-text-subtle border-ui-line border-b text-left text-xs">
