@@ -42,6 +42,7 @@ export type KpiTabData = {
 export async function getKpiTab(
   input: {
     range?: AdminAnalyticsRangeKey;
+    includeInternal?: boolean;
     client?: ReportClient;
     now?: Date;
   } = {},
@@ -56,7 +57,9 @@ export async function getKpiTab(
 
   const [facts, runs, webinars, emailSnapshots, setterBookings] =
     await Promise.all([
-      fetchFacts(client, startDay, endDay),
+      fetchFacts(client, startDay, endDay, {
+        includeInternal: input.includeInternal,
+      }),
       fetchRuns(client),
       fetchWebinars(client, startDay, endDay),
       fetchEmailSnapshots(client, startDay, endDay),

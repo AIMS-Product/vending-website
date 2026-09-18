@@ -96,7 +96,7 @@ async function fetchLeads(
       client
         .from("lead_submissions")
         .select(
-          "id,email,full_name,created_at,source_path,utm_source,utm_medium,metadata,call_booked_at,closed_won_at,closed_won_value",
+          "id,email,full_name,created_at,lifecycle_status,source_path,utm_source,utm_medium,metadata,call_booked_at,closed_won_at,closed_won_value",
         )
         .gte("created_at", `${startDay}T00:00:00.000Z`)
         .order("created_at")

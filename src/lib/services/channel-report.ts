@@ -13,7 +13,6 @@ import {
   type ConfidenceReport,
   type SourceCounts,
 } from "@/lib/services/channel-confidence";
-import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import { MANYCHAT_INGEST_CONNECTOR } from "@/lib/services/manychat-ingest";
 import {
   buildChannelReport,
@@ -29,7 +28,16 @@ import {
   type SyncHealthRow,
   type SyncRun,
 } from "@/lib/services/channel-report-rollup";
-import { CHANNEL_CONNECTORS } from "@/lib/services/channel-sync";
+import {
+  CHANNEL_CONNECTORS,
+  leadSpineRows,
+  type LeadRow,
+} from "@/lib/services/channel-sync";
+import { channelDailyKey } from "@/lib/services/channel-daily";
+import {
+  collapseToLeads,
+  lookbackStart,
+} from "@/lib/analytics/lead-definition";
 import { CLOSE_LEAD_FUNNEL_CONNECTOR } from "@/lib/services/close-lead-funnel-sync";
 import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
 import {
@@ -91,6 +99,7 @@ export type ChannelsTabData = {
 export async function getChannelsTab(
   input: {
     range?: AdminAnalyticsRangeKey;
+    includeInternal?: boolean;
     channel?: string | null;
     client?: ReportClient;
     now?: Date;
@@ -109,11 +118,13 @@ export async function getChannelsTab(
   );
 
   const [facts, runs, goingOut, fixLinks, sources] = await Promise.all([
-    fetchFacts(client, priorStartDay, endDay),
+    fetchFacts(client, priorStartDay, endDay, {
+      includeInternal: input.includeInternal,
+    }),
     fetchRuns(client),
     fetchGoingOut(client, priorStartDay, endDay, startDay),
     fetchFixLinks(client, startDay),
-    fetchSourceCounts(client, startDay, endDay),
+    fetchSourceCounts(client, startDay, endDay, input.includeInternal ?? false),
   ]);
 
   const connected = facts !== null;
@@ -158,8 +169,157 @@ export async function getChannelsTab(
   };
 }
 
-/** Null (not empty) when the table is missing, so the tab can say so. */
+/**
+ * Spine facts with the Leads column held to the one lead definition.
+ *
+ * The stored `leads` column is written by four connectors: the site's own
+ * leads, plus webinar registrations, GHL form fills and ManyChat contacts.
+ * Summed, August read 4,246 "leads" here against 597 on every other tab. So
+ * `leads` is recomputed from lead_submissions through `collapseToLeads` and
+ * the same row mapping the leads connector writes (`leadSpineRows`), and a
+ * stored count on a key no site lead ever used moves to `contacts`.
+ *
+ * Null (not empty) when the table is missing, so the tab can say so.
+ */
 export async function fetchFacts(
+  client: ReportClient,
+  startDay: string,
+  endDay: string,
+  options: { includeInternal?: boolean } = {},
+): Promise<ChannelFact[] | null> {
+  const [stored, leadRows] = await Promise.all([
+    fetchStoredFacts(client, startDay, endDay),
+    fetchSiteLeadRows(client, startDay, endDay),
+  ]);
+  if (stored === null || leadRows === null) return stored;
+  return applyLeadDefinition(stored, leadRows, {
+    startDay,
+    endDay,
+    includeInternal: options.includeInternal ?? false,
+  });
+}
+
+/** The spine's primary key: the six link dimensions, never the channel. */
+function factId(fact: {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+}): string {
+  return [
+    fact.day,
+    fact.source,
+    fact.medium,
+    fact.campaign,
+    fact.content,
+    fact.destination,
+  ].join("\u0000");
+}
+
+export function applyLeadDefinition(
+  stored: ChannelFact[],
+  leadRows: SpineLeadRow[],
+  window: { startDay: string; endDay: string; includeInternal: boolean },
+): ChannelFact[] {
+  const keyed = (rows: SpineLeadRow[]) =>
+    leadSpineRows(rows).map((row) => channelDailyKey(row));
+
+  // Every key a site submission was ever written under, counted or not: a
+  // stored count there is the site's (a repeat, a newsletter signup, a test),
+  // never a registration.
+  const siteKeys = new Set(keyed(leadRows).map(factId));
+  const counted = new Map<
+    string,
+    { key: ReturnType<typeof channelDailyKey>; leads: number }
+  >();
+  for (const key of keyed(
+    collapseToLeads(leadRows, {
+      includeInternal: window.includeInternal,
+    }),
+  )) {
+    if (key.day < window.startDay || key.day > window.endDay) continue;
+    const id = factId(key);
+    const entry = counted.get(id);
+    counted.set(id, { key, leads: (entry?.leads ?? 0) + 1 });
+  }
+
+  const facts = stored.map((fact): ChannelFact => {
+    const id = factId(fact);
+    const site = counted.get(id);
+    if (site || siteKeys.has(id)) {
+      return { ...fact, leads: site?.leads ?? 0, contacts: null };
+    }
+    return { ...fact, leads: null, contacts: fact.leads };
+  });
+
+  // Leads the connector has not written yet (it runs nightly) still count.
+  const storedIds = new Set(stored.map(factId));
+  const missing = [...counted.entries()]
+    .filter(([id]) => !storedIds.has(id))
+    .map(
+      ([, { key, leads }]): ChannelFact => ({
+        ...key,
+        spend: null,
+        impressions: null,
+        reach: null,
+        clicks: null,
+        visits: null,
+        thankyou_visits: null,
+        leads,
+        contacts: null,
+        booked: null,
+        showed: null,
+        won: null,
+        revenue: null,
+      }),
+    );
+  return [...facts, ...missing];
+}
+
+type SpineLeadRow = LeadRow & { closed_won_value?: number | null };
+
+/**
+ * Site lead rows from 30 days before the window (so repeats are recognised)
+ * to its end, with every field `leadSpineRows` keys on. Null on a read error:
+ * the tab then shows the stored spine rather than a half-read recount.
+ */
+async function fetchSiteLeadRows(
+  client: ReportClient,
+  startDay: string,
+  endDay: string,
+): Promise<SpineLeadRow[] | null> {
+  const endExclusive = `${dayKey(new Date(new Date(`${endDay}T00:00:00.000Z`).getTime() + DAY_MS))}T00:00:00.000Z`;
+  const rows: SpineLeadRow[] = [];
+  for (let from = 0; from < MAX_FACT_ROWS; from += PAGE_SIZE) {
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select(
+        "created_at,email,full_name,lifecycle_status,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,closed_won_value,metadata",
+      )
+      .gte(
+        "created_at",
+        lookbackStart(`${startDay}T00:00:00.000Z`).toISOString(),
+      )
+      .lt("created_at", endExclusive)
+      .order("created_at")
+      .range(from, from + PAGE_SIZE - 1);
+    if (error) {
+      console.error("lead_submissions read for channel facts failed", {
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+    const batch = (data ?? []) as unknown as SpineLeadRow[];
+    rows.push(...batch);
+    if (batch.length < PAGE_SIZE) break;
+  }
+  return rows;
+}
+
+async function fetchStoredFacts(
   client: ReportClient,
   startDay: string,
   endDay: string,
@@ -208,22 +368,19 @@ async function fetchSourceCounts(
   client: ReportClient,
   startDay: string,
   endDay: string,
+  includeInternal = false,
 ): Promise<SourceCounts> {
   const startIso = `${startDay}T00:00:00.000Z`;
   const endExclusive = `${dayKey(new Date(new Date(`${endDay}T00:00:00.000Z`).getTime() + DAY_MS))}T00:00:00.000Z`;
   const [leadSubmissions, webinarRegistrations, ga4Sessions, calendlyBookings] =
     await Promise.all([
-      pageSum(
-        (from, to) =>
-          client
-            .from("lead_submissions")
-            .select("email,full_name")
-            .gte("created_at", startIso)
-            .lt("created_at", endExclusive)
-            .order("created_at")
-            .range(from, to),
-        (row: { email: string | null; full_name: string | null }) =>
-          isInternalLead(row.email, row.full_name) ? 0 : 1,
+      // Counted by the one lead definition, like the Leads column.
+      fetchSiteLeadRows(client, startDay, endDay).then((rows) =>
+        rows === null
+          ? null
+          : collapseToLeads(rows, { includeInternal }).filter(
+              (lead) => lead.created_at.slice(0, 10) >= startDay,
+            ).length,
       ),
       pageSum(
         (from, to) =>

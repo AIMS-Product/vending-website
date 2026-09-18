@@ -31,7 +31,15 @@ function buildClient({
     let filteredToOneDay = false;
     let page: [number, number] | null = null;
     const builder: Record<string, unknown> = {};
-    for (const method of ["select", "order", "limit", "gte", "lte", "in"]) {
+    for (const method of [
+      "select",
+      "order",
+      "limit",
+      "gte",
+      "lte",
+      "lt",
+      "in",
+    ]) {
       builder[method] = vi.fn(() => builder);
     }
     builder.eq = vi.fn(() => {
@@ -45,18 +53,21 @@ function buildClient({
       return builder;
     });
     builder.then = (resolve: (value: unknown) => unknown) => {
+      // No site leads: every stored count is a GHL form fill (a contact).
       const data =
-        name === "channel_daily"
-          ? page
-            ? spine.slice(page[0], page[1] + 1)
-            : spine
-          : name === "close_lead_funnel"
+        name === "lead_submissions"
+          ? []
+          : name === "channel_daily"
             ? page
-              ? cohort.slice(page[0], page[1] + 1)
-              : cohort
-            : filteredToOneDay
-              ? workflows
-              : snapshotDays;
+              ? spine.slice(page[0], page[1] + 1)
+              : spine
+            : name === "close_lead_funnel"
+              ? page
+                ? cohort.slice(page[0], page[1] + 1)
+                : cohort
+              : filteredToOneDay
+                ? workflows
+                : snapshotDays;
       return Promise.resolve({ data, error: null }).then(resolve);
     };
     return builder;

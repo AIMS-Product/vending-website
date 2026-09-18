@@ -26,11 +26,9 @@
  */
 
 import { canonicalFunnelPath } from "@/lib/analytics/canonical-path";
+import { groupLeads } from "@/lib/analytics/lead-definition";
 import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
-import {
-  isChatbotCapture,
-  isInternalLead,
-} from "@/lib/services/admin-analytics-internal";
+import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import { resolveChannel, resolveGa4Channel } from "@/lib/analytics/channel";
 import {
   CLOSE_MATURITY_DAYS,
@@ -56,6 +54,8 @@ export type FunnelLeadRow = {
   metadata?: unknown;
   full_name: string | null;
   created_at: string;
+  /** Newsletter signups are not leads; see lead-definition. */
+  lifecycle_status?: string | null;
   source_path: string | null;
   call_booked_at: string | null;
   closed_won_at: string | null;
@@ -211,12 +211,17 @@ export function buildFunnelMonthly(input: {
   const changedOn = input.changedOn ?? FUNNEL_REBUILD_DAY;
   const grouping = input.grouping ?? "page";
 
-  const leads = input.leads.filter(
-    (lead) =>
-      input.includeInternal || !isInternalLead(lead.email, lead.full_name),
-  );
+  // One row per person: see lead-definition. A lead's questions are the best
+  // of every form they filled in, so sessions are re-keyed onto the lead.
+  const groups = groupLeads(input.leads, {
+    includeInternal: input.includeInternal,
+  });
+  const leads = groups.map((group) => group.lead);
   const showByEmail = indexShows(input.shows);
-  const questionsByLead = indexSessions(input.sessions ?? []);
+  const questionsByLead = questionsPerLead(
+    groups,
+    indexSessions(input.sessions ?? []),
+  );
   const visitsThrough = maxDay(input.visits);
 
   const months = monthKeys(leads, input.visits).map((month) =>
@@ -372,6 +377,7 @@ function buildPeriod(input: {
       grouping === "page" ? [page, channel] : [channel, page];
     both(row, child, (target) => {
       target.visits += visit.sessions;
+      target.sawVisits = true;
     });
   }
 
@@ -398,14 +404,16 @@ function buildPeriod(input: {
         target.questionsOffered += 1;
         if (questions.finished) target.questionsFinished += 1;
       }
-      if (!call) return;
-      target.booked += 1;
+      // A win counts whether or not Close logged a booking first: a deal
+      // closed on a phone call is still this lead's revenue.
       if (lead.closed_won_at) {
         target.won += 1;
-        if (lead.closed_won_value !== null) {
+        if (lead.closed_won_value != null) {
           target.revenue = (target.revenue ?? 0) + lead.closed_won_value;
         }
       }
+      if (!call) return;
+      target.booked += 1;
       applyCall(target, call, lead.closed_won_at !== null);
     });
   }
@@ -500,6 +508,12 @@ export type LeadQuestions = { finished: boolean; furthest: number };
 type Mutable = {
   funnel: string;
   visits: number;
+  /**
+   * Whether GA4 reported any session for this bucket. Chatbot and Meta Ads
+   * leads have no GA4 twin (GA4 cannot see a chat, and files Meta paid
+   * sessions under Meta), so their visits are unobserved, not zero.
+   */
+  sawVisits: boolean;
   leads: number;
   questionsOffered: number;
   questionsFinished: number;
@@ -520,6 +534,7 @@ function blank(funnel: string): Mutable {
   return {
     funnel,
     visits: 0,
+    sawVisits: false,
     leads: 0,
     questionsOffered: 0,
     questionsFinished: 0,
@@ -540,6 +555,7 @@ function sum(rows: Iterable<Mutable>): Mutable {
   const total = blank("All funnels");
   for (const row of rows) {
     total.visits += row.visits;
+    total.sawVisits = total.sawVisits || row.sawVisits;
     total.leads += row.leads;
     total.questionsOffered += row.questionsOffered;
     total.questionsFinished += row.questionsFinished;
@@ -563,7 +579,7 @@ function finalise(row: Mutable, visitWindowOpen: boolean): FunnelPeriodRow {
   return {
     funnel: row.funnel,
     isBookingFunnel: isBookingFunnelPath(row.funnel),
-    visits: visitWindowOpen ? row.visits : null,
+    visits: visitWindowOpen && row.sawVisits ? row.visits : null,
     leads: row.leads,
     questionsOffered: row.questionsOffered,
     questionsFinished: row.questionsFinished,
@@ -578,9 +594,10 @@ function finalise(row: Mutable, visitWindowOpen: boolean): FunnelPeriodRow {
     won: row.won,
     revenue: row.revenue,
     rates: {
-      visitToLead: visitWindowOpen
-        ? crossSystemRatio(row.leadsInVisitWindow, row.visits)
-        : null,
+      visitToLead:
+        visitWindowOpen && row.sawVisits
+          ? crossSystemRatio(row.leadsInVisitWindow, row.visits)
+          : null,
       questionsCompleted: ratio(row.questionsFinished, row.questionsOffered),
       leadToBook: ratio(row.booked, row.leads),
       bookToShow: ratio(row.held, showable),
@@ -650,6 +667,25 @@ export function indexSessions(
     index.set(key, {
       finished: (existing?.finished ?? false) || row.completed_at !== null,
       furthest: Math.max(existing?.furthest ?? 0, row.answer_count),
+    });
+  }
+  return index;
+}
+
+/** Sessions keyed by row id, re-keyed onto the lead that absorbed the row. */
+export function questionsPerLead(
+  groups: { lead: FunnelLeadRow; rows: FunnelLeadRow[] }[],
+  byRow: Map<string, LeadQuestions>,
+): Map<string, LeadQuestions> {
+  const index = new Map<string, LeadQuestions>();
+  for (const { lead, rows } of groups) {
+    const seen = rows
+      .map((row) => byRow.get(row.id))
+      .filter((entry): entry is LeadQuestions => entry !== undefined);
+    if (seen.length === 0) continue;
+    index.set(lead.id, {
+      finished: seen.some((entry) => entry.finished),
+      furthest: Math.max(...seen.map((entry) => entry.furthest)),
     });
   }
   return index;

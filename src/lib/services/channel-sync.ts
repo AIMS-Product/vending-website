@@ -11,9 +11,10 @@ import {
   type Ga4Client,
 } from "@/lib/ga4/client";
 import {
-  isChatbotCapture,
-  isInternalLead,
-} from "@/lib/services/admin-analytics-internal";
+  collapseToLeads,
+  lookbackStart,
+} from "@/lib/analytics/lead-definition";
+import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import {
   channelDailyKey,
   recordSyncRun,
@@ -416,10 +417,11 @@ async function bitlyLinkUtms(
   return map;
 }
 
-type LeadRow = {
+export type LeadRow = {
   created_at: string;
   email: string | null;
   full_name: string | null;
+  lifecycle_status?: string | null;
   utm_source: string | null;
   utm_medium: string | null;
   utm_campaign: string | null;
@@ -461,7 +463,7 @@ async function syncLeads(
   const endIso = `${dayKey(addDays(new Date(`${endDate}T00:00:00.000Z`), 1))}T00:00:00.000Z`;
 
   const base =
-    "created_at,email,full_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,metadata";
+    "created_at,email,full_name,lifecycle_status,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,metadata";
   // Probed once, not guessed: the deal-value column ships ahead of being
   // applied by hand, and selecting a column that is not there yet would fail
   // the whole leads connector rather than the one column.
@@ -475,45 +477,35 @@ async function syncLeads(
     client
       .from("lead_submissions")
       .select(revenueConnected ? `${base},closed_won_value` : base)
-      .gte("created_at", startIso)
+      // 30 days early so a repeat inside the window is recognised as the
+      // same lead (lead-definition); only leads from startIso are written.
+      .gte("created_at", lookbackStart(startIso).toISOString())
       .lt("created_at", endIso)
       .order("created_at")
       .range(from, to),
   );
 
-  const rows: ChannelDailyRow[] = leads
-    .filter((lead) => !isInternalLead(lead.email, lead.full_name))
-    .map((lead) => {
-      const booked = lead.call_booked_at ? 1 : 0;
-      const showed =
-        booked &&
-        lead.call_outcome !== "no_show" &&
-        lead.call_outcome !== "canceled"
-          ? 1
-          : 0;
-      const won = lead.closed_won_at || lead.call_outcome === "won" ? 1 : 0;
-      // A lead the site chatbot captured mid-conversation with no campaign
-      // tag is the chatbot's lead, not the site's. Written as the source so
-      // the read-time re-labelling reaches the same answer.
-      const chatbot =
-        !lead.utm_source?.trim() && isChatbotCapture(lead.metadata);
-      return {
-        day: lead.created_at.slice(0, 10),
-        source: chatbot ? "chatbot" : lead.utm_source,
-        medium: chatbot ? "chat" : lead.utm_medium,
-        campaign: lead.utm_campaign,
-        content: lead.utm_content,
-        term: lead.utm_term,
-        leads: 1,
-        booked,
-        showed,
-        won,
-        // Credited to the lead's cohort day like booked / showed / won, so a
-        // channel's revenue sits over the same population as its leads. Null
-        // for a lead that has not won: not observed, not zero.
-        revenue: lead.closed_won_value ?? null,
-      };
-    });
+  const inWindow = (lead: { created_at: string }) =>
+    new Date(lead.created_at) >= new Date(startIso);
+  // Every key a submission in the window was ever written under starts from
+  // zero, and the counted leads are summed on top (upsertChannelDaily sums
+  // rows sharing a key). Without this, a key whose only rows are now repeats
+  // or newsletter signups keeps the leads, booked and won an older sync
+  // wrote there, and the channel double counts that person's booking.
+  const cleared: ChannelDailyRow[] = leadSpineRows(leads.filter(inWindow)).map(
+    (row) => ({
+      ...row,
+      leads: 0,
+      booked: 0,
+      showed: 0,
+      won: 0,
+      revenue: null,
+    }),
+  );
+  const rows: ChannelDailyRow[] = [
+    ...cleared,
+    ...leadSpineRows(collapseToLeads(leads).filter(inWindow)),
+  ];
 
   // Bookings with a tagged link but no lead form behind them (a direct Calendly
   // link in a bio, say). They are bookings this link earned, so they count as
@@ -555,6 +547,44 @@ async function syncLeads(
   return written(
     await upsertChannelDaily(client, [...rows, ...bookingRows], { now }),
   );
+}
+
+/**
+ * One spine row per lead, keyed on its link. Shared with the report reader,
+ * which recomputes the Leads column from lead_submissions through this same
+ * mapping so the stored and the read-time keys cannot drift apart.
+ */
+export function leadSpineRows(leads: LeadRow[]): ChannelDailyRow[] {
+  return leads.map((lead) => {
+    const booked = lead.call_booked_at ? 1 : 0;
+    const showed =
+      booked &&
+      lead.call_outcome !== "no_show" &&
+      lead.call_outcome !== "canceled"
+        ? 1
+        : 0;
+    const won = lead.closed_won_at || lead.call_outcome === "won" ? 1 : 0;
+    // A lead the site chatbot captured mid-conversation with no campaign
+    // tag is the chatbot's lead, not the site's. Written as the source so
+    // the read-time re-labelling reaches the same answer.
+    const chatbot = !lead.utm_source?.trim() && isChatbotCapture(lead.metadata);
+    return {
+      day: lead.created_at.slice(0, 10),
+      source: chatbot ? "chatbot" : lead.utm_source,
+      medium: chatbot ? "chat" : lead.utm_medium,
+      campaign: lead.utm_campaign,
+      content: lead.utm_content,
+      term: lead.utm_term,
+      leads: 1,
+      booked,
+      showed,
+      won,
+      // Credited to the lead's cohort day like booked / showed / won, so a
+      // channel's revenue sits over the same population as its leads. Null
+      // for a lead that has not won: not observed, not zero.
+      revenue: lead.closed_won_value ?? null,
+    };
+  });
 }
 
 function written(result: { written: number; failed: number }) {

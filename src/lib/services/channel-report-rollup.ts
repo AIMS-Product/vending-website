@@ -28,7 +28,14 @@ export type ChannelFact = Pick<
   | "showed"
   | "won"
   | "revenue"
->;
+> & {
+  /**
+   * Webinar registrations, off-site GHL form fills and ManyChat contacts:
+   * people we hold a contact for who are not leads by the site definition
+   * (lead-definition.ts). Set by `fetchFacts`, never stored.
+   */
+  contacts?: number | null;
+};
 
 export const METRIC_KEYS = [
   "spend",
@@ -38,6 +45,7 @@ export const METRIC_KEYS = [
   "visits",
   "thankyou_visits",
   "leads",
+  "contacts",
   "booked",
   "showed",
   "won",
@@ -361,7 +369,10 @@ function rowFor(
       winPct: ofObservedPct(current, "won", "booked"),
     },
     directBooked: sumObserved(
-      current.filter((fact) => fact.leads == null).map((fact) => fact.booked),
+      // Not webinar or ManyChat rows: their bookings have contacts behind them.
+      current
+        .filter((fact) => fact.leads == null && fact.contacts == null)
+        .map((fact) => fact.booked),
     ),
     costPerLead:
       spend != null && metrics.leads ? round1(spend / metrics.leads) : null,

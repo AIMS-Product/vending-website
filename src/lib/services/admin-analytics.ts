@@ -2,6 +2,11 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveChannel } from "@/lib/analytics/channel";
+import {
+  collapseToLeads,
+  inLeadWindow,
+  lookbackStart,
+} from "@/lib/analytics/lead-definition";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import {
@@ -128,7 +133,6 @@ export type AdminAnalytics = {
   };
   bookingsTotal: number;
   bookingsUnattributed: number;
-  leadsAllTime: number;
   leadsBySourcePath: AdminAnalyticsBreakdownRow[];
   leadsByChannel: AdminAnalyticsBreakdownRow[];
   bookingsByCalendar: AdminAnalyticsBreakdownRow[];
@@ -184,19 +188,20 @@ export async function getAdminAnalytics(
   const start = new Date(end.getTime() - days * DAY_MS);
   const priorStart = new Date(start.getTime() - days * DAY_MS);
 
-  const [leadRows, leadsAllTime, bookings] = await Promise.all([
-    fetchLeads(client, priorStart.toISOString()),
-    countLeadsAllTime(client),
+  const [leadRows, bookings] = await Promise.all([
+    // From 30 days before the prior window, so a repeat submission whose
+    // first one landed just before it is recognised as the same lead.
+    fetchLeads(client, lookbackStart(priorStart).toISOString()),
     fetchBookings(client, priorStart.toISOString()),
   ]);
 
-  const internalExcluded = leadRows.filter((lead) =>
-    isInternalLead(lead.email, lead.full_name),
+  const internalExcluded = leadRows.filter(
+    (lead) =>
+      inLeadWindow(lead, start, end) &&
+      isInternalLead(lead.email, lead.full_name),
   ).length;
 
-  const leads = includeInternal
-    ? leadRows
-    : leadRows.filter((lead) => !isInternalLead(lead.email, lead.full_name));
+  const leads = collapseToLeads(leadRows, { includeInternal });
 
   const current = leads.filter((lead) => inWindow(lead.created_at, start, end));
   const prior = leads.filter((lead) =>
@@ -265,7 +270,6 @@ export async function getAdminAnalytics(
     },
     bookingsTotal: bookedInRange.length,
     bookingsUnattributed: bookedInRange.length - attributedInRange.length,
-    leadsAllTime,
     leadsBySourcePath: topNWithBookings(
       current,
       (lead) => lead.source_path,
@@ -424,39 +428,33 @@ async function fetchLeads(
   client: AdminAnalyticsClient,
   sinceIso: string,
 ): Promise<LeadAnalyticsRow[]> {
-  const { data, error } = await client
-    .from("lead_submissions")
-    .select(LEAD_ANALYTICS_FIELDS)
-    .gte("created_at", sinceIso)
-    .order("created_at", { ascending: true })
-    .limit(MAX_ANALYTICS_LEAD_ROWS);
-
-  if (error) {
-    throw new AdminAnalyticsServiceError("Could not load leads for analytics.");
+  // Paged: PostgREST caps one response at 1,000 rows without saying so, and
+  // an ascending read that hits the cap drops the NEWEST rows -- the window
+  // the page is about. Production passed 1,000 lead rows on 2026-09-18.
+  const rows: LeadAnalyticsRow[] = [];
+  const pageSize = 1000;
+  for (let from = 0; from < MAX_ANALYTICS_LEAD_ROWS; from += pageSize) {
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select(LEAD_ANALYTICS_FIELDS)
+      .gte("created_at", sinceIso)
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) {
+      throw new AdminAnalyticsServiceError(
+        "Could not load leads for analytics.",
+      );
+    }
+    const batch = (data ?? []) as LeadAnalyticsRow[];
+    rows.push(...batch);
+    if (batch.length < pageSize) return rows;
   }
-  const rows = (data ?? []) as LeadAnalyticsRow[];
-  if (rows.length >= MAX_ANALYTICS_LEAD_ROWS) {
-    console.warn("admin analytics lead read hit its row ceiling", {
-      limit: MAX_ANALYTICS_LEAD_ROWS,
-      since: sinceIso,
-    });
-  }
+  console.warn("admin analytics lead read hit its row ceiling", {
+    limit: MAX_ANALYTICS_LEAD_ROWS,
+    since: sinceIso,
+  });
   return rows;
-}
-
-async function countLeadsAllTime(
-  client: AdminAnalyticsClient,
-): Promise<number> {
-  const { count, error } = await client
-    .from("lead_submissions")
-    .select("id", { count: "exact", head: true });
-
-  if (error) {
-    throw new AdminAnalyticsServiceError(
-      "Could not count all-time leads for analytics.",
-    );
-  }
-  return count ?? 0;
 }
 
 type BookingsFetchResult = {

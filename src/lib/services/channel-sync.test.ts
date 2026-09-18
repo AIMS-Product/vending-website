@@ -303,11 +303,21 @@ describe("syncChannelDaily", () => {
       ...overrides,
     });
     const { client, upserts } = buildClient({
+      // Four different people: the same email twice is one lead.
       leads: [
-        lead({}),
-        lead({ call_booked_at: "2026-09-12", call_outcome: null }),
-        lead({ call_booked_at: "2026-09-12", call_outcome: "no_show" }),
+        lead({ email: "one@gmail.com" }),
         lead({
+          email: "two@gmail.com",
+          call_booked_at: "2026-09-12",
+          call_outcome: null,
+        }),
+        lead({
+          email: "three@gmail.com",
+          call_booked_at: "2026-09-12",
+          call_outcome: "no_show",
+        }),
+        lead({
+          email: "four@gmail.com",
           call_booked_at: "2026-09-12",
           call_outcome: "won",
           closed_won_at: "2026-09-20",
@@ -355,10 +365,19 @@ describe("syncChannelDaily", () => {
     };
     const { client, upserts } = buildClient({
       leads: [
-        { ...base, metadata: { source: "chatbot", conversationId: "c1" } },
-        { ...base, metadata: null },
+        {
+          ...base,
+          email: "one@gmail.com",
+          metadata: { source: "chatbot", conversationId: "c1" },
+        },
+        { ...base, email: "two@gmail.com", metadata: null },
         // A tagged lead keeps its campaign even when the chatbot captured it.
-        { ...base, utm_source: "youtube", metadata: { source: "chatbot" } },
+        {
+          ...base,
+          email: "three@gmail.com",
+          utm_source: "youtube",
+          metadata: { source: "chatbot" },
+        },
       ],
     });
 
@@ -375,6 +394,54 @@ describe("syncChannelDaily", () => {
     expect(byChannel.Chatbot).toMatchObject({ leads: 1, booked: 1 });
     expect(byChannel.Website).toMatchObject({ leads: 1 });
     expect(byChannel.YouTube).toMatchObject({ leads: 1 });
+  });
+
+  it("counts one person who submitted twice as one lead, with the booking from either row", async () => {
+    const base = {
+      email: "pat@buyer.com",
+      full_name: "Pat",
+      utm_source: "youtube",
+      utm_medium: "video",
+      utm_campaign: null,
+      utm_content: null,
+      utm_term: null,
+      call_outcome: null,
+      closed_won_at: null,
+      metadata: null,
+    };
+    const { client, upserts } = buildClient({
+      leads: [
+        {
+          ...base,
+          created_at: "2026-09-10T15:00:00.000Z",
+          call_booked_at: null,
+        },
+        {
+          ...base,
+          email: "PAT@buyer.com",
+          created_at: "2026-09-10T15:05:00.000Z",
+          call_booked_at: "2026-09-12",
+        },
+        {
+          ...base,
+          email: "reader@buyer.com",
+          created_at: "2026-09-10T16:00:00.000Z",
+          call_booked_at: null,
+          lifecycle_status: "newsletter_subscribed",
+        },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: null,
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    expect(upserts).toEqual([
+      expect.objectContaining({ channel: "YouTube", leads: 1, booked: 1 }),
+    ]);
   });
 
   it("counts a tagged Calendly booking with no lead form as booked, leads unobserved", async () => {

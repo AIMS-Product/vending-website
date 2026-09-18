@@ -95,6 +95,7 @@ export type FunnelMapData = {
 export async function getFunnelMap(
   input: {
     range?: AdminAnalyticsRangeKey;
+    includeInternal?: boolean;
     client?: MapClient;
     now?: Date;
   } = {},
@@ -107,7 +108,12 @@ export async function getFunnelMap(
   const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
 
   const [channels, ghl, cohortRows] = await Promise.all([
-    getChannelsTab({ range, client, now }),
+    getChannelsTab({
+      range,
+      client,
+      now,
+      includeInternal: input.includeInternal,
+    }),
     getGhlSummary(client, startDay, endDay),
     fetchCohortRows(client, startDay, endDay),
   ]);
@@ -246,19 +252,21 @@ async function getGhlSummary(
     const isFormRow =
       row.source === "ghl_form" ||
       ROUTE_KEYS.has(routeKey(row.source, row.medium, row.content));
-    if (!isFormRow || !row.leads) continue;
-    formLeads += row.leads;
+    // GHL form fills are contacts, not site leads (lead-definition).
+    const fills = row.contacts ?? 0;
+    if (!isFormRow || !fills) continue;
+    formLeads += fills;
     const key = routeKey(row.source, row.campaign, "");
     const existing = formsByKey.get(key);
     formsByKey.set(
       key,
       existing
-        ? { ...existing, leads: existing.leads + row.leads }
+        ? { ...existing, leads: existing.leads + fills }
         : {
             campaign: row.campaign,
             source: row.source,
             channel: row.channel,
-            leads: row.leads,
+            leads: fills,
           },
     );
   }

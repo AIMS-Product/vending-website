@@ -33,6 +33,12 @@ The exact object the Channels tab renders, plus `ok` and `generatedAt`:
 - `fixLinks`: posts whose outbound link fails the link standard.
 
 Every metric is a count or money; `null` means not observed, never zero.
+
+`leads` follows the one lead definition (`src/lib/analytics/lead-definition.ts`):
+one person who gave name and email on the site or to the chatbot, the same
+email within 30 days counted once, newsletter signups and test submissions
+excluded. It matches every tab of `/admin/analytics`. Webinar registrations,
+off-site GHL form fills and ManyChat contacts are in `contacts`, never `leads`.
 Aggregates only, no names, emails or lead ids.
 
 ## Example

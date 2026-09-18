@@ -3,6 +3,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
+import {
+  collapseToLeads,
+  inLeadWindow,
+  lookbackStart,
+} from "@/lib/analytics/lead-definition";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
   resolveAdminAnalyticsRange,
@@ -100,28 +105,24 @@ export async function getYouTubeAttribution(
   const startIso = start.toISOString();
 
   const [leadRead, videos, clicks, pageViews] = await Promise.all([
-    fetchLeads(client, startIso),
+    // 30 days early so a repeat submission is recognised as the same lead.
+    fetchLeads(client, lookbackStart(start).toISOString()),
     fetchVideos(client),
     fetchClicks(client, startIso),
     fetchVisits(client, startIso),
   ]);
 
-  const leadRows = leadRead.rows;
+  // Bounded at both ends: a custom range used to count every lead created
+  // after its end date too.
+  const leadRows = leadRead.rows.filter((lead) =>
+    inLeadWindow(lead, start, end),
+  );
   const internalExcluded = leadRows.filter((lead) =>
-    isInternalLead(
-      lead.email,
-      (lead as { full_name?: string | null }).full_name ?? null,
-    ),
+    isInternalLead(lead.email, lead.full_name ?? null),
   ).length;
-  const leads = includeInternal
-    ? leadRows
-    : leadRows.filter(
-        (lead) =>
-          !isInternalLead(
-            lead.email,
-            (lead as { full_name?: string | null }).full_name ?? null,
-          ),
-      );
+  const leads = collapseToLeads(leadRead.rows, { includeInternal }).filter(
+    (lead) => inLeadWindow(lead, start, end),
+  );
 
   return {
     ...buildYouTubeAttribution({
@@ -171,14 +172,24 @@ async function selectLeads(
   fields: string,
 ): Promise<YouTubeLeadRow[] | null> {
   try {
-    const { data, error } = await client
-      .from("lead_submissions")
-      .select(fields)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: true })
-      .limit(MAX_LEAD_ROWS);
-    if (error) return null;
-    return (data ?? []) as unknown as YouTubeLeadRow[];
+    // Paged: PostgREST caps one response at 1,000 rows silently, and an
+    // ascending read that hits it drops the newest rows.
+    const rows: YouTubeLeadRow[] = [];
+    const pageSize = 1000;
+    for (let from = 0; from < MAX_LEAD_ROWS; from += pageSize) {
+      const { data, error } = await client
+        .from("lead_submissions")
+        .select(fields)
+        .gte("created_at", sinceIso)
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(from, from + pageSize - 1);
+      if (error) return null;
+      const batch = (data ?? []) as unknown as YouTubeLeadRow[];
+      rows.push(...batch);
+      if (batch.length < pageSize) break;
+    }
+    return rows;
   } catch {
     return null;
   }

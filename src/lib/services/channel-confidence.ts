@@ -28,7 +28,13 @@ import {
 
 export type CoverageKey = Extract<
   MetricKey,
-  "spend" | "impressions" | "clicks" | "visits" | "leads" | "booked"
+  | "spend"
+  | "impressions"
+  | "clicks"
+  | "visits"
+  | "leads"
+  | "contacts"
+  | "booked"
 >;
 
 export const COVERAGE_KEYS: ReadonlyArray<{ key: CoverageKey; label: string }> =
@@ -38,6 +44,7 @@ export const COVERAGE_KEYS: ReadonlyArray<{ key: CoverageKey; label: string }> =
     { key: "clicks", label: "Clicked" },
     { key: "visits", label: "Visits" },
     { key: "leads", label: "Leads" },
+    { key: "contacts", label: "Reg. & contacts" },
     { key: "booked", label: "Booked" },
   ];
 
@@ -49,15 +56,15 @@ const EXPECTED: Record<string, CoverageKey[]> = {
   X: ["impressions", "visits", "leads"],
   TikTok: ["impressions", "visits", "leads"],
   YouTube: ["impressions", "clicks", "visits", "leads"],
-  Webinar: ["spend", "leads", "booked"],
+  Webinar: ["spend", "contacts", "booked"],
   "Meta Ads": ["spend", "visits", "leads"],
   "Google Ads": ["spend", "visits", "leads"],
   Email: ["impressions", "clicks", "leads"],
   Newsletter: ["visits", "leads"],
   Chatbot: ["leads", "booked"],
-  [INSTAGRAM_DM_CHANNEL]: ["clicks", "visits", "leads", "booked"],
+  [INSTAGRAM_DM_CHANNEL]: ["clicks", "contacts", "booked"],
   [LOW_TICKET_CHANNEL]: ["visits", "leads", "booked"],
-  [GHL_FORMS_CHANNEL]: ["leads"],
+  [GHL_FORMS_CHANNEL]: ["contacts"],
   [WEBSITE_CHANNEL]: ["visits", "leads"],
   [SEARCH_CHANNEL]: ["visits", "leads"],
   [AI_CHANNEL]: ["visits"],
@@ -82,7 +89,8 @@ const METRIC_CONNECTORS: Record<CoverageKey, string[]> = {
     "manychat-ingest",
   ],
   visits: ["ga4-visits"],
-  leads: ["leads", "webinar-ingest", "ghl-forms", "manychat-ingest"],
+  leads: ["leads"],
+  contacts: ["webinar-ingest", "ghl-forms", "manychat-ingest"],
   booked: ["leads", "webinar-ingest", "manychat-ingest"],
 };
 
@@ -251,9 +259,6 @@ function buildChecks(
   const sum = (rows: ChannelFact[], key: MetricKey) =>
     sumObserved(rows.map((row) => row[key]));
   const webinar = facts.filter((fact) => fact.channel === "Webinar");
-  const formLeads = facts.filter(
-    (fact) => fact.channel !== "Webinar" && fact.channel !== GHL_FORMS_CHANNEL,
-  );
   // Bookings the leads connector wrote: everything except the two programs
   // that report their own bookings (webinar-ingest, manychat-ingest).
   const siteBooked = facts.filter(
@@ -264,15 +269,16 @@ function buildChecks(
     reconcile(
       "leads",
       "Site leads match lead_submissions",
-      sum(formLeads, "leads"),
+      // Every channel: `leads` holds only site leads (lead-definition).
+      sum(facts, "leads"),
       sources.leadSubmissions,
       "lead_submissions",
       2,
     ),
     reconcile(
       "webinar",
-      "Webinar leads match registrations",
-      sum(webinar, "leads"),
+      "Webinar registrations match webinar_events",
+      sum(webinar, "contacts"),
       sources.webinarRegistrations,
       "webinar_events registrations",
       2,

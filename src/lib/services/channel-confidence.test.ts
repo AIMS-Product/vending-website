@@ -38,7 +38,13 @@ describe("buildConfidence", () => {
     const report = buildConfidence(
       [
         fact({ visits: 100, leads: 10, booked: 3 }),
-        fact({ channel: "Webinar", source: "webinar", leads: 500, booked: 40 }),
+        // Registrations arrive as contacts (fetchFacts), never as site leads.
+        fact({
+          channel: "Webinar",
+          source: "webinar",
+          contacts: 500,
+          booked: 40,
+        }),
         fact({ channel: "Instagram DM", source: "manychat", booked: 2 }),
       ],
       [],

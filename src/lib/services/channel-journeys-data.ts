@@ -17,6 +17,7 @@ import {
   resolveAdminAnalyticsRange,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
+import { lookbackStart } from "@/lib/analytics/lead-definition";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -47,9 +48,13 @@ export async function getChannelJourneys(input: {
         client
           .from("lead_submissions")
           .select(
-            "id,email,full_name,created_at,source_path,utm_source,utm_medium,metadata,call_booked_at,closed_won_at,closed_won_value",
+            "id,email,full_name,created_at,lifecycle_status,source_path,utm_source,utm_medium,metadata,call_booked_at,closed_won_at,closed_won_value",
           )
-          .gte("created_at", `${start}T00:00:00.000Z`)
+          // 30 days early so repeats are recognised (lead-definition).
+          .gte(
+            "created_at",
+            lookbackStart(`${start}T00:00:00.000Z`).toISOString(),
+          )
           .lte("created_at", `${end}T23:59:59.999Z`)
           .order("created_at")
           .range(from, to),

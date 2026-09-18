@@ -18,12 +18,17 @@ export const YOUTUBE_CHANNEL = "YouTube";
 
 /** Close labels are the only source for a call outcome; see the migration. */
 export type CallOutcome =
-  "no_show" | "canceled" | "rescheduled" | "contract_sent" | "won";
+  | "no_show"
+  | "canceled"
+  | "rescheduled"
+  | "contract_sent"
+  | "won";
 
 export type YouTubeLeadRow = {
   id: string;
   created_at: string;
   email: string | null;
+  full_name?: string | null;
   utm_source: string | null;
   utm_campaign: string | null;
   utm_content: string | null;

@@ -165,6 +165,7 @@ function ChannelKpis({
     <AdminMetricStrip>
       {kpi("Spend", totals.spend, priorTotals.spend, "money")}
       {kpi("Leads", totals.leads, priorTotals.leads)}
+      {kpi("Registrations & contacts", totals.contacts, priorTotals.contacts)}
       {kpi("Booked", totals.booked, priorTotals.booked)}
       {kpi("Won", totals.won, priorTotals.won)}
     </AdminMetricStrip>
@@ -277,6 +278,8 @@ const COLUMNS: ReadonlyArray<{
   { key: "clicks", label: "Clicks", format: "number" },
   { key: "visits", label: "Visits", format: "number" },
   { key: "leads", label: "Leads", format: "number" },
+  // Webinar registrations, off-site GHL forms, ManyChat: not site leads.
+  { key: "contacts", label: "Reg. & contacts", format: "number" },
   { key: "booked", label: "Booked", format: "number" },
   { key: "showed", label: "Showed", format: "number" },
   { key: "won", label: "Won", format: "number" },

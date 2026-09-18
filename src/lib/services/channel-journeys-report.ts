@@ -21,15 +21,14 @@ import {
   type JourneyStep,
 } from "@/lib/content/channel-journeys";
 import { resolveChannel, resolveGa4Channel } from "@/lib/analytics/channel";
-import {
-  isChatbotCapture,
-  isInternalLead,
-} from "@/lib/services/admin-analytics-internal";
+import { groupLeads } from "@/lib/analytics/lead-definition";
+import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import {
   canonicalFunnelPath,
   classifyBookedCall,
   indexSessions,
   indexShows,
+  questionsPerLead,
   type FunnelSessionRow,
   type FunnelShowRow,
 } from "@/lib/services/funnel-monthly";
@@ -39,6 +38,7 @@ export type JourneyLeadRow = {
   email: string | null;
   full_name: string | null;
   created_at: string;
+  lifecycle_status?: string | null;
   source_path: string | null;
   utm_source: string | null;
   utm_medium: string | null;
@@ -205,17 +205,25 @@ export function buildChannelJourneys(input: {
   const { start, end } = input.window;
 
   const showByEmail = indexShows(input.shows);
-  const questionsByLead = indexSessions(input.sessions);
+
   const visitsThrough = latestDay(input.visits.map((row) => row.day));
   // GA4 lags, so a page step measured to `end` would be short its last day
   // while every step around it is not.
   const visitEnd = visitsThrough && visitsThrough < end ? visitsThrough : end;
 
-  const leads = input.leads.filter(
-    (lead) =>
-      (input.includeInternal || !isInternalLead(lead.email, lead.full_name)) &&
+  // One row per person (see lead-definition); the loader reads 30 days early
+  // so a repeat just inside the window is recognised.
+  const groups = groupLeads(input.leads, {
+    includeInternal: input.includeInternal,
+  }).filter(
+    ({ lead }) =>
       lead.created_at.slice(0, 10) >= start &&
       lead.created_at.slice(0, 10) <= end,
+  );
+  const leads = groups.map((group) => group.lead);
+  const questionsByLead = questionsPerLead(
+    groups,
+    indexSessions(input.sessions),
   );
   const leadsByChannel = groupBy(leads, channelOfLead);
 

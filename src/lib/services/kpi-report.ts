@@ -578,7 +578,9 @@ function buildLane2Section(input: KpiInput): KpiSection {
       label: INSTAGRAM_DM_CHANNEL,
       detail: "ManyChat stages (Pearl)",
       values: {
-        leads: sumObserved(dm.map((fact) => fact.leads)),
+        // ManyChat new conversations are contacts, not site leads
+        // (lead-definition), so they arrive on `contacts`.
+        leads: sumObserved(dm.map((fact) => fact.contacts ?? null)),
         clicks: sumObserved(dm.map((fact) => fact.clicks)),
         booked: sumObserved(dm.map((fact) => fact.booked)),
         showRate: rate(pairedPct(dm, "showed", "booked")),

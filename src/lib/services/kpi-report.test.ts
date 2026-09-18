@@ -81,7 +81,8 @@ const input: KpiInput = {
       channel: "Instagram DM",
       source: "manychat",
       destination: "book-call",
-      leads: 40,
+      // ManyChat conversations are contacts, not site leads (fetchFacts).
+      contacts: 40,
       clicks: 20,
       booked: 10,
       showed: 6,

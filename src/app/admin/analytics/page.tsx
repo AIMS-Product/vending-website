@@ -55,6 +55,7 @@ import {
   toCustomRangeKey,
 } from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
+import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -119,10 +120,14 @@ export default async function AdminAnalyticsPage({
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
     isChannelsTab
-      ? getChannelsTab({ range, channel: singleParam(params.channel) })
+      ? getChannelsTab({
+          range,
+          channel: singleParam(params.channel),
+          includeInternal,
+        })
       : null,
-    isKpiTab ? getKpiTab({ range }) : null,
-    isMapTab ? getFunnelMap({ range }) : null,
+    isKpiTab ? getKpiTab({ range, includeInternal }) : null,
+    isMapTab ? getFunnelMap({ range, includeInternal }) : null,
     isBookedTab ? getBookedCalls() : null,
     // Deliberately ignores `range`: this tab IS the month-by-month series,
     // and a 30-day window would render one partial month.
@@ -176,6 +181,8 @@ export default async function AdminAnalyticsPage({
         range={range}
         includeInternal={includeInternal}
       />
+
+      <LeadDefinitionNote />
 
       {executive ? (
         <FunnelExecutiveTab data={executive} />
@@ -310,7 +317,6 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
         connected={analytics.bookingsConnected}
         total={analytics.bookingsTotal}
         unattributed={analytics.bookingsUnattributed}
-        leadsAllTime={analytics.leadsAllTime}
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -444,12 +450,10 @@ function BookingContext({
   connected,
   total,
   unattributed,
-  leadsAllTime,
 }: {
   connected: boolean;
   total: number;
   unattributed: number;
-  leadsAllTime: number;
 }) {
   if (!connected) {
     return (
@@ -477,9 +481,24 @@ function BookingContext({
         ) : (
           <>Every one of them traces back to a lead this site captured.</>
         )}{" "}
-        <span className="text-ui-text-subtle">
-          {leadsAllTime.toLocaleString()} leads captured all time.
-        </span>
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Every tab counts a lead the same way (lib/analytics/lead-definition), so the
+ * definition is stated once, above all of them.
+ */
+function LeadDefinitionNote() {
+  return (
+    <div className={`${adminCardClass} mb-5`}>
+      <p className="text-ui-text text-sm">
+        <span className="font-semibold">{LEAD_DEFINITION.title}:</span>{" "}
+        {LEAD_DEFINITION.body}
+      </p>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        {LEAD_DEFINITION.notLeads}
       </p>
     </div>
   );

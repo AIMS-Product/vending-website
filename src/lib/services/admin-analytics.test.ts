@@ -20,10 +20,13 @@ type FakeState = Record<string, FakeTableState>;
 
 /**
  * Minimal fake mirroring the two query shapes admin-analytics.ts issues:
- *  - a row-select query: `.select(fields).gte(...).order(...).limit(...)`
- *    resolving `{ data, error }`
+ *  - a row-select query: `.select(fields).gte(...).order(...).range(...)`
+ *    resolving `{ data, error }`, capped at 1,000 rows per response the way
+ *    PostgREST caps it in production
  *  - a `count(head:true)` query resolving `{ count, error }`
  */
+const POSTGREST_MAX_ROWS = 1000;
+
 function buildClient(state: FakeState) {
   return {
     from(table: string) {
@@ -37,6 +40,7 @@ class FakeAnalyticsQuery {
   private filters: Array<(row: FakeRow) => boolean> = [];
   private isCountQuery = false;
   private rowLimit: number | null = null;
+  private offset = 0;
 
   constructor(private tableState: FakeTableState) {}
 
@@ -62,6 +66,12 @@ class FakeAnalyticsQuery {
     return this;
   }
 
+  range(from: number, to: number) {
+    this.offset = from;
+    this.rowLimit = to - from + 1;
+    return this;
+  }
+
   then(
     resolve: (value: {
       data?: FakeRow[] | null;
@@ -83,7 +93,10 @@ class FakeAnalyticsQuery {
     );
     // Honour the limit the way PostgREST does, so a capped read is visible
     // here rather than being silently ignored by the fake.
-    const matched = this.rowLimit === null ? all : all.slice(0, this.rowLimit);
+    const cap = Math.min(this.rowLimit ?? Infinity, POSTGREST_MAX_ROWS);
+    const matched = this.isCountQuery
+      ? all
+      : all.slice(this.offset, this.offset + cap);
 
     resolve(
       this.isCountQuery
@@ -94,10 +107,13 @@ class FakeAnalyticsQuery {
 }
 
 function makeLead(overrides: Partial<FakeRow> = {}): FakeRow {
+  // One person per fixture row unless a test says otherwise: the same email
+  // twice within 30 days is one lead (lead-definition).
+  const id = (overrides.id as string | undefined) ?? "lead_1";
   return {
-    id: "lead_1",
+    id,
     created_at: "2026-07-15T12:00:00.000Z",
-    email: "prospect@gmail.com",
+    email: `prospect-${id}@gmail.com`,
     full_name: "Real Prospect",
     source_path: "/resources/vending-machine-cost",
     utm_source: "google",
@@ -121,6 +137,53 @@ function makeBooking(overrides: Partial<FakeRow> = {}): FakeRow {
 const NOW = new Date("2026-07-20T12:00:00.000Z");
 
 describe("getAdminAnalytics", () => {
+  it("counts every lead past the 1,000-row response cap", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: Array.from({ length: 1500 }, (_, index) =>
+          makeLead({
+            id: `c${String(index).padStart(4, "0")}`,
+            created_at: "2026-07-15T12:00:00.000Z",
+          }),
+        ),
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    expect(analytics.metrics.leads.value).toBe(1500);
+  });
+
+  it("counts one person who submitted twice as one lead, and skips newsletter signups", async () => {
+    const client = buildClient({
+      lead_submissions: {
+        rows: [
+          makeLead({ id: "a1", email: "pat@buyer.com" }),
+          makeLead({
+            id: "a2",
+            email: "pat@buyer.com",
+            created_at: "2026-07-16T12:00:00.000Z",
+          }),
+          makeLead({ id: "n1", lifecycle_status: "newsletter_subscribed" }),
+        ],
+      },
+      calendly_bookings: { rows: [] },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    expect(analytics.metrics.leads.value).toBe(1);
+  });
+
   it("counts leads in the selected window and compares to the prior window", async () => {
     const client = buildClient({
       lead_submissions: {

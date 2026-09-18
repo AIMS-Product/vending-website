@@ -11,6 +11,11 @@ import {
   resolveAdminAnalyticsRange,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
+import {
+  collapseToLeads,
+  lookbackStart,
+  type LeadLike,
+} from "@/lib/analytics/lead-definition";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -36,9 +41,13 @@ export async function getLinkCoverage(input: {
         client
           .from("lead_submissions")
           .select(
-            "created_at,source_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
+            "created_at,email,full_name,lifecycle_status,source_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
           )
-          .gte("created_at", `${start}T00:00:00.000Z`)
+          // 30 days early so repeats are recognised (lead-definition).
+          .gte(
+            "created_at",
+            lookbackStart(`${start}T00:00:00.000Z`).toISOString(),
+          )
           .lte("created_at", `${end}T23:59:59.999Z`)
           .order("created_at")
           .range(from, to),
@@ -57,7 +66,16 @@ export async function getLinkCoverage(input: {
     ) as Promise<CoverageLinkRow[]>,
   ]);
 
-  return buildLinkCoverage({ leads, links, window: { start, end } });
+  // Counted the way every other surface counts a lead: one person, no
+  // newsletter signups, no test or team submissions.
+  const counted = collapseToLeads(
+    leads as (CoverageLeadRow & LeadLike)[],
+  ).filter((lead) => lead.created_at.slice(0, 10) >= start);
+  return buildLinkCoverage({
+    leads: counted,
+    links,
+    window: { start, end },
+  });
 }
 
 async function page<Row>(
