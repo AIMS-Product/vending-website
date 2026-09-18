@@ -59,7 +59,11 @@ export async function getChannelJourneys(input: {
       (from, to) =>
         client
           .from("ga4_page_views")
-          .select("day,landing_page,utm_source,sessions")
+          // utm_campaign is not optional here: ga4_page_views has no medium, so
+          // resolveGa4Channel needs the campaign to tell a paid google session
+          // from an organic one. Without it every Google Ads session resolved
+          // to Organic search and the lane read 0 visits against 96 leads.
+          .select("day,landing_page,utm_source,utm_campaign,sessions")
           .gte("day", start)
           .lte("day", end)
           .order("day")
