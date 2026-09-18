@@ -607,7 +607,7 @@ function finalise(row: Mutable, visitWindowOpen: boolean): FunnelPeriodRow {
     revenue: row.revenue,
     rates: {
       visitToLead: visitWindowOpen
-        ? ratio(row.leadsInVisitWindow, row.visits)
+        ? crossSystemRatio(row.leadsInVisitWindow, row.visits)
         : null,
       questionsCompleted: ratio(row.questionsFinished, row.questionsOffered),
       leadToBook: ratio(row.booked, row.leads),
@@ -706,6 +706,31 @@ function maxDay(visits: FunnelVisitRow[]): string | null {
 function ratio(numerator: number, denominator: number): number | null {
   if (denominator <= 0) return null;
   return (numerator / denominator) * 100;
+}
+
+/**
+ * A rate whose two sides come from two instruments, dropped when it passes 100%.
+ *
+ * Opt-in is the only one here: the leads are rows in our own table, the visits
+ * are GA4 sessions. GA4 attributes a session to the landing page it saw, and we
+ * attribute a lead to the `source_path` the form was on, so a visitor who
+ * landed on one page and submitted on another is counted on two different rows.
+ * Where that runs one way the page shows more leads than visits — production on
+ * 2026-09-18 had /newsletter at 236.4% and /booking-t5-socials/Meta at 133.3%.
+ *
+ * Above 100% the join has demonstrably failed, and a rate that cannot be true
+ * is worth less than a dash. Below it the same error is present and invisible,
+ * which is why the tab says opt-in is a shape and not a conversion rate. This
+ * is the standing rule the Journeys tab already applies as `crossSystem`.
+ */
+const CROSS_SYSTEM_CEILING = 100;
+
+function crossSystemRatio(
+  numerator: number,
+  denominator: number,
+): number | null {
+  const value = ratio(numerator, denominator);
+  return value !== null && value > CROSS_SYSTEM_CEILING ? null : value;
 }
 
 function monthEnd(month: string): string {

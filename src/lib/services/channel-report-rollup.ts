@@ -231,21 +231,63 @@ export function pairedPct(
  */
 const MIN_COVERAGE = 0.5;
 
+/**
+ * The same correction for any denominator, not just visits.
+ *
+ * `pairedPct` was wrong everywhere, not only on opt-in. A spine row carries
+ * `booked` only if a booking happened on that link that day, so "both
+ * observed" dropped every lead-day that booked nobody and divided by the
+ * converting days alone. Measured on 30 days of production (2026-09-18) it
+ * inflated Book % on every channel that has a stage its links do not share:
+ * Webinar 140.0% against a true 0.2% (4,042 registrations, 152 bookings),
+ * Instagram 82.4% against 10.1%, Website 58.0% against 45.1%.
+ *
+ * So the denominator is every row that observed it, and a denominator row with
+ * no numerator counts as the zero it was.
+ *
+ * A rate above 100% survives this and is not a bug: a booking today can belong
+ * to a lead captured last week, and a direct Calendly link books with no lead
+ * row at all. The row's `directBooked` names that second case. Both sides still
+ * come from our own tables, so the number is real — it is simply not a cohort
+ * conversion rate, and `funnel-monthly` is where a cohort-correct one lives.
+ */
+export function ofObservedPct(
+  facts: ChannelFact[],
+  numerator: MetricKey,
+  denominator: MetricKey,
+  { requireCoverage = false } = {},
+): number | null {
+  const seen = facts.filter((fact) => fact[denominator] != null);
+  if (!seen.some((fact) => fact[numerator] != null)) return null;
+
+  const covered = seen.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0);
+  if (requireCoverage) {
+    const observed = facts.reduce(
+      (sum, fact) => sum + (fact[numerator] ?? 0),
+      0,
+    );
+    if (observed > 0 && covered < observed * MIN_COVERAGE) return null;
+  }
+
+  return pct(covered, sumObserved(seen.map((fact) => fact[denominator])));
+}
+
+/**
+ * The coverage guard belongs to visits alone.
+ *
+ * Under a visits denominator, a lead on a row with no visits can only mean the
+ * two connectors keyed the same traffic differently — GA4 has a session for
+ * every lead, so a lead with no session is a join failure. Under any other
+ * denominator the same shape is an ordinary category: a booking on a row with
+ * no leads is a direct Calendly link, which is real, expected, and already
+ * reported as the row's `directBooked`. Nulling those would hide an honest
+ * rate to protect against a failure that cannot happen there.
+ */
 export function ofVisitsPct(
   facts: ChannelFact[],
   numerator: MetricKey,
 ): number | null {
-  const visited = facts.filter((fact) => fact.visits != null);
-  if (!visited.some((fact) => fact[numerator] != null)) return null;
-
-  const covered = visited.reduce(
-    (sum, fact) => sum + (fact[numerator] ?? 0),
-    0,
-  );
-  const observed = facts.reduce((sum, fact) => sum + (fact[numerator] ?? 0), 0);
-  if (observed > 0 && covered < observed * MIN_COVERAGE) return null;
-
-  return pct(covered, sumObserved(visited.map((fact) => fact.visits)));
+  return ofObservedPct(facts, numerator, "visits", { requireCoverage: true });
 }
 
 function channelsObserving(facts: ChannelFact[], key: MetricKey): number {
@@ -273,12 +315,12 @@ export function buildStages(
       prior: priorTotals[key],
       ofPreviousPct:
         options.shares && previous
-          ? // Same reason as ofVisitsPct's doc comment: a visit-day that
-            // converted nobody carries no lead row, and dropping it averaged
-            // the funnel's first step over converting days only.
+          ? // See ofObservedPct: a denominator-day that converted nobody
+            // carries no numerator row, and dropping it averaged each step
+            // over its converting days only.
             previous.key === "visits"
             ? ofVisitsPct(current, key)
-            : pairedPct(current, key, previous.key)
+            : ofObservedPct(current, key, previous.key)
           : null,
       ofPreviousLabel: options.shares && previous ? previous.label : null,
       deltaPct: deltaPct(value, priorTotals[key]),
@@ -315,8 +357,8 @@ function rowFor(
     prior: priorMetrics,
     rates: {
       leadPct: ofVisitsPct(current, "leads"),
-      bookPct: pairedPct(current, "booked", "leads"),
-      winPct: pairedPct(current, "won", "booked"),
+      bookPct: ofObservedPct(current, "booked", "leads"),
+      winPct: ofObservedPct(current, "won", "booked"),
     },
     directBooked: sumObserved(
       current.filter((fact) => fact.leads == null).map((fact) => fact.booked),
