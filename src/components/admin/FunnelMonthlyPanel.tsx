@@ -233,8 +233,8 @@ export function FunnelMonthlyTab({
           <p className="text-ui-text-subtle mt-1 text-xs">
             {clipped
               .map(
-                (month) => `${month.label} counts visits from
-              ${month.visitsStart}`,
+                (month) =>
+                  `${month.label} counts visits from ${month.visitsStart}`,
               )
               .join("; ")}
             , where this site started capturing leads. Before that GA4 was
