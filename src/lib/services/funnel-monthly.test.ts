@@ -98,6 +98,50 @@ describe("buildFunnelMonthly", () => {
     expect(row?.rates.visitToLead).toBeCloseTo(0.5);
   });
 
+  it("clips the cutover month's visits to the day lead capture went live", () => {
+    // Production 2026-09-18: July held leads on five real days (the 07-27
+    // cutover onward) while GA4 contributed all thirty-one, so opt-in printed
+    // 0.97% against a real 5.21%. That made August's 5.09% read as a fourfold
+    // improvement when it was in fact a slight fall.
+    const report = buildFunnelMonthly({
+      leads: [
+        lead({ created_at: "2026-07-28T09:00:00.000Z" }),
+        lead({ created_at: "2026-07-29T09:00:00.000Z" }),
+      ],
+      visits: [
+        // Before lead capture existed: must not reach the denominator.
+        { day: "2026-07-05", landing_page: "/contact", sessions: 900 },
+        { day: "2026-07-28", landing_page: "/contact", sessions: 50 },
+        { day: "2026-07-29", landing_page: "/contact", sessions: 50 },
+      ],
+      shows: [],
+      now: new Date("2026-08-15T00:00:00.000Z"),
+    });
+
+    const july = report.months.find((month) => month.key === "2026-07");
+    expect(july?.visitsStart).toBe("2026-07-27");
+    expect(july?.totals.visits).toBe(100);
+    // 2 / 100, not 2 / 1000.
+    expect(july?.totals.rates.visitToLead).toBeCloseTo(2);
+  });
+
+  it("leaves every month after the cutover alone", () => {
+    const report = buildFunnelMonthly({
+      leads: [lead({ created_at: "2026-08-10T09:00:00.000Z" })],
+      visits: [
+        { day: "2026-08-01", landing_page: "/contact", sessions: 40 },
+        { day: "2026-08-10", landing_page: "/contact", sessions: 60 },
+      ],
+      shows: [],
+      now: new Date("2026-09-01T00:00:00.000Z"),
+    });
+
+    const august = report.months.find((month) => month.key === "2026-08");
+    // No clip: the whole month counts, and the page prints no start caption.
+    expect(august?.visitsStart).toBeNull();
+    expect(august?.totals.visits).toBe(100);
+  });
+
   it("drops an opt-in rate above 100%: the GA4 join has failed, not the funnel", () => {
     // Production 2026-09-18 showed /newsletter at 236.4%. GA4 credits the
     // session to the page it landed on; we credit the lead to the page the

@@ -159,6 +159,12 @@ export type FunnelPeriod = {
    * fewer visits than it had. Print it next to any visit number.
    */
   visitsEnd: string | null;
+  /**
+   * First day the visit columns cover, when lead capture started later than the
+   * window did. Only the cutover month has one; null everywhere else. Print it
+   * next to any visit number, for the same reason as `visitsEnd`.
+   */
+  visitsStart: string | null;
   rows: FunnelPeriodRow[];
   totals: FunnelPeriodRow;
 };
@@ -351,9 +357,11 @@ function buildPeriod(input: {
   visitsThrough: string | null;
 }): FunnelPeriod {
   const { start, end, today, visitsThrough, grouping } = input;
-  // Visit rates stop where GA4 stops, on both sides of the division.
+  // Visit rates stop where GA4 stops and start where lead capture started, on
+  // both sides of the division. See LEADS_LIVE_FROM.
   const visitEnd = visitsThrough && visitsThrough < end ? visitsThrough : end;
-  const visitWindowOpen = visitsThrough !== null && visitEnd >= start;
+  const visitStart = LEADS_LIVE_FROM > start ? LEADS_LIVE_FROM : start;
+  const visitWindowOpen = visitsThrough !== null && visitEnd >= visitStart;
 
   // Two levels, always: the row is whichever dimension was asked for and the
   // children are the other one. Grouping by channel without being able to open
@@ -388,7 +396,7 @@ function buildPeriod(input: {
   };
 
   for (const visit of input.visits) {
-    if (visit.day < start || visit.day > visitEnd) continue;
+    if (visit.day < visitStart || visit.day > visitEnd) continue;
     const page = canonicalFunnelPath(visit.landing_page);
     if (!page) continue;
     // GA4 holds no medium, so the campaign is what separates a paid google
@@ -422,7 +430,7 @@ function buildPeriod(input: {
 
     both(row, child, (target) => {
       target.leads += 1;
-      if (day <= visitEnd) target.leadsInVisitWindow += 1;
+      if (day >= visitStart && day <= visitEnd) target.leadsInVisitWindow += 1;
       if (questions) {
         target.questionsOffered += 1;
         if (questions.finished) target.questionsFinished += 1;
@@ -455,6 +463,7 @@ function buildPeriod(input: {
     label: input.label,
     start,
     end,
+    visitsStart: visitWindowOpen && visitStart > start ? visitStart : null,
     visitsEnd: visitWindowOpen ? visitEnd : null,
     rows,
     totals: finalise(
@@ -701,6 +710,27 @@ function maxDay(visits: FunnelVisitRow[]): string | null {
   }
   return latest;
 }
+
+/**
+ * The day this site started capturing leads. The mirror of `visitsThrough`.
+ *
+ * GA4 has been recording since 2026-02-26; this app took over lead capture at
+ * the custom-domain cutover on 2026-07-27 (see AGENTS.md). Without clipping the
+ * denominator to it, July divided five days of leads by thirty-one days of
+ * sessions and printed a 0.97% opt-in against a real 5.17% — which made
+ * August's 3.5% read as a fourfold improvement when it was in fact a fall. A
+ * partial first month distorts a rate exactly like a partial last one, so it
+ * gets exactly the same fix.
+ *
+ * Deliberately a declared date rather than the earliest row. Three leads landed
+ * on 2026-07-06 and then nothing for twenty-one days, so `min(created_at)` puts
+ * the boundary at 07-06 and recovers almost nothing (1.15%). The cutover is a
+ * fact we know, not one to infer from a sparse table.
+ *
+ * Only the cutover month is affected; for every later month this is earlier
+ * than the month start and nothing changes.
+ */
+export const LEADS_LIVE_FROM = "2026-07-27";
 
 /** Null, never zero, when the denominator is empty. */
 function ratio(numerator: number, denominator: number): number | null {

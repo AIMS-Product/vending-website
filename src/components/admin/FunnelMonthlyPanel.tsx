@@ -195,6 +195,9 @@ export function FunnelMonthlyTab({
     ),
   );
   const mainKeys = rowKeys.filter((key) => !tailKeys.has(key));
+  // Months whose visit denominator starts later than the month does, so the
+  // number carries its own caveat instead of quietly reading low.
+  const clipped = months.filter((month) => month.visitsStart !== null);
 
   return (
     <div className="space-y-5">
@@ -226,6 +229,20 @@ export function FunnelMonthlyTab({
             ? " Open a source for every page and link under it."
             : " Open a page for the sources that sent it."}
         </p>
+        {clipped.length > 0 ? (
+          <p className="text-ui-text-subtle mt-1 text-xs">
+            {clipped
+              .map(
+                (month) => `${month.label} counts visits from
+              ${month.visitsStart}`,
+              )
+              .join("; ")}
+            , where this site started capturing leads. Before that GA4 was
+            recording and we were not, so the whole month&rsquo;s sessions
+            against a few days&rsquo; leads would understate opt-in several
+            times over.
+          </p>
+        ) : null}
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
             <thead>
