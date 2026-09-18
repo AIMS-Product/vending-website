@@ -30,7 +30,13 @@ export type CacRouteInput = {
   readonly variableSpend: number | null;
   readonly spendChannel: string | null;
   readonly spendSource: "manual" | "auto";
+  /** What a human typed. Used only when Close has no count for this route. */
   readonly closedWon: number | null;
+  /**
+   * Won deals Close records for this route's funnels in the month, by date won.
+   * Null when the route maps to no Close funnel or Close could not be read.
+   */
+  readonly closedWonClose: number | null;
   readonly marchCac: number | null;
   readonly notes: string | null;
   /** The row version the browser loaded, sent back on save so a stale write is refused. */
@@ -56,6 +62,9 @@ export type CacStatus =
   | "no-model";
 
 export type CacRouteRow = CacRouteInput & {
+  /** The closes CAC divides by: Close's count when it has one, else the typed number. */
+  readonly closesUsed: number | null;
+  readonly closesSource: "close" | "typed";
   readonly proratedFixedCost: number | null;
   /** The spend the total actually used, after spendSource. */
   readonly spendUsed: number | null;
@@ -175,9 +184,10 @@ export function buildCacReport(
       const totalCost = parts.length
         ? round2(parts.reduce((a, b) => a + b, 0))
         : null;
+      const closesUsed = route.closedWonClose ?? route.closedWon;
       const cac =
-        totalCost != null && route.closedWon != null && route.closedWon > 0
-          ? round2(totalCost / route.closedWon)
+        totalCost != null && closesUsed != null && closesUsed > 0
+          ? round2(totalCost / closesUsed)
           : null;
       const spendDisagreement =
         route.variableSpend != null &&
@@ -195,6 +205,8 @@ export function buildCacReport(
           : null;
       return {
         ...route,
+        closesUsed,
+        closesSource: route.closedWonClose != null ? "close" : "typed",
         proratedFixedCost,
         spendUsed,
         observedSpend,
@@ -206,7 +218,7 @@ export function buildCacReport(
         status: statusFor(
           cac,
           route.marchCac,
-          route.closedWon,
+          closesUsed,
           route.fixedMonthlyCost != null || spendUsed != null,
         ),
       };
@@ -217,7 +229,7 @@ export function buildCacReport(
     return seen.length ? round2(seen.reduce((a, b) => a + b, 0)) : null;
   };
   const totalCost = sum((row) => row.totalCost);
-  const closedWon = sum((row) => row.closedWon);
+  const closedWon = sum((row) => row.closesUsed);
   return {
     month: month.month,
     daysInMonth: month.daysInMonth,
@@ -238,7 +250,7 @@ export function buildCacReport(
       // These routes contribute closes to the blended CAC while contributing no
       // cost, which pulls the blended number down. The workbook did this silently.
       routesWithoutCostModel: rows.filter(
-        (r) => r.fixedMonthlyCost == null && (r.closedWon ?? 0) > 0,
+        (r) => r.fixedMonthlyCost == null && (r.closesUsed ?? 0) > 0,
       ).length,
     },
   };

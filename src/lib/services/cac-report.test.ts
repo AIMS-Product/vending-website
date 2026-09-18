@@ -25,6 +25,7 @@ const route = (over: Partial<CacRouteInput> = {}): CacRouteInput => ({
   spendChannel: "Webinar|meta_ads",
   spendSource: "manual",
   closedWon: 3,
+  closedWonClose: null,
   marchCac: 3953,
   notes: null,
   updatedAt: "2026-09-17T00:00:00Z",
@@ -41,6 +42,28 @@ describe("buildCacReport", () => {
     expect(row.totalCost).toBe(21079.43);
     expect(row.cac).toBe(7026.48);
     expect(row.status).toBe("critical");
+  });
+
+  it("divides by Close's closes when it has a count, keeping the typed one", () => {
+    const row = buildCacReport(
+      september,
+      [route({ closedWon: 3, closedWonClose: 4 })],
+      new Map(),
+    ).rows[0]!;
+    expect(row.closesUsed).toBe(4);
+    expect(row.closesSource).toBe("close");
+    expect(row.closedWon).toBe(3);
+    expect(row.cac).toBe(5269.86); // 21079.43 / 4
+
+    // Close read zero for the month: a real zero, not a fallback to typed.
+    const none = buildCacReport(
+      september,
+      [route({ closedWon: 3, closedWonClose: 0 })],
+      new Map(),
+    ).rows[0]!;
+    expect(none.closesUsed).toBe(0);
+    expect(none.cac).toBeNull();
+    expect(none.status).toBe("no-closes");
   });
 
   it("reports typed spend against observed spend instead of choosing one", () => {

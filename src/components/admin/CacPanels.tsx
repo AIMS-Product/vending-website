@@ -232,6 +232,15 @@ function RouteRow({ row }: { row: CacRouteRow }) {
           inputMode="numeric"
           aria-label={`Closed won for ${row.route}`}
         />
+        {row.closedWonClose != null ? (
+          <p className="text-ui-text-muted mt-1 pr-2 text-right text-[11px]">
+            Close: {row.closedWonClose} (used)
+          </p>
+        ) : (
+          <p className="text-ui-text-subtle mt-1 pr-2 text-right text-[11px]">
+            typed (no Close count)
+          </p>
+        )}
       </td>
 
       {/* Everything right of here is computed. The fill is the boundary. */}

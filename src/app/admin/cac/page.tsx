@@ -81,6 +81,9 @@ export default async function AdminCacPage({
 
           {(() => {
             const notices = [
+              data.closeError
+                ? `Close could not be read (${data.closeError}), so every route is using its typed closed-won count this load.`
+                : null,
               data.daysInMonthLooksWrong
                 ? "Days in month does not match the calendar, and it prorates every fixed cost on this page. Worth correcting above before reading the numbers."
                 : null,
@@ -122,8 +125,10 @@ export default async function AdminCacPage({
             <ul className="text-ui-text-subtle list-disc space-y-1 pl-5 text-sm">
               <li>
                 <strong className="text-ui-text">Live:</strong> ad spend for the
-                routes that name a channel, and the proration, which now follows
-                the calendar instead of a cell somebody retypes each week.
+                routes that name a channel; the proration, which follows the
+                calendar; and closed-won, counted from Close by the date each
+                deal was won and the lead&rsquo;s funnel. A route Close has no
+                funnel for uses its typed count, and says so.
               </li>
               <li>
                 <strong className="text-ui-text">Imported:</strong> every fixed
@@ -131,9 +136,10 @@ export default async function AdminCacPage({
                 exactly as the workbook had them for May through September.
               </li>
               <li>
-                <strong className="text-ui-text">Still manual:</strong> salaries
-                and contracting, which no system here can see. Closed-won is
-                manual too; it is not yet joined to Close.
+                <strong className="text-ui-text">Still manual:</strong> fixed
+                cost (people, contractors and software per route), which no
+                system here can see. From September it follows Kody&rsquo;s CAC
+                Worksheet; each row&rsquo;s notes give the split.
               </li>
               <li>
                 Every white cell is editable and saves on its own row. A blank
