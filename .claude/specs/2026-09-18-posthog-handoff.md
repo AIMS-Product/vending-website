@@ -93,3 +93,22 @@ publishes to www.vendingpreneurs.com within a minute.
 - `curl` on a page returns a ~600-byte streamed shell; assert on DOM with Playwright, curl for headers only.
 - Test leads on preview reach the real Close org; use `posthog-test+<date>@vendingpreneurs.com`.
 - The PostHog chunk is ~94 kB gz (posthog-js itself); recorder loads lazily through `/api/ph/static/`.
+- posthog-js captures NOTHING from a browser it takes for a bot: `HeadlessChrome` in the UA,
+  matching `userAgentData.brands`, or `navigator.webdriver`. Flags/config requests still go out,
+  so the proxy looks alive while zero events arrive. `scripts/ph-preview-check.mjs` now presents
+  a normal Chrome (`--disable-blink-features=AutomationControlled`, UA override, init script).
+- Events post to both `/api/ph/e/` and `/api/ph/i/v0/e/`, gzipped without `compression=gzip-js`
+  in the query; `form_abandoned` / `$pageleave` travel by sendBeacon, whose bodies Playwright
+  cannot read (the script mirrors them through the console).
+- An empty `batch` to `/e/` gets 400 "request holds no event" from PostHog; send one event for a 200.
+- `window.posthog` is not set when posthog-js is imported as a module; do not probe for it.
+- The aside browser is logged into neither Vercel nor PostHog (checked 2026-09-18 ~12:40 PT).
+- `next start` spawns `next-server`; `pkill -f 'next start'` misses it. Kill by
+  `lsof -nP -iTCP:<port> -sTCP:LISTEN -t`, or the stale server keeps serving the old build.
+
+## Second pass, 2026-09-18 ~12:45 PT
+
+Local production build verified (see the spec's Verification section). Two defects fixed on the
+branch: `cac06a8` (trailing-slash 308 looped to itself) and `3312840` (`form_abandoned` stamped
+with the next page's `source_path`; check script rework). PR #35 head is `3312840`, checks green.
+Still blocked on the preview (Vercel SSO) and on PostHog login for the configuration clicks.

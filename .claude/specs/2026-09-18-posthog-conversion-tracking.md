@@ -92,6 +92,28 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$P/about/"            
 curl -s -o /dev/null -w '%{http_code}\n' "$P/api/ph/static/array.js"                                                                         # 200
 ```
 
+Local production build (`next build --webpack` + `next start`, 2026-09-18 ~12:30 PT), same
+checks against `http://localhost:3811`:
+
+```
+/about/                 -> 308 /about          (was 308 /about/, a loop; fixed in cac06a8)
+/contact/?utm_source=x  -> 308 /contact?utm_source=x
+/news/some-post//       -> 308 (Next collapses //) -> 308 /news/some-post ; terminates
+POST /api/ph/e/ empty batch     -> 400 "request holds no event"  (PostHog's answer; the rewrite works)
+POST /api/ph/e/ one event       -> 200
+GET  /api/ph/static/array.js    -> 200
+scripts/ph-preview-check.mjs    -> 13 events, ALL carry vp_session_id:
+  $pageview /contact (funnel) · form_viewed · form_started first_field=first_name ·
+  form_field_completed · $autocapture · $pageview /privacy (client-side link) ·
+  form_abandoned source_path=/contact (beacon) · $pageview / · $set · landing_viewed
+```
+
+Two defects found and fixed by this pass: the proxy's trailing-slash 308 redirected to itself
+(`NextURL.clone()` re-appends the incoming slash to any pathname set later), and
+`form_abandoned` fired from the pathname-effect cleanup carried the _next_ page's
+`source_path` (stamped with the form's own URL now, 3312840). `$set` events are posthog-js's
+own initial-property events, no code here sets person properties.
+
 PostHog → Activity: `$pageview` from `/`, `/contact`, `/booking-youtube`, a `/news/*`
 post, `/start`, with `vp_session_id`, `source_path`, `page_group`, `environment=preview`.
 Fill a field on `/contact` and leave: `form_viewed → form_started → form_field_completed →
