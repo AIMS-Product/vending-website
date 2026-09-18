@@ -38,7 +38,7 @@ import { FunnelMapTab } from "@/components/admin/FunnelMapPanel";
 import {
   FunnelMonthlyTab,
   parseFunnelGrouping,
-  parseFunnelMetric,
+  parseFunnelMetrics,
 } from "@/components/admin/FunnelMonthlyPanel";
 import { ChannelJourneysTab } from "@/components/admin/ChannelJourneyPanel";
 import { KpiTab } from "@/components/admin/KpiPanels";
@@ -181,7 +181,7 @@ export default async function AdminAnalyticsPage({
           data={funnels}
           range={range}
           includeInternal={includeInternal}
-          metric={parseFunnelMetric(singleParam(params.metric))}
+          metrics={parseFunnelMetrics(singleParam(params.metric))}
         />
       ) : booked ? (
         <BookedCallsPanel report={booked} />

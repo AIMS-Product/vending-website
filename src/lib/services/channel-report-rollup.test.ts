@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildChannelReport,
   buildGoingOut,
+  ofObservedPct,
   ofVisitsPct,
   summariseSyncRuns,
   sumObserved,
@@ -234,6 +235,46 @@ describe("buildGoingOut", () => {
       ["cold", 0, 0],
       ["long", null, null],
     ]);
+  });
+});
+
+describe("ofObservedPct", () => {
+  it("counts a lead-day that booked nobody, instead of averaging over booking days only", () => {
+    const facts = [
+      fact({ leads: 50, booked: 5 }),
+      fact({ day: "2026-09-02", leads: 150, booked: null }),
+    ];
+    // The bug this replaced: "both observed" dropped the second row and gave
+    // 5 / 50 = 10%. Over 200 leads the real rate is 2.5%.
+    expect(ofObservedPct(facts, "booked", "leads")).toBe(2.5);
+  });
+
+  it("reproduces the Webinar 140% and settles it", () => {
+    // 2026-09-18 production, 30 days: 4,042 Webinar leads are registrations
+    // written by the webinar receiver on rows that carry no booking, and the
+    // 152 bookings sit on a handful of /start rows that carry a few leads.
+    // Pairing the two divided 152 by that handful.
+    const facts = [
+      fact({ channel: "Webinar", leads: 3934, booked: null }),
+      fact({ day: "2026-09-02", channel: "Webinar", leads: 108, booked: 152 }),
+    ];
+    expect(ofObservedPct(facts, "booked", "leads")).toBe(3.8);
+    // What the old pairedPct did: 152 / 108.
+    expect(Math.round((152 / 108) * 100)).toBe(141);
+  });
+
+  it("keeps the rate when it is honestly above 100%", () => {
+    // A booking today can belong to a lead captured last week. Both sides are
+    // still our own tables, so the number stands rather than becoming a dash.
+    expect(
+      ofObservedPct([fact({ leads: 10, booked: 11 })], "booked", "leads"),
+    ).toBe(110);
+  });
+
+  it("is null when the denominator was never observed", () => {
+    expect(
+      ofObservedPct([fact({ leads: null, booked: 4 })], "booked", "leads"),
+    ).toBeNull();
   });
 });
 

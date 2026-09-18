@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { adminLinkClass } from "@/components/admin/AdminUi";
 import { MarketingLinkBuilder } from "@/components/admin/MarketingLinkBuilder";
 import {
   bitlyConnected,
@@ -29,7 +31,16 @@ export default async function AdminLinksPage() {
       userEmail={user.email}
       userRole={role}
     >
-      <MarketingLinkBuilder links={links} bitlyConnected={bitlyConnected()} />
+      <div className="space-y-5">
+        <p className="text-ui-text-subtle text-xs">
+          <Link href="/admin/links/coverage" className={adminLinkClass}>
+            Link coverage
+          </Link>{" "}
+          shows how many leads arrived on a link that is in this registry, and
+          lists the ones that are missing from it.
+        </p>
+        <MarketingLinkBuilder links={links} bitlyConnected={bitlyConnected()} />
+      </div>
     </AdminShell>
   );
 }

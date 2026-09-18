@@ -98,6 +98,44 @@ describe("buildFunnelMonthly", () => {
     expect(row?.rates.visitToLead).toBeCloseTo(0.5);
   });
 
+  it("drops an opt-in rate above 100%: the GA4 join has failed, not the funnel", () => {
+    // Production 2026-09-18 showed /newsletter at 236.4%. GA4 credits the
+    // session to the page it landed on; we credit the lead to the page the
+    // form was on. A visitor who landed elsewhere and submitted here is
+    // counted on two different rows, and the page ends up with more leads
+    // than sessions.
+    const report = buildFunnelMonthly({
+      leads: [
+        lead({ created_at: "2026-09-15T09:00:00.000Z" }),
+        lead({ created_at: "2026-09-15T10:00:00.000Z" }),
+        lead({ created_at: "2026-09-15T11:00:00.000Z" }),
+      ],
+      visits: [
+        { day: "2026-09-15", landing_page: "/contact", sessions: 1 },
+        { day: "2026-09-16", landing_page: "/contact", sessions: 1 },
+      ],
+      shows: [],
+      now: NOW,
+    });
+
+    const row = findRow(report, "2026-09", "/contact");
+    expect(row?.leads).toBe(3);
+    expect(row?.visits).toBe(2);
+    // 150% cannot be true, so it is a dash rather than a confident wrong number.
+    expect(row?.rates.visitToLead).toBeNull();
+  });
+
+  it("keeps an opt-in rate at exactly 100%", () => {
+    const report = buildFunnelMonthly({
+      leads: [lead({ created_at: "2026-09-15T09:00:00.000Z" })],
+      visits: [{ day: "2026-09-15", landing_page: "/contact", sessions: 1 }],
+      shows: [],
+      now: NOW,
+    });
+
+    expect(findRow(report, "2026-09", "/contact")?.rates.visitToLead).toBe(100);
+  });
+
   it("never turns an empty denominator into a zero rate", () => {
     const report = buildFunnelMonthly({
       leads: [lead()],

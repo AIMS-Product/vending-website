@@ -95,12 +95,38 @@ const CLOSING_STEPS: readonly JourneyStep[] = [
   { key: "won", kind: "won", label: "Won", detail: "Closed/won in Close" },
 ];
 
+/**
+ * The Webinar lane's closing steps.
+ *
+ * A Webinar lead IS a registration — Adam, 2026-09-18. That is the Registered
+ * step above, and it is what the Channels tab counts. The rows in
+ * `lead_submissions` captured on /start are a different and much smaller
+ * thing: the people who filled the site form. Calling those the lane's "Lead"
+ * put two meanings on one word, which is why the Channels tab's 4,042 read as
+ * a bug against this lane's 3. They were both right; only one of them was
+ * allowed to be called a lead.
+ *
+ * They keep the `lead` kind because the qualification, booking, show and win
+ * steps below are all keyed off a lead row. Only the label changes.
+ */
+const WEBINAR_CLOSING_STEPS: readonly JourneyStep[] = CLOSING_STEPS.map(
+  (step) =>
+    step.kind === "lead"
+      ? {
+          ...step,
+          label: "/start form",
+          detail:
+            "Site form submissions on /start. The Webinar lead is the registration above.",
+        }
+      : step,
+);
+
 export const CHANNEL_JOURNEYS: readonly ChannelJourney[] = [
   {
     key: "webinar",
     label: "Webinar",
     channels: ["Webinar"],
-    note: "Paid ads drive registration; the webinar itself sends people to /start to book. Two things to hold: registration is counted by the webinar receiver, not GA4, so the step before it is not a like-for-like denominator; and the Channels tab counts a registration AS a lead, which is why its Webinar lead figure is in the thousands while this lane's Lead step — site form submissions only — is in single digits. Both are right about different things.",
+    note: "Paid ads drive registration; the webinar itself sends people to /start to book. A Webinar lead is a registration (Adam, 2026-09-18), so the Registered step is this lane's lead count and the Channels tab's thousands are the right figure. The /start form step below is site form submissions only, which is a different and much smaller thing. Registration is counted by the webinar receiver, not GA4, so the step before it is not a like-for-like denominator.",
     steps: [
       {
         key: "seen",
@@ -123,7 +149,7 @@ export const CHANNEL_JOURNEYS: readonly ChannelJourney[] = [
         label: "/start",
         detail: "The booking page the webinar sends to",
       },
-      ...CLOSING_STEPS,
+      ...WEBINAR_CLOSING_STEPS,
     ],
   },
   {

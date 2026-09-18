@@ -33,6 +33,7 @@ const READ_ONLY_PAGES = [
   "leads/[id]/page.tsx",
   "libraries/page.tsx",
   "links/page.tsx",
+  "links/coverage/page.tsx",
   "media/page.tsx",
   "news/page.tsx",
   "pages/page.tsx",

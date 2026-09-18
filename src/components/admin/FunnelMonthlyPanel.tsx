@@ -1,5 +1,7 @@
+import { Fragment } from "react";
 import Link from "next/link";
 import { adminCardClass, adminEyebrowClass } from "@/components/admin/AdminUi";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type {
   FunnelGrouping,
   FunnelMonthlyReport,
@@ -127,9 +129,27 @@ const FLAT_BAND = 5;
 /** Rows below this many leads across every month fold into one tail row. */
 const TAIL_LEADS = 3;
 
-export function parseFunnelMetric(value: string | null | undefined): MetricKey {
-  const match = METRICS.find((metric) => metric.key === value?.trim());
-  return match ? match.key : "leads";
+/**
+ * The selected metrics, in the fixed funnel order above.
+ *
+ * Absent means all of them: the tab's job is to show the whole funnel at once,
+ * and a metric is hidden only because someone hid it. An unrecognised or empty
+ * selection also falls back to all rather than to an arbitrary single metric —
+ * a stale bookmark should show too much, never too little.
+ */
+export function parseFunnelMetrics(
+  value: string | null | undefined,
+): MetricKey[] {
+  const wanted = new Set(
+    value
+      ?.split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean),
+  );
+  const picked = METRICS.filter((metric) => wanted.has(metric.key)).map(
+    (metric) => metric.key,
+  );
+  return picked.length > 0 ? picked : METRICS.map((metric) => metric.key);
 }
 
 export function parseFunnelGrouping(
@@ -142,15 +162,18 @@ export function FunnelMonthlyTab({
   data,
   range,
   includeInternal,
-  metric: metricKey,
+  metrics: metricKeys,
 }: {
   data: FunnelMonthlyReport;
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
-  metric: MetricKey;
+  metrics: MetricKey[];
 }) {
-  const metric =
-    METRICS.find((entry) => entry.key === metricKey) ?? METRICS[0]!;
+  const selected = METRICS.filter((entry) => metricKeys.includes(entry.key));
+  const metrics = selected.length > 0 ? selected : METRICS;
+  // The sparkline needs one number per month, so it only has a column to live
+  // in while a single metric is showing.
+  const trend = metrics.length === 1 ? metrics[0]! : null;
   if (data.months.length === 0) {
     return (
       <div className={adminCardClass}>
@@ -179,16 +202,20 @@ export function FunnelMonthlyTab({
         data={data}
         range={range}
         includeInternal={includeInternal}
-        metric={metric}
+        metrics={metrics}
       />
 
       <section
         className={adminCardClass}
-        aria-label={`${metric.label} by month`}
+        aria-label={`The funnel by month, by ${
+          data.grouping === "channel" ? "source" : "page"
+        }`}
       >
         <h2 className={adminEyebrowClass}>
-          {metric.label} by {data.grouping === "channel" ? "source" : "page"},
-          by month
+          {metrics.length === METRICS.length
+            ? "The funnel"
+            : metrics.map((entry) => entry.label).join(" · ")}{" "}
+          by {data.grouping === "channel" ? "source" : "page"}, by month
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           Green and red are the change against the month to the left, not a
@@ -202,23 +229,45 @@ export function FunnelMonthlyTab({
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
             <thead>
-              <tr
-                className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
-              >
-                <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
+              <tr className={`text-left ${adminEyebrowClass}`}>
+                <th
+                  rowSpan={2}
+                  className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 align-bottom font-semibold"
+                >
                   {data.grouping === "channel" ? "Source" : "Page"}
                 </th>
                 {months.map((month) => (
                   <th
                     key={month.key}
-                    className="py-2 pr-3 text-right font-semibold whitespace-nowrap"
+                    colSpan={metrics.length}
+                    className="border-ui-line border-b py-2 pr-3 text-right font-semibold whitespace-nowrap"
                   >
                     {month.label}
                   </th>
                 ))}
-                <th className="py-2 text-right font-semibold whitespace-nowrap">
-                  Trend
-                </th>
+                {trend ? (
+                  <th
+                    rowSpan={2}
+                    className="py-2 text-right align-bottom font-semibold whitespace-nowrap"
+                  >
+                    Trend
+                  </th>
+                ) : null}
+              </tr>
+              <tr
+                className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+              >
+                {months.map((month) =>
+                  metrics.map((entry) => (
+                    <th
+                      key={`${month.key}:${entry.key}`}
+                      scope="col"
+                      className="text-ui-text-subtle py-1.5 pr-3 text-right font-normal whitespace-nowrap"
+                    >
+                      {entry.label}
+                    </th>
+                  )),
+                )}
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
@@ -227,22 +276,26 @@ export function FunnelMonthlyTab({
                   key={key ?? "(none)"}
                   rowKey={key}
                   months={months}
-                  metric={metric}
+                  metrics={metrics}
+                  trend={trend}
+                  grouping={data.grouping}
                 />
               ))}
               <tr className="font-medium">
                 <td className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2.5 pr-4 pl-0">
                   All {data.grouping === "channel" ? "sources" : "pages"}
                 </td>
-                {months.map((month, index) => (
-                  <Cell
-                    key={month.key}
-                    row={month.totals}
-                    previous={index > 0 ? months[index - 1]!.totals : null}
-                    metric={metric}
-                  />
-                ))}
-                <td />
+                {months.map((month, index) =>
+                  metrics.map((entry) => (
+                    <Cell
+                      key={`${month.key}:${entry.key}`}
+                      row={month.totals}
+                      previous={index > 0 ? months[index - 1]!.totals : null}
+                      metric={entry}
+                    />
+                  )),
+                )}
+                {trend ? <td /> : null}
               </tr>
             </tbody>
           </table>
@@ -257,7 +310,7 @@ export function FunnelMonthlyTab({
         ) : null}
       </section>
 
-      {data.beforeAfter ? <BeforeAfter data={data} metric={metric} /> : null}
+      {data.beforeAfter ? <BeforeAfter data={data} metrics={metrics} /> : null}
       <Caveats data={data} />
     </div>
   );
@@ -267,20 +320,45 @@ function Controls({
   data,
   range,
   includeInternal,
-  metric,
+  metrics,
 }: {
   data: FunnelMonthlyReport;
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
-  metric: Metric;
+  metrics: Metric[];
 }) {
-  const href = (next: { metric?: MetricKey; group?: FunnelGrouping }) => {
+  const showing = new Set(metrics.map((entry) => entry.key));
+  const href = (next: { metrics?: MetricKey[]; group?: FunnelGrouping }) => {
     const params = new URLSearchParams({ range, tab: "funnels" });
-    params.set("metric", next.metric ?? metric.key);
+    const keys = next.metrics ?? [...showing];
+    // All selected is the default, so it is left off the URL and a shared link
+    // stays short.
+    if (keys.length > 0 && keys.length < METRICS.length) {
+      params.set("metric", keys.join(","));
+    }
     params.set("group", next.group ?? data.grouping);
     if (includeInternal) params.set("internal", "1");
     return `?${params.toString()}`;
   };
+
+  /**
+   * Clicking a metric adds or drops it, keeping the funnel order. The last one
+   * showing is not a toggle: an empty table would read as "no data" rather than
+   * as "you hid everything".
+   */
+  const toggled = (key: MetricKey): MetricKey[] => {
+    if (!showing.has(key)) {
+      return METRICS.filter(
+        (entry) => showing.has(entry.key) || entry.key === key,
+      ).map((entry) => entry.key);
+    }
+    if (showing.size === 1) return [key];
+    return METRICS.filter(
+      (entry) => showing.has(entry.key) && entry.key !== key,
+    ).map((entry) => entry.key);
+  };
+
+  const allShowing = showing.size === METRICS.length;
 
   return (
     <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -297,16 +375,24 @@ function Controls({
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1">
-        <span className={`${adminEyebrowClass} mr-1`}>Metric</span>
+        <span className={`${adminEyebrowClass} mr-1`}>Metrics</span>
         {METRICS.map((entry) => (
           <Pill
             key={entry.key}
-            href={href({ metric: entry.key })}
-            active={entry.key === metric.key}
+            href={href({ metrics: toggled(entry.key) })}
+            active={showing.has(entry.key)}
+            pressed
           >
             {entry.label}
           </Pill>
         ))}
+        <Pill
+          href={href({ metrics: METRICS.map((entry) => entry.key) })}
+          active={allShowing}
+          muted
+        >
+          {allShowing ? "All showing" : "Show all"}
+        </Pill>
       </div>
     </div>
   );
@@ -315,19 +401,27 @@ function Controls({
 function Pill({
   href,
   active,
+  pressed,
+  muted,
   children,
 }: {
   href: string;
   active: boolean;
+  /** A toggle rather than a choice: it reports pressed state, not current page. */
+  pressed?: boolean;
+  muted?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <Link
       href={href}
-      aria-current={active ? "true" : undefined}
+      aria-pressed={pressed ? active : undefined}
+      aria-current={!pressed && active ? "true" : undefined}
       className={`rounded border px-2 py-1 text-xs transition ${
         active
-          ? "border-ui-accent bg-ui-accent-soft text-ui-text font-medium"
+          ? muted
+            ? "border-ui-line text-ui-text-subtle"
+            : "border-ui-accent bg-ui-accent-soft text-ui-text font-medium"
           : "border-ui-line text-ui-text-subtle hover:text-ui-text"
       }`}
     >
@@ -339,14 +433,21 @@ function Pill({
 function PivotRow({
   rowKey,
   months,
-  metric,
+  metrics,
+  trend,
+  grouping,
 }: {
   rowKey: string;
   months: FunnelPeriod[];
-  metric: Metric;
+  metrics: Metric[];
+  trend: Metric | null;
+  grouping: FunnelGrouping;
 }) {
   const rows = months.map((month) => find(month, rowKey));
   const childKeys = orderedChildKeys(rows);
+  // Grouped by source, this row IS a channel and gets its mark; grouped by
+  // page it is a URL, and the channels are the children below.
+  const logo = grouping === "channel";
 
   return (
     <>
@@ -358,7 +459,10 @@ function PivotRow({
             <details>
               <summary className="text-ui-text hover:text-ui-accent cursor-pointer list-none font-medium">
                 <span className="text-ui-text-subtle mr-1 text-xs">▸</span>
-                {rowKey}
+                <span className="inline-flex items-center gap-2 align-middle">
+                  {logo ? <ChannelLogo label={rowKey} /> : null}
+                  {rowKey}
+                </span>
               </summary>
               <ul className="text-ui-text-subtle mt-1 ml-4 space-y-0.5 text-xs">
                 {childKeys.map((child) => (
@@ -369,27 +473,36 @@ function PivotRow({
               </ul>
             </details>
           ) : (
-            <span className="text-ui-text font-medium">{rowKey}</span>
+            <span className="text-ui-text inline-flex items-center gap-2 font-medium">
+              {logo ? <ChannelLogo label={rowKey} /> : null}
+              {rowKey}
+            </span>
           )}
         </td>
-        {months.map((month, index) => (
-          <Cell
-            key={month.key}
-            row={rows[index] ?? null}
-            previous={index > 0 ? (rows[index - 1] ?? null) : null}
-            metric={metric}
-          />
-        ))}
-        <td className="py-2.5 text-right align-middle">
-          <Sparkline rows={rows} metric={metric} />
-        </td>
+        {months.map((month, index) =>
+          metrics.map((entry) => (
+            <Cell
+              key={`${month.key}:${entry.key}`}
+              row={rows[index] ?? null}
+              previous={index > 0 ? (rows[index - 1] ?? null) : null}
+              metric={entry}
+            />
+          )),
+        )}
+        {trend ? (
+          <td className="py-2.5 text-right align-middle">
+            <Sparkline rows={rows} metric={trend} />
+          </td>
+        ) : null}
       </tr>
       {childKeys.length > 0 ? (
         <ChildRows
           rowKey={rowKey}
           childKeys={childKeys}
           months={months}
-          metric={metric}
+          metrics={metrics}
+          trend={trend}
+          grouping={grouping}
         />
       ) : null}
     </>
@@ -409,13 +522,19 @@ function ChildRows({
   rowKey,
   childKeys,
   months,
-  metric,
+  metrics,
+  trend,
+  grouping,
 }: {
   rowKey: string;
   childKeys: string[];
   months: FunnelPeriod[];
-  metric: Metric;
+  metrics: Metric[];
+  trend: Metric | null;
+  grouping: FunnelGrouping;
 }) {
+  // The mirror of the parent row: grouped by page, the children are channels.
+  const logo = grouping === "page";
   return (
     <>
       {childKeys.map((child) => {
@@ -429,18 +548,23 @@ function ChildRows({
           <tr key={`${rowKey}:${child}`} className="text-ui-text-subtle">
             <td className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-1.5 pr-4 pl-4 text-xs">
               <span className="text-ui-text-subtle mr-1">└</span>
-              {child}
+              <span className="inline-flex items-center gap-1.5 align-middle">
+                {logo ? <ChannelLogo label={child} /> : null}
+                {child}
+              </span>
             </td>
-            {months.map((month, index) => (
-              <Cell
-                key={month.key}
-                row={rows[index] ?? null}
-                previous={index > 0 ? (rows[index - 1] ?? null) : null}
-                metric={metric}
-                small
-              />
-            ))}
-            <td />
+            {months.map((month, index) =>
+              metrics.map((entry) => (
+                <Cell
+                  key={`${month.key}:${entry.key}`}
+                  row={rows[index] ?? null}
+                  previous={index > 0 ? (rows[index - 1] ?? null) : null}
+                  metric={entry}
+                  small
+                />
+              )),
+            )}
+            {trend ? <td /> : null}
           </tr>
         );
       })}
@@ -531,10 +655,10 @@ function trendTone(input: {
 
 function BeforeAfter({
   data,
-  metric,
+  metrics,
 }: {
   data: FunnelMonthlyReport;
-  metric: Metric;
+  metrics: Metric[];
 }) {
   const { before, after, changedOn } = data.beforeAfter!;
   const keys = orderedRowKeys([before, after]);
@@ -562,40 +686,67 @@ function BeforeAfter({
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[34rem] text-[0.8125rem]">
           <thead>
+            <tr className={`text-left ${adminEyebrowClass}`}>
+              <th rowSpan={2} className="py-2 pr-4 align-bottom font-semibold">
+                {data.grouping === "channel" ? "Source" : "Page"}
+              </th>
+              {metrics.map((entry) => (
+                <th
+                  key={entry.key}
+                  colSpan={2}
+                  className="border-ui-line border-b py-2 pr-3 text-right font-semibold whitespace-nowrap"
+                >
+                  {entry.label}
+                </th>
+              ))}
+            </tr>
             <tr
               className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
             >
-              <th className="py-2 pr-4 font-semibold">
-                {data.grouping === "channel" ? "Source" : "Page"}
-              </th>
-              <th className="py-2 pr-3 text-right font-semibold">
-                {metric.label} before
-              </th>
-              <th className="py-2 text-right font-semibold">
-                {metric.label} after
-              </th>
+              {metrics.map((entry) => (
+                <Fragment key={entry.key}>
+                  <th className="text-ui-text-subtle py-1.5 pr-3 text-right font-normal">
+                    Before
+                  </th>
+                  <th className="text-ui-text-subtle py-1.5 pr-3 text-right font-normal">
+                    After
+                  </th>
+                </Fragment>
+              ))}
             </tr>
           </thead>
           <tbody className="divide-ui-line divide-y">
             {keys.map((key) => (
               <tr key={key}>
                 <td className="py-2 pr-4">{key}</td>
-                <Cell row={find(before, key)} previous={null} metric={metric} />
-                <Cell
-                  row={find(after, key)}
-                  previous={find(before, key)}
-                  metric={metric}
-                />
+                {metrics.map((entry) => (
+                  <Fragment key={entry.key}>
+                    <Cell
+                      row={find(before, key)}
+                      previous={null}
+                      metric={entry}
+                    />
+                    <Cell
+                      row={find(after, key)}
+                      previous={find(before, key)}
+                      metric={entry}
+                    />
+                  </Fragment>
+                ))}
               </tr>
             ))}
             <tr className="font-medium">
               <td className="py-2 pr-4">All</td>
-              <Cell row={before.totals} previous={null} metric={metric} />
-              <Cell
-                row={after.totals}
-                previous={before.totals}
-                metric={metric}
-              />
+              {metrics.map((entry) => (
+                <Fragment key={entry.key}>
+                  <Cell row={before.totals} previous={null} metric={entry} />
+                  <Cell
+                    row={after.totals}
+                    previous={before.totals}
+                    metric={entry}
+                  />
+                </Fragment>
+              ))}
             </tr>
           </tbody>
         </table>
