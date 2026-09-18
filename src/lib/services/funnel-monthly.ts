@@ -194,8 +194,6 @@ export type FunnelMonthlyReport = {
 
 // The funnel a row belongs to. Shared with the browser-side PostHog stamp so
 // both sides of the vp_session_id seam agree on "which page".
-// The funnel a row belongs to. Shared with the browser-side PostHog stamp so
-// both sides of the vp_session_id seam agree on "which page".
 export { canonicalFunnelPath };
 
 export function buildFunnelMonthly(input: {
