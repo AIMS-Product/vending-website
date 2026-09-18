@@ -35,11 +35,13 @@ import {
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
 import { BookedCallsPanel } from "@/components/admin/BookedCallsPanel";
 import { FunnelMapTab } from "@/components/admin/FunnelMapPanel";
+import { FunnelMonthlyTab } from "@/components/admin/FunnelMonthlyPanel";
 import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getBookedCalls } from "@/lib/services/booked-calls-data";
 import { getFunnelMap } from "@/lib/services/funnel-map";
+import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
 import {
   parseAdminAnalyticsRange,
   toCustomRangeKey,
@@ -81,20 +83,37 @@ export default async function AdminAnalyticsPage({
   const isKpiTab = tab === "kpi";
   const isMapTab = tab === "map";
   const isBookedTab = tab === "booked";
-  const [{ user, role }, analytics, youtube, channels, kpi, map, booked] =
-    await Promise.all([
-      requireReadAccess(),
-      isYouTubeTab || isChannelsTab || isKpiTab || isMapTab || isBookedTab
-        ? null
-        : getAdminAnalytics({ range, includeInternal }),
-      isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
-      isChannelsTab
-        ? getChannelsTab({ range, channel: singleParam(params.channel) })
-        : null,
-      isKpiTab ? getKpiTab({ range }) : null,
-      isMapTab ? getFunnelMap({ range }) : null,
-      isBookedTab ? getBookedCalls() : null,
-    ]);
+  const isFunnelsTab = tab === "funnels";
+  const [
+    { user, role },
+    analytics,
+    youtube,
+    channels,
+    kpi,
+    map,
+    booked,
+    funnels,
+  ] = await Promise.all([
+    requireReadAccess(),
+    isYouTubeTab ||
+    isChannelsTab ||
+    isKpiTab ||
+    isMapTab ||
+    isBookedTab ||
+    isFunnelsTab
+      ? null
+      : getAdminAnalytics({ range, includeInternal }),
+    isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
+    isChannelsTab
+      ? getChannelsTab({ range, channel: singleParam(params.channel) })
+      : null,
+    isKpiTab ? getKpiTab({ range }) : null,
+    isMapTab ? getFunnelMap({ range }) : null,
+    isBookedTab ? getBookedCalls() : null,
+    // Deliberately ignores `range`: this tab IS the month-by-month series,
+    // and a 30-day window would render one partial month.
+    isFunnelsTab ? getFunnelMonthly({ includeInternal }) : null,
+  ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
 
@@ -135,7 +154,9 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {booked ? (
+      {funnels ? (
+        <FunnelMonthlyTab data={funnels} />
+      ) : booked ? (
         <BookedCallsPanel report={booked} />
       ) : map ? (
         <FunnelMapTab
