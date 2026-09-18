@@ -248,8 +248,8 @@ export function FunnelJourney({
                 ) : null}
                 {stage.key === "showed" ? (
                   <Caveat>
-                    An upper bound. A booked call counts as shown unless Close
-                    says no-show or cancelled, and many never get an outcome.
+                    Counts only calls a rep logged as a show in Close. A call
+                    nobody logged is not counted, so this is a floor.
                   </Caveat>
                 ) : null}
               </div>

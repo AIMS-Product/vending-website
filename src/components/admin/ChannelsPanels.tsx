@@ -235,9 +235,9 @@ function FunnelStrip({
       <p className="text-ui-text-subtle mt-3 text-xs">
         Each share is measured only where both stages were observed for the same
         link, so the two sides are one population. Deltas are against the prior{" "}
-        {days} days. Showed is an upper bound: a booked call counts as shown
-        unless its Close outcome says no-show or cancelled. Seen and Clicked are
-        what the platforms report about their own surface, upstream of the site.
+        {days} days. Showed counts only calls a rep logged as a show in Close,
+        so it is a floor while logging is incomplete. Seen and Clicked are what
+        the platforms report about their own surface, upstream of the site.
       </p>
     </section>
   );

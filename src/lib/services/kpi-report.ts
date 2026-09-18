@@ -278,7 +278,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none. Show rate is an upper bound, not a measurement: a booked call counts as shown unless its Close outcome says no-show or cancelled, so a call nobody logged an outcome for counts as shown. Lane 2 below shows what share of bookings have an outcome at all.",
+      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none. A call counts as shown only when a rep logged it as a show in Close (First Call Show Up = yes); a call nobody logged is not counted as shown, so show rate is a floor while logging is incomplete. Lane 2 below shows what share of due calls have a show answer in Close. Webinar, Instagram DM and email/SMS links have their own sections, so All channels here excludes their visits.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,

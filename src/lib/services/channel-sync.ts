@@ -112,7 +112,8 @@ export function skipped(reason: string) {
   return { rowsWritten: 0, error: `skipped: ${reason}` };
 }
 
-async function syncGa4Visits(
+/** Exported for scripts/channel-visits-repair.mjs, which runs it one day at a time. */
+export async function syncGa4Visits(
   client: SyncClient,
   ga4: Ga4Client | null,
   startDate: string,
@@ -149,7 +150,14 @@ async function syncGa4Visits(
   // Only the columns whose write actually landed may be cleared. The
   // confirmations upsert fails wherever `thankyou_visits` is missing from the
   // database, and clearing a column this run could not write would erase a
-  // number nothing was going to replace.
+  // number nothing was going to replace. An empty thank-you report writes
+  // nothing and so cannot fail, so the column is probed too: without it a
+  // quiet day read a missing column and failed the whole connector.
+  const { error: thankYouColumnError } = await client
+    .from("channel_daily")
+    .select("thankyou_visits")
+    .limit(1);
+  const thankYouWritable = confirmations.failed === 0 && !thankYouColumnError;
   const cleared = await clearSupersededGa4Metrics(client, {
     startDate,
     endDate,
@@ -157,12 +165,12 @@ async function syncGa4Visits(
     liveKeys: new Set(
       [
         ...(visits.failed === 0 ? sessions : []),
-        ...(confirmations.failed === 0 ? thankYou : []),
+        ...(thankYouWritable ? thankYou : []),
       ].map((row) => keyId(channelDailyKey(key(row)))),
     ),
     columns: [
       ...(visits.failed === 0 ? (["visits"] as const) : []),
-      ...(confirmations.failed === 0 ? (["thankyou_visits"] as const) : []),
+      ...(thankYouWritable ? (["thankyou_visits"] as const) : []),
     ],
   });
 
