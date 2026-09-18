@@ -6,6 +6,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { FreezeTableHead } from "@/components/admin/FreezeTableHead";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
+import { CloseWinsPanel } from "@/components/admin/CloseWinsPanel";
 import {
   FLAT_BAND,
   MIN_WEIGHT,
@@ -241,6 +242,15 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
           </p>
         ) : null}
       </section>
+
+      <CloseWinsPanel
+        report={data.closeWins}
+        columns={data.months.map((month) => ({
+          key: month.key,
+          label: month.label,
+        }))}
+        caption="Every sale Close recorded, in the month it was won. The Won and Revenue columns above follow site leads from the month they arrived, so they leave out buyers who never filled a site form, such as webinar buyers. Use this table for sales by channel."
+      />
 
       <Breakdown
         title="By channel"

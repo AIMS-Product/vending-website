@@ -39,6 +39,7 @@ import {
   lookbackStart,
 } from "@/lib/analytics/lead-definition";
 import { CLOSE_LEAD_FUNNEL_CONNECTOR } from "@/lib/services/close-lead-funnel-sync";
+import { getCloseWins, type CloseWinsReport } from "@/lib/services/close-wins";
 import { GHL_CONNECTORS } from "@/lib/services/ghl-sync";
 import {
   METRICOOL_ADS_CONNECTOR,
@@ -94,6 +95,8 @@ export type ChannelsTabData = {
   fixLinks: FixLinkRow[];
   /** False when the spine tables do not exist yet (migration not applied). */
   connected: boolean;
+  /** Won deals in range as Close records them, one period keyed "range". */
+  closeWins: CloseWinsReport;
 };
 
 export async function getChannelsTab(
@@ -117,15 +120,27 @@ export async function getChannelsTab(
     new Date(endsAt.getTime() - (2 * days - 1) * DAY_MS),
   );
 
-  const [facts, runs, goingOut, fixLinks, sources] = await Promise.all([
-    fetchFacts(client, priorStartDay, endDay, {
-      includeInternal: input.includeInternal,
-    }),
-    fetchRuns(client),
-    fetchGoingOut(client, priorStartDay, endDay, startDay),
-    fetchFixLinks(client, startDay),
-    fetchSourceCounts(client, startDay, endDay, input.includeInternal ?? false),
-  ]);
+  const [facts, runs, goingOut, fixLinks, sources, closeWins] =
+    await Promise.all([
+      fetchFacts(client, priorStartDay, endDay, {
+        includeInternal: input.includeInternal,
+      }),
+      fetchRuns(client),
+      fetchGoingOut(client, priorStartDay, endDay, startDay),
+      fetchFixLinks(client, startDay),
+      fetchSourceCounts(
+        client,
+        startDay,
+        endDay,
+        input.includeInternal ?? false,
+      ),
+      getCloseWins({
+        from: startDay,
+        to: endDay,
+        periodOf: () => "range",
+        mirror: client,
+      }),
+    ]);
 
   const connected = facts !== null;
   const all = normaliseFacts(facts ?? []);
@@ -166,6 +181,7 @@ export async function getChannelsTab(
     goingOut,
     fixLinks,
     connected,
+    closeWins,
   };
 }
 
@@ -258,23 +274,21 @@ export function applyLeadDefinition(
   const storedIds = new Set(stored.map(factId));
   const missing = [...counted.entries()]
     .filter(([id]) => !storedIds.has(id))
-    .map(
-      ([, { key, leads }]): ChannelFact => ({
-        ...key,
-        spend: null,
-        impressions: null,
-        reach: null,
-        clicks: null,
-        visits: null,
-        thankyou_visits: null,
-        leads,
-        contacts: null,
-        booked: null,
-        showed: null,
-        won: null,
-        revenue: null,
-      }),
-    );
+    .map(([, { key, leads }]): ChannelFact => ({
+      ...key,
+      spend: null,
+      impressions: null,
+      reach: null,
+      clicks: null,
+      visits: null,
+      thankyou_visits: null,
+      leads,
+      contacts: null,
+      booked: null,
+      showed: null,
+      won: null,
+      revenue: null,
+    }));
   return [...facts, ...missing];
 }
 

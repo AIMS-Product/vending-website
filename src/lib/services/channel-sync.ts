@@ -22,6 +22,11 @@ import {
   type ChannelDailyRow,
   type SyncRunOutcome,
 } from "@/lib/services/channel-daily";
+import {
+  classifyBookedCall,
+  indexShows,
+  type FunnelShowRow,
+} from "@/lib/services/funnel-monthly";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -449,8 +454,8 @@ type BookingRow = {
 /**
  * Leads by cohort day: a lead's booked / showed / won are credited to the day
  * the lead arrived, so a channel row's booked ÷ leads is a real rate over one
- * population. "showed" is a derivation, not an observation: booked minus the
- * outcomes that assert the call did not happen (matching the YouTube tab).
+ * population. "showed" counts only calls a rep logged as a show in Close
+ * (close_lead_funnel.first_call_show_up), matching the Funnels tab.
  * Revenue is the lead's won Close deal value, mirrored by the reconciler.
  */
 async function syncLeads(
@@ -492,6 +497,18 @@ async function syncLeads(
   // rows sharing a key). Without this, a key whose only rows are now repeats
   // or newsletter signups keeps the leads, booked and won an older sync
   // wrote there, and the channel double counts that person's booking.
+  const shows = {
+    byEmail: indexShows(
+      await pageAll<FunnelShowRow>((from, to) =>
+        client
+          .from("close_lead_funnel")
+          .select("email,first_sales_call_booked_date,first_call_show_up")
+          .order("lead_id")
+          .range(from, to),
+      ),
+    ),
+    today: dayKey(now),
+  };
   const cleared: ChannelDailyRow[] = leadSpineRows(leads.filter(inWindow)).map(
     (row) => ({
       ...row,
@@ -504,7 +521,7 @@ async function syncLeads(
   );
   const rows: ChannelDailyRow[] = [
     ...cleared,
-    ...leadSpineRows(collapseToLeads(leads).filter(inWindow)),
+    ...leadSpineRows(collapseToLeads(leads).filter(inWindow), shows),
   ];
 
   // Bookings with a tagged link but no lead form behind them (a direct Calendly
@@ -554,15 +571,24 @@ async function syncLeads(
  * which recomputes the Leads column from lead_submissions through this same
  * mapping so the stored and the read-time keys cannot drift apart.
  */
-export function leadSpineRows(leads: LeadRow[]): ChannelDailyRow[] {
+export function leadSpineRows(
+  leads: LeadRow[],
+  shows: { byEmail: Map<string, FunnelShowRow>; today: string } | null = null,
+): ChannelDailyRow[] {
   return leads.map((lead) => {
     const booked = lead.call_booked_at ? 1 : 0;
+    // Shown only when a rep logged the show in Close ("First Call Show Up" =
+    // yes), the same rule the Funnels tab uses via classifyBookedCall. An
+    // unlogged call is not assumed to have happened. Null when the caller
+    // did not read the Close mirror (the report reader only needs the keys).
     const showed =
-      booked &&
-      lead.call_outcome !== "no_show" &&
-      lead.call_outcome !== "canceled"
-        ? 1
-        : 0;
+      shows === null
+        ? null
+        : booked &&
+            classifyBookedCall(lead.email, shows.byEmail, shows.today).state ===
+              "held"
+          ? 1
+          : 0;
     const won = lead.closed_won_at || lead.call_outcome === "won" ? 1 : 0;
     // A lead the site chatbot captured mid-conversation with no campaign
     // tag is the chatbot's lead, not the site's. Written as the source so

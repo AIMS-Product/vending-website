@@ -7,6 +7,7 @@ import {
   type FunnelPeriodRow,
 } from "@/lib/services/funnel-monthly";
 import { fetchFunnelInputs } from "@/lib/services/funnel-monthly-data";
+import { getCloseWins, type CloseWinsReport } from "@/lib/services/close-wins";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -61,6 +62,12 @@ export type FunnelExecutiveReport = {
   /** Channels any spend was observed for. Every other row's CPL is a dash. */
   spendChannels: string[];
   showCoverage: FunnelMonthlyReport["showCoverage"];
+  /**
+   * Won deals as Close records them, by the month they were won, per channel.
+   * Includes buyers who never filled a site form (webinar, reactivation), so
+   * it is not the same population as the lead-cohort Won column above.
+   */
+  closeWins: CloseWinsReport;
   generatedAt: string;
 };
 
@@ -71,6 +78,7 @@ export function buildFunnelExecutive(input: {
   byChannel: FunnelMonthlyReport;
   byPage: FunnelMonthlyReport;
   spend: SpendRow[];
+  closeWins?: CloseWinsReport;
 }): FunnelExecutiveReport {
   const byDay = new Map<string, number>();
   const byDayChannel = new Map<string, number>();
@@ -132,6 +140,7 @@ export function buildFunnelExecutive(input: {
     visitsThrough: input.byChannel.visitsThrough,
     spendChannels: [...spendChannels].sort(),
     showCoverage: input.byChannel.showCoverage,
+    closeWins: input.closeWins ?? { ok: false, error: "Not read." },
     generatedAt: new Date().toISOString(),
   };
 }
@@ -176,11 +185,22 @@ export async function getFunnelExecutive(
   const now = input.now ?? new Date();
   const shared = await fetchFunnelInputs(client, now);
   const options = { ...shared, now, includeInternal: input.includeInternal };
+  const start = monthStart(shared);
 
+  const [spend, closeWins] = await Promise.all([
+    fetchSpend(client, start),
+    getCloseWins({
+      from: start,
+      to: now.toISOString().slice(0, 10),
+      periodOf: (day) => day.slice(0, 7),
+      mirror: client,
+    }),
+  ]);
   return buildFunnelExecutive({
     byChannel: buildFunnelMonthly({ ...options, grouping: "channel" }),
     byPage: buildFunnelMonthly({ ...options, grouping: "page" }),
-    spend: await fetchSpend(client, monthStart(shared)),
+    spend,
+    closeWins,
   });
 }
 

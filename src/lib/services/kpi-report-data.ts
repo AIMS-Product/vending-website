@@ -16,6 +16,11 @@ import {
 } from "@/lib/services/channel-report";
 import { normaliseFacts } from "@/lib/services/channel-report-rollup";
 import {
+  classifyBookedCall,
+  indexShows,
+  type FunnelShowRow,
+} from "@/lib/services/funnel-monthly";
+import {
   buildKpiReport,
   type EmailSnapshotRow,
   type KpiReport,
@@ -163,7 +168,11 @@ async function fetchSetterBookings(
   const leadIds = report.rows
     .map((row) => row.leadSubmissionId)
     .filter((id): id is string => Boolean(id));
-  const outcomes = await fetchLeadOutcomes(client, leadIds);
+  const [outcomes, showByEmail] = await Promise.all([
+    fetchLeadOutcomes(client, leadIds),
+    fetchShowIndex(client),
+  ]);
+  const today = dayKey(new Date());
 
   return report.rows
     .filter((row) => !isInternalLead(row.inviteeEmail, row.inviteeName))
@@ -176,8 +185,38 @@ async function fetchSetterBookings(
           row.credit.kind === "rep" ? row.credit.who : row.closeSetter,
         call_outcome: outcome?.call_outcome ?? null,
         closed_won_at: outcome?.closed_won_at ?? null,
+        show_state: showByEmail
+          ? classifyBookedCall(row.inviteeEmail, showByEmail, today).state
+          : null,
       };
     });
+}
+
+/**
+ * The Close mirror's show-up answers by email, the one place a logged show
+ * exists. Null on a read error so the show columns read as a dash, not 0.
+ */
+async function fetchShowIndex(
+  client: ReportClient,
+): Promise<Map<string, FunnelShowRow> | null> {
+  const rows: FunnelShowRow[] = [];
+  for (let from = 0; from < 100_000; from += 1000) {
+    const { data, error } = await client
+      .from("close_lead_funnel")
+      .select("email,first_sales_call_booked_date,first_call_show_up")
+      .order("lead_id")
+      .range(from, from + 999);
+    if (error) {
+      console.error("close_lead_funnel read for KPI shows failed", {
+        code: error.code,
+        message: error.message,
+      });
+      return null;
+    }
+    rows.push(...(data ?? []));
+    if ((data ?? []).length < 1000) break;
+  }
+  return indexShows(rows);
 }
 
 type LeadOutcome = {

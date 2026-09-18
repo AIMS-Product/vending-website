@@ -44,6 +44,8 @@ function buildClient(data: {
   links?: unknown[];
   leads?: unknown[];
   bookings?: unknown[];
+  /** The Close mirror: the only place a logged show exists. */
+  shows?: unknown[];
   /** Rows already on the spine, for the superseded-metric sweep to read. */
   channelDaily?: unknown[];
   /**
@@ -91,6 +93,8 @@ function buildClient(data: {
         return table(data.leads ?? []);
       case "calendly_bookings":
         return table(data.bookings ?? []);
+      case "close_lead_funnel":
+        return table(data.shows ?? []);
       default:
         throw new Error(`Unexpected table: ${name}`);
     }
@@ -325,6 +329,20 @@ describe("syncChannelDaily", () => {
         }),
         lead({ email: "qa@example.com" }),
       ],
+      // A show counts only when a rep logged it in Close. two@ booked but
+      // nobody logged the call, so it is not shown.
+      shows: [
+        {
+          email: "three@gmail.com",
+          first_sales_call_booked_date: "2026-09-10",
+          first_call_show_up: "No",
+        },
+        {
+          email: "four@gmail.com",
+          first_sales_call_booked_date: "2026-09-10",
+          first_call_show_up: "Yes",
+        },
+      ],
     });
 
     await syncChannelDaily({
@@ -340,7 +358,7 @@ describe("syncChannelDaily", () => {
         channel: "Instagram",
         leads: 4,
         booked: 3,
-        showed: 2,
+        showed: 1,
         won: 1,
         // One won lead carries a deal value; the three that did not win
         // contribute null, which does not drag the sum down to zero.

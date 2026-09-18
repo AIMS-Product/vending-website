@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
+import { CloseWinsPanel } from "@/components/admin/CloseWinsPanel";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import {
   AdminDeltaChip,
@@ -106,6 +107,14 @@ export function ChannelsTab({
             : (row) => channelsHref(range, includeInternal, row.key)
         }
       />
+
+      <div className="mt-5">
+        <CloseWinsPanel
+          report={data.closeWins}
+          columns={[{ key: "range", label: data.range.label }]}
+          caption="Every sale Close recorded in this range, by the day it was won. The Won column above only counts buyers who left a site lead or a webinar sheet row, so it runs lower; this is the complete count."
+        />
+      </div>
 
       {data.drill ? (
         <div className="mt-5 grid gap-5 xl:grid-cols-2">

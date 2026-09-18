@@ -1,0 +1,209 @@
+import "server-only";
+
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { createCloseClient, type CloseClient } from "@/lib/close/client";
+import { config } from "@/lib/config";
+import {
+  GOAL_CHANNELS,
+  OTHER_CHANNEL,
+  UNTRACKED_LABEL,
+  channelKeyForFunnel,
+} from "@/lib/services/channel-targets";
+import { FIELD_LABELS } from "@/lib/services/close-lead-funnel-sync";
+import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/types/database";
+
+/**
+ * Won deals as Close records them: every won opportunity, dated by the day it
+ * was won, credited to the lead's "Funnel Name DEAL (Opp)".
+ *
+ * This exists because every other won number on the dashboard hangs off a
+ * row in our own lead table, and most buyers never filled a site form.
+ * Webinar registrants register on GHL, so a webinar sale had nowhere to land
+ * and the tabs printed 0 while Close held $145K of webinar deals since June.
+ * These are never leads. They are the sales, by channel, from the system that
+ * records the sale.
+ */
+
+export const CLOSE_WINS_SOURCE =
+  'Close: every won deal, dated by the day it was won, credited to the lead\'s "Funnel Name DEAL (Opp)".';
+
+export type CloseDeal = {
+  leadId: string;
+  dateWon: string;
+  /** Dollars. Null when the deal carries no value in Close. */
+  value: number | null;
+  funnel: string | null;
+};
+
+export type CloseWinRow = { label: string; won: number; revenue: number };
+
+export type CloseWinsPeriod = {
+  key: string;
+  won: number;
+  revenue: number;
+  /** Won deals with no value in Close. Counted in `won`, absent from `revenue`. */
+  unvalued: number;
+  rows: CloseWinRow[];
+};
+
+export type CloseWinsReport =
+  { ok: true; periods: CloseWinsPeriod[] } | { ok: false; error: string };
+
+const LABEL_BY_KEY = new Map(
+  [...GOAL_CHANNELS, OTHER_CHANNEL].map((channel) => [
+    channel.key,
+    channel.label,
+  ]),
+);
+
+/** The channel a Close funnel rolls into, named as the goals page names it. */
+export function closeChannelLabel(funnel: string | null): string {
+  const key = channelKeyForFunnel(funnel);
+  return key === null
+    ? UNTRACKED_LABEL
+    : (LABEL_BY_KEY.get(key) ?? OTHER_CHANNEL.label);
+}
+
+/** Groups deals into periods; `periodOf` returns null to leave a deal out. */
+export function summariseCloseWins(
+  deals: readonly CloseDeal[],
+  periodOf: (day: string) => string | null,
+): CloseWinsPeriod[] {
+  const periods = new Map<string, CloseWinsPeriod>();
+  for (const deal of deals) {
+    const key = periodOf(deal.dateWon);
+    if (key === null) continue;
+    const period = periods.get(key) ?? {
+      key,
+      won: 0,
+      revenue: 0,
+      unvalued: 0,
+      rows: [],
+    };
+    const label = closeChannelLabel(deal.funnel);
+    const existing = period.rows.find((row) => row.label === label);
+    const row = existing ?? { label, won: 0, revenue: 0 };
+    const value = deal.value ?? 0;
+    const nextRow = { ...row, won: row.won + 1, revenue: row.revenue + value };
+    periods.set(key, {
+      ...period,
+      won: period.won + 1,
+      revenue: period.revenue + value,
+      unvalued: period.unvalued + (deal.value === null ? 1 : 0),
+      rows: existing
+        ? period.rows.map((entry) => (entry === existing ? nextRow : entry))
+        : [...period.rows, nextRow],
+    });
+  }
+  return [...periods.values()]
+    .map((period) => ({
+      ...period,
+      rows: [...period.rows].sort(
+        (a, b) => b.revenue - a.revenue || b.won - a.won,
+      ),
+    }))
+    .sort((a, b) => b.key.localeCompare(a.key));
+}
+
+type MirrorClient = Pick<SupabaseClient<Database>, "from">;
+type WinsCloseClient = Pick<CloseClient, "listWonOpportunities" | "getLead">;
+
+/** 100 per page; 50 pages is 5,000 wins, far above any range the tabs ask for. */
+const MAX_PAGES = 50;
+
+/**
+ * Every won deal in [from, to] with its lead's funnel. The funnel comes from
+ * our `close_lead_funnel` mirror when the lead is in it, and from Close
+ * directly when it is not (the mirror only holds leads that booked a first
+ * call, and some buyers never did).
+ */
+export async function fetchCloseDeals(input: {
+  from: string;
+  to: string;
+  close: WinsCloseClient;
+  mirror: MirrorClient;
+}): Promise<CloseDeal[]> {
+  const opportunities = [];
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const result = await input.close.listWonOpportunities({
+      from: input.from,
+      to: input.to,
+      skip: page * 100,
+    });
+    opportunities.push(...(result.data ?? []));
+    if (!result.has_more) break;
+  }
+  const dated = opportunities.flatMap((opportunity) =>
+    opportunity.date_won
+      ? [{ ...opportunity, dateWon: opportunity.date_won.slice(0, 10) }]
+      : [],
+  );
+
+  const leadIds = [...new Set(dated.map((opportunity) => opportunity.lead_id))];
+  const funnelByLead = new Map<string, string | null>();
+  for (let from = 0; from < leadIds.length; from += 100) {
+    const { data, error } = await input.mirror
+      .from("close_lead_funnel")
+      .select("lead_id,funnel")
+      .in("lead_id", leadIds.slice(from, from + 100));
+    if (error)
+      throw new Error(`close_lead_funnel read failed: ${error.message}`);
+    for (const row of data ?? []) funnelByLead.set(row.lead_id, row.funnel);
+  }
+
+  const missing = leadIds.filter((id) => !funnelByLead.has(id));
+  const fetched = await Promise.all(
+    missing.map(async (id) => {
+      const lead = await input.close.getLead(id);
+      const funnel = lead?.custom?.[FIELD_LABELS.funnel];
+      return [
+        id,
+        typeof funnel === "string" && funnel.trim() ? funnel : null,
+      ] as const;
+    }),
+  );
+  for (const [id, funnel] of fetched) funnelByLead.set(id, funnel);
+
+  return dated.map((opportunity) => ({
+    leadId: opportunity.lead_id,
+    dateWon: opportunity.dateWon,
+    value: opportunity.value === null ? null : opportunity.value / 100,
+    funnel: funnelByLead.get(opportunity.lead_id) ?? null,
+  }));
+}
+
+/**
+ * Won deals in [from, to], grouped by `periodOf`. Never throws: a Close
+ * failure comes back as `ok: false` so the panel says Close could not be read
+ * instead of printing 0.
+ */
+export async function getCloseWins(input: {
+  from: string;
+  to: string;
+  periodOf: (day: string) => string | null;
+  close?: WinsCloseClient;
+  mirror?: MirrorClient;
+}): Promise<CloseWinsReport> {
+  const close =
+    input.close ??
+    (config.CLOSE_API_KEY
+      ? createCloseClient({ apiKey: config.CLOSE_API_KEY })
+      : null);
+  if (!close) return { ok: false, error: "CLOSE_API_KEY is not set." };
+  try {
+    const deals = await fetchCloseDeals({
+      from: input.from,
+      to: input.to,
+      close,
+      mirror: input.mirror ?? createAdminClient(),
+    });
+    return { ok: true, periods: summariseCloseWins(deals, input.periodOf) };
+  } catch (error) {
+    console.error("Close won-deal read failed", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Close read failed.",
+    };
+  }
+}

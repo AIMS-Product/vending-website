@@ -162,9 +162,20 @@ const input: KpiInput = {
       booked_by_setter: "Pearl",
       call_outcome: "showed",
       closed_won_at: "2026-09-05",
+      show_state: "held",
     },
-    { booked_by_setter: "Pearl", call_outcome: "no_show", closed_won_at: null },
-    { booked_by_setter: null, call_outcome: null, closed_won_at: null },
+    {
+      booked_by_setter: "Pearl",
+      call_outcome: "no_show",
+      closed_won_at: null,
+      show_state: "noShow",
+    },
+    {
+      booked_by_setter: null,
+      call_outcome: null,
+      closed_won_at: null,
+      show_state: "unlogged",
+    },
   ],
   lastRun,
 };
@@ -329,7 +340,8 @@ describe("buildKpiReport", () => {
 
   it("counts setters by booking date and the DM funnel from ManyChat", () => {
     const [team, pearl, unassigned, dm] = lane2!.rows;
-    expect(team!.values).toMatchObject({ booked: 3, showed: 2, won: 1 });
+    // The self-booked call was due but nobody logged it in Close: not shown.
+    expect(team!.values).toMatchObject({ booked: 3, showed: 1, won: 1 });
     expect(pearl!.label).toBe("Pearl");
     expect(pearl!.values).toMatchObject({
       booked: 2,

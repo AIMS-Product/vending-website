@@ -206,6 +206,13 @@ export type CloseLeadReadResult = {
   }> | null;
 };
 
+export type CloseWonOpportunity = {
+  id: string;
+  lead_id: string;
+  date_won: string | null;
+  value: number | null;
+};
+
 export type CloseCustomFieldDefinition = {
   id: string;
   name: string;
@@ -427,6 +434,24 @@ export function createCloseClient({
         if (error instanceof CloseApiError && error.status === 404) return null;
         throw error;
       }
+    },
+    /**
+     * One page of won opportunities whose `date_won` falls in [from, to],
+     * both YYYY-MM-DD. `value` is in cents.
+     */
+    listWonOpportunities(input: { from: string; to: string; skip: number }) {
+      const params = new URLSearchParams({
+        status_type: "won",
+        date_won__gte: input.from,
+        date_won__lte: input.to,
+        _limit: "100",
+        _skip: String(input.skip),
+        _fields: "id,lead_id,date_won,value",
+      });
+      return request<{
+        data?: CloseWonOpportunity[];
+        has_more?: boolean;
+      }>("GET", `/opportunity/?${params.toString()}`);
     },
     getContact(contactId: string) {
       return request<CloseContactResult>(

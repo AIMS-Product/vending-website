@@ -81,6 +81,11 @@ export type SetterBookingRow = {
   booked_by_setter: string | null;
   call_outcome: string | null;
   closed_won_at: string | null;
+  /**
+   * The call as Close logged it (classifyBookedCall). Null when the Close
+   * mirror could not be read; the show columns then read as a dash.
+   */
+  show_state?: "held" | "noShow" | "pending" | "unlogged" | null;
 };
 
 export type KpiInput = {
@@ -185,7 +190,7 @@ const LANE2_COLUMNS: KpiColumn[] = [
   { key: "clicks", label: "Booking links sent", format: "number" },
   { key: "booked", label: "Booked", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
-  { key: "outcomeKnown", label: "Outcome known", format: "percent" },
+  { key: "outcomeKnown", label: "Show logged in Close", format: "percent" },
   { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
   { key: "won", label: "Won", format: "number" },
@@ -529,17 +534,24 @@ function buildLane2Section(input: KpiInput): KpiSection {
   const rows: KpiRow[] = [];
   const setterRow = (label: string, bookings: SetterBookingRow[]): KpiRow => {
     const booked = bookings.length;
-    const showed = bookings.filter(
-      (b) => b.call_outcome !== "no_show" && b.call_outcome !== "canceled",
-    ).length;
+    // Shown only when a rep logged the show in Close, the Funnels tab's rule.
+    // Calls not yet due are left out of the show-rate denominator; calls due
+    // but never logged stay in it and are reported as not logged, never as
+    // shown.
+    const observed = bookings.every((b) => b.show_state != null);
+    const showed = observed
+      ? bookings.filter((b) => b.show_state === "held").length
+      : null;
+    const due = bookings.filter((b) => b.show_state !== "pending").length;
     const won = bookings.filter(
       (b) => Boolean(b.closed_won_at) || b.call_outcome === "won",
     ).length;
-    // What share of these calls anybody actually logged an outcome for. Show
-    // rate counts an unlogged call as shown, so this is the reader's warning
-    // about how much of the show rate above it is a measurement: at 37% the
-    // other 63% are assumed, not observed.
-    const known = bookings.filter((b) => Boolean(b.call_outcome)).length;
+    // What share of the calls that were due have a show answer in Close.
+    const known = observed
+      ? bookings.filter(
+          (b) => b.show_state === "held" || b.show_state === "noShow",
+        ).length
+      : null;
     return {
       key: `setter|${label}`,
       label,
@@ -548,10 +560,10 @@ function buildLane2Section(input: KpiInput): KpiSection {
         leads: null,
         clicks: null,
         booked,
-        showRate: rate(pct(showed, booked)),
-        outcomeKnown: rate(pct(known, booked)),
+        showRate: showed === null ? null : rate(pct(showed, due)),
+        outcomeKnown: known === null ? null : rate(pct(known, due)),
         showed,
-        closeRate: rate(pct(won, showed)),
+        closeRate: showed === null ? null : rate(pct(won, showed)),
         won,
       },
       sourceOfTruth:
