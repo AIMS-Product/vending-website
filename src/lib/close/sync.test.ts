@@ -575,6 +575,98 @@ describe("adminRunCloseSync", () => {
     });
   });
 
+  it("writes the UTMs to the lead as well once lead-scoped field IDs exist", async () => {
+    // Stephen's original utm_* fields are CONTACT-scoped, so a UTM only ever
+    // reached the contact — invisible to Smart Views, Opportunities and every
+    // report in Close, which are all lead-level. Separate lead-scoped fields fix
+    // that. The two sets must never cross: a contact-scoped ID on a lead update
+    // makes Close reject the whole update with a 400.
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+          payload: {
+            contact: {
+              full_name: "Jane Buyer",
+              email: "buyer@example.com",
+              phone: "415-555-0101",
+            },
+            attribution: {
+              utm_source: "newsletter",
+              utm_medium: "email",
+              utm_campaign: "sept14",
+              utm_term: "book-call",
+              utm_content: "free-market-analysis",
+            },
+          },
+        }),
+      ],
+      leads: [
+        makeLead({
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_close_1",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "+14155550101" }],
+        }),
+      )
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_UTM_SOURCE_FIELD_ID: "cf_contact_utm_source",
+        CLOSE_UTM_MEDIUM_FIELD_ID: "cf_contact_utm_medium",
+        CLOSE_UTM_CAMPAIGN_FIELD_ID: "cf_contact_utm_campaign",
+        CLOSE_UTM_TERM_FIELD_ID: "cf_contact_utm_term",
+        CLOSE_UTM_CONTENT_FIELD_ID: "cf_contact_utm_content",
+        CLOSE_LEAD_UTM_SOURCE_FIELD_ID: "cf_lead_utm_source",
+        CLOSE_LEAD_UTM_MEDIUM_FIELD_ID: "cf_lead_utm_medium",
+        CLOSE_LEAD_UTM_CAMPAIGN_FIELD_ID: "cf_lead_utm_campaign",
+        CLOSE_LEAD_UTM_TERM_FIELD_ID: "cf_lead_utm_term",
+        CLOSE_LEAD_UTM_CONTENT_FIELD_ID: "cf_lead_utm_content",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ scanned: 1, synced: 1, failed: 0 });
+
+    const contactBody = JSON.parse(
+      fetchMock.mock.calls[1]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+    expect(contactBody["custom.cf_contact_utm_source"]).toBe("newsletter");
+    expect(contactBody["custom.cf_contact_utm_campaign"]).toBe("sept14");
+
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+      "https://api.close.com/api/v1/lead/lead_close_1/",
+    );
+    const leadBody = JSON.parse(
+      fetchMock.mock.calls[2]?.[1]?.body as string,
+    ) as Record<string, unknown>;
+    expect(leadBody).toEqual({
+      "custom.cf_lead_utm_source": "newsletter",
+      "custom.cf_lead_utm_medium": "email",
+      "custom.cf_lead_utm_campaign": "sept14",
+      "custom.cf_lead_utm_term": "book-call",
+      "custom.cf_lead_utm_content": "free-market-analysis",
+    });
+    // The whole point of the split: no contact-scoped ID on the lead update.
+    for (const key of Object.keys(leadBody)) {
+      expect(key.startsWith("custom.cf_contact_")).toBe(false);
+    }
+  });
+
   it("reuses one clear Close contact match and flags ambiguous matches for review", async () => {
     const single = buildClient();
     const singleFetch = vi

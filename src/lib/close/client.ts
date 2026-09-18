@@ -24,6 +24,11 @@ export type CloseCustomFieldConfig = {
   utmCampaignFieldId?: string;
   utmTermFieldId?: string;
   utmContentFieldId?: string;
+  leadUtmSourceFieldId?: string;
+  leadUtmMediumFieldId?: string;
+  leadUtmCampaignFieldId?: string;
+  leadUtmTermFieldId?: string;
+  leadUtmContentFieldId?: string;
   gclidFieldId?: string;
   fbclidFieldId?: string;
   gbraidFieldId?: string;
@@ -295,6 +300,11 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
       utmCampaignFieldId: trimmed(env.CLOSE_UTM_CAMPAIGN_FIELD_ID),
       utmTermFieldId: trimmed(env.CLOSE_UTM_TERM_FIELD_ID),
       utmContentFieldId: trimmed(env.CLOSE_UTM_CONTENT_FIELD_ID),
+      leadUtmSourceFieldId: trimmed(env.CLOSE_LEAD_UTM_SOURCE_FIELD_ID),
+      leadUtmMediumFieldId: trimmed(env.CLOSE_LEAD_UTM_MEDIUM_FIELD_ID),
+      leadUtmCampaignFieldId: trimmed(env.CLOSE_LEAD_UTM_CAMPAIGN_FIELD_ID),
+      leadUtmTermFieldId: trimmed(env.CLOSE_LEAD_UTM_TERM_FIELD_ID),
+      leadUtmContentFieldId: trimmed(env.CLOSE_LEAD_UTM_CONTENT_FIELD_ID),
       gclidFieldId: trimmed(env.CLOSE_GCLID_FIELD_ID),
       fbclidFieldId: trimmed(env.CLOSE_FBCLID_FIELD_ID),
       gbraidFieldId: trimmed(env.CLOSE_GBRAID_FIELD_ID),
@@ -653,8 +663,24 @@ export function closeCustomFieldPayload(
     values.source_cta_tracking_name,
   );
   assignCustom(payload, fields.clickedHrefFieldId, values.clicked_href);
-  // UTMs and source_path are deliberately absent here — they are contact-scoped in
-  // Close and are built by closeContactAttributionPayload instead. See that function.
+  // The UTMs live on the contact too (closeContactAttributionPayload), on
+  // Stephen's original contact-scoped fields. They are written here as well
+  // because Smart Views, Opportunities and every report in Close are
+  // lead-level: a UTM only the contact carries is invisible to the people
+  // asking which link produced the call. These are separate, LEAD-scoped field
+  // IDs — Close 400s the whole update if a contact-scoped ID is sent here — and
+  // they stay unset until those fields exist, so this is a no-op until then.
+  //
+  // Latest touch, not first: most leads off a campaign link already exist in
+  // Close (all 8 leads from the Sept newsletter send pre-dated it), so a
+  // create-only write would leave exactly the leads being asked about blank.
+  // First touch is already held, untouched, by the create-only Entry Source and
+  // Lead Cohort fields.
+  assignCustom(payload, fields.leadUtmSourceFieldId, values.utm_source);
+  assignCustom(payload, fields.leadUtmMediumFieldId, values.utm_medium);
+  assignCustom(payload, fields.leadUtmCampaignFieldId, values.utm_campaign);
+  assignCustom(payload, fields.leadUtmTermFieldId, values.utm_term);
+  assignCustom(payload, fields.leadUtmContentFieldId, values.utm_content);
   assignCustom(payload, fields.gclidFieldId, values.gclid);
   assignCustom(payload, fields.fbclidFieldId, values.fbclid);
   assignCustom(payload, fields.gbraidFieldId, values.gbraid);
