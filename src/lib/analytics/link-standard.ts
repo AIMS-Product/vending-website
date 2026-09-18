@@ -173,7 +173,16 @@ export function checkLinkStandard(
 ): LinkStandardCheck {
   const utms = parseLinkUtms(url);
   if (!utms) return { compliant: false, problems: ["Not a valid URL."] };
+  return checkLinkUtms(utms);
+}
 
+/**
+ * The same rules against UTMs already pulled apart, for callers that never had
+ * the URL. A lead row stores the five values in their own columns, so the
+ * coverage report would otherwise have to reassemble a URL just to take it
+ * back apart — and the second copy of these rules would drift.
+ */
+export function checkLinkUtms(utms: LinkUtms): LinkStandardCheck {
   const problems: string[] = [];
   if (!utms.source) problems.push("utm_source is missing.");
   else if (!isOneOf(LINK_SOURCES, utms.source.toLowerCase())) {

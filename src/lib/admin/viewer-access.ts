@@ -34,6 +34,7 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/leads",
   "/admin/libraries",
   "/admin/links",
+  "/admin/links/coverage",
   "/admin/media",
   "/admin/news",
   "/admin/pages",
