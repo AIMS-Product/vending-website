@@ -123,9 +123,9 @@ const METRICS: Metric[] = [
  * becoming three is a 50% jump and means nothing; colouring it trains people
  * to ignore the colour everywhere else.
  */
-const MIN_WEIGHT = 8;
+export const MIN_WEIGHT = 8;
 /** Moves smaller than this are flat. Rates wobble a point either way. */
-const FLAT_BAND = 5;
+export const FLAT_BAND = 5;
 /** Rows below this many leads across every month fold into one tail row. */
 const TAIL_LEADS = 3;
 
@@ -652,7 +652,12 @@ function Sparkline({
   );
 }
 
-function trendTone(input: {
+/**
+ * The month-on-month direction of one cell, or flat when the move is too thin
+ * or too small to mean anything. Exported so the executive rollup colours by
+ * the same rule rather than inventing a second one.
+ */
+export function trendTone(input: {
   value: number | null;
   before: number | null;
   weight: number;

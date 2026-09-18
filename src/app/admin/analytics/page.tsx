@@ -47,6 +47,8 @@ import { getChannelsTab } from "@/lib/services/channel-report";
 import { getBookedCalls } from "@/lib/services/booked-calls-data";
 import { getFunnelMap } from "@/lib/services/funnel-map";
 import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
+import { getFunnelExecutive } from "@/lib/services/funnel-executive";
+import { FunnelExecutiveTab } from "@/components/admin/FunnelExecutivePanel";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
   parseAdminAnalyticsRange,
@@ -91,6 +93,7 @@ export default async function AdminAnalyticsPage({
   const isBookedTab = tab === "booked";
   const isFunnelsTab = tab === "funnels";
   const isJourneysTab = tab === "journeys";
+  const isExecTab = tab === "exec";
   const [
     { user, role },
     analytics,
@@ -101,6 +104,7 @@ export default async function AdminAnalyticsPage({
     booked,
     funnels,
     journeys,
+    executive,
   ] = await Promise.all([
     requireReadAccess(),
     isYouTubeTab ||
@@ -109,7 +113,8 @@ export default async function AdminAnalyticsPage({
     isMapTab ||
     isBookedTab ||
     isFunnelsTab ||
-    isJourneysTab
+    isJourneysTab ||
+    isExecTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -128,6 +133,9 @@ export default async function AdminAnalyticsPage({
         })
       : null,
     isJourneysTab ? getChannelJourneys({ range, includeInternal }) : null,
+    // Same reason as the Funnels tab: this view IS the month series, so a
+    // 30-day range would render one partial month and call it the trend.
+    isExecTab ? getFunnelExecutive({ includeInternal }) : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -169,7 +177,9 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
-      {journeys ? (
+      {executive ? (
+        <FunnelExecutiveTab data={executive} />
+      ) : journeys ? (
         <ChannelJourneysTab
           data={journeys}
           range={range}

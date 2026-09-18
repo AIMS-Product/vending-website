@@ -37,24 +37,41 @@ export async function getFunnelMonthly(
 ): Promise<FunnelMonthlyReport> {
   const client = input.client ?? createAdminClient();
   const now = input.now ?? new Date();
-  const startDay = await firstLeadMonthStart(client, now);
 
+  return buildFunnelMonthly({
+    ...(await fetchFunnelInputs(client, now)),
+    now,
+    includeInternal: input.includeInternal,
+    grouping: input.grouping,
+  });
+}
+
+export type FunnelInputs = {
+  leads: FunnelLeadRow[];
+  visits: FunnelVisitRow[];
+  shows: FunnelShowRow[];
+  sessions: FunnelSessionRow[];
+};
+
+/**
+ * The four reads every monthly rollup needs.
+ *
+ * Exported so a view wanting the same months grouped two ways pays for one
+ * read rather than two: the grouping is applied in memory by
+ * `buildFunnelMonthly`, and these tables run to tens of thousands of rows.
+ */
+export async function fetchFunnelInputs(
+  client: Client,
+  now: Date,
+): Promise<FunnelInputs> {
+  const startDay = await firstLeadMonthStart(client, now);
   const [leads, visits, shows, sessions] = await Promise.all([
     fetchLeads(client, startDay),
     fetchVisits(client, startDay),
     fetchShows(client),
     fetchSessions(client, startDay),
   ]);
-
-  return buildFunnelMonthly({
-    leads,
-    visits,
-    shows,
-    sessions,
-    now,
-    includeInternal: input.includeInternal,
-    grouping: input.grouping,
-  });
+  return { leads, visits, shows, sessions };
 }
 
 /** First day of the month the earliest lead landed in. */

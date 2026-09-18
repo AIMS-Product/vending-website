@@ -504,6 +504,7 @@ function formatShortDate(isoDate: string): string {
 
 export const ANALYTICS_TABS = [
   { key: "overview", label: "Overview" },
+  { key: "exec", label: "Executive" },
   { key: "acquisition", label: "Acquisition" },
   { key: "pages", label: "Pages & funnel" },
   { key: "funnels", label: "Funnels by month" },
