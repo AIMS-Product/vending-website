@@ -114,6 +114,30 @@ const legacyNewsRedirects: ReadonlyArray<{
 ];
 
 const nextConfig: NextConfig = {
+  // PostHog reverse proxy: same-origin, so ad blockers and the CSP see our
+  // own traffic. posthog-js posts to `/e/`, `/s/`, `/flags/` with a trailing
+  // slash, which Next's built-in 308 would turn into a redirect, hence
+  // skipTrailingSlashRedirect. Public pages keep their trailing-slash 308 in
+  // src/proxy.ts (trailingSlashRedirectPath).
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/api/ph/static/:path*",
+          destination: "https://us-assets.i.posthog.com/static/:path*",
+        },
+        {
+          source: "/api/ph/array/:path*",
+          destination: "https://us-assets.i.posthog.com/array/:path*",
+        },
+        {
+          source: "/api/ph/:path*",
+          destination: "https://us.i.posthog.com/:path*",
+        },
+      ],
+    };
+  },
   async headers() {
     return [
       {

@@ -5,6 +5,7 @@ import {
   goToPreCallResources,
   PRE_CALL_RESOURCES_PATH,
 } from "@/lib/booking/post-booking-redirect";
+import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
 
 /**
  * Sends a visitor to the pre-call resources page the moment they finish
@@ -38,18 +39,41 @@ function isEventScheduled(event: MessageEvent): boolean {
   );
 }
 
-export function CalendlyBookingRedirect() {
+export function CalendlyBookingRedirect({ url }: { url?: string }) {
+  // PostHog behaviour markers for the calendar step. `calendar_viewed` is the
+  // last pre-booking step the browser can see; `calendar_booked` is a
+  // behaviour signal for replay filters, not a booked-call count (Close is).
+  const calendarUrl = url ? calendarPathOnly(url) : undefined;
+  useEffect(() => {
+    captureEvent("calendar_viewed", { calendar_url: calendarUrl });
+  }, [calendarUrl]);
+
   useEffect(() => {
     function onMessage(event: MessageEvent) {
       if (!isEventScheduled(event)) return;
+      captureEvent(
+        "calendar_booked",
+        { surface: "page", calendar_url: calendarUrl },
+        SEND_NOW,
+      );
       goToPreCallResources();
     }
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [calendarUrl]);
 
   return null;
+}
+
+/** Calendly URLs carry the visitor's name/email as prefill params; keep only the calendar. */
+function calendarPathOnly(url: string) {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return undefined;
+  }
 }
 
 // Exported for the test — the guard is the security boundary, so it is worth

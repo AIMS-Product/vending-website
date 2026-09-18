@@ -1,16 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  serializeAttributionSession,
-  updateAttributionSessionFromPage,
-  VP_ATTRIBUTION_STORAGE_KEY,
-  VP_SESSION_COOKIE_NAME,
-  type AttributionSession,
-} from "@/lib/attribution-session";
+import { type AttributionSession } from "@/lib/attribution-session";
 import {
   emitAttributionEvent,
   readStoredAttributionSession,
+  refreshStoredSession,
 } from "@/lib/attribution-client";
 import {
   appendSessionClickAttributionToHref,
@@ -52,33 +47,6 @@ function handleAttributionClick(event: MouseEvent) {
   if (!target) return;
 
   preserveLeadLinkAttribution(event, target.anchor, target.href);
-}
-
-function refreshStoredSession() {
-  try {
-    const session = updateAttributionSessionFromPage({
-      href: window.location.href,
-      referrer: document.referrer,
-      existing: readStoredAttributionSession(),
-      nowIso: new Date().toISOString(),
-      sessionIdFactory: browserSessionId,
-    });
-    window.localStorage.setItem(
-      VP_ATTRIBUTION_STORAGE_KEY,
-      serializeAttributionSession(session),
-    );
-    document.cookie = `${VP_SESSION_COOKIE_NAME}=${encodeURIComponent(
-      session.vp_session_id,
-    )}; Path=/; Max-Age=15552000; SameSite=Lax`;
-    return session;
-  } catch {
-    return null;
-  }
-}
-
-function browserSessionId() {
-  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
-  return `vp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
 }
 
 function shouldIgnoreClick(event: MouseEvent) {

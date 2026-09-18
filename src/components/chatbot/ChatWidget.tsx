@@ -28,6 +28,7 @@ import {
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 import { playReceiveSound, playSendSound } from "@/lib/chatbot/sounds";
 import { goToPreCallResources } from "@/lib/booking/post-booking-redirect";
+import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
 
 const SESSION_STORAGE_KEY = "vp_chat_session_id";
 const TEASER_DISMISSED_KEY = "vp_chat_teaser_dismissed";
@@ -38,6 +39,7 @@ const CAPTURED_KEY = "vp_chat_captured";
 const OPEN_KEY = "vp_chat_open";
 const CAPTURE_OFFERED_KEY = "vp_chat_capture_offered";
 const EXIT_INTENT_OFFERED_KEY = "vp_chat_exit_intent_offered";
+const CHAT_STARTED_KEY = "vp_chat_started";
 const DEFAULT_BRAND_COLOR = "#2a8fcc";
 const ON_INTENT_DELAY_MS = 800;
 /**
@@ -346,6 +348,7 @@ export function ChatWidget() {
       } | null;
       if (!data || typeof data !== "object") return;
       if (data.event !== "calendly.event_scheduled") return;
+      captureEvent("calendar_booked", { surface: "chat" }, SEND_NOW);
       const inviteeUri = data.payload?.invitee?.uri;
       void confirmBookingInChat(
         sessionIdRef.current,
@@ -575,6 +578,7 @@ export function ChatWidget() {
       hasOfferedExitIntentRef.current = true;
       writeSessionFlag(EXIT_INTENT_OFFERED_KEY);
       setOpen(true);
+      captureEvent("chat_opened", { trigger: "exit_intent" });
       void offerExitIntent();
     };
 
@@ -593,6 +597,11 @@ export function ChatWidget() {
     async (text: string) => {
       const sessionId = sessionIdRef.current;
       if (!sessionId || !text.trim() || isWaiting) return;
+
+      if (!readSessionFlag(CHAT_STARTED_KEY)) {
+        writeSessionFlag(CHAT_STARTED_KEY);
+        captureEvent("chat_started", { conversation_id: sessionId });
+      }
 
       setError(null);
       playSendSound();
@@ -804,6 +813,7 @@ export function ChatWidget() {
           onOpen={() => {
             setShowTeaser(false);
             setOpen(true);
+            captureEvent("chat_opened", { trigger: "teaser" });
           }}
           onDismiss={() => {
             setShowTeaser(false);
@@ -892,6 +902,7 @@ export function ChatWidget() {
           onClick={() => {
             setShowTeaser(false);
             setOpen(true);
+            captureEvent("chat_opened", { trigger: "launcher" });
           }}
         />
       )}
