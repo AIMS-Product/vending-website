@@ -20,6 +20,7 @@ import {
 } from "@/lib/attribution-session";
 import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
+import { trackFormResult } from "@/lib/tracking/form-tracking";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
   buildCalendlyBookingUrl,
@@ -282,6 +283,15 @@ export function PublicLeadForm({
       // Credits the popup whose CTA drove this visit (no-op otherwise);
       // feeds the Converted tile in /admin/popups.
       emitPopupConversionIfAttributed({ lead_intent: intent });
+      trackFormResult({
+        formId: `lead-form-${intent}-step-1`,
+        ok: true,
+        properties: {
+          lead_intent: intent,
+          qualification_state: state.qualification?.thankYouState,
+          qualification_score: state.qualification?.score,
+        },
+      });
       pushDataLayerEvent(
         leadSubmitEvent(attribution, intent, 1, {
           leadEmail: submittedValues.email ?? "",
@@ -301,6 +311,11 @@ export function PublicLeadForm({
         );
       }
     } else if (state.status === "error") {
+      trackFormResult({
+        formId: `lead-form-${intent}-step-1`,
+        ok: false,
+        errorKeys: deriveLeadErrorSummary(state).map((item) => item.errorKey),
+      });
       pushDataLayerEvent(
         leadSubmitErrorEvent(
           attribution,
@@ -318,6 +333,17 @@ export function PublicLeadForm({
   useEffect(() => {
     if (stage2TrackedRef.current === finishState) return;
     stage2TrackedRef.current = finishState;
+    if (finishState.status === "success") {
+      trackFormResult({
+        formId: "lead-form-qualification-step-2",
+        ok: true,
+        properties: {
+          lead_intent: intent,
+          qualification_state: finishState.qualification?.thankYouState,
+          qualification_score: finishState.qualification?.score,
+        },
+      });
+    }
     if (finishState.status === "success" && finishState.qualification) {
       pushDataLayerEvent(
         leadQualifiedEvent(attribution, intent, 2, {
@@ -329,6 +355,13 @@ export function PublicLeadForm({
         }),
       );
     } else if (finishState.status === "error") {
+      trackFormResult({
+        formId: "lead-form-qualification-step-2",
+        ok: false,
+        errorKeys: deriveLeadErrorSummary(finishState).map(
+          (item) => item.errorKey,
+        ),
+      });
       pushDataLayerEvent(
         leadSubmitErrorEvent(
           attribution,
@@ -1385,7 +1418,8 @@ function TextField({
 }
 
 type SelectFieldOption =
-  string | { readonly value: string; readonly label: string };
+  | string
+  | { readonly value: string; readonly label: string };
 
 function SelectField({
   name,

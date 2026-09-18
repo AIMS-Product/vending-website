@@ -39,6 +39,8 @@ const envSchema = z.object({
   SLACK_WEBHOOK_URL: optionalEnv,
   MONEY_PAGE_INGEST_URL: optionalTrimmedOptionalEnv,
   MONEY_PAGE_SECRET: optionalTrimmedOptionalEnv,
+  /** PostHog project token (public by design). Unset = PostHog off. */
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: optionalTrimmedOptionalEnv,
   CRON_SECRET: optionalTrimmedOptionalEnv,
   /** Bearer key for the read-only reporting API (/api/reporting/*). */
   REPORTING_API_KEY: optionalTrimmedOptionalEnv,
@@ -196,6 +198,8 @@ const parsed = envSchema.safeParse({
   SLACK_WEBHOOK_URL: process.env.SLACK_WEBHOOK_URL,
   MONEY_PAGE_INGEST_URL: process.env.MONEY_PAGE_INGEST_URL,
   MONEY_PAGE_SECRET: process.env.MONEY_PAGE_SECRET,
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
   CRON_SECRET: process.env.CRON_SECRET,
   REPORTING_API_KEY: process.env.REPORTING_API_KEY,
   CALENDLY_WEBHOOK_SIGNING_KEY: process.env.CALENDLY_WEBHOOK_SIGNING_KEY,

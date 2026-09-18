@@ -25,7 +25,7 @@
  * young to judge, comes back null so the page can say so.
  */
 
-import { FUNNEL_REDIRECTS } from "@/lib/content/funnel-redirects";
+import { canonicalFunnelPath } from "@/lib/analytics/canonical-path";
 import { isBookingFunnelPath } from "@/lib/content/booking-funnel-routes";
 import {
   isChatbotCapture,
@@ -194,44 +194,9 @@ export type FunnelMonthlyReport = {
 
 // The funnel a row belongs to. Shared with the browser-side PostHog stamp so
 // both sides of the vp_session_id seam agree on "which page".
-/** Old funnel URL -> the page it now renders, so a redirect keeps one history. */
-const REDIRECT_DESTINATIONS: ReadonlyMap<string, string> = new Map(
-  FUNNEL_REDIRECTS.map((redirect) => [
-    redirect.source,
-    // The destination carries `?source_path=`; the page is what precedes it.
-    redirect.destination.split("?")[0] ?? redirect.destination,
-  ]),
-);
-
-/**
- * The funnel a path belongs to: query stripped, lowercased, trailing slash
- * removed, then folded through FUNNEL_REDIRECTS to the page it now renders.
- *
- * A redirected URL folds into its destination because that is what the visitor
- * saw. Leaving them apart splits one funnel's history in half on the day the
- * redirect shipped: GA4 records the final URL while the lead keeps
- * `source_path` of the old one, so visits and leads land in different rows and
- * every rate on both is wrong.
- *
- * Anything reading paths on the client — a PostHog stamp, say — must fold them
- * the same way or the two sides of the funnel cannot be joined. Import it from
- * here rather than writing a second copy.
- */
-export function canonicalFunnelPath(
-  path: string | null | undefined,
-): string | null {
-  const raw = path?.trim();
-  if (!raw) return null;
-  // GA4 landing pages arrive with the query string attached.
-  const withoutQuery = raw.split(/[?#]/)[0] ?? raw;
-  const lowered = withoutQuery.toLowerCase();
-  const normalised =
-    lowered.length > 1 && lowered.endsWith("/")
-      ? lowered.replace(/\/+$/, "")
-      : lowered;
-  if (!normalised.startsWith("/")) return null;
-  return REDIRECT_DESTINATIONS.get(normalised) ?? normalised;
-}
+// The funnel a row belongs to. Shared with the browser-side PostHog stamp so
+// both sides of the vp_session_id seam agree on "which page".
+export { canonicalFunnelPath };
 
 export function buildFunnelMonthly(input: {
   leads: FunnelLeadRow[];

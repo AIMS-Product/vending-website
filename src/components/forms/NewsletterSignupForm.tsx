@@ -15,6 +15,7 @@ import {
   NEWSLETTER_SMS_CONSENT_LABEL,
 } from "@/lib/content/newsletter";
 import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
+import { trackFormResult } from "@/lib/tracking/form-tracking";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
   formStartEvent,
@@ -75,6 +76,11 @@ export function NewsletterSignupForm({
     if (state.status === "success") {
       // Stage 1 writes the lead row, so a popup-driven signup converts here.
       emitPopupConversionIfAttributed({ lead_intent: "newsletter" });
+      trackFormResult({
+        formId: "newsletter-signup-step-1",
+        ok: true,
+        properties: { lead_intent: "newsletter" },
+      });
       pushDataLayerEvent(
         leadSubmitEvent(attribution, "qualification", 1, {
           leadEmail: stringValue(submitted.email),
@@ -83,6 +89,11 @@ export function NewsletterSignupForm({
         }),
       );
     } else if (state.status === "error") {
+      trackFormResult({
+        formId: "newsletter-signup-step-1",
+        ok: false,
+        errorKeys: Object.keys(state.fieldErrors ?? { form: [state.message] }),
+      });
       pushDataLayerEvent(
         leadSubmitErrorEvent(
           attribution,
@@ -96,6 +107,11 @@ export function NewsletterSignupForm({
 
   useEffect(() => {
     if (finishState.status === "success") {
+      trackFormResult({
+        formId: "newsletter-signup-step-2",
+        ok: true,
+        properties: { lead_intent: "newsletter" },
+      });
       pushDataLayerEvent(
         leadSubmitEvent(attribution, "qualification", 2, {
           leadEmail: stringValue(submitted.email),
@@ -104,6 +120,13 @@ export function NewsletterSignupForm({
         }),
       );
     } else if (finishState.status === "error") {
+      trackFormResult({
+        formId: "newsletter-signup-step-2",
+        ok: false,
+        errorKeys: Object.keys(
+          finishState.fieldErrors ?? { form: [finishState.message] },
+        ),
+      });
       pushDataLayerEvent(
         leadSubmitErrorEvent(
           attribution,

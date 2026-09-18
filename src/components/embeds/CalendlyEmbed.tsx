@@ -36,7 +36,7 @@ export function CalendlyEmbed({
         src={src}
         title={title}
       />
-      <CalendlyBookingRedirect />
+      <CalendlyBookingRedirect url={src} />
     </div>
   );
 }
