@@ -148,6 +148,29 @@ describe("proxy legacy blog redirects", () => {
     mocks.hasPublishedSeoPagePath.mockResolvedValue(false);
   });
 
+  it.each([
+    ["/about/", "https://vending-website.vercel.app/about"],
+    [
+      "/contact/?utm_source=x",
+      "https://vending-website.vercel.app/contact?utm_source=x",
+    ],
+    ["/news/some-post//", "https://vending-website.vercel.app/news/some-post"],
+  ])(
+    "308s the trailing-slash form %s to one canonical URL",
+    async (path, location) => {
+      const response = await proxy(request(path));
+
+      expect(response.status).toBe(308);
+      expect(response.headers.get("location")).toBe(location);
+    },
+  );
+
+  it("leaves the root alone", async () => {
+    const response = await proxy(request("/"));
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
   it("permanently redirects legacy /blog/{slug} to the published news article", async () => {
     const { hasPublishedPostSlug } = await import("@/lib/services/news");
     vi.mocked(hasPublishedPostSlug).mockResolvedValue(true);

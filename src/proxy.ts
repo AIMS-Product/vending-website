@@ -150,9 +150,13 @@ export async function proxy(request: NextRequest) {
   // for the PostHog proxy (next.config.ts), so public pages do it here.
   const canonicalPath = trailingSlashRedirectPath(path);
   if (canonicalPath) {
-    const url = request.nextUrl.clone();
-    url.pathname = canonicalPath;
-    return NextResponse.redirect(url, 308);
+    // Not `nextUrl.clone()`: NextURL remembers the incoming trailing slash and
+    // re-appends it to any pathname assigned later, so the clone would redirect
+    // `/about/` to `/about/` forever. A plain URL keeps the path as written.
+    return NextResponse.redirect(
+      new URL(`${canonicalPath}${request.nextUrl.search}`, request.url),
+      308,
+    );
   }
 
   if (path === "/") {
