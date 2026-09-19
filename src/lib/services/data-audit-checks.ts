@@ -10,10 +10,8 @@ import {
   type AdNetwork,
   type MetricoolClient,
 } from "@/lib/metricool/client";
-import {
-  createYouTubeAnalyticsClient,
-  type YouTubeAnalyticsClient,
-} from "@/lib/youtube-analytics/client";
+import type { YouTubeAnalyticsClient } from "@/lib/youtube-analytics/client";
+import { youtubeSourceFromConfig } from "@/lib/services/youtube-analytics-sync";
 import {
   createCalendlyApiClient,
   type CalendlyApiClient,
@@ -84,8 +82,10 @@ export async function runDataAudit(
   const ghl = deps.ghl === undefined ? ghlFromConfig() : deps.ghl;
   const metricool =
     deps.metricool === undefined ? metricoolFromConfig() : deps.metricool;
-  const youtube =
-    deps.youtube === undefined ? youtubeFromConfig() : deps.youtube;
+  const youtubeSource =
+    deps.youtube === undefined
+      ? youtubeSourceFromConfig()
+      : deps.youtube && { client: deps.youtube, sourceName: "YouTube" };
   const calendly =
     deps.calendly === undefined ? calendlyFromConfig() : deps.calendly;
   const close = deps.close === undefined ? closeFromConfig() : deps.close;
@@ -96,7 +96,9 @@ export async function runDataAudit(
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
     ...(await safe("ads", () => adSpendCheck(client, metricool, now))),
     ...(await safe("ghl", () => ghlFormsCheck(client, ghl, now))),
-    ...(await safe("youtube", () => youtubeCheck(client, youtube, now))),
+    ...(await safe("youtube", () =>
+      youtubeCheck(client, youtubeSource || null, now),
+    )),
     ...(await safe("webinar", () => webinarFreshnessCheck(client, now))),
     ...(await safe("spine", () => spineChecks(client, now))),
     ...(await safe("leads", () => leadsInCloseCheck(client, now))),
@@ -451,11 +453,14 @@ async function ghlFormsCheck(
 
 async function youtubeCheck(
   client: Client,
-  youtube: YouTubeAnalyticsClient | null,
+  youtube: { client: YouTubeAnalyticsClient; sourceName: string } | null,
   now: Date,
 ): Promise<AuditResult[]> {
   const { from, to, label } = settledWindow(now, SETTLED_LAG_DAYS.youtube);
-  const shared = { window: label, sourceName: "YouTube" };
+  const shared = {
+    window: label,
+    sourceName: youtube?.sourceName ?? "YouTube",
+  };
   if (!youtube) {
     return [
       assertion({
@@ -470,7 +475,7 @@ async function youtubeCheck(
   }
   let source = 0;
   for (const day of daysBetween(from, to)) {
-    const rows = await youtube.fetchVideoDay(day);
+    const rows = await youtube.client.fetchVideoDay(day);
     for (const row of rows) source += row.views ?? 0;
   }
   const ours = await sumColumn(
@@ -840,21 +845,6 @@ function metricoolFromConfig(): MetricoolClient | null {
   return createMetricoolClient({
     apiKey: config.METRICOOL_API_KEY,
     userId: config.METRICOOL_USER_ID,
-  });
-}
-
-function youtubeFromConfig(): YouTubeAnalyticsClient | null {
-  if (
-    !config.GOOGLE_OAUTH_CLIENT_ID ||
-    !config.GOOGLE_OAUTH_CLIENT_SECRET ||
-    !config.YOUTUBE_REFRESH_TOKEN
-  ) {
-    return null;
-  }
-  return createYouTubeAnalyticsClient({
-    clientId: config.GOOGLE_OAUTH_CLIENT_ID,
-    clientSecret: config.GOOGLE_OAUTH_CLIENT_SECRET,
-    refreshToken: config.YOUTUBE_REFRESH_TOKEN,
   });
 }
 

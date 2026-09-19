@@ -183,6 +183,24 @@ async function campaignByVideoId(
 }
 
 /** The OAuth client when its grant exists, else Metricool's YouTube analytics. */
+/**
+ * The client and the name of the system behind it. YouTube's own Analytics API
+ * when OAuth is connected, Metricool's YouTube numbers otherwise. Exported so
+ * the nightly audit checks against whichever one actually fed the table, and
+ * names it honestly in the report.
+ */
+export function youtubeSourceFromConfig(): {
+  client: YouTubeAnalyticsClient;
+  sourceName: string;
+} | null {
+  const client = youtubeFromConfig();
+  if (!client) return null;
+  return {
+    client,
+    sourceName: config.YOUTUBE_REFRESH_TOKEN ? "YouTube" : "Metricool",
+  };
+}
+
 function youtubeFromConfig(): YouTubeAnalyticsClient | null {
   const {
     GOOGLE_OAUTH_CLIENT_ID,
