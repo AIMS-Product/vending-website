@@ -28,10 +28,12 @@ export const YOUTUBE_ANALYTICS_CONNECTOR = "youtube-analytics";
 
 /**
  * YouTube Analytics finalises a day two to three days late, so the run
- * re-reads a short trailing window ending yesterday. `days` widens it once
- * for a backfill: one request per day per 200 videos.
+ * re-reads a trailing window ending yesterday. `days` widens it once for a
+ * backfill: one request per day per 200 videos. Seven, not four: with four,
+ * a single run that came back empty (2026-09-14) left Sep 10 with no views at
+ * all, because no later run asked for that day again.
  */
-const WINDOW_DAYS = 4;
+const WINDOW_DAYS = 7;
 
 export type YouTubeAnalyticsSyncResult = {
   endDate: string;
