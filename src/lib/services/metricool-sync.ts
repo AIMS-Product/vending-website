@@ -15,6 +15,7 @@ import {
   type MetricoolPost,
 } from "@/lib/metricool/client";
 import {
+  channelDailyKey,
   recordSyncRun,
   upsertChannelDaily,
   type ChannelDailyRow,
@@ -207,16 +208,106 @@ export async function syncMetricool(
       }
     }
     if (rows.length === 0) return { rowsWritten: 0 };
-    const result = await upsertChannelDaily(client, rows, { now });
+    const written = await upsertChannelDaily(client, rows, { now });
+    // Only after every write landed: clearing a renamed row whose replacement
+    // failed to write would lose that day's spend instead of double counting it.
+    const cleared =
+      written.failed === 0
+        ? await clearRenamedAdRows(client, rows, { now })
+        : { written: 0, failed: 0 };
+    const failed = written.failed + cleared.failed;
     return {
-      rowsWritten: result.written,
+      rowsWritten: written.written + cleared.written,
       error:
-        result.failed > 0
-          ? `${result.failed} channel_daily rows failed to write; see the server log.`
+        failed > 0
+          ? `${failed} channel_daily rows failed to write; see the server log.`
           : null,
     };
   });
   return { endDate, connector, ads };
+}
+
+const AD_METRICS_BLANK = {
+  spend: null,
+  impressions: null,
+  reach: null,
+  clicks: null,
+} as const;
+
+/**
+ * Blanks the ad metrics on a campaign day stored under an older name.
+ *
+ * The campaign name rides in `content`, which is part of the spine key, and
+ * the webinar campaign is renamed every week. A rename inside the rewrite
+ * window writes the same campaign day under a second key while the old-name
+ * row keeps its spend, so the day counts twice (Sep 15 2026: $462 + $698.43
+ * against Meta's $866.03). Only rows for a (day, source, campaign) this run
+ * wrote are touched, so a quiet API day never blanks real spend.
+ */
+async function clearRenamedAdRows(
+  client: SyncClient,
+  rows: readonly ChannelDailyRow[],
+  { now }: { now: Date },
+) {
+  const liveContent = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const key = channelDailyKey(row);
+    const id = adDayId(key);
+    liveContent.set(id, (liveContent.get(id) ?? new Set()).add(key.content));
+  }
+  const days = rows.map((row) => row.day).sort();
+  // Paged: PostgREST silently caps a read at 1,000 rows, and a `days=400`
+  // backfill stores more ad rows than that.
+  const stored: StoredAdRow[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await client
+      .from("channel_daily")
+      .select("day,source,medium,campaign,content,destination")
+      .in("source", ["google", "meta_ads"])
+      .gte("day", days[0]!)
+      .lte("day", days.at(-1)!)
+      .not("spend", "is", null)
+      .order("day")
+      .order("campaign")
+      .order("content")
+      .range(from, from + 999);
+    if (error) throw new Error(`channel_daily read failed: ${error.message}`);
+    stored.push(...((data ?? []) as StoredAdRow[]));
+    if ((data ?? []).length < 1000) break;
+  }
+
+  const renamed = stored.filter((row) => {
+    const live = liveContent.get(adDayId(row));
+    return live !== undefined && !live.has(row.content);
+  });
+  if (renamed.length === 0) return { written: 0, failed: 0 };
+  return upsertChannelDaily(
+    client,
+    renamed.map((row) => ({
+      day: row.day,
+      source: row.source,
+      medium: row.medium,
+      campaign: row.campaign,
+      content: row.content,
+      // `destination` is what the term resolved to; it round-trips unchanged.
+      term: row.destination,
+      ...AD_METRICS_BLANK,
+    })),
+    { now },
+  );
+}
+
+type StoredAdRow = {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+};
+
+function adDayId(row: { day: string; source: string; campaign: string }) {
+  return `${row.day}\u0000${row.source}\u0000${row.campaign}`;
 }
 
 /**

@@ -207,8 +207,17 @@ describe("syncMetricool", () => {
               (upserts[name] ??= []).push(...rows);
               return { error: null };
             }),
+            select: () => emptyQuery,
           },
     );
+    const emptyQuery = {
+      in: () => emptyQuery,
+      gte: () => emptyQuery,
+      lte: () => emptyQuery,
+      not: () => emptyQuery,
+      order: () => emptyQuery,
+      range: async () => ({ data: [], error: null }),
+    };
     return {
       client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
       upserts,
@@ -354,6 +363,84 @@ describe("syncMetricool", () => {
     expect(runs.map((run) => run.connector)).toEqual([
       "metricool-posts",
       "metricool-ads",
+    ]);
+  });
+
+  it("clears a campaign day stored under the name it had before a rename", async () => {
+    // Measured in production: the Sep 15 webinar campaign was renamed "Sep 22"
+    // and its Sep 15 spend sat under both names, $462 + $698.43 against
+    // Meta's $866.03 for the whole day.
+    const stored = [
+      {
+        day: "2026-09-11",
+        source: "meta_ads",
+        medium: "paid",
+        campaign: "120245678748410338",
+        content: "LL - VP Masterclass Webinar | Sep 15",
+        destination: "unknown",
+      },
+      {
+        day: "2026-09-11",
+        source: "meta_ads",
+        medium: "paid",
+        campaign: "120245678748410338",
+        content: webinarCampaign.name,
+        destination: "unknown",
+      },
+      // Another campaign's row the run did not write: not a rename, untouched.
+      {
+        day: "2026-09-11",
+        source: "google",
+        medium: "cpc",
+        campaign: "999",
+        content: "Paused campaign",
+        destination: "unknown",
+      },
+    ];
+    const upserts: Array<Record<string, unknown>> = [];
+    const query = {
+      select: () => query,
+      in: () => query,
+      gte: () => query,
+      lte: () => query,
+      not: () => query,
+      order: () => query,
+      range: async () => ({ data: stored, error: null }),
+      upsert: vi.fn(async (rows: Array<Record<string, unknown>>) => {
+        upserts.push(...rows);
+        return { error: null };
+      }),
+      insert: async () => ({ error: null }),
+    };
+    const client = { from: () => query } as unknown as Pick<
+      SupabaseClient<Database>,
+      "from"
+    >;
+    await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async ({ network, from }) =>
+          network === "facebookads" && from === "2026-09-11"
+            ? [webinarCampaign]
+            : [],
+        fetchYouTubeVideos: noAds,
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    const blanked = upserts.filter((row) => row.spend === null);
+    expect(blanked).toEqual([
+      expect.objectContaining({
+        day: "2026-09-11",
+        campaign: "120245678748410338",
+        content: "LL - VP Masterclass Webinar | Sep 15",
+        spend: null,
+        impressions: null,
+        reach: null,
+        clicks: null,
+      }),
     ]);
   });
 });
