@@ -1209,6 +1209,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      data_audit_runs: {
+        Row: {
+          check_id: string;
+          detail: string;
+          diff_pct: number | null;
+          id: number;
+          label: string;
+          ours: number | null;
+          run_at: string;
+          source: number | null;
+          source_name: string;
+          status: string;
+          window_label: string;
+        };
+        Insert: {
+          check_id: string;
+          detail: string;
+          diff_pct?: number | null;
+          id?: number;
+          label: string;
+          ours?: number | null;
+          run_at?: string;
+          source?: number | null;
+          source_name: string;
+          status: string;
+          window_label: string;
+        };
+        Update: {
+          check_id?: string;
+          detail?: string;
+          diff_pct?: number | null;
+          id?: number;
+          label?: string;
+          ours?: number | null;
+          run_at?: string;
+          source?: number | null;
+          source_name?: string;
+          status?: string;
+          window_label?: string;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;
