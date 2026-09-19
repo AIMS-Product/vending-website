@@ -170,7 +170,11 @@ export function updateAttributionSessionFromPage({
       latest_landing_path: url.pathname,
       latest_referrer: referrer,
       latest_touch_at: nowIso,
-      ...sessionAttributionValues(pageAttribution),
+      // A visitor who lands on a tagged URL and clicks away before that page
+      // stored a session arrives here with the tags only in the referrer.
+      // Four leads lost their channel this way between Aug 1 and Sep 18.
+      ...compactAttributionValues(ownReferrerAttribution(referrer, url)),
+      ...compactAttributionValues(pageAttribution),
     };
   }
 
@@ -232,13 +236,7 @@ function hasAttributionSignal(params: URLSearchParams) {
   });
 }
 
-function sessionAttributionValues(attribution: LeadAttribution) {
-  return Object.fromEntries(
-    ATTRIBUTION_VALUE_FIELDS.map((field) => [field, attribution[field]]),
-  );
-}
-
-function compactAttributionValues(attribution: LeadAttribution) {
+function compactAttributionValues(attribution: Partial<LeadAttribution>) {
   return Object.fromEntries(
     ATTRIBUTION_VALUE_FIELDS.map((field) => [field, attribution[field]]).filter(
       ([, value]) => value,
@@ -248,6 +246,24 @@ function compactAttributionValues(attribution: LeadAttribution) {
 
 function currentUrl(url: URL) {
   return `${url.origin}${url.pathname}${url.search}`;
+}
+
+/** The tags on a referrer from our own site (apex or www); never another site's. */
+function ownReferrerAttribution(referrer: string, current: URL) {
+  let from: URL;
+  try {
+    from = new URL(referrer);
+  } catch {
+    return {} as Partial<LeadAttribution>;
+  }
+  const site = (host: string) => host.replace(/^www\./, "");
+  if (site(from.hostname) !== site(current.hostname)) {
+    return {} as Partial<LeadAttribution>;
+  }
+  return buildLeadAttribution(
+    Object.fromEntries(from.searchParams.entries()),
+    from.pathname,
+  );
 }
 
 function isExternalReferrer(referrer: string, currentOrigin: string) {
