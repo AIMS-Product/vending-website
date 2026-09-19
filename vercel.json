@@ -60,6 +60,18 @@
     {
       "path": "/api/admin/close-lead-funnel-sync/run",
       "schedule": "5 * * * *"
+    },
+    {
+      "path": "/api/admin/data-audit/run",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/admin/data-report/run?period=day",
+      "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/admin/data-report/run?period=week",
+      "schedule": "0 0 * * 5"
     }
   ]
 }
