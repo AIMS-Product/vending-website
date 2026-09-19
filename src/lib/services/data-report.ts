@@ -53,7 +53,17 @@ export type DataReport = { subject: string; text: string; html: string };
 export function buildDataReport(input: DataReportInput): DataReport {
   const title = input.period === "day" ? "Today" : "This week";
   const trust = trustLine(input.audit);
-  const subject = `${input.period === "day" ? "EOD" : "EOW"} ${input.windowLabel}: ${totalOf(input.channels, "leads")} leads, ${closeBooked(input) ?? totalOf(input.channels, "booked")} calls booked${trust.subjectSuffix}`;
+  // The Close side is always a whole week, so a day report says so rather
+  // than letting a week's calls read as today's.
+  const leads = num(totalOf(input.channels, "leads"));
+  const calls = closeBooked(input);
+  const callsPhrase =
+    calls === null
+      ? `${num(totalOf(input.channels, "booked"))} calls booked`
+      : input.period === "day"
+        ? `${num(calls)} calls booked this week`
+        : `${num(calls)} calls booked`;
+  const subject = `${input.period === "day" ? "EOD" : "EOW"} ${input.windowLabel}: ${leads} leads${input.period === "day" ? " today" : ""}, ${callsPhrase}${trust.subjectSuffix}`;
 
   const sections: string[] = [];
   sections.push(`${title}: ${input.windowLabel}`);

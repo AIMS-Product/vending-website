@@ -59,7 +59,7 @@ describe("buildDataReport", () => {
     const report = buildDataReport(input());
 
     expect(report.subject).toBe(
-      "EOD Friday 19 September: 13 leads, 41 calls booked",
+      "EOD Friday 19 September: 13 leads today, 41 calls booked this week",
     );
     expect(report.text.split("\n")[2]).toBe(
       "All 2 checks agree with their source systems.",
