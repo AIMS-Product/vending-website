@@ -28,6 +28,7 @@ function row(
     directBooked: null,
     costPerLead: null,
     costPerBooked: null,
+    costPerSignup: null,
   };
 }
 

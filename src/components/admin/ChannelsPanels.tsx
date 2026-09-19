@@ -453,7 +453,16 @@ function ChannelRow({
         />
       </td>
       <td className="text-ui-text py-2.5 text-right font-semibold tabular-nums">
-        <Cell value={row.costPerLead} format="money" />
+        {row.costPerSignup != null ? (
+          <span title="Most of this spend bought registrations or off-site sign-ups, not site leads, so it is divided by site leads plus sign-ups.">
+            {formatValue(row.costPerSignup, "money")}
+            <span className="text-ui-text-subtle ml-1 text-xs font-normal">
+              / sign-up
+            </span>
+          </span>
+        ) : (
+          <Cell value={row.costPerLead} format="money" />
+        )}
       </td>
     </tr>
   );

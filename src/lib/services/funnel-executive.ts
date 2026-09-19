@@ -71,6 +71,9 @@ export type FunnelExecutiveReport = {
   generatedAt: string;
 };
 
+/** Channels whose ad spend buys registrations, never site leads. */
+const REGISTRATION_SPEND_CHANNELS: ReadonlySet<string> = new Set(["Webinar"]);
+
 /** One month's observed spend, and the same split by channel. */
 export type SpendRow = { day: string; channel: string; spend: number | null };
 
@@ -86,6 +89,10 @@ export function buildFunnelExecutive(input: {
 
   for (const row of input.spend) {
     if (row.spend === null) continue;
+    // Webinar ads buy webinar registrations on GHL, not site leads; counted
+    // here they tripled August's cost per lead ($117.90 against ~$110 on the
+    // paid channels). The Channels tab prices them per registration instead.
+    if (REGISTRATION_SPEND_CHANNELS.has(row.channel)) continue;
     byDay.set(row.day, (byDay.get(row.day) ?? 0) + row.spend);
     const channelKey = `${row.day}\u0000${row.channel}`;
     byDayChannel.set(

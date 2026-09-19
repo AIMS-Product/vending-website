@@ -233,7 +233,10 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
               other channel&rsquo;s cost per lead is a dash because nothing was
               observed, not because it was free.
             </>
-          ) : null}
+          ) : null}{" "}
+          Webinar ad spend buys webinar registrations, not site leads, so it is
+          left out of cost per lead here; the Channels tab prices it per
+          sign-up.
         </p>
         {data.visitsThrough ? (
           <p className="text-ui-text-subtle mt-1 text-xs">

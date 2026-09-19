@@ -94,6 +94,23 @@ describe("buildFunnelExecutive", () => {
     expect(august.costPerLead).toBe(12.5);
   });
 
+  it("leaves webinar ad spend out of cost per site lead", () => {
+    // August 2026 in production: $40,128 of webinar ads bought 2,727
+    // registrations, and counting it against 510 site leads printed a
+    // $117.90 cost per lead where the paid channels ran about $110.
+    const result = buildFunnelExecutive({
+      byChannel,
+      byPage,
+      spend: [...spend, { day: "2026-08-15", channel: "Webinar", spend: 9000 }],
+    });
+    const august = result.months.find((month) => month.key === "2026-08")!;
+
+    expect(august.spend).toBe(1250);
+    expect(august.costPerLead).toBe(12.5);
+    expect(august.costPerLeadByChannel["Webinar"] ?? null).toBeNull();
+    expect(result.spendChannels).toEqual(["Google Ads", "Meta Ads"]);
+  });
+
   it("gives a channel nothing was spent on a dash, not a free lead", () => {
     const result = buildFunnelExecutive({ byChannel, byPage, spend });
     const august = result.months.find((month) => month.key === "2026-08")!;

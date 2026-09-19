@@ -127,6 +127,35 @@ describe("buildChannelReport", () => {
     expect(report.rows[2].metrics.impressions).toBe(9000);
   });
 
+  it("prices spend per sign-up where it mostly bought registrations", () => {
+    // August 2026 in production: $40,128 of webinar ads over 8 site leads
+    // printed a $5,016 cost per lead; the 2,727 registrations it bought were
+    // about $15 each.
+    const report = buildChannelReport(
+      [
+        fact({
+          channel: "Webinar",
+          source: "meta_ads",
+          spend: 40128,
+          leads: 8,
+          contacts: 2727,
+        }),
+        fact({
+          channel: "Google Ads",
+          source: "google",
+          spend: 1100,
+          leads: 10,
+        }),
+      ],
+      [],
+    );
+    const webinar = report.rows.find((row) => row.label === "Webinar")!;
+    expect(webinar.costPerLead).toBe(5016);
+    expect(webinar.costPerSignup).toBe(14.7);
+    const google = report.rows.find((row) => row.label === "Google Ads")!;
+    expect(google.costPerSignup).toBeNull();
+  });
+
   it("can group by destination for the drill-in", () => {
     const report = buildChannelReport(
       [

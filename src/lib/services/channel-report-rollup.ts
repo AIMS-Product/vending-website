@@ -139,6 +139,12 @@ export type ChannelReportRow = {
   /** spend ÷ leads and spend ÷ booked; null where spend is unobserved or zero. */
   costPerLead: number | null;
   costPerBooked: number | null;
+  /**
+   * spend ÷ (leads + registrations/contacts), only where registrations
+   * outnumber site leads. Webinar ads buy registrations, so spend ÷ site leads
+   * alone reads thousands of dollars a lead. Null otherwise.
+   */
+  costPerSignup: number | null;
 };
 
 export type ChannelReport = {
@@ -378,6 +384,10 @@ function rowFor(
       spend != null && metrics.leads ? round1(spend / metrics.leads) : null,
     costPerBooked:
       spend != null && metrics.booked ? round1(spend / metrics.booked) : null,
+    costPerSignup:
+      spend != null && (metrics.contacts ?? 0) > (metrics.leads ?? 0)
+        ? round1(spend / ((metrics.leads ?? 0) + (metrics.contacts ?? 0)))
+        : null,
   };
 }
 
