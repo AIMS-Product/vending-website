@@ -6,6 +6,7 @@ import {
   createGhlClient,
   type GhlClient,
   type GhlEmailStats,
+  type GhlFormSubmission,
 } from "@/lib/ghl/client";
 import {
   recordSyncRun,
@@ -59,7 +60,10 @@ export async function syncGhl(
         client,
         ghl,
         dayKey(addDays(now, -(deps.days ?? FORM_WINDOW_DAYS))),
-        endDate,
+        // GHL's `endAt` is exclusive: asking for the window's own last day
+        // returns nothing for it. Measured live 2026-09-19 (112 submissions
+        // to endAt 09-18, 129 to endAt 09-19).
+        dayKey(addDays(now, 1)),
         now,
       ),
     ),
@@ -249,24 +253,17 @@ export const FORM_ROUTES: Record<string, FormRoute | "exclude"> = {
   "7K87uNNVmBmzjuQOtUdh": "exclude",
 };
 
-/** GHL lander form submissions as leads, by form, by the day they arrived. */
-async function syncForms(
-  client: SyncClient,
-  ghl: GhlClient | null,
-  startAt: string,
-  endAt: string,
-  now: Date,
-) {
-  if (!ghl) return skipped("GHL_API_KEY / GHL_LOCATION_ID are not configured.");
-  const [forms, submissions] = await Promise.all([
-    ghl.listForms(),
-    ghl.fetchFormSubmissions({ startAt, endAt }),
-  ]);
-  const nameById = new Map(forms.map((form) => [form.id, form.name]));
-  // Webinar registration forms are already counted as registrations by the
-  // vp-webinars push (channel Webinar). Counting the same people again here
-  // as ghl_form leads doubled the funnel, so those forms are skipped.
-  const rows: ChannelDailyRow[] = submissions
+/**
+ * Submissions to spine rows. Webinar registration forms are already counted as
+ * registrations by the vp-webinars push (channel Webinar); counting the same
+ * people again here as `ghl_form` leads doubled the funnel, so they are
+ * skipped. Exported so the nightly audit compares the same keys this writes.
+ */
+export function formSubmissionRows(
+  submissions: readonly GhlFormSubmission[],
+  nameById: ReadonlyMap<string, string>,
+): ChannelDailyRow[] {
+  return submissions
     .filter(
       (submission) =>
         !WEBINAR_FORM_PATTERN.test(nameById.get(submission.formId) ?? "") &&
@@ -287,6 +284,25 @@ async function syncForms(
         leads: 1,
       };
     });
+}
+
+/** GHL lander form submissions as leads, by form, by the day they arrived. */
+async function syncForms(
+  client: SyncClient,
+  ghl: GhlClient | null,
+  startAt: string,
+  endAt: string,
+  now: Date,
+) {
+  if (!ghl) return skipped("GHL_API_KEY / GHL_LOCATION_ID are not configured.");
+  const [forms, submissions] = await Promise.all([
+    ghl.listForms(),
+    ghl.fetchFormSubmissions({ startAt, endAt }),
+  ]);
+  const rows = formSubmissionRows(
+    submissions,
+    new Map(forms.map((form) => [form.id, form.name])),
+  );
   const result = await upsertChannelDaily(client, rows, { now });
   return {
     rowsWritten: result.written,

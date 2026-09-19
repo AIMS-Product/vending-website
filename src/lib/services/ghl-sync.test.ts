@@ -105,6 +105,27 @@ describe("emailDeltaRows", () => {
 });
 
 describe("syncGhl", () => {
+  it("asks GoHighLevel for one day past the window, because endAt is exclusive", async () => {
+    // Measured against the live API 2026-09-19: startAt 09-12 endAt 09-18
+    // returns nothing for the 18th (112 submissions), endAt 09-19 returns it
+    // (129). Sending the window's own last day drops that day every run.
+    const { client } = buildClient();
+    const ranges: Array<{ startAt: string; endAt: string }> = [];
+    await syncGhl({
+      client,
+      ghl: {
+        ...ghl,
+        fetchFormSubmissions: async (range) => {
+          ranges.push(range);
+          return [];
+        },
+      },
+      now,
+      days: 3,
+    });
+    expect(ranges).toEqual([{ startAt: "2026-09-08", endAt: "2026-09-12" }]);
+  });
+
   it("records both connectors as skipped without a client", async () => {
     const { client, runs } = buildClient();
     const result = await syncGhl({ client, ghl: null, now });
