@@ -270,7 +270,18 @@ async function emailTotals(
     .gte("day", from)
     .lte("day", to)
     .limit(1000);
-  if (!data || data.length === 0) return null;
+  // A block with dashes, never a missing block: an absent section reads as
+  // "we do not send email" rather than "no figure for this window yet".
+  if (!data || data.length === 0) {
+    return {
+      label: "Email workflows (GoHighLevel)",
+      values: [
+        { label: "Sent", value: "-" },
+        { label: "Clicked", value: "-" },
+      ],
+      note: "no daily figure in this window yet; the deltas are credited to the day the snapshot covers",
+    };
+  }
   const sum = (key: "impressions" | "clicks") => {
     const observed = data.filter((row) => row[key] !== null);
     return observed.length === 0
