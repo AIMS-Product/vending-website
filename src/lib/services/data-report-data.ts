@@ -9,6 +9,7 @@ import {
   buildDataReport,
   type DataReport,
   type ReportChannelRow,
+  type ReportSourceBlock,
 } from "@/lib/services/data-report";
 import type { AuditResult, AuditSummary } from "@/lib/services/data-audit";
 import { summariseAudit } from "@/lib/services/data-audit";
@@ -45,9 +46,10 @@ export async function sendDataReport(deps: {
   const client = deps.client ?? createAdminClient();
   const { from, to, label } = reportWindow(deps.period, now);
 
-  const [channels, close, audit] = await Promise.all([
+  const [channels, close, sources, audit] = await Promise.all([
     channelRows(from, to),
     closeRows(to),
+    sourceBlocks(client, from, to),
     latestAudit(client),
   ]);
 
@@ -56,6 +58,7 @@ export async function sendDataReport(deps: {
     windowLabel: label,
     channels,
     close,
+    sources,
     audit,
     dashboardUrl: `${config.NEXT_PUBLIC_SITE_URL ?? "https://www.vendingpreneurs.com"}/admin/analytics`,
   });
@@ -169,6 +172,190 @@ export async function latestAudit(client: Client): Promise<{
       detail: row.detail,
     }));
   return { summary: summariseAudit(results), results, runAt };
+}
+
+/**
+ * The sources with no column in the channel table: the webinar, the email
+ * workflows, the chatbot, social reach, and the two feeds that are not
+ * connected yet. A feed that is silent says so rather than being left out,
+ * because an absent row reads as "nothing happened" instead of "not tracked".
+ */
+async function sourceBlocks(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock[]> {
+  const [webinar, email, chatbot, reach, bitly, manychat] = await Promise.all([
+    latestWebinar(client),
+    emailTotals(client, from, to),
+    chatbotTotals(client, from, to),
+    reachTotals(client, from, to),
+    countRows(client, "bitly_link_clicks", (query) =>
+      query.gte("day", from).lte("day", to),
+    ),
+    countRows(client, "manychat_events", (query) =>
+      query.gte("day", from).lte("day", to),
+    ),
+  ]);
+
+  const blocks: ReportSourceBlock[] = [];
+  if (webinar) blocks.push(webinar);
+  if (email) blocks.push(email);
+  if (chatbot) blocks.push(chatbot);
+  if (reach) blocks.push(reach);
+  blocks.push({
+    label: "Instagram DM (ManyChat)",
+    values: [{ label: "Events", value: count(manychat) }],
+    note:
+      (manychat ?? 0) === 0
+        ? "not connected: Mike has not added the External Request steps"
+        : undefined,
+  });
+  blocks.push({
+    label: "Short-link clicks (Bitly)",
+    values: [{ label: "Clicks", value: count(bitly) }],
+    note:
+      (bitly ?? 0) === 0
+        ? "not connected: no Bitly access token yet"
+        : undefined,
+  });
+  return blocks;
+}
+
+async function latestWebinar(
+  client: Client,
+): Promise<ReportSourceBlock | null> {
+  const { data } = await client
+    .from("webinar_events")
+    .select(
+      "date,label,registrations,attendees,booked_ever,showed,won,revenue,spend,booking_maturing",
+    )
+    .order("date", { ascending: false })
+    .limit(1);
+  const row = data?.[0];
+  if (!row) return null;
+  return {
+    label: `Webinar ${row.label ?? row.date}`,
+    values: [
+      { label: "Registered", value: count(row.registrations) },
+      { label: "Attended", value: count(row.attendees) },
+      { label: "Booked", value: count(row.booked_ever) },
+      { label: "Showed", value: count(row.showed) },
+      { label: "Won", value: count(row.won) },
+      { label: "Revenue", value: dollars(row.revenue) },
+      { label: "Spend", value: dollars(row.spend) },
+    ],
+    note: row.booking_maturing
+      ? "too early to grade: bookings are still coming in"
+      : undefined,
+  };
+}
+
+async function emailTotals(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock | null> {
+  const { data } = await client
+    .from("ghl_email_stats")
+    .select("sent,delivered,opened,clicked,replied")
+    .gte("snapshot_day", from)
+    .lte("snapshot_day", to);
+  if (!data || data.length === 0) return null;
+  const sum = (key: "sent" | "delivered" | "opened" | "clicked" | "replied") =>
+    data.reduce((total, row) => total + (row[key] ?? 0), 0);
+  return {
+    label: "Email workflows (GoHighLevel)",
+    values: [
+      { label: "Sent", value: count(sum("sent")) },
+      { label: "Opened", value: count(sum("opened")) },
+      { label: "Clicked", value: count(sum("clicked")) },
+      { label: "Replied", value: count(sum("replied")) },
+    ],
+  };
+}
+
+async function chatbotTotals(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock | null> {
+  const { data } = await client
+    .from("chatbot_conversations")
+    .select("status,lead_submission_id")
+    .gte("created_at", `${from}T00:00:00Z`)
+    .lt("created_at", `${nextDay(to)}T00:00:00Z`);
+  if (!data) return null;
+  return {
+    label: "Site chatbot",
+    values: [
+      { label: "Conversations", value: count(data.length) },
+      {
+        label: "Leads captured",
+        value: count(data.filter((row) => row.lead_submission_id).length),
+      },
+    ],
+  };
+}
+
+async function reachTotals(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock | null> {
+  const { data } = await client
+    .from("channel_daily")
+    .select("impressions,clicks")
+    .gte("day", from)
+    .lte("day", to)
+    .not("impressions", "is", null)
+    .limit(1000);
+  if (!data || data.length === 0) return null;
+  const sum = (key: "impressions" | "clicks") =>
+    data.reduce((total, row) => total + (row[key] ?? 0), 0);
+  return {
+    label: "Social reach (Metricool)",
+    values: [
+      { label: "Impressions", value: count(sum("impressions")) },
+      { label: "Clicks to site", value: count(sum("clicks")) },
+    ],
+    note: "impressions, not people: the same follower counts once per post",
+  };
+}
+
+async function countRows(
+  client: Client,
+  table: "bitly_link_clicks" | "manychat_events",
+  apply: (query: CountQuery) => CountQuery,
+): Promise<number | null> {
+  const query = apply(
+    client.from(table).select("*", { count: "exact", head: true }) as never,
+  ) as unknown as Promise<{ count: number | null }>;
+  const { count: rows } = await query;
+  return rows ?? null;
+}
+
+type CountQuery = {
+  gte(column: string, value: string): CountQuery;
+  lte(column: string, value: string): CountQuery;
+};
+
+function count(value: number | null | undefined) {
+  return value === null || value === undefined
+    ? "-"
+    : value.toLocaleString("en-US");
+}
+
+function dollars(value: number | null | undefined) {
+  return value === null || value === undefined
+    ? "-"
+    : `$${Math.round(value).toLocaleString("en-US")}`;
+}
+
+function nextDay(day: string) {
+  const date = new Date(`${day}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + 1);
+  return date.toISOString().slice(0, 10);
 }
 
 function recipients() {

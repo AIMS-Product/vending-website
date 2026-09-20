@@ -103,6 +103,39 @@ describe("buildDataReport", () => {
     expect(googleAds).toMatch(/Google Ads\s+12\s+-\s+5/);
   });
 
+  it("labels every figure so a phone can stack the table into cards", () => {
+    const report = buildDataReport(input());
+
+    // No monospace block: that is what wrapped into nonsense on a phone.
+    expect(report.html).not.toContain("<pre");
+    expect(report.html).toContain("@media only screen and (max-width:520px)");
+    // Each cell carries the column it came from, which is the stacked label.
+    expect(report.html).toContain('data-label="Leads"');
+    expect(report.html).toContain('data-label="Revenue"');
+    // The row's own name is the card title, not a labelled figure.
+    expect(report.html).toContain(
+      '<td align="left" class="label" data-label="Channel">Google Ads</td>',
+    );
+  });
+
+  it("shows a source that is not connected instead of leaving it out", () => {
+    const report = buildDataReport(
+      input({
+        sources: [
+          {
+            label: "Instagram DM (ManyChat)",
+            values: [{ label: "Events", value: "0" }],
+            note: "not connected: Mike has not added the External Request steps",
+          },
+        ],
+      }),
+    );
+
+    expect(report.text).toContain("Instagram DM (ManyChat): 0 events");
+    expect(report.text).toContain("not connected");
+    expect(report.html).toContain("Instagram DM (ManyChat)");
+  });
+
   it("marks a week that has not finished", () => {
     const report = buildDataReport(
       input({
