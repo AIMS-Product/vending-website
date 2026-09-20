@@ -347,6 +347,8 @@ const STYLES = `
        font-variant-numeric:tabular-nums; }
   tr.total td { font-weight:700; border-top:2px solid #d1d5db; border-bottom:0; }
   .label::before { content:""; }
+  .pair { color:#6b7280; font-size:12px; }
+  p.note { margin:-2px 0 14px; font-size:12px; }
   @media only screen and (max-width:520px) {
     body { padding:14px; }
     table, tbody, tr, td { display:block; width:100%; box-sizing:border-box; }
@@ -360,6 +362,7 @@ const STYLES = `
     td::before { content:attr(data-label); color:#6b7280; font-size:12px;
                  text-align:left; flex:0 0 auto; }
     td.label::before { content:""; }
+    .pair { display:none; }
   }
 `;
 
@@ -387,22 +390,22 @@ function htmlSection(section: Section): string {
     return `<ul>${section.items.map((item) => `<li>${escape(item)}</li>`).join("")}</ul>`;
   }
   if (section.kind === "blocks") {
+    // The note goes on its own line, never in a column: squeezed into a cell
+    // it wrapped one word per line next to the figures.
     return section.blocks
       .map(
         (block) =>
           `<table role="presentation"><tbody><tr>` +
-          `<td class="label">${escape(block.label)}</td>` +
+          `<td class="label" width="190">${escape(block.label)}</td>` +
           block.values
             .map(
               (value) =>
                 `<td align="right" data-label="${escape(value.label)}">` +
-                `<span class="label">${escape(value.label)}: </span>${escape(value.value)}</td>`,
+                `<span class="pair">${escape(value.label)}: </span>${escape(value.value)}</td>`,
             )
             .join("") +
-          (block.note
-            ? `<td align="right" data-label="Note">${escape(block.note)}</td>`
-            : "") +
-          `</tr></tbody></table>`,
+          `</tr></tbody></table>` +
+          (block.note ? `<p class="muted note">${escape(block.note)}</p>` : ""),
       )
       .join("\n");
   }
