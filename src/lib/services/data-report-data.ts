@@ -251,27 +251,39 @@ async function latestWebinar(
   };
 }
 
+/**
+ * `ghl_email_stats` holds GoHighLevel's LIFETIME totals per workflow, which is
+ * why summing it printed 166,109 sent in one day. The daily numbers are the
+ * deltas the connector already wrote onto the spine as `ghl_email`. Opens and
+ * replies have no daily figure at all, so they are not reported rather than
+ * being filled in from a lifetime total.
+ */
 async function emailTotals(
   client: Client,
   from: string,
   to: string,
 ): Promise<ReportSourceBlock | null> {
   const { data } = await client
-    .from("ghl_email_stats")
-    .select("sent,delivered,opened,clicked,replied")
-    .gte("snapshot_day", from)
-    .lte("snapshot_day", to);
+    .from("channel_daily")
+    .select("impressions,clicks")
+    .eq("source", "ghl_email")
+    .gte("day", from)
+    .lte("day", to)
+    .limit(1000);
   if (!data || data.length === 0) return null;
-  const sum = (key: "sent" | "delivered" | "opened" | "clicked" | "replied") =>
-    data.reduce((total, row) => total + (row[key] ?? 0), 0);
+  const sum = (key: "impressions" | "clicks") => {
+    const observed = data.filter((row) => row[key] !== null);
+    return observed.length === 0
+      ? null
+      : observed.reduce((total, row) => total + (row[key] ?? 0), 0);
+  };
   return {
     label: "Email workflows (GoHighLevel)",
     values: [
-      { label: "Sent", value: count(sum("sent")) },
-      { label: "Opened", value: count(sum("opened")) },
-      { label: "Clicked", value: count(sum("clicked")) },
-      { label: "Replied", value: count(sum("replied")) },
+      { label: "Sent", value: count(sum("impressions")) },
+      { label: "Clicked", value: count(sum("clicks")) },
     ],
+    note: "GoHighLevel reports opens and replies as lifetime totals only, so there is no daily figure for them",
   };
 }
 
