@@ -12,6 +12,7 @@ import {
 import { SETTER_CALENDLY_URL } from "@/lib/qualification/thank-you-links";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import {
+  creditConflict,
   SETTER_NAMES,
   setterBookingUrl,
   summarizeCallCredits,
@@ -164,7 +165,7 @@ export default async function AdminBookingsPage({
       </AdminMetricStrip>
 
       <PeoplePanel summary={summary} />
-      <UntaggedNote summary={summary} />
+      <UntaggedNote summary={summary} rows={rows} />
       <SetterLinksPanel />
       <CallsPanel
         canEdit={canEdit}
@@ -228,8 +229,22 @@ function PeoplePanel({ summary }: { summary: CallCreditSummary }) {
   );
 }
 
-function UntaggedNote({ summary }: { summary: CallCreditSummary }) {
-  if (summary.byKind.untagged === 0 && summary.unclassified.length === 0) {
+/** Named once so the row badge and the summary count cannot drift apart. */
+const conflictOf = (row: CallCreditRow) => creditConflict(row);
+
+function UntaggedNote({
+  summary,
+  rows,
+}: {
+  summary: CallCreditSummary;
+  rows: CallCreditRow[];
+}) {
+  const conflicted = rows.filter((row) => conflictOf(row));
+  if (
+    summary.byKind.untagged === 0 &&
+    summary.unclassified.length === 0 &&
+    conflicted.length === 0
+  ) {
     return null;
   }
 
@@ -254,6 +269,32 @@ function UntaggedNote({ summary }: { summary: CallCreditSummary }) {
               {summary.unclassified.join(", ")}
             </span>
             . Their calls are counted; only the role column is blank.
+          </li>
+        ) : null}
+        {conflicted.length > 0 ? (
+          <li>
+            <span className="text-ui-text font-medium">
+              {conflicted.length}{" "}
+              {conflicted.length === 1 ? "call names" : "calls name"} two
+              different people
+            </span>{" "}
+            — Calendly recorded who booked it and Close&rsquo;s setter field
+            says someone else. The credit here follows Calendly, because it is
+            what the booking system recorded rather than a field typed
+            afterwards, and each one is marked &ldquo;Close says&rdquo; in the
+            table. Fix the wrong side at the source:{" "}
+            <span className="text-ui-text font-medium">
+              {[
+                ...new Set(
+                  conflicted.map(
+                    (row) => `${row.credit.who} / ${conflictOf(row)}`,
+                  ),
+                ),
+              ]
+                .slice(0, 6)
+                .join(", ")}
+            </span>
+            .
           </li>
         ) : null}
       </ul>
@@ -372,6 +413,14 @@ function CallsPanel({
                   <span className="text-ui-text-muted block text-xs font-normal">
                     {KIND_LABEL[row.credit.kind]}
                   </span>
+                  {conflictOf(row) ? (
+                    <span
+                      className="text-ui-text-muted block text-xs font-normal"
+                      title="Calendly recorded who booked the call; Close's setter field names someone else. Calendly wins here. Whichever is wrong should be corrected at the source."
+                    >
+                      Close says {conflictOf(row)}
+                    </span>
+                  ) : null}
                 </td>
                 <td className="py-2 text-xs">
                   {row.chat ? (

@@ -11,6 +11,7 @@ import {
   resolveCallCredit,
   summarizeCallCredits,
   type CallCreditRow,
+  creditConflict,
 } from "./call-credit";
 
 const CONNOR = "https://api.calendly.com/users/8533e44c";
@@ -354,5 +355,46 @@ describe("setter booking links", () => {
     );
     expect(url).toContain("hide_gdpr_banner=1");
     expect(url).toContain("utm_content=connor-george");
+  });
+});
+
+describe("creditConflict", () => {
+  const calendly = {
+    kind: "rep" as const,
+    basis: "calendly" as const,
+    who: "Connor George",
+    evidence: "",
+    repUri: null,
+  };
+
+  it("names the setter Close disagrees with", () => {
+    // Connor rang and set the call; Close still had Pearl on the lead.
+    expect(
+      creditConflict({ credit: calendly, closeSetter: "Pearl Sathekge" }),
+    ).toBe("Pearl Sathekge");
+  });
+
+  it("is quiet when the two records agree, whatever the casing", () => {
+    expect(
+      creditConflict({ credit: calendly, closeSetter: "connor george" }),
+    ).toBeNull();
+    expect(creditConflict({ credit: calendly, closeSetter: null })).toBeNull();
+    expect(creditConflict({ credit: calendly, closeSetter: "  " })).toBeNull();
+  });
+
+  it("says nothing when Close's field is what we credited in the first place", () => {
+    // basis "close" means the credit IS the Close name; it cannot disagree.
+    expect(
+      creditConflict({
+        credit: { ...calendly, basis: "close", who: "Pearl Sathekge" },
+        closeSetter: "Pearl Sathekge",
+      }),
+    ).toBeNull();
+    expect(
+      creditConflict({
+        credit: { ...calendly, basis: "touch" },
+        closeSetter: "Someone Else",
+      }),
+    ).toBeNull();
   });
 });

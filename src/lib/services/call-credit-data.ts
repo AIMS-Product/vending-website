@@ -148,7 +148,27 @@ export async function buildCallCreditReport(
   }
 
   const directory = buildCalendlyDirectory(data);
-  const chats = await fetchChatIndex(client);
+  const [chats, closeSetters] = await Promise.all([
+    fetchChatIndex(client),
+    fetchCloseSetters(client),
+  ]);
+
+  /**
+   * Close's setter for a booking, preferring the Close mirror over the site
+   * lead row.
+   *
+   * `lead_submissions.booked_by_setter` only exists for leads that filled a
+   * form on the site, so for reactivation and webinar leads — most of the
+   * book — Close's setter field was invisible here and the credit fell
+   * through to an inference or to "No tag". 1,235 bookings on 2026-09-21. The
+   * mirror carries the same field for every Close lead, so a setter who
+   * corrects the record in Close now sees it land.
+   */
+  const closeSetterFor = (row: RawRow): string | null => {
+    const email = row.invitee_email?.trim().toLowerCase();
+    const mirrored = email ? closeSetters.get(email) : null;
+    return mirrored ?? row.lead?.booked_by_setter ?? null;
+  };
 
   const rows: CallCreditRow[] = data
     .filter((row) => {
@@ -180,13 +200,13 @@ export async function buildCallCreditReport(
           utmSource: row.utm_source,
           utmMedium: row.utm_medium,
           utmContent: row.utm_content,
-          closeSetter: row.lead?.booked_by_setter ?? null,
+          closeSetter: closeSetterFor(row),
           setterTouch: setterTouchOf(row),
         },
         directory,
       ),
       leadSubmissionId: row.lead_submission_id,
-      closeSetter: row.lead?.booked_by_setter ?? null,
+      closeSetter: closeSetterFor(row),
       chat: resolveChatTouch(
         {
           inviteeEmail: row.invitee_email,
@@ -204,6 +224,42 @@ export async function buildCallCreditReport(
     connected: true,
     since: bookedSince.toISOString(),
   };
+}
+
+/**
+ * Close's setter field for every mirrored lead, by email.
+ *
+ * Paged explicitly: PostgREST silently caps an unpaged read, and a partial map
+ * here would quietly un-credit whoever fell past the cap.
+ */
+async function fetchCloseSetters(
+  client: CallCreditClient,
+): Promise<Map<string, string>> {
+  const byEmail = new Map<string, string>();
+  const PAGE = 1000;
+  try {
+    for (let from = 0; from < 100_000; from += PAGE) {
+      const { data, error } = await client
+        .from("close_lead_funnel")
+        .select("email,setter_name")
+        .order("lead_id")
+        .range(from, from + PAGE - 1);
+      if (error) return byEmail;
+      const batch = (data ?? []) as Array<{
+        email: string | null;
+        setter_name: string | null;
+      }>;
+      for (const row of batch) {
+        const email = row.email?.trim().toLowerCase();
+        const setter = row.setter_name?.trim();
+        if (email && setter && !byEmail.has(email)) byEmail.set(email, setter);
+      }
+      if (batch.length < PAGE) break;
+    }
+  } catch {
+    return byEmail;
+  }
+  return byEmail;
 }
 
 /**

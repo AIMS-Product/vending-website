@@ -384,6 +384,28 @@ export type CallCreditRow = {
   closeSetter: string | null;
 };
 
+/**
+ * The name Close disagrees with us about, or null when the two records agree
+ * or only one of them has an answer.
+ *
+ * Calendly's record wins the credit and should: it is what the booking system
+ * itself recorded, not a field someone typed afterwards. But silently picking
+ * a winner is what sends a setter to Slack asking why a call they rang and set
+ * is under somebody else's name. Naming the disagreement lets whoever is wrong
+ * fix it at the source.
+ */
+export function creditConflict(row: {
+  credit: CallCredit;
+  closeSetter: string | null;
+}): string | null {
+  if (row.credit.basis !== "calendly") return null;
+  const close = row.closeSetter?.trim();
+  if (!close) return null;
+  return close.toLowerCase() === row.credit.who.trim().toLowerCase()
+    ? null
+    : close;
+}
+
 export type CallCreditPerson = {
   who: string;
   role: RepRole;
@@ -398,6 +420,8 @@ export type CallCreditSummary = {
   unclassified: string[];
   /** Calls where the person had chatted with the bot beforehand. */
   chatTouched: number;
+  /** Calls where Calendly's record and Close's setter field name different people. */
+  conflicts: number;
 };
 
 export function summarizeCallCredits(rows: CallCreditRow[]): CallCreditSummary {
@@ -409,8 +433,10 @@ export function summarizeCallCredits(rows: CallCreditRow[]): CallCreditSummary {
   };
   const people = new Map<string, CallCreditPerson>();
 
+  let conflicts = 0;
   for (const row of rows) {
     byKind[row.credit.kind] += 1;
+    if (creditConflict(row)) conflicts += 1;
     if (row.credit.kind !== "rep") continue;
     const existing = people.get(row.credit.who);
     if (existing) {
@@ -436,6 +462,7 @@ export function summarizeCallCredits(rows: CallCreditRow[]): CallCreditSummary {
       .filter((person) => person.role === "unclassified")
       .map((person) => person.who),
     chatTouched: rows.filter((row) => row.chat !== null).length,
+    conflicts,
   };
 }
 
