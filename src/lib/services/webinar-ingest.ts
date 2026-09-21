@@ -201,8 +201,22 @@ async function write(
     // The sheet's own booked numbers keep their home on `webinar_events`,
     // which is where webinar booking and show rates belong.
     booked: null,
-    showed: a.showed,
-    won: a.won,
+    // Same reasoning, and it should have been applied here at the same time.
+    // These are not the cohort's outcomes: vp-webinars joins a Close outcome
+    // back to an ad set by matching the booker's email to a GHL registrant,
+    // and that join only partly lands (Sept 1: 13 of 27 bookings; Aug 18: 35
+    // of 78). What arrives is a floor, and on 2026-09-21 it was a 5% one --
+    // 57 shows and 1 win on the spine against 66 shows and 2 wins in the same
+    // four cohorts. Rendered beside a full `booked` count from the tagged
+    // Calendly links, a floor reads as the whole truth and understates the
+    // webinar by an order of magnitude.
+    //
+    // `webinar_events` already holds all six stages for every cohort, counted
+    // over one population, and that is where a webinar's show and close rates
+    // belong. The spine keeps what ad-set attribution can honestly carry: who
+    // the ads acquired, and what they cost.
+    showed: null,
+    won: null,
   }));
   const spine = await upsertChannelDaily(client, rows, { now });
   if (spine.failed > 0) {

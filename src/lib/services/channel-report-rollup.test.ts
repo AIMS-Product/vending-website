@@ -77,6 +77,38 @@ describe("buildChannelReport", () => {
     expect(funnel.won.ofPreviousPct).toBe(25);
   });
 
+  it("counts contacts in the Book % denominator, not site leads alone", () => {
+    // The Webinar shape, live on 2026-09-21: registrations land in `contacts`
+    // because they are not site leads, the bookings they produce land on the
+    // night-of CTA row, and a handful of site leads sit alongside. Denominated
+    // on `leads` alone this published 300%.
+    const report = buildChannelReport(
+      [
+        fact({ channel: "Webinar", contacts: 4037, leads: null }),
+        fact({ channel: "Webinar", leads: 9, booked: 27 }),
+        fact({
+          channel: "Webinar",
+          source: "internal-webinar",
+          content: "sept22_end_cta",
+          booked: 119,
+        }),
+      ],
+      [],
+    );
+
+    // 27 bookings over the 4,046 people the channel actually acquired.
+    expect(report.rows[0].rates.bookPct).toBe(0.7);
+    // The CTA row still has no audience on it, so it stays disclosed, not folded in.
+    expect(report.rows[0].directBooked).toBe(119);
+  });
+
+  it("gives Book % a dash when a channel acquired nobody", () => {
+    const report = buildChannelReport([fact({ booked: 4 })], []);
+
+    expect(report.rows[0].rates.bookPct).toBeNull();
+    expect(report.rows[0].directBooked).toBe(4);
+  });
+
   it("keeps bookings without a lead out of Book % and collapses visit-only rows", () => {
     const report = buildChannelReport(
       [

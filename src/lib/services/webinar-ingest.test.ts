@@ -148,6 +148,7 @@ describe("ingestWebinarSnapshot", () => {
       // so the sender's next full-history send clears the doubled rows.
       booked: null,
       showed: null,
+      won: null,
     });
     // Spend lives on webinar_events; metricool-ads owns it on the spine.
     expect(spine[0]).not.toHaveProperty("spend");
@@ -201,5 +202,29 @@ describe("ingestWebinarSnapshot", () => {
     ).rejects.toMatchObject({ status: 500 });
     expect(runs[0]).toMatchObject({ rows_written: 0 });
     expect(String(runs[0].error)).toMatch(/webinar_events upsert failed/);
+  });
+
+  it("keeps the ad-set outcome floors off the spine", async () => {
+    // vp-webinars joins a Close outcome back to an ad set by matching the
+    // booker's email to a GHL registrant, and that join only partly lands
+    // (Sept 1: 13 of 27 bookings). What arrives is a floor -- on 2026-09-21,
+    // 57 shows and 1 win against 66 and 2 in the same four cohorts. Beside a
+    // full `booked` count from the tagged links a floor reads as the whole
+    // truth, so it stays on `webinar_events` where the whole cohort is.
+    const { client, spine } = buildClient();
+
+    await ingestWebinarSnapshot(
+      {
+        ...payload,
+        webinars: [],
+        audiences: [{ ...payload.audiences[0], booked: 12, showed: 7, won: 1 }],
+      },
+      { client, now: NOW },
+    );
+
+    expect(spine[0]).toMatchObject({ leads: 263 });
+    expect(spine[0].booked).toBeNull();
+    expect(spine[0].showed).toBeNull();
+    expect(spine[0].won).toBeNull();
   });
 });

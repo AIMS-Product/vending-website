@@ -264,6 +264,10 @@ const MIN_COVERAGE = 0.5;
  * row at all. The row's `directBooked` names that second case. Both sides still
  * come from our own tables, so the number is real — it is simply not a cohort
  * conversion rate, and `funnel-monthly` is where a cohort-correct one lives.
+ *
+ * Still used for the visits denominator. NOT used for Book %: see
+ * `bookedOfSignupsPct`, which is denominated on the acquired population rather
+ * than on site leads alone.
  */
 export function ofObservedPct(
   facts: ChannelFact[],
@@ -284,6 +288,42 @@ export function ofObservedPct(
   }
 
   return pct(covered, sumObserved(seen.map((fact) => fact[denominator])));
+}
+
+/**
+ * Book %, denominated on everyone the channel acquired rather than on site
+ * leads alone.
+ *
+ * `applyLeadDefinition` splits one population in two: a site form fill stays a
+ * `lead`, while a webinar registration, an off-site GHL form fill and a
+ * ManyChat contact become `contacts`, because they are not leads by the site's
+ * definition. Both are people, and both can book. Denominating on `leads`
+ * alone therefore divides a channel's whole booking count by whatever slice of
+ * its audience happened to fill in a form on our own site.
+ *
+ * Measured live on 2026-09-21 that published Webinar Book % as **300%** -- 27
+ * bookings over 9 site leads, while the 4,037 registrations that actually
+ * produced them sat in `contacts` and were skipped. VSL read 200% and
+ * Instagram 84.8% the same way. `costPerSignup` already reasons correctly
+ * about this ("Webinar ads buy registrations, so spend / site leads alone
+ * reads thousands of dollars a lead"); Book % never did.
+ *
+ * Everything else about `ofObservedPct` is kept: the denominator is every row
+ * that observed acquisition, a denominator row with no booking counts as the
+ * zero it was, and a booking on a row with no audience stays out of the rate
+ * and is disclosed as `directBooked` instead.
+ */
+export function bookedOfSignupsPct(facts: ChannelFact[]): number | null {
+  const seen = facts.filter(
+    (fact) => fact.leads != null || fact.contacts != null,
+  );
+  if (!seen.some((fact) => fact.booked != null)) return null;
+  const booked = seen.reduce((sum, fact) => sum + (fact.booked ?? 0), 0);
+  const signups = seen.reduce(
+    (sum, fact) => sum + (fact.leads ?? 0) + (fact.contacts ?? 0),
+    0,
+  );
+  return pct(booked, signups);
 }
 
 /**
@@ -371,7 +411,7 @@ function rowFor(
     prior: priorMetrics,
     rates: {
       leadPct: ofVisitsPct(current, "leads"),
-      bookPct: ofObservedPct(current, "booked", "leads"),
+      bookPct: bookedOfSignupsPct(current),
       winPct: ofObservedPct(current, "won", "booked"),
     },
     directBooked: sumObserved(
