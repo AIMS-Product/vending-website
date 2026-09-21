@@ -46,6 +46,8 @@ import { KpiTab } from "@/components/admin/KpiPanels";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getBookedCalls } from "@/lib/services/booked-calls-data";
+import { VideoEngagementTab } from "@/components/admin/VideoEngagementPanels";
+import { getVideoEngagementReport } from "@/lib/services/video-engagement-report";
 import { getFunnelMap } from "@/lib/services/funnel-map";
 import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
 import { getFunnelExecutive } from "@/lib/services/funnel-executive";
@@ -57,6 +59,7 @@ import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
   parseAdminAnalyticsRange,
+  resolveAdminAnalyticsRange,
   toCustomRangeKey,
 } from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
@@ -101,6 +104,7 @@ export default async function AdminAnalyticsPage({
   const isJourneysTab = tab === "journeys";
   const isExecTab = tab === "exec";
   const isCloseTab = tab === "close";
+  const isVideoTab = tab === "video";
   const [
     { user, role },
     analytics,
@@ -114,6 +118,7 @@ export default async function AdminAnalyticsPage({
     executive,
     closeWeeks,
     closeMtd,
+    videoEngagement,
   ] = await Promise.all([
     requireReadAccess(),
     isYouTubeTab ||
@@ -124,7 +129,8 @@ export default async function AdminAnalyticsPage({
     isFunnelsTab ||
     isJourneysTab ||
     isExecTab ||
-    isCloseTab
+    isCloseTab ||
+    isVideoTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -152,6 +158,13 @@ export default async function AdminAnalyticsPage({
     isExecTab ? getFunnelExecutive({ includeInternal }) : null,
     isCloseTab ? getCloseWeekView() : null,
     isCloseTab ? getCloseMtdFunnel() : null,
+    // Windowed on when the call was BOOKED, matching the bookings ledger, so
+    // "booked prospects" means the same population on both pages.
+    isVideoTab
+      ? getVideoEngagementReport({
+          days: resolveAdminAnalyticsRange(range).days,
+        })
+      : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -225,6 +238,8 @@ export default async function AdminAnalyticsPage({
           includeInternal={includeInternal}
           metrics={parseFunnelMetrics(singleParam(params.metric))}
         />
+      ) : videoEngagement ? (
+        <VideoEngagementTab report={videoEngagement} />
       ) : booked ? (
         <BookedCallsPanel report={booked} />
       ) : map ? (
