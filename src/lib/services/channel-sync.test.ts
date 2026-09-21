@@ -27,6 +27,7 @@ function table(rows: unknown[]) {
     "eq",
     "is",
     "not",
+    "or",
     "order",
     "range",
     "limit",
@@ -524,6 +525,74 @@ describe("syncChannelDaily", () => {
     expect(upserts).toEqual([
       expect.objectContaining({ day: "2026-06-24", booked: 1 }),
     ]);
+  });
+
+  it("blanks the booking left on the day a booking used to be dated to", async () => {
+    // Measured in production 2026-09-21: 34 rows carrying 90 phantom bookings.
+    // aug11_end_cta sat correctly on Aug 11 and 12 (13 + 5) and again as a
+    // lump of 18 on Aug 24, because an upsert never deletes the old day.
+    const link = {
+      source: "linkedin",
+      medium: "organic",
+      campaign: "bio",
+      content: "profile",
+      destination: "book-call",
+    };
+    const { client, upserts } = buildClient({
+      bookings: [
+        {
+          created_at: "2026-09-14T19:05:00.000Z",
+          booked_at: "2026-09-09T15:12:00.000Z",
+          utm_source: link.source,
+          utm_medium: link.medium,
+          utm_campaign: link.campaign,
+          utm_content: link.content,
+          utm_term: link.destination,
+        },
+      ],
+      channelDaily: [
+        // The day this run writes the booking to. Left alone.
+        { day: "2026-09-09", ...link },
+        // The same link on a day this run no longer writes: the fossil.
+        { day: "2026-09-10", ...link },
+        // Another link the run did not write at all. Not a move, untouched —
+        // the equivalent of the ad sweep's quiet-API-day guard.
+        {
+          day: "2026-09-10",
+          source: "youtube",
+          medium: "organic",
+          campaign: "(not set)",
+          content: "(not set)",
+          destination: "unknown",
+        },
+      ],
+    });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: null,
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    const blanked = upserts.filter((row) => row.booked === null);
+    expect(blanked).toEqual([
+      expect.objectContaining({
+        day: "2026-09-10",
+        source: "linkedin",
+        booked: null,
+        showed: null,
+        won: null,
+        revenue: null,
+      }),
+    ]);
+    // Four connectors write `leads`. Blanking it on a day this connector did
+    // not write would erase webinar registrations, GHL and ManyChat contacts.
+    expect(blanked[0]).not.toHaveProperty("leads");
+    // Spend, visits and clicks belong to other connectors: 7 of the 34
+    // measured orphans carry a real visits count on the same row.
+    expect(blanked[0]).not.toHaveProperty("visits");
+    expect(blanked[0]).not.toHaveProperty("spend");
   });
 
   it("nulls visits on a link GA4 stopped reporting, because it moved the session", async () => {

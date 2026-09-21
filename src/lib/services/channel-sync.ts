@@ -569,8 +569,121 @@ async function syncLeads(
     revenue: null,
   }));
 
-  return written(
-    await upsertChannelDaily(client, [...rows, ...bookingRows], { now }),
+  const result = await upsertChannelDaily(client, [...rows, ...bookingRows], {
+    now,
+  });
+  // Only after every write landed, for the same reason the ad sync waits:
+  // blanking a moved booking whose replacement failed to write would lose the
+  // booking instead of double counting it.
+  if (result.failed === 0) {
+    await clearMovedBookingRows(client, [...rows, ...bookingRows], { now });
+  }
+  return written(result);
+}
+
+const BOOKING_OUTCOMES_BLANK = {
+  booked: null,
+  showed: null,
+  won: null,
+  revenue: null,
+} as const;
+
+type StoredBookingRow = {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+};
+
+/** A booking's identity without its day: everything the link says about it. */
+function bookingLinkId(row: {
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+}) {
+  return [
+    row.source,
+    row.medium,
+    row.campaign,
+    row.content,
+    row.destination,
+  ].join("\u0000");
+}
+
+/**
+ * Blanks booking outcomes left on the day a booking used to be dated to.
+ *
+ * `channel_daily` is rebuilt by upsert and an upsert never deletes, so when a
+ * booking's day changes — a `booked_at` correction, a re-import, a
+ * date-bucketing fix — the sync writes it at its new day and the old day keeps
+ * its count. The read-time rollup sums both. Measured 2026-09-21: 34 such rows
+ * carrying 90 phantom bookings, which is why August channel Book % read
+ * roughly double (REPORTING.md section 3). The night-of CTA cohorts show it
+ * exactly: aug11_end_cta sat correctly on Aug 11 and 12 (13 + 5) and again as
+ * a lump of 18 on Aug 24.
+ *
+ * Same shape as `clearRenamedAdRows` in metricool-sync, one axis over: there
+ * the campaign name moves inside a day, here the day moves under a link. Only
+ * links this run actually wrote are considered, so a link with no bookings in
+ * the window is never blanked — the equivalent of that function's quiet-API-day
+ * guard.
+ *
+ * `leads` is deliberately not blanked. Four connectors write that column (site
+ * leads, webinar registrations, GHL, ManyChat), so clearing it on a day this
+ * connector did not write would erase another connector's contacts. Spend,
+ * visits and clicks belong to metricool-ads, GA4 and Bitly and are untouched:
+ * 7 of the 34 measured orphans carry a real `visits` count on the same row.
+ */
+async function clearMovedBookingRows(
+  client: SyncClient,
+  rows: readonly ChannelDailyRow[],
+  { now }: { now: Date },
+) {
+  const liveDays = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const key = channelDailyKey(row);
+    const id = bookingLinkId(key);
+    liveDays.set(id, (liveDays.get(id) ?? new Set()).add(key.day));
+  }
+  const days = rows.map((row) => row.day).sort();
+  if (days.length === 0) return { written: 0, failed: 0 };
+
+  const stored = await pageAll<StoredBookingRow>((from, to) =>
+    client
+      .from("channel_daily")
+      .select("day,source,medium,campaign,content,destination")
+      .gte("day", days[0]!)
+      .lte("day", days.at(-1)!)
+      .or("booked.gt.0,showed.gt.0,won.gt.0")
+      .order("day")
+      .order("source")
+      .order("campaign")
+      .range(from, to),
+  );
+
+  const moved = stored.filter((row) => {
+    const live = liveDays.get(bookingLinkId(row));
+    return live !== undefined && !live.has(row.day);
+  });
+  if (moved.length === 0) return { written: 0, failed: 0 };
+
+  return upsertChannelDaily(
+    client,
+    moved.map((row) => ({
+      day: row.day,
+      source: row.source,
+      medium: row.medium,
+      campaign: row.campaign,
+      content: row.content,
+      // `destination` is what the term resolved to; it round-trips unchanged.
+      term: row.destination,
+      ...BOOKING_OUTCOMES_BLANK,
+    })),
+    { now },
   );
 }
 
