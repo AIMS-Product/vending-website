@@ -84,6 +84,86 @@ describe("daysBetween", () => {
   });
 });
 
+describe("spine-orphaned-bookings", () => {
+  /** The shape the real defect had: a cohort's whole total re-landing on one day. */
+  const link = (
+    content: string,
+    day: string,
+    booked: number,
+    synced: string,
+  ) => ({
+    day,
+    source: "internal-webinar",
+    medium: "during-night-of",
+    campaign: "book_meeting",
+    content,
+    destination: "unknown",
+    booked,
+    synced_at: `${synced}T11:10:00.000Z`,
+    leads: null,
+  });
+
+  const orphanRun = (channel_daily: Array<Record<string, unknown>>) =>
+    runDataAudit({
+      now,
+      client: fakeClient({ channel_daily }),
+      ga4: null,
+      close: null,
+      calendly: null,
+      metricool: null,
+      youtube: null,
+      ghl: null,
+    });
+
+  it("counts a booking left on the day it moved off", async () => {
+    const run = await orphanRun([
+      // Where the cohort really sits, rewritten by the latest sync.
+      link("aug11_end_cta", "2026-09-11", 13, "2026-09-19"),
+      link("aug11_end_cta", "2026-09-12", 5, "2026-09-19"),
+      // The same 18 again on a day the sync no longer writes them to.
+      link("aug11_end_cta", "2026-09-18", 18, "2026-09-14"),
+      // A live booking on that day, so the day itself was rewritten.
+      link("sep18_end_cta", "2026-09-18", 2, "2026-09-19"),
+    ]);
+    const check = run.results.find(
+      (result) => result.checkId === "spine-orphaned-bookings",
+    )!;
+    expect(check).toMatchObject({ status: "fail", ours: 18 });
+    expect(check.detail).toContain("2026-09-18");
+  });
+
+  it("leaves a booking whose link survives nowhere else for a human", async () => {
+    // The two standing rows in REPORTING.md section 9: stale, but there is no
+    // other day to move them to, so the sync cannot clear them either.
+    const run = await orphanRun([
+      link("dead_session", "2026-09-18", 1, "2026-09-14"),
+      link("sep18_end_cta", "2026-09-18", 2, "2026-09-19"),
+    ]);
+    expect(
+      run.results.find(
+        (result) => result.checkId === "spine-orphaned-bookings",
+      ),
+    ).toMatchObject({ status: "pass", ours: 0 });
+  });
+
+  it("does not call a whole day stale when one connector ran later", async () => {
+    // Every booking row here was written by the same day's sync; the minutes
+    // between connectors inside one cron are not staleness.
+    const run = await orphanRun([
+      { ...link("aug11_end_cta", "2026-09-11", 13, "2026-09-19") },
+      {
+        ...link("aug11_end_cta", "2026-09-12", 5, "2026-09-19"),
+        synced_at: "2026-09-19T23:18:00.000Z",
+      },
+    ]);
+    expect(
+      run.results.find(
+        (result) => result.checkId === "spine-orphaned-bookings",
+      ),
+    ).toMatchObject({ status: "pass", ours: 0 });
+  });
+});
+
 describe("runDataAudit", () => {
   it("asks GoHighLevel past the window's last day and compares the keys the sync writes", async () => {
     const fetchFormSubmissions = vi.fn(async () => [

@@ -16,6 +16,7 @@ import {
 } from "@/lib/analytics/lead-definition";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import {
+  bookingLinkId,
   channelDailyKey,
   recordSyncRun,
   upsertChannelDaily,
@@ -596,23 +597,6 @@ type StoredBookingRow = {
   content: string;
   destination: string;
 };
-
-/** A booking's identity without its day: everything the link says about it. */
-function bookingLinkId(row: {
-  source: string;
-  medium: string;
-  campaign: string;
-  content: string;
-  destination: string;
-}) {
-  return [
-    row.source,
-    row.medium,
-    row.campaign,
-    row.content,
-    row.destination,
-  ].join("\u0000");
-}
 
 /**
  * Blanks booking outcomes left on the day a booking used to be dated to.

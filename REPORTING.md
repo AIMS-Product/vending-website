@@ -82,18 +82,28 @@ reporting deliberately, so that ad spend is never divided by outcomes ads did no
 - **Marketing meetings booked** = total booked − Reactivation Scrapers.
 - Verified W10: Stephen 172 − 83 = 89; ours independently = 89. Exact.
 
-### Spine drift — root-caused and fixed 2026-09-21
+### Spine drift — root-caused, fixed and applied 2026-09-21
 
-**Status: cause found, fix committed (`5b8fe6d`), NOT yet applied to stored data.**
-The fix corrects the spine on the next sync run. Until that run, the numbers below
-are still what the dashboard shows.
+**Status: settled.** Fix `5b8fe6d`, applied by a manual `channel-sync` run at 13:20 PT
+(the 4:10am cron had already run before the fix shipped). It cleared **32 of the 34
+orphan rows and 88 of the 90 phantom bookings**, exactly what the simulation predicted.
+The two it left are the two named at the end of this section; both are still stored and
+still counted.
 
 **Cause: orphaned booking rows the sync can never clear.**
 
-`channel_daily.booked` has two writers (`channel-sync.ts`):
+`channel_daily.booked` has **three** writers, not two — `channel-confidence.ts:94` lists them
+(`leads`, `webinar-ingest`, `manychat-ingest`). The `leads` connector (`channel-sync.ts`) writes
+two of the four kinds:
 
 1. site leads carrying `call_booked_at` — credited to the day the **lead arrived**;
-2. Calendly bookings with no `lead_submission_id` — credited to the day the call was **booked**.
+2. Calendly bookings with no `lead_submission_id` — credited to the day the call was **booked**;
+3. `webinar-ingest` — the in-room CTA bookings, written as `source = internal-webinar`;
+4. `manychat-ingest` — `call_booked` events.
+
+Measured 2026-09-21: of 1,851 stored bookings since Jun 1, **327 are `internal-webinar`**. Any
+check that reconstructs expected bookings from `lead_submissions` + `calendly_bookings` alone is
+short by that much and will report a false gap — it did, by 31 on W8, before this was found.
 
 `syncLeads` zeroes stale rows before rewriting, but its clearing set is built only from keys that
 **current site leads** map to (`channel-sync.ts:510-528`). Calendly-derived rows carry `leads=null`
@@ -115,16 +125,30 @@ Each duplicate equals that cohort's total exactly. Every orphan was written by t
 **Measured 2026-09-21: 34 orphan rows carrying 90 phantom bookings since 2026-06-01. All
 `leads=null`.**
 
-| Week | Spine reads | Orphaned | Corrected |
-| ---- | ----------- | -------- | --------- |
-| W8   | 164         | 56       | **108**   |
-| W9   | 112         | 0        | **112**   |
-| W10  | 128         | 32       | **96**    |
-| W11  | 81          | 1        | **80**    |
+Measured through `fetchFacts` before and after the run (population: `channel_daily.booked`
+summed over the week, leads + contacts definition applied):
 
-An orphan is a `booked` row the most recent sync did not regenerate, identified by `synced_at`
-older than the latest run. That test is only valid while the latest run covered the day in
-question — check before reusing it.
+| Week            | Before | Predicted | After   | Note                                                                                                                                |
+| --------------- | ------ | --------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| W8 Aug 24-30    | 164    | 108       | **108** | Exact.                                                                                                                              |
+| W9 Aug 31-Sep 6 | 112    | 112       | **112** | No orphans; unchanged, as predicted.                                                                                                |
+| W10 Sep 7-13    | 128    | 96        | **97**  | Every row rewritten by the run, 0 orphans left. The extra 1 is a booking that matured after the morning measurement, not a phantom. |
+| W11 Sep 14-20   | 81     | 80        | **83**  | 82 live + the 1 unreachable chatbot orphan below. Rose because W11 bookings are still maturing.                                     |
+
+W10 and W11 are still moving: a lead's booking is credited to its **arrival** day, so a
+week's total keeps rising for days after the week ends. Do not treat either as final.
+
+An orphan is a `booked` row the most recent sync did not regenerate. `synced_at` cannot say this
+on its own — three connectors share the column and each write bumps it — but **among rows that
+carry a booking** it can, because only the booking writers set `booked` and they rewrite a day's
+booking rows in one pass. So: a `booked > 0` row whose `synced_at` **date** is older than the
+newest `synced_at` date among booked rows on the same day. Dates, not instants: the connectors
+run minutes apart inside one cron and a manual run lands hours later.
+
+Validated against the 34-row backup across all of 2026: **34 rows, 90 bookings, 0 missed,
+0 extra.** This is now the `spine-orphaned-bookings` audit check (§8), which additionally
+requires the link to hold a booking on another day — the same restriction the fix applies, and
+what separates the 32 it can clear from the 2 it cannot.
 
 **Ruled out by measurement, not opinion:** double-counting a lead against an unlinked Calendly row
 (3 of 1,122 estate-wide, 0 in W8/W9); twinned keys from the Sept 11 channel rename (0 in every
@@ -254,7 +278,10 @@ directions per cohort.
 - `close_lead_funnel` only holds leads that booked. It cannot answer lead-volume questions.
 - **A stale spine row is invisible.** `channel_daily` is append-and-update; nothing deletes. A row
   whose key the sync stopped generating keeps its last value and is summed forever. Before trusting
-  any historical spine figure, check `synced_at` against the latest run for that day.
+  any historical spine figure, check `synced_at` against the latest run for that day. For bookings
+  this is now checked nightly by `spine-orphaned-bookings` in `data-audit-checks.ts`, which renders
+  on `/admin/data`. **Spend, visits, clicks, leads and won have no such check** — the same defect
+  in any of those is still silent.
 - **`vitest.config.ts` pre-sets placeholder Supabase env vars** (`localhost:54321`). A diagnostic
   that loads `.env.local` with `??=` silently reads nothing and returns null — assign with `=`.
 - Webinar-night spikes in `booked` are **real** (the night-of CTA bursts). A spike on a day with no
@@ -267,17 +294,18 @@ directions per cohort.
 Every number that two systems disagree on, or that has no traceable source. A number is only
 allowed in a report when it appears here as **settled**, or is quoted with its caveat.
 
-| Number                             | Systems that disagree             | Status                                                                      | What settles it                                                     |
-| ---------------------------------- | --------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Channel `booked`, Aug–Sep          | Spine vs Close mirror             | **Fix committed, not applied.** 90 phantom bookings still stored            | Run the channel sync; re-measure W8/W10/W11 against the table in §3 |
-| Kody's "New Form Submissions (VP)" | Kody vs everything we hold        | **Unsourced.** ~1.31× our total capture W7–W9, 1.15× at W10                 | One question to Kody: which report is it                            |
-| "Leads"                            | Site form fills vs total captured | **Settled 2026-09-21.** Tiles renamed; 109 vs 1,308 was a label, not a loss | §2                                                                  |
-| Won, per webinar cohort            | Calls board (room) vs Close tag   | **Settled.** Both correct, different scope; never merge                     | §7                                                                  |
-| Company booked                     | Our Close mirror vs Stephen       | **Settled.** Within 2% on matched windows; marketing line exact at W10      | §3, §5                                                              |
-| Stephen's "Leads" column           | Stephen vs registrations          | **Known bad.** 365 for an 809-registrant week                               | Do not use it                                                       |
-| Spencer Reynolds' meetings         | Stephen drops them; we do not     | **Open decision**, not a defect                                             | Adam's call                                                         |
-| GHL form-fill volume               | Nobody reports it end to end      | **No owner**                                                                | Build it or say it does not exist                                   |
-| `instagram/simon/{{user_id}}`      | —                                 | **Broken link template** shipped live; booking real, attribution is not     | Fix the link, do not backfill                                       |
+| Number                             | Systems that disagree               | Status                                                                                | What settles it                                                     |
+| ---------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Channel `booked`, Aug–Sep          | Spine vs Close mirror               | **Settled 2026-09-21.** Sync run; 88 of 90 phantom bookings cleared. W8 164→108 exact | §3; `spine-orphaned-bookings` now checks it nightly                 |
+| Channel `booked`, the last 2       | Two links with no surviving booking | **Standing, unfixable by the sync.** 2 bookings still counted, attribution wrong      | Delete by hand or fix the link; the audit deliberately ignores them |
+| Kody's "New Form Submissions (VP)" | Kody vs everything we hold          | **Unsourced.** ~1.31× our total capture W7–W9, 1.15× at W10                           | One question to Kody: which report is it                            |
+| "Leads"                            | Site form fills vs total captured   | **Settled 2026-09-21.** Tiles renamed; 109 vs 1,308 was a label, not a loss           | §2                                                                  |
+| Won, per webinar cohort            | Calls board (room) vs Close tag     | **Settled.** Both correct, different scope; never merge                               | §7                                                                  |
+| Company booked                     | Our Close mirror vs Stephen         | **Settled.** Within 2% on matched windows; marketing line exact at W10                | §3, §5                                                              |
+| Stephen's "Leads" column           | Stephen vs registrations            | **Known bad.** 365 for an 809-registrant week                                         | Do not use it                                                       |
+| Spencer Reynolds' meetings         | Stephen drops them; we do not       | **Open decision**, not a defect                                                       | Adam's call                                                         |
+| GHL form-fill volume               | Nobody reports it end to end        | **No owner**                                                                          | Build it or say it does not exist                                   |
+| `instagram/simon/{{user_id}}`      | —                                   | **Broken link template** shipped live; booking real, attribution is not               | Fix the link, do not backfill                                       |
 
 Rules this register enforces:
 

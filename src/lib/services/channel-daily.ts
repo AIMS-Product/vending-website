@@ -103,6 +103,29 @@ export function channelDailyKey(dimensions: ChannelDailyDimensions) {
   };
 }
 
+/**
+ * A booking's identity without its day: everything the link says about it.
+ *
+ * Shared by the sync, which blanks bookings left on a day they moved off, and
+ * by the audit, which checks that blanking is working. One definition, so the
+ * check can never disagree with the fix about what "the same link" means.
+ */
+export function bookingLinkId(row: {
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+}): string {
+  return [
+    row.source,
+    row.medium,
+    row.campaign,
+    row.content,
+    row.destination,
+  ].join("\u0000");
+}
+
 export type UpsertResult = { written: number; failed: number };
 
 /**

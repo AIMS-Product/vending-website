@@ -16,7 +16,7 @@ import {
   createCalendlyApiClient,
   type CalendlyApiClient,
 } from "@/lib/services/calendly-api";
-import { channelDailyKey } from "@/lib/services/channel-daily";
+import { bookingLinkId, channelDailyKey } from "@/lib/services/channel-daily";
 import { formSubmissionRows } from "@/lib/services/ghl-sync";
 import { resolveFieldIds } from "@/lib/services/close-lead-funnel-sync";
 import {
@@ -39,6 +39,12 @@ type Client = Pick<SupabaseClient<Database>, "from">;
  */
 const SETTLED_LAG_DAYS = { ga4: 2, ads: 2, youtube: 3, live: 1 } as const;
 const WINDOW_DAYS = 7;
+/**
+ * Bookings only. A moved booking is stranded forever, so the spine check looks
+ * back a quarter rather than the 30 days the spend check uses: the 90 phantom
+ * bookings found on 2026-09-21 had been accumulating since June.
+ */
+const ORPHAN_WINDOW_DAYS = 90;
 const ADS_WINDOW_DAYS = 4;
 
 export type DataAuditDeps = {
@@ -551,8 +557,10 @@ async function spineChecks(client: Client, now: Date): Promise<AuditResult[]> {
   ).length;
 
   const holes = await findDayHoles(client, now);
+  const orphans = await orphanedBookingsCheck(client, now);
 
   return [
+    orphans,
     assertion({
       checkId: "spine-forked-spend",
       label: "No campaign day counted twice",
@@ -567,6 +575,90 @@ async function spineChecks(client: Client, now: Date): Promise<AuditResult[]> {
     }),
     holes,
   ];
+}
+
+type BookingRow = {
+  day: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+  booked: number | null;
+  synced_at: string;
+};
+
+/**
+ * Bookings stranded on the day they were dated to before they moved.
+ *
+ * `channel_daily` is rebuilt by upsert and an upsert never deletes, so when a
+ * booking's day changes the sync writes the new day and the old row keeps its
+ * count; the rollup then sums both. `clearMovedBookingRows` in `channel-sync`
+ * blanks them and this is the check that the blanking is working. Nothing
+ * compared `booked` to anything before, which is how 90 phantom bookings
+ * survived from June to September 2026 (REPORTING.md section 3).
+ *
+ * `synced_at` cannot say a row is stale on its own — three connectors write
+ * this table and each one's write bumps the column. Among rows that carry a
+ * booking it can, because only the booking writers set `booked` and they
+ * rewrite a day's booking rows in one pass, so a booking row stamped an older
+ * day than the newest booking row on its own day was not regenerated. Stamps
+ * are compared by day, not instant: the connectors run minutes apart inside
+ * one cron, and a manual run lands hours later without meaning staleness.
+ *
+ * Counted only when the same link holds a booking on another day, the
+ * restriction `clearMovedBookingRows` applies for the same reason: a booking
+ * on a link with no surviving booking anywhere has nowhere to move to, so it
+ * can only be deleted by hand. Two such rows are standing and documented
+ * (REPORTING.md section 9) rather than fixable, and a check that failed on
+ * them every night would be ignored by the second week.
+ */
+async function orphanedBookingsCheck(
+  client: Client,
+  now: Date,
+): Promise<AuditResult> {
+  const from = dayKey(addDays(now, -ORPHAN_WINDOW_DAYS));
+  const to = dayKey(addDays(now, -1));
+  const rows = await pageAll<BookingRow>(
+    client,
+    "channel_daily",
+    "day,source,medium,campaign,content,destination,booked,synced_at",
+    (query) => query.gte("day", from).lte("day", to).gt("booked", "0"),
+  );
+
+  const newestByDay = new Map<string, string>();
+  const daysByLink = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const stamp = row.synced_at.slice(0, 10);
+    if (stamp > (newestByDay.get(row.day) ?? ""))
+      newestByDay.set(row.day, stamp);
+    const link = bookingLinkId(row);
+    daysByLink.set(link, (daysByLink.get(link) ?? new Set()).add(row.day));
+  }
+
+  const orphans = rows.filter(
+    (row) =>
+      row.synced_at.slice(0, 10) < (newestByDay.get(row.day) ?? "") &&
+      (daysByLink.get(bookingLinkId(row))?.size ?? 0) > 1,
+  );
+  const bookings = orphans.reduce(
+    (sum, row) => sum + Number(row.booked ?? 0),
+    0,
+  );
+  const days = [...new Set(orphans.map((row) => row.day))].sort();
+
+  return assertion({
+    checkId: "spine-orphaned-bookings",
+    label: "No booking counted on a day it moved off",
+    window: `${from} to ${to}`,
+    sourceName: "our spine",
+    ok: orphans.length === 0,
+    count: bookings,
+    detail:
+      orphans.length === 0
+        ? "Every stored booking was written by the latest sync of its own day."
+        : `${bookings} bookings sit on ${orphans.length} rows the latest sync of their own day did not rewrite, so they are counted twice. Days affected: ${days.join(", ")}.`,
+  });
 }
 
 /**
