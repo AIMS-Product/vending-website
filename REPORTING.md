@@ -201,6 +201,18 @@ YouTube 62.5% · Google Ads 49.5% · Chatbot 53.7% · Newsletter 50%. Pinned in
 Shows over people who booked — never over all leads. Counting shows over leads is a known past
 defect.
 
+### Qualified (rep)
+
+Qualified over people who **booked**, never over people who showed.
+
+Measured 2026-09-21 for September so far: **16 of 444 booked calls carry "Qualified (Opp)" = Yes
+with no "First Call Show Up (Opp)" = Yes.** Qualified is therefore not a subset of showed, and a
+qualified-over-showed rate reads above 100% for some funnels. Both rates on the MTD funnel are
+over booked for this reason, and the 16 are disclosed on screen.
+
+This is a logging habit, not a data defect: a rep can mark the outcome without ever ticking the
+show. Do not "fix" it by inferring a show from a qualification.
+
 ---
 
 ## 5. Stephen's MTD dashboard — what it counts
@@ -224,6 +236,35 @@ registrants) and 1,965 for the week of Aug 25 (1,109 registrants). Do not use it
 
 **Trust his Booked.** Verified against our independent Close data within 3 bookings on both
 matched weeks.
+
+### Our mirror of it — `/admin/analytics?tab=close`
+
+Shipped 2026-09-21. The same four stages, computed only from `close_lead_funnel`, with every
+stage naming its population and the Close field it read. It reproduces the **shape** of his
+dashboard and none of its arithmetic.
+
+Measured September 1-21, 2026 (population: leads whose first sales call is dated in the window,
+SteelTrap exclusions applied):
+
+| Stage      | Count | Rate            | Population                                                                      |
+| ---------- | ----- | --------------- | ------------------------------------------------------------------------------- |
+| Booked     | 444   | —               | Leads whose first sales call is scheduled in the month                          |
+| Showed     | 250   | 56.3% of booked | Of those, "First Call Show Up (Opp)" = Yes                                      |
+| Qualified  | 188   | 42.3% of booked | Of those, "Qualified (Opp)" = Yes                                               |
+| Closed-won | 40    | —               | Deals won in the month by `date_won` — **a different population**, not a subset |
+
+Revenue on those 40: **$281,609**, 0 unvalued. 32 first calls excluded by the SteelTrap rule.
+Marketing line **235**, `Reactivation Scrapers` **209** (444 total).
+
+**Three reasons it will never equal his number**, all stated on the screen itself:
+
+1. **Meeting owners.** He drops meetings owned by four people, one of whom (Spencer Reynolds) is
+   an active VP setter. `close_lead_funnel` has **no meeting-owner field**, so that filter cannot
+   be applied on our side at all. Reproducing it needs Close meeting activities, which we do not
+   ingest.
+2. **What a booking is.** We read the lead's "First Sales Call Booked Date"; he reads meeting
+   activities and filters them by title.
+3. **His "Leads" column is not mirrored, on purpose.** §5 above.
 
 ---
 
@@ -294,18 +335,20 @@ directions per cohort.
 Every number that two systems disagree on, or that has no traceable source. A number is only
 allowed in a report when it appears here as **settled**, or is quoted with its caveat.
 
-| Number                             | Systems that disagree               | Status                                                                                | What settles it                                                     |
-| ---------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| Channel `booked`, Aug–Sep          | Spine vs Close mirror               | **Settled 2026-09-21.** Sync run; 88 of 90 phantom bookings cleared. W8 164→108 exact | §3; `spine-orphaned-bookings` now checks it nightly                 |
-| Channel `booked`, the last 2       | Two links with no surviving booking | **Standing, unfixable by the sync.** 2 bookings still counted, attribution wrong      | Delete by hand or fix the link; the audit deliberately ignores them |
-| Kody's "New Form Submissions (VP)" | Kody vs everything we hold          | **Unsourced.** ~1.31× our total capture W7–W9, 1.15× at W10                           | One question to Kody: which report is it                            |
-| "Leads"                            | Site form fills vs total captured   | **Settled 2026-09-21.** Tiles renamed; 109 vs 1,308 was a label, not a loss           | §2                                                                  |
-| Won, per webinar cohort            | Calls board (room) vs Close tag     | **Settled.** Both correct, different scope; never merge                               | §7                                                                  |
-| Company booked                     | Our Close mirror vs Stephen         | **Settled.** Within 2% on matched windows; marketing line exact at W10                | §3, §5                                                              |
-| Stephen's "Leads" column           | Stephen vs registrations            | **Known bad.** 365 for an 809-registrant week                                         | Do not use it                                                       |
-| Spencer Reynolds' meetings         | Stephen drops them; we do not       | **Open decision**, not a defect                                                       | Adam's call                                                         |
-| GHL form-fill volume               | Nobody reports it end to end        | **No owner**                                                                          | Build it or say it does not exist                                   |
-| `instagram/simon/{{user_id}}`      | —                                   | **Broken link template** shipped live; booking real, attribution is not               | Fix the link, do not backfill                                       |
+| Number                             | Systems that disagree               | Status                                                                                                                     | What settles it                                                                  |
+| ---------------------------------- | ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| Channel `booked`, Aug–Sep          | Spine vs Close mirror               | **Settled 2026-09-21.** Sync run; 88 of 90 phantom bookings cleared. W8 164→108 exact                                      | §3; `spine-orphaned-bookings` now checks it nightly                              |
+| Channel `booked`, the last 2       | Two links with no surviving booking | **Standing, unfixable by the sync.** 2 bookings still counted, attribution wrong                                           | Delete by hand or fix the link; the audit deliberately ignores them              |
+| Kody's "New Form Submissions (VP)" | Kody vs everything we hold          | **Unsourced.** ~1.31× our total capture W7–W9, 1.15× at W10                                                                | One question to Kody: which report is it                                         |
+| "Leads"                            | Site form fills vs total captured   | **Settled 2026-09-21.** Tiles renamed; 109 vs 1,308 was a label, not a loss                                                | §2                                                                               |
+| Won, per webinar cohort            | Calls board (room) vs Close tag     | **Settled.** Both correct, different scope; never merge                                                                    | §7                                                                               |
+| Company booked                     | Our Close mirror vs Stephen         | **Settled.** Within 2% on matched windows; marketing line exact at W10                                                     | §3, §5                                                                           |
+| Stephen's "Leads" column           | Stephen vs registrations            | **Known bad.** 365 for an 809-registrant week                                                                              | Do not use it                                                                    |
+| Spencer Reynolds' meetings         | Stephen drops them; we do not       | **Open decision**, not a defect. Our mirror _cannot_ drop them — there is no meeting-owner field                           | Adam's call; matching him needs Close meeting-activity ingestion                 |
+| MTD funnel stages, September       | Our Close mirror vs Stephen's MTD   | **Unverified against his sheet.** 444 / 250 / 188 / 40 measured from our mirror 2026-09-21; the two rules differ by design | A matched-window comparison against his Booked; the owner filter can never match |
+| Qualified without a logged show    | Close vs itself                     | **Settled 2026-09-21.** 16 of 444 booked calls; qualified is not a subset of showed                                        | §4; both rates are over booked and the 16 are disclosed on screen                |
+| GHL form-fill volume               | Nobody reports it end to end        | **No owner**                                                                                                               | Build it or say it does not exist                                                |
+| `instagram/simon/{{user_id}}`      | —                                   | **Broken link template** shipped live; booking real, attribution is not                                                    | Fix the link, do not backfill                                                    |
 
 Rules this register enforces:
 
@@ -318,7 +361,12 @@ Rules this register enforces:
 
 1. Where does Kody's "New Form Submissions (VP)" come from?
 2. Should Spencer Reynolds' meetings be excluded from company booking totals? Stephen drops them.
-3. No end-to-end report of GHL form-fill volume exists, though Lane 2 works those leads.
-4. Should the spine credit a lead's booking to its arrival day or its booking day? Close uses the
+   Note we currently **cannot** drop them: `close_lead_funnel` carries no meeting-owner field. If
+   the answer is yes, it needs Close meeting-activity ingestion, which is a slice of its own.
+3. Is the MTD funnel worth reconciling to Stephen's Booked on a matched window, given the two
+   rules differ by design? Ours reads a lead field, his reads meeting activities. Until someone
+   does that comparison, the September stages stay **unverified** in §9.
+4. No end-to-end report of GHL form-fill volume exists, though Lane 2 works those leads.
+5. Should the spine credit a lead's booking to its arrival day or its booking day? Close uses the
    booking day. Changing it would make the two systems comparable week-on-week; it would also
    break `booked ÷ leads` as a rate over one population, which is why it is the way it is.

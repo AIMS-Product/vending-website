@@ -51,6 +51,8 @@ import { getFunnelMonthly } from "@/lib/services/funnel-monthly-data";
 import { getFunnelExecutive } from "@/lib/services/funnel-executive";
 import { FunnelExecutiveTab } from "@/components/admin/FunnelExecutivePanel";
 import { CloseWeekTab } from "@/components/admin/CloseWeekPanel";
+import { CloseMtdFunnelPanel } from "@/components/admin/CloseMtdFunnelPanel";
+import { getCloseMtdFunnel } from "@/lib/services/close-mtd-funnel-data";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
@@ -111,6 +113,7 @@ export default async function AdminAnalyticsPage({
     journeys,
     executive,
     closeWeeks,
+    closeMtd,
   ] = await Promise.all([
     requireReadAccess(),
     isYouTubeTab ||
@@ -148,6 +151,7 @@ export default async function AdminAnalyticsPage({
     // 30-day range would render one partial month and call it the trend.
     isExecTab ? getFunnelExecutive({ includeInternal }) : null,
     isCloseTab ? getCloseWeekView() : null,
+    isCloseTab ? getCloseMtdFunnel() : null,
   ]);
   const internalExcluded =
     youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
@@ -198,10 +202,13 @@ export default async function AdminAnalyticsPage({
       <LeadDefinitionNote />
 
       {closeWeeks ? (
-        <CloseWeekTab
-          report={closeWeeks}
-          selected={singleParam(params.week) ?? null}
-        />
+        <div className="space-y-5">
+          {closeMtd ? <CloseMtdFunnelPanel report={closeMtd} /> : null}
+          <CloseWeekTab
+            report={closeWeeks}
+            selected={singleParam(params.week) ?? null}
+          />
+        </div>
       ) : executive ? (
         <FunnelExecutiveTab data={executive} />
       ) : journeys ? (

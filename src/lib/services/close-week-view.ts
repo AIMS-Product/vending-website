@@ -90,7 +90,7 @@ export function recentWeeks(today: string, count: number): string[] {
   );
 }
 
-function isYes(value: string | null): boolean {
+export function isYes(value: string | null): boolean {
   return value?.trim().toLowerCase() === "yes";
 }
 
@@ -109,7 +109,7 @@ export function isExcludedCall(call: CloseCall): boolean {
   );
 }
 
-function labelOf(funnel: string | null): string {
+export function labelOf(funnel: string | null): string {
   return funnel?.trim() || NO_SOURCE_LABEL;
 }
 
