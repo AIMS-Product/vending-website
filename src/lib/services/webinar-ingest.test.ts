@@ -207,10 +207,11 @@ describe("ingestWebinarSnapshot", () => {
   it("keeps the ad-set outcome floors off the spine", async () => {
     // vp-webinars joins a Close outcome back to an ad set by matching the
     // booker's email to a GHL registrant, and that join only partly lands
-    // (Sept 1: 13 of 27 bookings). What arrives is a floor -- on 2026-09-21,
-    // 57 shows and 1 win against 66 and 2 in the same four cohorts. Beside a
-    // full `booked` count from the tagged links a floor reads as the whole
-    // truth, so it stays on `webinar_events` where the whole cohort is.
+    // (Sept 1: 13 of 27 bookings). What arrives is a floor -- on 2026-09-21
+    // the spine carried 1 win over 30 days against 4 in the same four cohorts
+    // on vp-webinars' Calls board. Beside a full `booked` count from the
+    // tagged links a floor reads as the whole truth, so webinar outcomes stay
+    // on `webinar_events`.
     const { client, spine } = buildClient();
 
     await ingestWebinarSnapshot(

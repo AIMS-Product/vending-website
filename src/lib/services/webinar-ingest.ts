@@ -205,11 +205,19 @@ async function write(
     // These are not the cohort's outcomes: vp-webinars joins a Close outcome
     // back to an ad set by matching the booker's email to a GHL registrant,
     // and that join only partly lands (Sept 1: 13 of 27 bookings; Aug 18: 35
-    // of 78). What arrives is a floor, and on 2026-09-21 it was a 5% one --
-    // 57 shows and 1 win on the spine against 66 shows and 2 wins in the same
-    // four cohorts. Rendered beside a full `booked` count from the tagged
-    // Calendly links, a floor reads as the whole truth and understates the
-    // webinar by an order of magnitude.
+    // of 78). What arrives is a floor: on 2026-09-21 the spine carried 1 win
+    // across 30 days, against 4 in the same four cohorts (Aug 25 two, Sept 1
+    // one, Sept 8 one) counted per person from Close on vp-webinars' Calls
+    // board. Rendered beside a full `booked` count from the tagged Calendly
+    // links, a floor reads as the whole truth.
+    //
+    // Note there are two legitimate win counts upstream and they disagree. The
+    // Calls board counts a person who was in the Zoom room and took a recorded
+    // call, and gives those four cohorts 4 wins. The Close cohort counts leads
+    // carrying the event's `utm_content` tag, and gives 2 -- Aug 25 reads zero
+    // there. The tag goes missing on precisely the people who book, so it is
+    // the lower of the two, and it is the one `webinar_events` receives. Do
+    // not quote either as "the" number without saying which route it took.
     //
     // `webinar_events` already holds all six stages for every cohort, counted
     // over one population, and that is where a webinar's show and close rates
