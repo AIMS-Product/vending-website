@@ -22,6 +22,32 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * "reached", not "watched", wherever the distinction could mislead.
  */
 
+/**
+ * When this table started holding anything.
+ *
+ * Everything before it is silence, not a zero. A call from August shows no
+ * videos because nothing was recording in August, and there is no source to
+ * backfill from — Vidalytics' own dashboard is aggregate and per-anonymous-
+ * visitor, so no per-person history exists anywhere to recover.
+ *
+ * Read from the data rather than hardcoded, so it stays true if the table is
+ * ever cleared or reseeded. Null when the table is empty, which reads as "we
+ * have tracked nothing yet" and greys the whole column honestly.
+ */
+async function trackingStartedAt(): Promise<string | null> {
+  try {
+    const { data } = await createAdminClient()
+      .from("lead_video_views")
+      .select("first_played_at")
+      .order("first_played_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    return data?.first_played_at ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type VideoWatcherRow = {
   bookingId: string;
   name: string;
@@ -37,6 +63,12 @@ export type VideoWatcherRow = {
   /** Their deepest video, for the "what do they care about" column. */
   deepest: { label: string; percent: number } | null;
   lastSeenAt: string | null;
+  /**
+   * True when this person booked before tracking existed. Their watching
+   * happened, if it happened, in a window we were not recording — so an empty
+   * row says nothing about them and must never reach a call list.
+   */
+  predatesTracking: boolean;
 };
 
 export type VideoBreakdownRow = {
@@ -59,8 +91,12 @@ export type VideoEngagementReport = {
   bookedCount: number;
   /** Of those, how many opened at least one video. */
   watcherCount: number;
-  /** Booked, matched to a session, and watched nothing — the outreach list. */
+  /** Booked, matched, tracked, and watched nothing — the outreach list. */
   coldCount: number;
+  /** Booked before tracking existed. Not cold, not engaged: unknowable. */
+  predatesTrackingCount: number;
+  /** When the first video view was recorded, or null if none ever were. */
+  trackingStartedAt: string | null;
   /** Booked but with no session id, so we genuinely cannot say. */
   unknownCount: number;
   totalVideos: number;
@@ -84,7 +120,11 @@ export async function getVideoEngagementReport({
   days = 90,
   now = new Date(),
 }: { days?: number; now?: Date } = {}): Promise<VideoEngagementReport> {
-  const report = await buildCallCreditReport({ days });
+  const [report, trackingStart] = await Promise.all([
+    buildCallCreditReport({ days }),
+    trackingStartedAt(),
+  ]);
+  const trackedFrom = trackingStart ? Date.parse(trackingStart) : null;
   const leadFacts = await loadLeadFacts(
     report.rows.flatMap((row) =>
       row.leadSubmissionId ? [row.leadSubmissionId] : [],
@@ -115,7 +155,7 @@ export async function getVideoEngagementReport({
     .map((row) => {
       const session = sessionByBooking.get(row.id);
       const views = session ? (bySession.get(session) ?? []) : [];
-      return buildWatcherRow(row, views, now);
+      return buildWatcherRow(row, views, now, trackedFrom);
     })
     .filter((row): row is VideoWatcherRow => row !== null)
     .sort(byEngagementThenSoonest);
@@ -123,11 +163,17 @@ export async function getVideoEngagementReport({
   return {
     bookedCount: report.rows.length,
     watcherCount: people.filter((p) => p.videosStarted > 0).length,
-    coldCount: report.rows.filter(
+    // Cold means "we were watching and they did nothing". Anyone who booked
+    // before tracking existed is excluded: putting them on a call list would
+    // have a rep chase someone for not doing something we never looked for.
+    coldCount: people.filter(
       (row) =>
-        sessionByBooking.has(row.id) &&
-        !bySession.has(sessionByBooking.get(row.id) as string),
+        !row.predatesTracking &&
+        row.videosStarted === 0 &&
+        sessionByBooking.has(row.bookingId),
     ).length,
+    predatesTrackingCount: people.filter((row) => row.predatesTracking).length,
+    trackingStartedAt: trackingStart,
     unknownCount: report.rows.filter((row) => !sessionByBooking.has(row.id))
       .length,
     totalVideos: preCallVideos.length,
@@ -143,10 +189,12 @@ function buildWatcherRow(
     inviteeName: string | null;
     inviteeEmail: string | null;
     startAt: string | null;
+    bookedAt: string | null;
     canceled: boolean;
   },
   views: ViewRow[],
   now: Date,
+  trackedFrom: number | null,
 ): VideoWatcherRow | null {
   const startsAt = row.startAt ? Date.parse(row.startAt) : Number.NaN;
 
@@ -159,8 +207,16 @@ function buildWatcherRow(
     }))
     .sort((a, b) => b.percent - a.percent)[0];
 
+  // Anchored on when they BOOKED, not when the call is: the page is opened in
+  // the minutes after booking, so that is the window we either saw or missed.
+  const bookedAtMs = row.bookedAt ? Date.parse(row.bookedAt) : Number.NaN;
+  const predatesTracking =
+    trackedFrom === null ||
+    (Number.isFinite(bookedAtMs) && bookedAtMs < trackedFrom);
+
   return {
     bookingId: row.id,
+    predatesTracking: predatesTracking && views.length === 0,
     name: row.inviteeName?.trim() || row.inviteeEmail || "Unknown",
     email: row.inviteeEmail,
     startAt: row.startAt,

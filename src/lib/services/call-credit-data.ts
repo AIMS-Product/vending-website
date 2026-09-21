@@ -98,6 +98,9 @@ export type CallCreditReport = {
  * date with a month of slack on either side. Promote it to a real column if
  * this ever needs to page.
  */
+/** PostgREST's own ceiling; asking for more in one request silently truncates. */
+const PAGE = 1000;
+
 export async function buildCallCreditReport(
   options: {
     days?: number;
@@ -127,7 +130,12 @@ export async function buildCallCreditReport(
   const client = deps.client ?? createAdminClient();
 
   let data: RawRow[] = [];
-  const read = (leadJoin: string) =>
+  // PostgREST caps a response at 1,000 rows and says so only in a header, so
+  // `.limit(5000)` quietly returned 1,000 and every count built on it was
+  // wrong — the Video tab published "1000 booked prospects" against 3,952 real
+  // bookings. Pages explicitly instead, ordered by the same column it filters
+  // on so the window is stable between requests.
+  const read = (leadJoin: string, from: number, to: number) =>
     client
       .from("calendly_bookings")
       .select(fieldsWith(leadJoin))
@@ -135,15 +143,27 @@ export async function buildCallCreditReport(
       .gte("event_start_at", callWindowStart)
       .lte("event_start_at", callWindowEnd)
       .order("event_start_at", { ascending: false })
-      .limit(limit);
+      .order("invitee_uri", { ascending: false })
+      .range(from, to);
 
   try {
-    let result = await read(LEAD_JOIN_WITH_TOUCH);
-    if (result.error) result = await read(LEAD_JOIN_BASE);
-    if (result.error) {
+    let leadJoin = LEAD_JOIN_WITH_TOUCH;
+    let probe = await read(leadJoin, 0, PAGE - 1);
+    if (probe.error) {
+      leadJoin = LEAD_JOIN_BASE;
+      probe = await read(leadJoin, 0, PAGE - 1);
+    }
+    if (probe.error) {
       return emptyReport(bookedSince.toISOString(), false);
     }
-    data = (result.data ?? []) as unknown as RawRow[];
+
+    data = (probe.data ?? []) as unknown as RawRow[];
+    while (data.length < limit && (probe.data ?? []).length === PAGE) {
+      probe = await read(leadJoin, data.length, data.length + PAGE - 1);
+      if (probe.error) break;
+      data = [...data, ...((probe.data ?? []) as unknown as RawRow[])];
+    }
+    data = data.slice(0, limit);
   } catch {
     return emptyReport(bookedSince.toISOString(), false);
   }

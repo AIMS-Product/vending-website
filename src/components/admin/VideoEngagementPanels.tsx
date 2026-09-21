@@ -60,7 +60,16 @@ export function VideoEngagementTab({
           tone="amber"
           label="Watched nothing"
           value={report.coldCount}
-          caption="Booked, matched, opened nothing — the call list"
+          caption="Booked since tracking began and opened nothing — the call list"
+        />
+        <AdminMetricPanel
+          label="Before tracking"
+          value={report.predatesTrackingCount}
+          caption={
+            report.trackingStartedAt
+              ? `Booked before ${formatDay(report.trackingStartedAt)}; nothing was recording`
+              : "Nothing has been recorded yet"
+          }
         />
         <AdminMetricPanel
           label="Can't tell"
@@ -140,7 +149,14 @@ function PersonRow({ row, total }: { row: VideoWatcherRow; total: number }) {
         </span>
       </td>
       <td className="text-ui-text py-2 whitespace-nowrap">
-        {row.videosStarted === 0 ? (
+        {row.predatesTracking ? (
+          <span
+            className="text-ui-text-muted text-xs"
+            title="They booked before any of this was recorded. Whether they watched is unknowable — there is no earlier data anywhere to recover."
+          >
+            Not tracked yet
+          </span>
+        ) : row.videosStarted === 0 ? (
           <span className="text-ui-text-muted">None</span>
         ) : (
           <>
