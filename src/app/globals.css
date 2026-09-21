@@ -500,3 +500,95 @@ body:has([data-hide-site-footer="true"]) > footer {
     transform: none;
   }
 }
+
+/* The reporting glossary on /admin/data, rendered from REPORTING.md. Only
+   --ui-* tokens: this is an admin surface, so it must not pick up the public
+   site's brand colours the way .news-prose deliberately does. */
+.admin-glossary {
+  color: var(--ui-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.65;
+}
+.admin-glossary > * + * {
+  margin-top: 1rem;
+}
+.admin-glossary h1 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--ui-text);
+  letter-spacing: -0.01em;
+}
+.admin-glossary h2 {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ui-line);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+.admin-glossary h3 {
+  margin-top: 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ui-text);
+}
+.admin-glossary strong {
+  color: var(--ui-text);
+  font-weight: 600;
+}
+.admin-glossary a {
+  color: var(--ui-accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.admin-glossary ul,
+.admin-glossary ol {
+  padding-left: 1.25rem;
+}
+.admin-glossary ul {
+  list-style: disc;
+}
+.admin-glossary ol {
+  list-style: decimal;
+}
+.admin-glossary li + li {
+  margin-top: 0.375rem;
+}
+.admin-glossary code {
+  border-radius: 4px;
+  background: var(--ui-canvas);
+  padding: 0.0625rem 0.25rem;
+  font-size: 0.8125rem;
+  color: var(--ui-text);
+}
+.admin-glossary blockquote {
+  border-left: 2px solid var(--ui-line-strong);
+  padding-left: 0.875rem;
+  color: var(--ui-text-muted);
+}
+.admin-glossary hr {
+  border: 0;
+  border-top: 1px solid var(--ui-line);
+}
+/* Tables carry most of the glossary. They must stay scrollable rather than
+   widen the admin shell: several have nine columns. */
+.admin-glossary table {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+.admin-glossary th,
+.admin-glossary td {
+  border: 1px solid var(--ui-line);
+  padding: 0.375rem 0.625rem;
+  text-align: left;
+  vertical-align: top;
+}
+.admin-glossary th {
+  background: var(--ui-canvas);
+  color: var(--ui-text);
+  font-weight: 600;
+  white-space: nowrap;
+}

@@ -25,12 +25,15 @@ export async function recordVideoView({
   embedId,
   percent,
   pagePath,
+  durationSeconds,
   occurredAt,
 }: {
   vpSessionId: string;
   embedId: string;
   percent: number;
   pagePath?: string | null;
+  /** The video's full length, so a percent can be read back as time. */
+  durationSeconds?: number | null;
   occurredAt?: Date;
 }): Promise<void> {
   const session = vpSessionId.trim();
@@ -75,6 +78,14 @@ export async function recordVideoView({
         embed_id: embed.slice(0, 64),
         max_percent: bounded,
         page_path: pagePath?.trim().slice(0, 300) || null,
+        // Capped at eight hours: it comes from a public endpoint, and a
+        // nonsense length would poison every average built on it.
+        duration_seconds:
+          durationSeconds &&
+          Number.isFinite(durationSeconds) &&
+          durationSeconds > 0
+            ? Math.min(Math.round(durationSeconds), 28_800)
+            : null,
         // Only meaningful on insert; the upsert leaves it alone on conflict
         // because the stored value is already the earlier timestamp.
         first_played_at: existing ? undefined : at,

@@ -29,6 +29,10 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/chatbot/conversations",
   "/admin/chatbot/insights",
   "/admin/chatbot/settings",
+  // The reporting glossary and last night's source checks. A viewer reading a
+  // number anywhere else in the studio is exactly who needs to know whether it
+  // currently agrees with the system that owns it.
+  "/admin/data",
   "/admin/forms",
   "/admin/goals",
   "/admin/leads",

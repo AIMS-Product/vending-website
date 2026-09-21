@@ -74,6 +74,9 @@ export async function POST(request: Request) {
       embedId: stringProperty(payload.properties, "embed_id"),
       percent: Number(stringProperty(payload.properties, "percent")),
       pagePath: stringProperty(payload.properties, "page_path") || null,
+      durationSeconds: Number(
+        stringProperty(payload.properties, "duration_seconds"),
+      ),
     });
   }
 

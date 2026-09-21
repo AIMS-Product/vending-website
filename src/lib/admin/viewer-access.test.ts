@@ -26,6 +26,7 @@ const READ_ONLY_PAGES = [
   "chatbot/conversations/[id]/page.tsx",
   "chatbot/insights/page.tsx",
   "chatbot/settings/page.tsx",
+  "data/page.tsx",
   "forms/page.tsx",
   "forms/[id]/page.tsx",
   "goals/page.tsx",

@@ -5,7 +5,10 @@ import {
   emitAttributionEvent,
   readStoredAttributionSession,
 } from "@/lib/attribution-client";
-import { getVidalyticsPlayer } from "@/lib/tracking/vidalytics-player";
+import {
+  getVidalyticsPlayer,
+  vidalyticsContainerId,
+} from "@/lib/tracking/vidalytics-player";
 import {
   milestonesReached,
   percentWatched,
@@ -39,7 +42,11 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
     let detach: (() => void) | undefined;
     let cancelled = false;
 
-    const report = (percent: number, pagePath: string) => {
+    const report = (
+      percent: number,
+      pagePath: string,
+      durationSeconds: number,
+    ) => {
       for (const milestone of milestonesReached(percent, reported)) {
         reported.add(milestone);
         emitAttributionEvent("video_progress", session, {
@@ -49,11 +56,17 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
           // it back before storing.
           percent: String(milestone),
           page_path: pagePath,
+          // The video's full length, so a percent can be read back as time.
+          // Sent per event rather than looked up: only the player knows it,
+          // and marketing swaps videos without telling anyone.
+          duration_seconds: String(Math.round(durationSeconds)),
         });
       }
     };
 
-    void getVidalyticsPlayer(embedId).then((player) => {
+    // The container id is the key the player registers under; the embed id is
+    // what we store, because that is what names a video to a human.
+    void getVidalyticsPlayer(vidalyticsContainerId(embedId)).then((player) => {
       // The page can navigate away while a player is still loading, and this
       // promise never rejects or times out — without the guard a late resolve
       // attaches listeners to a player nobody is watching.
@@ -65,12 +78,10 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
 
       function onTimeUpdate() {
         try {
-          const percent = percentWatched(
-            player.currentTime(),
-            player.duration(),
-          );
+          const duration = player.duration();
+          const percent = percentWatched(player.currentTime(), duration);
           if (percent === null) return;
-          report(percent, pagePath);
+          report(percent, pagePath, duration);
         } catch {
           // A player that throws mid-playback is Vidalytics' problem, not the
           // visitor's.
@@ -78,7 +89,11 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
       }
 
       function onEnded() {
-        report(100, pagePath);
+        try {
+          report(100, pagePath, player.duration());
+        } catch {
+          // Same contract as above: a throwing player is never our crash.
+        }
       }
 
       player.on("timeupdate", onTimeUpdate);

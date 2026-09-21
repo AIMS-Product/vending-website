@@ -1,7 +1,7 @@
 # Waiting on a hand-applied migration
 
 The Supabase CLI is not linked in this repo, so these run in the SQL editor
-(Supabase → SQL editor → paste → Run). All three are safe to run twice.
+(Supabase → SQL editor → paste → Run). All four are safe to run twice.
 
 Paste this whole block:
 
@@ -65,6 +65,19 @@ create index if not exists lead_video_views_last_seen_idx
   on public.lead_video_views (last_seen_at desc);
 
 alter table public.lead_video_views enable row level security;
+
+-- 4. Video length (20260921160000). Without it engagement can only be shown as
+-- a percent, never as "watched 3 of the 5 minutes".
+alter table public.lead_video_views
+  add column if not exists duration_seconds integer;
+
+alter table public.lead_video_views
+  drop constraint if exists lead_video_views_duration_sane;
+
+alter table public.lead_video_views
+  add constraint lead_video_views_duration_sane
+    check (duration_seconds is null
+           or (duration_seconds > 0 and duration_seconds <= 28800));
 ```
 
 Then re-run the audit so the first verdicts are stored:

@@ -1,4 +1,5 @@
 import { unified } from "unified";
+import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import remarkRehype from "remark-rehype";
 import rehypeSanitize, {
@@ -84,10 +85,31 @@ const processor = unified()
   .use(rehypeStringify);
 
 /**
+ * The same pipeline with GitHub-flavoured markdown: tables, strikethrough,
+ * task lists, bare autolinks.
+ *
+ * Opt-in rather than on by default. Every news post and SEO page body already
+ * renders through the plain pipeline, and switching them all to GFM would
+ * silently change published content — a line of dashes under a heading
+ * becomes a table, a bare URL becomes a link. Callers that author their own
+ * markdown ask for it; stored body content does not.
+ */
+const gfmProcessor = unified()
+  .use(remarkParse)
+  .use(remarkGfm)
+  .use(remarkRehype)
+  .use(rehypeSanitize, schema)
+  .use(rehypeOptimizeImages)
+  .use(rehypeStringify);
+
+/**
  * Parse a markdown string into sanitised HTML. Always run this on every
  * render of user-supplied body content — the database stores raw markdown.
  */
-export async function renderMarkdown(source: string): Promise<string> {
-  const file = await processor.process(source);
+export async function renderMarkdown(
+  source: string,
+  { gfm = false }: { gfm?: boolean } = {},
+): Promise<string> {
+  const file = await (gfm ? gfmProcessor : processor).process(source);
   return String(file);
 }

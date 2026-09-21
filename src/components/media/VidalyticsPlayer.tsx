@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { vidalyticsContainerId } from "@/lib/tracking/vidalytics-player";
 import { VideoEngagement } from "./VideoEngagement";
 
 /**
@@ -29,7 +30,7 @@ export function VidalyticsPlayer({
   embedId: string;
   className?: string;
 }) {
-  const containerId = `vidalytics_embed_${embedId}`;
+  const containerId = vidalyticsContainerId(embedId);
 
   return (
     <div

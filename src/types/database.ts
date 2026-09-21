@@ -1253,6 +1253,7 @@ export type Database = {
       };
       lead_video_views: {
         Row: {
+          duration_seconds: number | null;
           embed_id: string;
           first_played_at: string;
           last_seen_at: string;
@@ -1261,6 +1262,7 @@ export type Database = {
           vp_session_id: string;
         };
         Insert: {
+          duration_seconds?: number | null;
           embed_id: string;
           first_played_at?: string;
           last_seen_at?: string;
@@ -1269,6 +1271,7 @@ export type Database = {
           vp_session_id: string;
         };
         Update: {
+          duration_seconds?: number | null;
           embed_id?: string;
           first_played_at?: string;
           last_seen_at?: string;

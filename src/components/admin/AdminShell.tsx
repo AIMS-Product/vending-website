@@ -26,6 +26,7 @@ type AdminSection =
   | "goals"
   | "cac"
   | "bookings"
+  | "data"
   | "team"
   | "links"
   | "media"
@@ -149,6 +150,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/bookings",
     description: "Who set each call",
     icon: "target",
+  },
+  {
+    id: "data",
+    label: "Data trust",
+    href: "/admin/data",
+    description: "What each number means and whether it agrees",
+    icon: "shield",
   },
   {
     id: "team",
