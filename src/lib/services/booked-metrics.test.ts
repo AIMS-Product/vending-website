@@ -369,3 +369,33 @@ describe("attribution", () => {
     ]);
   });
 });
+
+describe("dayKeyIn caching", () => {
+  const ZONES = ["America/New_York", "UTC", "Australia/Sydney"];
+  const SAMPLES = [
+    "2026-09-14T23:30:00.000Z",
+    "2026-09-15T02:00:00.000Z",
+    "2026-01-01T04:59:59.999Z",
+    "2026-07-04T12:00:00.000Z",
+    "2025-12-31T23:59:59.000Z",
+  ];
+
+  it("matches toLocaleDateString for every zone, twice over", () => {
+    for (const zone of ZONES) {
+      for (const iso of SAMPLES) {
+        const expected = new Date(iso).toLocaleDateString("en-CA", {
+          timeZone: zone,
+        });
+        // Twice: the second read comes from the cache and must not drift.
+        expect(dayKeyIn(iso, zone)).toBe(expected);
+        expect(dayKeyIn(iso, zone)).toBe(expected);
+      }
+    }
+  });
+
+  it("keeps null for the unparseable and the absent", () => {
+    expect(dayKeyIn(null, "UTC")).toBeNull();
+    expect(dayKeyIn("not a date", "UTC")).toBeNull();
+    expect(dayKeyIn("not a date", "UTC")).toBeNull();
+  });
+});

@@ -247,26 +247,59 @@ export type BookedMetricInput = {
   timeZone?: string;
 };
 
+// en-CA formats as YYYY-MM-DD, which sorts and compares as a date key.
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
+const dayKeys = new Map<string, string | null>();
+/**
+ * A goal page reads ~40 metrics over the same few thousand bookings, so the
+ * same instant is converted dozens of times. Building a fresh formatter per
+ * call (what `toLocaleDateString` does) cost around ten seconds of the page.
+ * ponytail: a plain Map, cleared wholesale at a cap — the keys repeat across
+ * requests, so a real LRU would buy nothing.
+ */
+const MAX_DAY_KEYS = 100_000;
+
 /** The calendar day an instant falls on, in the reporting timezone. */
 export function dayKeyIn(iso: string | null, timeZone: string): string | null {
   if (!iso) return null;
+  const cacheKey = `${timeZone}|${iso}`;
+  const cached = dayKeys.get(cacheKey);
+  if (cached !== undefined) return cached;
+
   const at = new Date(iso);
   if (Number.isNaN(at.getTime())) return null;
-  // en-CA formats as YYYY-MM-DD, which sorts and compares as a date key.
-  return at.toLocaleDateString("en-CA", { timeZone });
+  let formatter = dayFormatters.get(timeZone);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat("en-CA", { timeZone });
+    dayFormatters.set(timeZone, formatter);
+  }
+  const key = formatter.format(at);
+  if (dayKeys.size >= MAX_DAY_KEYS) dayKeys.clear();
+  dayKeys.set(cacheKey, key);
+  return key;
 }
 
 function emailKey(email: string | null): string | null {
   return email?.trim().toLowerCase() || null;
 }
 
-/** Close funnel by lead email. First lead wins, matching booked-calls.ts. */
+/**
+ * Close funnel by lead email. First lead wins, matching booked-calls.ts.
+ *
+ * Keyed on the array itself, because one page reads ~40 metrics over the same
+ * rows and would otherwise rebuild the whole index for each. Nothing mutates a
+ * funnel array in place, so identity is a safe key.
+ */
+const funnelIndexes = new WeakMap<FunnelRow[], Map<string, string | null>>();
 function funnelIndex(funnels: FunnelRow[]): Map<string, string | null> {
+  const cached = funnelIndexes.get(funnels);
+  if (cached) return cached;
   const index = new Map<string, string | null>();
   for (const row of funnels) {
     const key = emailKey(row.email);
     if (key && !index.has(key)) index.set(key, row.funnel);
   }
+  funnelIndexes.set(funnels, index);
   return index;
 }
 
