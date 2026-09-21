@@ -2866,6 +2866,17 @@ export type Database = {
         };
         Returns: undefined;
       };
+      record_video_view: {
+        Args: {
+          p_vp_session_id: string;
+          p_embed_id: string;
+          p_percent: number;
+          p_page_path?: string | null;
+          p_duration_seconds?: number | null;
+          p_occurred_at?: string;
+        };
+        Returns: undefined;
+      };
       is_app_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;

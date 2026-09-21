@@ -38,3 +38,22 @@ describe("milestonesReached", () => {
     expect(milestonesReached(24, new Set())).toEqual([]);
   });
 });
+
+describe("one event per crossing", () => {
+  // The live-page defect: seeking to 60% crossed 25 and 50 at the same instant,
+  // both were sent as separate beacons, and the writes raced — 25 won and the
+  // stored progress was lower than what was actually watched.
+  it("gives the caller the furthest milestone as the last element", () => {
+    const crossed = milestonesReached(60, new Set());
+    expect(crossed).toEqual([25, 50]);
+    expect(crossed[crossed.length - 1]).toBe(50);
+  });
+
+  it("reports nothing once every crossed milestone is accounted for", () => {
+    const reported = new Set<number>();
+    const first = milestonesReached(60, reported);
+    for (const m of first) reported.add(m);
+    expect(milestonesReached(60, reported)).toEqual([]);
+    expect(milestonesReached(76, reported)).toEqual([75]);
+  });
+});

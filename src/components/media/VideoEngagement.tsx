@@ -47,21 +47,27 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
       pagePath: string,
       durationSeconds: number,
     ) => {
-      for (const milestone of milestonesReached(percent, reported)) {
-        reported.add(milestone);
-        emitAttributionEvent("video_progress", session, {
-          embed_id: embedId,
-          // Sent as a string because the attribution route's schema and the
-          // downstream ingest both take string properties; the service parses
-          // it back before storing.
-          percent: String(milestone),
-          page_path: pagePath,
-          // The video's full length, so a percent can be read back as time.
-          // Sent per event rather than looked up: only the player knows it,
-          // and marketing swaps videos without telling anyone.
-          duration_seconds: String(Math.round(durationSeconds)),
-        });
-      }
+      const crossed = milestonesReached(percent, reported);
+      if (crossed.length === 0) return;
+      for (const milestone of crossed) reported.add(milestone);
+
+      // One event carrying the furthest milestone, not one per milestone. A
+      // scrub crosses several at once and storage keeps only the maximum, so
+      // the extra beacons said nothing the first one did not — while racing
+      // each other and spending four times the rate-limit budget.
+      const milestone = crossed[crossed.length - 1];
+      emitAttributionEvent("video_progress", session, {
+        embed_id: embedId,
+        // Sent as a string because the attribution route's schema and the
+        // downstream ingest both take string properties; the service parses
+        // it back before storing.
+        percent: String(milestone),
+        page_path: pagePath,
+        // The video's full length, so a percent can be read back as time.
+        // Sent per event rather than looked up: only the player knows it,
+        // and marketing swaps videos without telling anyone.
+        duration_seconds: String(Math.round(durationSeconds)),
+      });
     };
 
     // The container id is the key the player registers under; the embed id is

@@ -1,7 +1,7 @@
 # Waiting on a hand-applied migration
 
 The Supabase CLI is not linked in this repo, so these run in the SQL editor
-(Supabase → SQL editor → paste → Run). All four are safe to run twice.
+(Supabase → SQL editor → paste → Run). All five are safe to run twice.
 
 Paste this whole block:
 
@@ -78,6 +78,47 @@ alter table public.lead_video_views
   add constraint lead_video_views_duration_sane
     check (duration_seconds is null
            or (duration_seconds > 0 and duration_seconds <= 28800));
+
+-- 5. Monotonic video progress (20260921180000). Without it simultaneous
+-- milestones race and the LOWER number can win.
+create or replace function public.record_video_view(
+  p_vp_session_id   text,
+  p_embed_id        text,
+  p_percent         smallint,
+  p_page_path       text default null,
+  p_duration_seconds integer default null,
+  p_occurred_at     timestamptz default now()
+) returns void
+language sql
+security definer
+set search_path = public
+as $$
+  insert into public.lead_video_views as v (
+    vp_session_id, embed_id, max_percent, page_path,
+    duration_seconds, first_played_at, last_seen_at
+  )
+  values (
+    p_vp_session_id, p_embed_id, p_percent, p_page_path,
+    p_duration_seconds, p_occurred_at, p_occurred_at
+  )
+  on conflict (vp_session_id, embed_id) do update set
+    -- The whole point: progress never goes backwards.
+    max_percent = greatest(v.max_percent, excluded.max_percent),
+    -- Keep the first non-null length we ever saw; a later event that could not
+    -- read a duration must not erase one that could.
+    duration_seconds = coalesce(v.duration_seconds, excluded.duration_seconds),
+    page_path = coalesce(v.page_path, excluded.page_path),
+    -- Earliest play stands; recency always moves forward.
+    first_played_at = least(v.first_played_at, excluded.first_played_at),
+    last_seen_at = greatest(v.last_seen_at, excluded.last_seen_at);
+$$;
+
+comment on function public.record_video_view is
+  'Upserts one video view, keeping the furthest point reached. security definer because lead_video_views is RLS-enabled with no policies (service-role only).';
+
+-- The function is the only intended way in; it runs as owner, so nothing else
+-- needs the table granted.
+revoke all on function public.record_video_view from public, anon, authenticated;
 ```
 
 Then re-run the audit so the first verdicts are stored:

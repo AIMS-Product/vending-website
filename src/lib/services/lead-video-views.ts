@@ -17,7 +17,12 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * the visits this table exists for happen AFTER a booking, on a page reached
  * by redirect, and never carry a campaign at all.
  *
- * Best-effort by contract: never throws, so a missing table (before the
+ * Progress only ever moves up, and the database enforces that rather than the
+ * application: two milestones crossed by one scrub arrive as two simultaneous
+ * requests, and a read-compare-write loses the higher one. See the
+ * record_video_view migration.
+ *
+ * Best-effort by contract: never throws, so a missing function (before the
  * migration is applied) is a no-op rather than a failed request.
  */
 export async function recordVideoView({
@@ -45,54 +50,25 @@ export async function recordVideoView({
   const bounded = Math.min(100, Math.floor(percent));
 
   try {
-    const client = createAdminClient();
-
-    // Postgres has no "upsert taking the larger value" without either an
-    // ON CONFLICT ... DO UPDATE expression or a trigger, and PostgREST exposes
-    // neither. Read-then-write is the honest version: the race is two beacons
-    // from the SAME session arriving together, where both writers are the same
-    // person watching the same video, so the loser costs at most one quarter
-    // of resolution on a number a rep reads as "most of it".
-    // ponytail: move to a DO UPDATE with greatest() in SQL if that quarter
-    // ever matters.
-    const { data: existing } = await client
-      .from("lead_video_views")
-      .select("max_percent")
-      .eq("vp_session_id", session)
-      .eq("embed_id", embed)
-      .maybeSingle();
-
-    if (existing && existing.max_percent >= bounded) {
-      // Already recorded at least this far; only the recency is news.
-      await client
-        .from("lead_video_views")
-        .update({ last_seen_at: at })
-        .eq("vp_session_id", session)
-        .eq("embed_id", embed);
-      return;
-    }
-
-    await client.from("lead_video_views").upsert(
-      {
-        vp_session_id: session.slice(0, 160),
-        embed_id: embed.slice(0, 64),
-        max_percent: bounded,
-        page_path: pagePath?.trim().slice(0, 300) || null,
-        // Capped at eight hours: it comes from a public endpoint, and a
-        // nonsense length would poison every average built on it.
-        duration_seconds:
-          durationSeconds &&
-          Number.isFinite(durationSeconds) &&
-          durationSeconds > 0
-            ? Math.min(Math.round(durationSeconds), 28_800)
-            : null,
-        // Only meaningful on insert; the upsert leaves it alone on conflict
-        // because the stored value is already the earlier timestamp.
-        first_played_at: existing ? undefined : at,
-        last_seen_at: at,
-      },
-      { onConflict: "vp_session_id,embed_id" },
-    );
+    // One statement, and the database does the comparing: see the
+    // record_video_view migration. The read-then-write this replaces lost the
+    // higher number whenever two milestones landed together, which on a scrub
+    // is every time.
+    await createAdminClient().rpc("record_video_view", {
+      p_vp_session_id: session.slice(0, 160),
+      p_embed_id: embed.slice(0, 64),
+      p_percent: bounded,
+      p_page_path: pagePath?.trim().slice(0, 300) || null,
+      // Capped at eight hours: it comes from a public endpoint, and a
+      // nonsense length would poison every average built on it.
+      p_duration_seconds:
+        durationSeconds &&
+        Number.isFinite(durationSeconds) &&
+        durationSeconds > 0
+          ? Math.min(Math.round(durationSeconds), 28_800)
+          : null,
+      p_occurred_at: at,
+    });
   } catch {
     // Reporting, not the product. A failure here must never reach a visitor.
   }

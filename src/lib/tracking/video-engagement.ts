@@ -18,13 +18,12 @@
  */
 
 /**
- * The quarters. Four per video, and a visitor who plays all fifteen videos
- * through to the end spends sixty events — exactly the per-minute budget the
- * attribution endpoint allows one IP. That visitor is the most engaged person
- * who will ever load the page, and losing their last beacon to a 429 cannot
- * change what a rep concludes, so the ceiling is left where it is.
- * ponytail: if this grows past four thresholds, coalesce per page and flush on
- * pagehide rather than raising the rate limit.
+ * The quarters.
+ *
+ * One event per crossing, carrying the furthest quarter reached — never one
+ * per milestone. A scrub crosses several at once, storage keeps only the
+ * maximum, and sending them separately made simultaneous writes race each
+ * other for a number they all agreed on.
  */
 export const VIDEO_MILESTONES = [25, 50, 75, 100] as const;
 
