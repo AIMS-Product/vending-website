@@ -114,6 +114,13 @@ const legacyNewsRedirects: ReadonlyArray<{
 ];
 
 const nextConfig: NextConfig = {
+  // /admin/data renders REPORTING.md, the reporting glossary, so the page and
+  // the file cannot drift apart. Nothing imports it, so nothing traces it into
+  // the bundle: without this the read succeeds locally and fails in
+  // production. `src/lib/services/data-trust.ts` says the same thing.
+  outputFileTracingIncludes: {
+    "/admin/data": ["./REPORTING.md"],
+  },
   // PostHog reverse proxy: same-origin, so ad blockers and the CSP see our
   // own traffic. posthog-js posts to `/e/`, `/s/`, `/flags/` with a trailing
   // slash, which Next's built-in 308 would turn into a redirect, hence
