@@ -4,6 +4,7 @@ import {
   preCallVideoByEmbedId,
   preCallVideos,
 } from "@/lib/content/pre-call-resources";
+import { chunk, ID_BATCH } from "@/lib/batch";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
 
@@ -105,15 +106,19 @@ export async function loadEngagementBySession(
   if (unique.length === 0) return new Map();
 
   try {
-    const { data, error } = await createAdminClient()
-      .from("lead_video_views")
-      .select("vp_session_id, embed_id, max_percent, last_seen_at")
-      .in("vp_session_id", unique);
-
-    if (error || !data) return new Map();
+    const client = createAdminClient();
+    const rows: VideoViewRow[] = [];
+    for (const batch of chunk(unique, ID_BATCH)) {
+      const { data, error } = await client
+        .from("lead_video_views")
+        .select("vp_session_id, embed_id, max_percent, last_seen_at")
+        .in("vp_session_id", batch);
+      if (error || !data) continue;
+      rows.push(...(data as (VideoViewRow & { vp_session_id: string })[]));
+    }
 
     const bySession = new Map<string, VideoViewRow[]>();
-    for (const row of data) {
+    for (const row of rows as (VideoViewRow & { vp_session_id: string })[]) {
       const rows = bySession.get(row.vp_session_id) ?? [];
       rows.push(row);
       bySession.set(row.vp_session_id, rows);
@@ -170,22 +175,29 @@ export async function loadLeadFacts(
   const unique = [...new Set(leadIds.filter((id) => id.trim()))];
   if (unique.length === 0) return new Map();
 
-  const { data, error } = await createAdminClient()
-    .from("lead_submissions")
-    .select("id, metadata, close_lead_id")
-    .in("id", unique);
+  const client = createAdminClient();
+  const facts = new Map<string, LeadFacts>();
 
-  if (error || !data) return new Map();
+  // Chunked because PostgREST puts `in` lists in the query string: a 90-day
+  // window is thousands of bookings, and one request carrying every id builds
+  // a URL long enough that the request never comes back. Measured on the live
+  // Video tab, where the 90-day range hung on exactly this.
+  for (const batch of chunk(unique, ID_BATCH)) {
+    const { data, error } = await client
+      .from("lead_submissions")
+      .select("id, metadata, close_lead_id")
+      .in("id", batch);
 
-  return new Map(
-    data.map((row) => [
-      row.id,
-      {
+    if (error || !data) continue;
+    for (const row of data) {
+      facts.set(row.id, {
         sessionId: sessionIdFromLeadMetadata(row.metadata),
         closeLeadId: row.close_lead_id,
-      },
-    ]),
-  );
+      });
+    }
+  }
+
+  return facts;
 }
 
 /** Session ids only, for callers that do not touch Close. */
