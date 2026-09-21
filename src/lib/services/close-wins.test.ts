@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  byCloser,
   closeChannelLabel,
   fetchCloseDeals,
   summariseCloseWins,
@@ -23,19 +24,28 @@ describe("summariseCloseWins", () => {
           dateWon: "2026-08-12",
           value: 8997,
           funnel: "Internal Webinar",
+          closer: null,
         },
         {
           leadId: "b",
           dateWon: "2026-08-31",
           value: 5697,
           funnel: "Internal Webinar",
+          closer: null,
         },
-        { leadId: "c", dateWon: "2026-08-02", value: null, funnel: "YouTube" },
+        {
+          leadId: "c",
+          dateWon: "2026-08-02",
+          value: null,
+          funnel: "YouTube",
+          closer: null,
+        },
         {
           leadId: "d",
           dateWon: "2026-09-04",
           value: 14997,
           funnel: "Internal Webinar",
+          closer: null,
         },
       ],
       (day) => day.slice(0, 7),
@@ -51,7 +61,15 @@ describe("summariseCloseWins", () => {
 
   it("leaves out deals the period function rejects", () => {
     const periods = summariseCloseWins(
-      [{ leadId: "a", dateWon: "2026-07-01", value: 100, funnel: null }],
+      [
+        {
+          leadId: "a",
+          dateWon: "2026-07-01",
+          value: 100,
+          funnel: null,
+          closer: null,
+        },
+      ],
       () => null,
     );
     expect(periods).toEqual([]);
@@ -100,7 +118,7 @@ describe("fetchCloseDeals", () => {
       from: () => ({
         select: () => ({
           in: async () => ({
-            data: [{ lead_id: "in-mirror", funnel: "YouTube" }],
+            data: [{ lead_id: "in-mirror", funnel: "YouTube", closer: null }],
             error: null,
           }),
         }),
@@ -121,13 +139,64 @@ describe("fetchCloseDeals", () => {
         dateWon: "2026-08-12",
         value: 8997,
         funnel: "YouTube",
+        closer: null,
       },
       {
         leadId: "not-in-mirror",
         dateWon: "2026-08-20",
         value: 5000,
         funnel: "Internal Webinar",
+        closer: null,
       },
+    ]);
+  });
+});
+
+describe("summariseCloseWins by closer", () => {
+  it("groups the same deals and the same totals by who won them", () => {
+    const deals = [
+      {
+        leadId: "a",
+        dateWon: "2026-09-20",
+        value: 5997,
+        funnel: "Reactivation Scrapers",
+        closer: "Shreya Bechra",
+      },
+      {
+        leadId: "b",
+        dateWon: "2026-09-20",
+        value: 8997,
+        funnel: "Internal Webinar",
+        closer: "Shreya Bechra",
+      },
+      {
+        leadId: "c",
+        dateWon: "2026-09-21",
+        value: 1000,
+        funnel: "YouTube",
+        closer: "Joe Dysert",
+      },
+      {
+        leadId: "d",
+        dateWon: "2026-09-21",
+        value: null,
+        funnel: "YouTube",
+        closer: null,
+      },
+    ];
+    const month = (day: string) => day.slice(0, 7);
+    const byChannelPeriods = summariseCloseWins(deals, month);
+    const byCloserPeriods = summariseCloseWins(deals, month, byCloser);
+
+    // Same arithmetic, so the two groupings cannot disagree on the total.
+    expect(byCloserPeriods[0].won).toBe(byChannelPeriods[0].won);
+    expect(byCloserPeriods[0].revenue).toBe(byChannelPeriods[0].revenue);
+    expect(byCloserPeriods[0].unvalued).toBe(byChannelPeriods[0].unvalued);
+
+    expect(byCloserPeriods[0].rows).toEqual([
+      { label: "Shreya Bechra", won: 2, revenue: 14994 },
+      { label: "Joe Dysert", won: 1, revenue: 1000 },
+      { label: "No closer in Close", won: 1, revenue: 0 },
     ]);
   });
 });

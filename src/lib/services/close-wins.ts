@@ -34,6 +34,16 @@ export type CloseDeal = {
   /** Dollars. Null when the deal carries no value in Close. */
   value: number | null;
   funnel: string | null;
+  /**
+   * The closer who won it — the opportunity's owner in Close.
+   *
+   * A win has always had two people behind it: whoever set the call and
+   * whoever closed it. Only the funnel was ever recorded here, so "whose close
+   * was that" could not be answered from this system at all, which is how a
+   * deal ends up argued over in Slack. The setter lives on the booking
+   * (`call-credit.ts`); this is the other half.
+   */
+  closer: string | null;
 };
 
 export type CloseWinRow = { label: string; won: number; revenue: number };
@@ -48,7 +58,13 @@ export type CloseWinsPeriod = {
 };
 
 export type CloseWinsReport =
-  { ok: true; periods: CloseWinsPeriod[] } | { ok: false; error: string };
+  | {
+      ok: true;
+      periods: CloseWinsPeriod[];
+      /** The same deals and the same totals, grouped by who closed them. */
+      byCloser: CloseWinsPeriod[];
+    }
+  | { ok: false; error: string };
 
 const LABEL_BY_KEY = new Map(
   [...GOAL_CHANNELS, OTHER_CHANNEL].map((channel) => [
@@ -65,10 +81,24 @@ export function closeChannelLabel(funnel: string | null): string {
     : (LABEL_BY_KEY.get(key) ?? OTHER_CHANNEL.label);
 }
 
-/** Groups deals into periods; `periodOf` returns null to leave a deal out. */
+/** Who or what a deal is credited to. Channel by default, closer on request. */
+export const byChannel = (deal: CloseDeal): string =>
+  closeChannelLabel(deal.funnel);
+
+/** The closer who won it, or a named gap rather than a blank row. */
+export const byCloser = (deal: CloseDeal): string =>
+  deal.closer ?? "No closer in Close";
+
+/**
+ * Groups deals into periods; `periodOf` returns null to leave a deal out.
+ * `labelOf` picks the row each deal lands on, so the same arithmetic serves
+ * "which channel won it" and "who closed it" — two questions, one code path,
+ * no chance of the two disagreeing on the totals.
+ */
 export function summariseCloseWins(
   deals: readonly CloseDeal[],
   periodOf: (day: string) => string | null,
+  labelOf: (deal: CloseDeal) => string = byChannel,
 ): CloseWinsPeriod[] {
   const periods = new Map<string, CloseWinsPeriod>();
   for (const deal of deals) {
@@ -81,7 +111,7 @@ export function summariseCloseWins(
       unvalued: 0,
       rows: [],
     };
-    const label = closeChannelLabel(deal.funnel);
+    const label = labelOf(deal);
     const existing = period.rows.find((row) => row.label === label);
     const row = existing ?? { label, won: 0, revenue: 0 };
     const value = deal.value ?? 0;
@@ -170,6 +200,7 @@ export async function fetchCloseDeals(input: {
     dateWon: opportunity.dateWon,
     value: opportunity.value === null ? null : opportunity.value / 100,
     funnel: funnelByLead.get(opportunity.lead_id) ?? null,
+    closer: opportunity.user_name?.trim() || null,
   }));
 }
 
@@ -198,7 +229,11 @@ export async function getCloseWins(input: {
       close,
       mirror: input.mirror ?? createAdminClient(),
     });
-    return { ok: true, periods: summariseCloseWins(deals, input.periodOf) };
+    return {
+      ok: true,
+      periods: summariseCloseWins(deals, input.periodOf),
+      byCloser: summariseCloseWins(deals, input.periodOf, byCloser),
+    };
   } catch (error) {
     console.error("Close won-deal read failed", error);
     return {

@@ -30,7 +30,23 @@ export function CloseWinsPanel({
         Source: {CLOSE_WINS_SOURCE} These are sales, not leads.
       </p>
       {report.ok ? (
-        <WinsTable periods={report.periods} columns={columns} />
+        <>
+          <WinsTable periods={report.periods} columns={columns} />
+          {/*
+            The other half of a win. Until now a sale was credited to a channel
+            and to nobody, so "whose close was that" could not be answered here
+            at all — which is how one ends up argued over in Slack. Same deals,
+            same totals, grouped by the opportunity's owner in Close.
+          */}
+          <h3 className="text-ui-text mt-6 text-sm font-semibold">
+            Who closed them
+          </h3>
+          <p className="text-ui-text-subtle mt-1 text-xs">
+            The opportunity&rsquo;s owner in Close. Who set the call is a
+            separate question, answered on Bookings.
+          </p>
+          <WinsTable periods={report.byCloser} columns={columns} people />
+        </>
       ) : (
         <p className="text-ui-bad mt-3 text-sm">
           Close could not be read, so won deals are not shown: {report.error}
@@ -43,9 +59,12 @@ export function CloseWinsPanel({
 function WinsTable({
   periods,
   columns,
+  people = false,
 }: {
   periods: CloseWinsPeriod[];
   columns: CloseWinsPanelProps["columns"];
+  /** Rows are people, so no channel logo is drawn beside the name. */
+  people?: boolean;
 }) {
   const byKey = new Map(periods.map((period) => [period.key, period]));
   const shown = columns.map((column) => byKey.get(column.key) ?? null);
@@ -92,7 +111,7 @@ function WinsTable({
                 className="py-1.5 pr-3 text-left text-xs font-medium whitespace-nowrap"
               >
                 <span className="inline-flex items-center gap-1.5">
-                  <ChannelLogo label={label} />
+                  {people ? null : <ChannelLogo label={label} />}
                   {label}
                 </span>
               </th>

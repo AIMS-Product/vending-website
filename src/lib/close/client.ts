@@ -211,6 +211,9 @@ export type CloseWonOpportunity = {
   lead_id: string;
   date_won: string | null;
   value: number | null;
+  /** The opportunity's owner in Close: the closer who won it. */
+  user_id?: string | null;
+  user_name?: string | null;
 };
 
 export type CloseCustomFieldDefinition = {
@@ -446,7 +449,9 @@ export function createCloseClient({
         date_won__lte: input.to,
         _limit: "100",
         _skip: String(input.skip),
-        _fields: "id,lead_id,date_won,value",
+        // user_id/user_name are the closer. Close has always returned them;
+        // leaving them out of _fields is why no win carried a name.
+        _fields: "id,lead_id,date_won,value,user_id,user_name",
       });
       return request<{
         data?: CloseWonOpportunity[];

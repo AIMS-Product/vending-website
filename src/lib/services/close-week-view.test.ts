@@ -99,18 +99,21 @@ describe("buildCloseWeeks", () => {
           dateWon: "2026-09-13",
           value: 5997,
           funnel: "Internal Webinar",
+          closer: null,
         },
         {
           leadId: "b",
           dateWon: "2026-09-17",
           value: null,
           funnel: "Internal Webinar",
+          closer: null,
         },
         {
           leadId: "c",
           dateWon: "2026-09-10",
           value: 9999,
           funnel: "Internal Webinar",
+          closer: null,
         },
       ],
     });
