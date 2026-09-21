@@ -291,6 +291,28 @@ export function ofObservedPct(
 }
 
 /**
+ * A booking on this row was made by someone the channel has already counted.
+ *
+ * The webinar's night-of and replay calls-to-action (`internal-webinar`) are shown inside the
+ * room and in the sends that follow it, so every click came from somebody who registered first
+ * and is therefore already sitting in the channel's `contacts`. Those rows carry the booking
+ * without an audience of their own, which makes the per-row test for "nothing acquired this"
+ * read them as direct Calendly links. They are the opposite: the most thoroughly acquired
+ * bookings the channel has.
+ *
+ * Measured against live data on 2026-09-21: 119 of the Webinar channel's 146 bookings over 30
+ * days and 226 of its 261 over 90 days sat on these rows, every one of them on this source, and
+ * no row outside the Webinar channel carries it. Book % published 0.7% against a true 3.6%, and
+ * `directBooked` claimed 119 direct bookings that had never happened.
+ *
+ * Keyed on the source rather than the channel because the source is the property that makes the
+ * claim true -- the link is only reachable from inside the event -- and because a channel name
+ * is a label we choose, while this is a fact about where the link lives.
+ */
+const bookedByOwnAudience = (fact: ChannelFact) =>
+  fact.source === "internal-webinar";
+
+/**
  * Book %, denominated on everyone the channel acquired rather than on site
  * leads alone.
  *
@@ -315,7 +337,8 @@ export function ofObservedPct(
  */
 export function bookedOfSignupsPct(facts: ChannelFact[]): number | null {
   const seen = facts.filter(
-    (fact) => fact.leads != null || fact.contacts != null,
+    (fact) =>
+      fact.leads != null || fact.contacts != null || bookedByOwnAudience(fact),
   );
   if (!seen.some((fact) => fact.booked != null)) return null;
   const booked = seen.reduce((sum, fact) => sum + (fact.booked ?? 0), 0);
@@ -415,9 +438,15 @@ function rowFor(
       winPct: ofObservedPct(current, "won", "booked"),
     },
     directBooked: sumObserved(
-      // Not webinar or ManyChat rows: their bookings have contacts behind them.
+      // A booking with nothing behind it anywhere: no audience on the row, and not one of the
+      // in-event links whose audience the channel counted on a different row.
       current
-        .filter((fact) => fact.leads == null && fact.contacts == null)
+        .filter(
+          (fact) =>
+            fact.leads == null &&
+            fact.contacts == null &&
+            !bookedByOwnAudience(fact),
+        )
         .map((fact) => fact.booked),
     ),
     costPerLead:

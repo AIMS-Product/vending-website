@@ -96,10 +96,12 @@ describe("buildChannelReport", () => {
       [],
     );
 
-    // 27 bookings over the 4,046 people the channel actually acquired.
-    expect(report.rows[0].rates.bookPct).toBe(0.7);
-    // The CTA row still has no audience on it, so it stays disclosed, not folded in.
-    expect(report.rows[0].directBooked).toBe(119);
+    // All 146 bookings over the 4,046 people the channel acquired. The night-of CTA lives inside
+    // the room, so its 119 came from registrants the channel already counted in `contacts` -- they
+    // belong in the numerator even though their own row carries no audience.
+    expect(report.rows[0].rates.bookPct).toBe(3.6);
+    // Nothing booked this channel out of nowhere, so there is no direct total to disclose.
+    expect(report.rows[0].directBooked).toBeNull();
   });
 
   it("gives Book % a dash when a channel acquired nobody", () => {
@@ -107,6 +109,39 @@ describe("buildChannelReport", () => {
 
     expect(report.rows[0].rates.bookPct).toBeNull();
     expect(report.rows[0].directBooked).toBe(4);
+  });
+
+  it("leaves every other channel's Book % alone: only in-event links are folded in", () => {
+    // The four channels with no contacts behind them, pinned at their live 2026-09-21 values.
+    // A change to Book % that moves any of these has changed a channel it had no business touching.
+    const report = buildChannelReport(
+      [
+        fact({ channel: "YouTube", source: "youtube", leads: 136, booked: 85 }),
+        fact({
+          channel: "Google Ads",
+          source: "google",
+          leads: 97,
+          booked: 48,
+        }),
+        fact({ channel: "Chatbot", source: "chatbot", leads: 41, booked: 22 }),
+        fact({
+          channel: "Newsletter",
+          source: "newsletter",
+          leads: 10,
+          booked: 5,
+        }),
+      ],
+      [],
+    );
+    const pct = Object.fromEntries(
+      report.rows.map((row) => [row.label, row.rates.bookPct]),
+    );
+    expect(pct).toEqual({
+      YouTube: 62.5,
+      "Google Ads": 49.5,
+      Chatbot: 53.7,
+      Newsletter: 50,
+    });
   });
 
   it("keeps bookings without a lead out of Book % and collapses visit-only rows", () => {
