@@ -12,6 +12,15 @@ import {
 import { SETTER_CALENDLY_URL } from "@/lib/qualification/thank-you-links";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import {
+  buildPreCallBriefing,
+  coldBookings,
+  type BriefingRow,
+} from "@/lib/services/pre-call-briefing";
+import {
+  loadEngagementBySession,
+  loadSessionIdsByLead,
+} from "@/lib/services/pre-call-engagement";
+import {
   creditConflict,
   SETTER_NAMES,
   setterBookingUrl,
@@ -69,6 +78,22 @@ export default async function AdminBookingsPage({
     ? report.rows.filter((row) => row.chat !== null)
     : report.rows;
   const summary = chatOnly ? summarizeCallCredits(rows) : report.summary;
+
+  // What each upcoming call has watched. Two hops because the session id is
+  // the join: booking -> its lead row -> the session that lead was captured
+  // under -> that session's video rows.
+  const sessionByLead = await loadSessionIdsByLead(
+    report.rows.flatMap((row) =>
+      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+    ),
+  );
+  const briefing = buildPreCallBriefing({
+    rows: report.rows,
+    sessionByLead,
+    engagementBySession: await loadEngagementBySession([
+      ...sessionByLead.values(),
+    ]),
+  });
 
   return (
     <AdminShell
@@ -164,6 +189,8 @@ export default async function AdminBookingsPage({
         />
       </AdminMetricStrip>
 
+      <PreCallBriefingPanel rows={briefing} />
+
       <PeoplePanel summary={summary} />
       <UntaggedNote summary={summary} rows={rows} />
       <SetterLinksPanel />
@@ -174,6 +201,103 @@ export default async function AdminBookingsPage({
         chatOnly={chatOnly}
       />
     </AdminShell>
+  );
+}
+
+/**
+ * Upcoming calls, and what each person watched before it.
+ *
+ * Sits above the credit ledger because it is the only panel on this page about
+ * a call that has not happened yet — everything below it is a record, this is
+ * a to-do list. The cold count leads because that is the action: a booked call
+ * from someone who never opened the resources page is the one worth a text.
+ *
+ * "No session" is shown as its own thing rather than folded into the zero.
+ * The match is per browser, so a prospect who booked on their phone and
+ * watched on a laptop reads as unknown, not cold — telling a rep to chase them
+ * for not watching would be wrong, and one wrong nudge is enough for the whole
+ * column to stop being trusted.
+ */
+function PreCallBriefingPanel({ rows }: { rows: BriefingRow[] }) {
+  if (rows.length === 0) return null;
+
+  const cold = coldBookings(rows);
+  const engaged = rows.filter((row) => row.engagement.watchedCount > 0);
+
+  return (
+    <section className={`${adminPanelClass} mb-4 p-4`}>
+      <h2 className={adminSectionTitleClass}>
+        Coming up, and what they have watched
+      </h2>
+      <p className="text-ui-text-muted mt-1 mb-3 text-xs">
+        {rows.length} {rows.length === 1 ? "call" : "calls"} in the next two
+        weeks. {engaged.length} watched something; {cold.length} have opened
+        nothing and are worth a nudge. Matched per browser — someone who books
+        on a phone and watches on a laptop shows as no session, not as cold.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[44rem] text-sm">
+          <thead>
+            <tr className="text-ui-text-muted text-left text-xs">
+              <th className="py-1.5 font-medium">Call</th>
+              <th className="py-1.5 font-medium">Lead</th>
+              <th className="py-1.5 font-medium">Set by</th>
+              <th className="py-1.5 font-medium">Watched</th>
+              <th className="py-1.5 font-medium">Most of</th>
+            </tr>
+          </thead>
+          <tbody className="divide-ui-line divide-y">
+            {rows.map((row) => (
+              <tr key={row.id}>
+                <td className="text-ui-text-muted py-2 whitespace-nowrap">
+                  {formatDay(row.startAt)}
+                </td>
+                <td className="text-ui-text py-2">{row.name}</td>
+                <td className="text-ui-text-muted py-2">{row.setBy}</td>
+                <td className="py-2 whitespace-nowrap">
+                  <WatchedCell row={row} />
+                </td>
+                <td className="text-ui-text-muted py-2 text-xs">
+                  {row.engagement.videos
+                    .slice(0, 2)
+                    .map((video) => `${video.label} (${video.percent}%)`)
+                    .join(", ") || "\u2014"}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+function WatchedCell({ row }: { row: BriefingRow }) {
+  if (row.unknownSession) {
+    return (
+      <span
+        className="text-ui-text-muted text-xs"
+        title="This booking has no first-party session id, so we cannot tell what they watched. Not the same as watching nothing."
+      >
+        No session
+      </span>
+    );
+  }
+
+  const { watchedCount, totalVideos, finishedCount } = row.engagement;
+  if (watchedCount === 0) {
+    return (
+      <span className="text-ui-text text-xs font-medium">Nothing yet</span>
+    );
+  }
+
+  return (
+    <span className="text-ui-text text-xs font-medium">
+      {watchedCount} of {totalVideos}
+      <span className="text-ui-text-muted block font-normal">
+        {finishedCount} most of the way through
+      </span>
+    </span>
   );
 }
 

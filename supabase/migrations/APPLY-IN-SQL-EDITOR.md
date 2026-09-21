@@ -1,7 +1,7 @@
 # Waiting on a hand-applied migration
 
 The Supabase CLI is not linked in this repo, so these run in the SQL editor
-(Supabase → SQL editor → paste → Run). Both are safe to run twice.
+(Supabase → SQL editor → paste → Run). All three are safe to run twice.
 
 Paste this whole block:
 
@@ -36,6 +36,35 @@ create index if not exists data_audit_runs_check_idx
   on public.data_audit_runs (check_id, run_at desc);
 
 alter table public.data_audit_runs enable row level security;
+
+-- 3. Pre-call video engagement (20260921120000). Without it nothing records
+-- which pre-call videos a booker watched: the player events are emitted and
+-- silently dropped, and the Engagement column on /admin/bookings stays blank.
+create table if not exists public.lead_video_views (
+  vp_session_id   text not null,
+  embed_id        text not null,
+  max_percent     smallint not null default 0,
+  page_path       text,
+  first_played_at timestamptz not null default now(),
+  last_seen_at    timestamptz not null default now(),
+  primary key (vp_session_id, embed_id),
+  constraint lead_video_views_percent_range
+    check (max_percent between 0 and 100),
+  constraint lead_video_views_session_len
+    check (length(vp_session_id) <= 160),
+  constraint lead_video_views_embed_len
+    check (length(embed_id) <= 64),
+  constraint lead_video_views_path_len
+    check (page_path is null or length(page_path) <= 300)
+);
+
+create index if not exists lead_video_views_session_idx
+  on public.lead_video_views (vp_session_id);
+
+create index if not exists lead_video_views_last_seen_idx
+  on public.lead_video_views (last_seen_at desc);
+
+alter table public.lead_video_views enable row level security;
 ```
 
 Then re-run the audit so the first verdicts are stored:

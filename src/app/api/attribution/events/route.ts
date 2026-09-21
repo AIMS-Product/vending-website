@@ -5,6 +5,7 @@ import { config } from "@/lib/config";
 import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
 import { recordTaggedPageView } from "@/lib/services/lead-page-views";
+import { recordVideoView } from "@/lib/services/lead-video-views";
 import { recordPopupEvent } from "@/lib/services/popups";
 
 const attributionEventSchema = z.object({
@@ -60,6 +61,19 @@ export async function POST(request: Request) {
       utmSource: stringProperty(payload.properties, "utm_source"),
       utmCampaign: stringProperty(payload.properties, "utm_campaign"),
       utmContent: stringProperty(payload.properties, "utm_content"),
+    });
+  }
+
+  // Pre-call video engagement. Kept locally for the same reason as the two
+  // above — the forward has no readback — and this one is read by a person:
+  // /admin/bookings shows a rep what an upcoming call has watched, and the
+  // ones who watched nothing are the outreach list.
+  if (payload.event_type === "video_progress") {
+    await recordVideoView({
+      vpSessionId: payload.vp_session_id,
+      embedId: stringProperty(payload.properties, "embed_id"),
+      percent: Number(stringProperty(payload.properties, "percent")),
+      pagePath: stringProperty(payload.properties, "page_path") || null,
     });
   }
 

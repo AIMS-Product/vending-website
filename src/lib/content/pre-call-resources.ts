@@ -264,3 +264,41 @@ export const preCallNext = {
   body: "Grab a time that works for you and we'll walk through your situation together.",
   cta: { label: "Book Your Free Strategy Call", href: "/contact" },
 } as const;
+
+/**
+ * Every video on the page, flattened, in the order a visitor meets them.
+ *
+ * Derived from the three blocks above rather than typed out again: the reps'
+ * "watched 6 of 15" is only true if the denominator is the page itself, and a
+ * hand-kept second list would drift the first time marketing adds a story.
+ * Operators with an `href` are published articles, not videos, so they are
+ * absent here by construction.
+ *
+ * `label` is what a rep reads in Close and on /admin/bookings, so it is the
+ * question or the member's name — never the embed id, which means nothing to
+ * anyone outside this file.
+ */
+export type PreCallVideo = {
+  embedId: string;
+  label: string;
+  group: "intro" | "objection" | "story";
+};
+
+export const preCallVideos: readonly PreCallVideo[] = [
+  { embedId: preCallHero.embedId, label: "Intro", group: "intro" },
+  ...preCallResources.items.map((item) => ({
+    embedId: item.embedId,
+    label: item.question,
+    group: "objection" as const,
+  })),
+  ...preCallOperators.items.flatMap((item) =>
+    "embedId" in item
+      ? [{ embedId: item.embedId, label: item.name, group: "story" as const }]
+      : [],
+  ),
+];
+
+/** Lookup for turning a stored embed id back into something readable. */
+export const preCallVideoByEmbedId = new Map(
+  preCallVideos.map((video) => [video.embedId, video]),
+);

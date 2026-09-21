@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { VideoEngagement } from "./VideoEngagement";
 
 /**
  * One Vidalytics player.
@@ -35,6 +36,8 @@ export function VidalyticsPlayer({
       className={`relative overflow-hidden rounded-[12px] border-2 border-[#111111] bg-[#0b1b26] shadow-[8px_8px_0_#111111] ${className}`}
     >
       <div id={containerId} style={{ width: "100%", paddingTop: "56.25%" }} />
+      {/* Counts quarters watched against this session. Renders nothing. */}
+      <VideoEngagement embedId={embedId} />
       <Script id={`vidalytics-${embedId}`} strategy="lazyOnload">
         {`(function (v, i, d, a, l, y, t, c, s) {
     y='_'+d.toLowerCase();c=d+'L';if(!v[d]){v[d]={};}if(!v[c]){v[c]={};}if(!v[y]){v[y]={};}var vl='Loader',vli=v[y][vl],vsl=v[c][vl + 'Script'],vlf=v[c][vl + 'Loaded'],ve='Embed';

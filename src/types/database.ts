@@ -1251,6 +1251,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      lead_video_views: {
+        Row: {
+          embed_id: string;
+          first_played_at: string;
+          last_seen_at: string;
+          max_percent: number;
+          page_path: string | null;
+          vp_session_id: string;
+        };
+        Insert: {
+          embed_id: string;
+          first_played_at?: string;
+          last_seen_at?: string;
+          max_percent?: number;
+          page_path?: string | null;
+          vp_session_id: string;
+        };
+        Update: {
+          embed_id?: string;
+          first_played_at?: string;
+          last_seen_at?: string;
+          max_percent?: number;
+          page_path?: string | null;
+          vp_session_id?: string;
+        };
+        Relationships: [];
+      };
       ga4_page_views: {
         Row: {
           day: string;

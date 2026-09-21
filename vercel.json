@@ -72,6 +72,10 @@
     {
       "path": "/api/admin/data-report/run?period=week",
       "schedule": "0 0 * * 5"
+    },
+    {
+      "path": "/api/admin/pre-call-notes/run",
+      "schedule": "25 * * * *"
     }
   ]
 }

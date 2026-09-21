@@ -25,6 +25,10 @@ export const ATTRIBUTION_EVENT_TYPES = [
   "popup_cta_clicked",
   "popup_converted",
   "popup_dismissed",
+  // Fired at each quarter of a Vidalytics video (see VideoEngagement). The
+  // pre-call resources page is the reason it exists: a booker is sent there
+  // and nothing recorded whether they watched anything.
+  "video_progress",
 ] as const;
 
 export type AttributionEventType = (typeof ATTRIBUTION_EVENT_TYPES)[number];
