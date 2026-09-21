@@ -6,6 +6,8 @@ import {
   hasTargets,
   OTHER_CHANNEL,
   TARGET_BASIS,
+  targetOver,
+  totalTargetOver,
   type GoalChannel,
 } from "@/lib/services/channel-targets";
 import { CLOSE_LEAD_FUNNEL_CONNECTOR } from "@/lib/services/close-lead-funnel-sync";
@@ -16,6 +18,7 @@ import {
   type Pace,
   type Period,
 } from "@/lib/services/goal-pace";
+import { weekStartOf } from "@/lib/services/close-week-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -23,7 +26,6 @@ type ReportClient = Pick<SupabaseClient<Database>, "from">;
 
 const PAGE_SIZE = 1000;
 const MAX_ROWS = 50_000;
-const DAY_MS = 86_400_000;
 
 export type GoalPeriodKey = { kind: "month"; month: string } | { kind: "q4" };
 
@@ -32,8 +34,12 @@ export type GoalRow = {
   label: string;
   note: string | null;
   pace: Pace;
-  /** Booked in the last seven days, whatever the period. */
-  last7: number | null;
+  /**
+   * Booked so far in the current Friday-to-Thursday week, and the share of the
+   * period's target that week should carry. Null when today is outside the
+   * period, where a week to date would answer nothing.
+   */
+  week: { booked: number; target: number | null } | null;
   /**
    * Of the calls booked in the period, how many carry a show-up answer in
    * Close. The rest have no outcome yet, so any show rate is an upper bound.
@@ -59,6 +65,14 @@ export type GoalReport = {
   other: GoalRow;
   /** Booked calls whose lead has no funnel in Close. */
   untracked: number;
+  /**
+   * Every booked call in the period, plan channels and all. The total row
+   * counts only the channels the plan sets a number for, so this is carried
+   * separately rather than quietly folded into a row with a target on it.
+   */
+  allBooked: number | null;
+  /** The Friday the current week started on, null when today is outside the period. */
+  weekStart: string | null;
 };
 
 type MirrorRow = {
@@ -110,8 +124,13 @@ export async function getGoalReport(
   const { period, label, months, firstMonth } = goalPeriod(periodKey);
   const targetsApply = hasTargets(firstMonth);
 
-  const last7Start = dayKey(new Date(now.getTime() - 6 * DAY_MS));
-  const readStart = last7Start < period.start ? last7Start : period.start;
+  // Weeks run Friday to Thursday, as the sales floor and SteelTrap count them.
+  // The week can open before the period does (Oct 1 2026 is a Thursday), so
+  // the read window starts at whichever came first.
+  const weekStart =
+    today >= period.start && today <= period.end ? weekStartOf(today) : null;
+  const readStart =
+    weekStart != null && weekStart < period.start ? weekStart : period.start;
   const readEnd = today > period.end ? today : period.end;
 
   const [mirror, updatedAt] = await Promise.all([
@@ -124,32 +143,44 @@ export async function getGoalReport(
   const inPeriod = rows.filter((row) =>
     within(row.first_sales_call_booked_date, period),
   );
-  const inLast7 = rows.filter((row) =>
-    within(row.first_sales_call_booked_date, { start: last7Start, end: today }),
-  );
+  const inWeek =
+    weekStart == null
+      ? []
+      : rows.filter((row) =>
+          within(row.first_sales_call_booked_date, {
+            start: weekStart,
+            end: today,
+          }),
+        );
 
   const build = (channel: GoalChannel): GoalRow => {
     const mine = inPeriod.filter(
       (row) => channelKeyForFunnel(row.funnel) === channel.key,
     );
-    const target =
-      targetsApply && channel.target != null ? channel.target * months : null;
+    const target = targetsApply
+      ? targetOver(channel, firstMonth, months)
+      : null;
+    const pace = buildPace({
+      target,
+      actual: connected ? mine.length : null,
+      period,
+      today,
+      workdays: channel.workdays,
+    });
     return {
       key: channel.key,
       label: channel.label,
       note: channel.note ?? null,
-      pace: buildPace({
-        target,
-        actual: connected ? mine.length : null,
-        period,
-        today,
-        workdays: channel.workdays,
-      }),
-      last7: connected
-        ? inLast7.filter(
-            (row) => channelKeyForFunnel(row.funnel) === channel.key,
-          ).length
-        : null,
+      pace,
+      week:
+        weekStart == null || !connected
+          ? null
+          : {
+              booked: inWeek.filter(
+                (row) => channelKeyForFunnel(row.funnel) === channel.key,
+              ).length,
+              target: pace.weeklyTarget,
+            },
       outcomeLogged: connected ? logged(mine, "first_call_show_up") : null,
       setterNamed:
         connected && channel.key === "lane-2"
@@ -164,21 +195,35 @@ export async function getGoalReport(
     (row) => channelKeyForFunnel(row.funnel) === null,
   ).length;
 
-  const totalTarget = targetsApply
-    ? GOAL_CHANNELS.reduce((sum, c) => sum + (c.target ?? 0), 0) * months
-    : null;
+  // The total counts the channels the plan sets a number for, and nothing
+  // else. Holding every booked call against a six-channel target made
+  // September read "ahead" on the strength of Meta, Google and LinkedIn
+  // bookings the plan never asked for. A target and its actual are one
+  // population, here as on every row.
+  const planKeys = new Set(GOAL_CHANNELS.map((channel) => channel.key));
+  const inPlan = inPeriod.filter((row) =>
+    planKeys.has(channelKeyForFunnel(row.funnel) ?? ""),
+  );
+  const inPlanThisWeek = inWeek.filter((row) =>
+    planKeys.has(channelKeyForFunnel(row.funnel) ?? ""),
+  );
+  const totalTarget = targetsApply ? totalTargetOver(firstMonth, months) : null;
+  const totalPace = buildPace({
+    target: totalTarget,
+    actual: connected ? inPlan.length : null,
+    period,
+    today,
+  });
   const total: GoalRow = {
     key: "total",
-    label: "All channels",
+    label: "Plan channels",
     note: null,
-    pace: buildPace({
-      target: totalTarget,
-      actual: connected ? inPeriod.length : null,
-      period,
-      today,
-    }),
-    last7: connected ? inLast7.length : null,
-    outcomeLogged: connected ? logged(inPeriod, "first_call_show_up") : null,
+    pace: totalPace,
+    week:
+      weekStart == null || !connected
+        ? null
+        : { booked: inPlanThisWeek.length, target: totalPace.weeklyTarget },
+    outcomeLogged: connected ? logged(inPlan, "first_call_show_up") : null,
     setterNamed: null,
   };
 
@@ -195,6 +240,8 @@ export async function getGoalReport(
     rows: channelRows,
     other,
     untracked,
+    allBooked: connected ? inPeriod.length : null,
+    weekStart,
   };
 }
 

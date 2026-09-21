@@ -13,7 +13,12 @@ import {
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type { Pace, PaceStatus } from "@/lib/services/goal-pace";
 import type { GoalReport, GoalRow } from "@/lib/services/goal-report";
-import { UNTRACKED_LABEL } from "@/lib/services/channel-targets";
+import {
+  BASELINE_MONTH,
+  MONTHLY_GROWTH,
+  OTHER_TARGETS_IN_CIRCULATION,
+  UNTRACKED_LABEL,
+} from "@/lib/services/channel-targets";
 
 /**
  * Target, pace and actual for one period. Pace is the point: "ahead or behind,
@@ -100,9 +105,9 @@ export function GoalHeadline({ report }: { report: GoalReport }) {
         label="Booked so far"
         value={pace.actual == null ? "—" : pace.actual.toLocaleString()}
         caption={
-          report.total.last7 == null
+          report.total.week == null
             ? "not observed"
-            : `${report.total.last7.toLocaleString()} in the last 7 days`
+            : `${report.total.week.booked.toLocaleString()} so far this week`
         }
       />
       <AdminMetricPanel
@@ -136,8 +141,8 @@ export function GoalTable({ report }: { report: GoalReport }) {
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>Channels against target</h2>
         <p className="text-ui-text-subtle text-xs">
-          Pace is target × share of the period elapsed. Lane 2 and Marketing
-          Reactivation pace on workdays.
+          Pace is target × share of the period elapsed. Weeks run Friday to
+          Thursday. Lane 2 and Marketing Reactivation pace on workdays.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -153,7 +158,7 @@ export function GoalTable({ report }: { report: GoalReport }) {
                 Weekly target
               </th>
               <th className="px-3 py-2.5 text-right font-semibold">
-                Last 7 days
+                This week
               </th>
               <th className="px-3 py-2.5 text-right font-semibold">
                 Need per week
@@ -174,16 +179,29 @@ export function GoalTable({ report }: { report: GoalReport }) {
           </tbody>
         </table>
       </div>
-      {report.untracked > 0 ? (
-        <p className="text-ui-text-muted border-ui-line border-t px-4 py-3 text-xs">
-          <span className="text-ui-text font-semibold tabular-nums">
-            {report.untracked.toLocaleString()}
-          </span>{" "}
-          booked {report.untracked === 1 ? "call belongs" : "calls belong"} to a
-          lead with {UNTRACKED_LABEL.toLowerCase()}. Counted in the total, not
-          given to any channel.
-        </p>
-      ) : null}
+      <p className="text-ui-text-muted border-ui-line border-t px-4 py-3 text-xs">
+        The total is the channels the plan sets a number for, so it counts the
+        same calls the target does.{" "}
+        {report.allBooked == null ? null : (
+          <>
+            Every booked call in this period, plan channels and all, comes to{" "}
+            <span className="text-ui-text font-semibold tabular-nums">
+              {report.allBooked.toLocaleString()}
+            </span>
+            .{" "}
+          </>
+        )}
+        {report.untracked > 0 ? (
+          <>
+            <span className="text-ui-text font-semibold tabular-nums">
+              {report.untracked.toLocaleString()}
+            </span>{" "}
+            of {report.untracked === 1 ? "those belongs" : "those belong"} to a
+            lead with {UNTRACKED_LABEL.toLowerCase()} and{" "}
+            {report.untracked === 1 ? "is" : "are"} in no channel row.
+          </>
+        ) : null}
+      </p>
     </section>
   );
 }
@@ -233,7 +251,9 @@ function GoalTableRow({
       <td className="text-ui-text-muted px-3 py-2.5 text-right tabular-nums">
         {num(pace.weeklyTarget)}
       </td>
-      <td className="px-3 py-2.5 text-right tabular-nums">{num(row.last7)}</td>
+      <td className="px-3 py-2.5 text-right tabular-nums">
+        {row.week == null ? DASH : num(row.week.booked)}
+      </td>
       <td className="text-ui-text-muted px-3 py-2.5 text-right tabular-nums">
         {num(pace.neededPerWeek)}
       </td>
@@ -287,6 +307,18 @@ export function GoalBasis({ report }: { report: GoalReport }) {
           <dd>{report.basis}</dd>
         </div>
         <div>
+          <dt className="text-ui-text font-medium">The plan</dt>
+          <dd>
+            Every priority channel grows{" "}
+            {Math.round((MONTHLY_GROWTH - 1) * 100)}% a month, compounding, as
+            the Q4 Growth Plan tab sets out. Each channel counts up from what it
+            actually booked in {monthName(BASELINE_MONTH)}, so October, November
+            and December are three different numbers and a quarter is the sum of
+            its months. Marketing Reactivation is fixed at 44 a month rather
+            than grown, because {monthName(BASELINE_MONTH)} booked none.
+          </dd>
+        </div>
+        <div>
           <dt className="text-ui-text font-medium">Freshness</dt>
           <dd>
             {report.updatedAt
@@ -320,6 +352,39 @@ export function GoalBasis({ report }: { report: GoalReport }) {
           </dd>
         </div>
       </dl>
+      <div className="border-ui-line mt-4 border-t pt-4">
+        <h3 className="text-ui-text text-[0.8125rem] font-medium">
+          Other targets you may have seen
+        </h3>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          None of these is what this page counts against. They are named so a
+          number quoted from somewhere else can be placed rather than argued
+          with.
+        </p>
+        <dl className="text-ui-text-muted mt-3 grid gap-3 text-[0.8125rem]">
+          {OTHER_TARGETS_IN_CIRCULATION.map((entry) => (
+            <div key={entry.label}>
+              <dt className="text-ui-text font-medium">
+                {entry.label}{" "}
+                <span className="text-ui-text-subtle font-normal">
+                  — {entry.value}
+                </span>
+              </dt>
+              <dd>{entry.why}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
     </section>
   );
+}
+
+/** "August 2026" from "2026-08". */
+function monthName(month: string): string {
+  const [year, mon] = month.split("-").map(Number) as [number, number];
+  return new Date(Date.UTC(year, mon - 1, 1)).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }

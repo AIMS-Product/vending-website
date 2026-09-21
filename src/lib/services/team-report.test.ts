@@ -132,6 +132,7 @@ describe("buildSetters", () => {
         }),
       ],
       period: september,
+      firstMonth: "2026-09",
       months: 1,
       targetsApply: true,
     });
@@ -155,7 +156,8 @@ describe("buildSetters", () => {
     expect(report.selfBooked.booked).toBe(1);
     expect(report.total.booked).toBe(3);
     expect(report.total.set).toBe(4);
-    expect(report.target).toBe(330);
+    // Lane 2 books 291 in August; the plan grows it 10% a month.
+    expect(report.target).toBe(320);
   });
 
   it("lets Close's setter field beat a channel tag but not Calendly's record, and keeps the inferred touch last", () => {
@@ -177,6 +179,7 @@ describe("buildSetters", () => {
         booking({ email: "c@x.com", credit: rep("August Young", "touch") }),
       ],
       period: september,
+      firstMonth: "2026-09",
       months: 1,
       targetsApply: false,
     });
@@ -192,6 +195,7 @@ describe("buildSetters", () => {
       leads: [lead({ email: "a@x.com", setter_name: "Robin Perkins" })],
       bookings: [],
       period: september,
+      firstMonth: "2026-09",
       months: 1,
       targetsApply: false,
     });

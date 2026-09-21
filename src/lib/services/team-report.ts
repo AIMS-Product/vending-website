@@ -15,7 +15,7 @@ import {
   type RepRole,
 } from "@/lib/services/call-credit";
 import { classifyEventType } from "@/lib/services/calendly-event-class";
-import { GOAL_CHANNELS } from "@/lib/services/channel-targets";
+import { GOAL_CHANNELS, targetOver } from "@/lib/services/channel-targets";
 import {
   pct,
   sumObserved,
@@ -251,6 +251,8 @@ export function buildSetters(input: {
   leads: FunnelLeadRow[];
   bookings: CreditedBooking[];
   period: Period;
+  /** First month of the period, so a compounding target sums its own months. */
+  firstMonth: string;
   months: number;
   targetsApply: boolean;
 }): SettersReport {
@@ -315,8 +317,8 @@ export function buildSetters(input: {
     selfBooked,
     total,
     target:
-      input.targetsApply && lane?.target != null
-        ? lane.target * input.months
+      input.targetsApply && lane
+        ? targetOver(lane, input.firstMonth, input.months)
         : null,
     unclassified: rows
       .filter((row) => row.role === "unclassified")

@@ -93,6 +93,7 @@ export async function getTeamTab(input: {
         leads: leads ?? [],
         bookings,
         period,
+        firstMonth,
         months,
         targetsApply: hasTargets(firstMonth),
       }),

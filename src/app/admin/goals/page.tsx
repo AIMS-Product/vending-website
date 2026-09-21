@@ -72,7 +72,9 @@ export default async function AdminGoalsPage({
             Daily pace — new calls booked
           </h2>
           <p className="text-ui-text-subtle text-xs">
-            Booked-on basis, Lane 2 excluded, Eastern day.
+            Booked-on basis, Lane 2 excluded, Eastern day. The 25 a day is
+            Jess&rsquo;s floor goal and the 42 is the capacity
+            dashboard&rsquo;s; neither comes from the Q4 plan below.
           </p>
         </div>
         {pace.connected ? null : (
@@ -95,7 +97,8 @@ export default async function AdminGoalsPage({
           Monthly plan — Close first sales calls
         </h2>
         <p className="text-ui-text-subtle text-xs">
-          Lands-on basis, first call per lead, deduplicated.
+          Lands-on basis, first call per lead, deduplicated. Targets grow 10% a
+          month from each channel&rsquo;s August.
         </p>
       </div>
 
