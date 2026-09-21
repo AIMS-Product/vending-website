@@ -82,7 +82,11 @@ reporting deliberately, so that ad spend is never divided by outcomes ads did no
 - **Marketing meetings booked** = total booked − Reactivation Scrapers.
 - Verified W10: Stephen 172 − 83 = 89; ours independently = 89. Exact.
 
-### Spine drift — root-caused 2026-09-21
+### Spine drift — root-caused and fixed 2026-09-21
+
+**Status: cause found, fix committed (`5b8fe6d`), NOT yet applied to stored data.**
+The fix corrects the spine on the next sync run. Until that run, the numbers below
+are still what the dashboard shows.
 
 **Cause: orphaned booking rows the sync can never clear.**
 
@@ -136,6 +140,17 @@ agree week-on-week at the boundary.
 
 **The earlier "spine W10 = 83" is not reproducible** and equals the Reactivation Scrapers count for
 the same week; treat it as a transcription slip, not a measurement.
+
+**The fix** (`clearMovedBookingRows`, `channel-sync.ts`) blanks the booking outcomes on a day a
+link no longer has a booking on, mirroring `clearRenamedAdRows` in `metricool-sync.ts` — there the
+campaign name moves inside a day, here the day moves under a link. It only considers links the run
+actually wrote, so a link with no bookings in the window is never blanked. Simulated against live
+data it reaches **32 of the 34 rows and 88 of the 90 phantom bookings**. The two it leaves are
+single bookings on links with no surviving booking anywhere:
+
+- `2026-07-22 instagram/simon/{{user_id}}/_____` — an unrendered link template that shipped live.
+  A tracking bug in its own right; the booking is real, its attribution is not.
+- `2026-09-15 chatbot/site_chat/(not set)/5b3714ca-…` — a dead chatbot session key.
 
 ## 4. Rates
 
@@ -247,7 +262,31 @@ directions per cohort.
 
 ---
 
-## 9. Open questions
+## 9. Contested numbers — the live register
+
+Every number that two systems disagree on, or that has no traceable source. A number is only
+allowed in a report when it appears here as **settled**, or is quoted with its caveat.
+
+| Number                             | Systems that disagree             | Status                                                                      | What settles it                                                     |
+| ---------------------------------- | --------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| Channel `booked`, Aug–Sep          | Spine vs Close mirror             | **Fix committed, not applied.** 90 phantom bookings still stored            | Run the channel sync; re-measure W8/W10/W11 against the table in §3 |
+| Kody's "New Form Submissions (VP)" | Kody vs everything we hold        | **Unsourced.** ~1.31× our total capture W7–W9, 1.15× at W10                 | One question to Kody: which report is it                            |
+| "Leads"                            | Site form fills vs total captured | **Settled 2026-09-21.** Tiles renamed; 109 vs 1,308 was a label, not a loss | §2                                                                  |
+| Won, per webinar cohort            | Calls board (room) vs Close tag   | **Settled.** Both correct, different scope; never merge                     | §7                                                                  |
+| Company booked                     | Our Close mirror vs Stephen       | **Settled.** Within 2% on matched windows; marketing line exact at W10      | §3, §5                                                              |
+| Stephen's "Leads" column           | Stephen vs registrations          | **Known bad.** 365 for an 809-registrant week                               | Do not use it                                                       |
+| Spencer Reynolds' meetings         | Stephen drops them; we do not     | **Open decision**, not a defect                                             | Adam's call                                                         |
+| GHL form-fill volume               | Nobody reports it end to end      | **No owner**                                                                | Build it or say it does not exist                                   |
+| `instagram/simon/{{user_id}}`      | —                                 | **Broken link template** shipped live; booking real, attribution is not     | Fix the link, do not backfill                                       |
+
+Rules this register enforces:
+
+- A number with no row here has not been checked. Say so rather than quoting it.
+- "Settled" means measured against the other system on a **matched window**, with the population
+  named. Not "looks about right".
+- When a number moves, the row moves with it. A stale register is worse than none.
+
+## 10. Open questions
 
 1. Where does Kody's "New Form Submissions (VP)" come from?
 2. Should Spencer Reynolds' meetings be excluded from company booking totals? Stephen drops them.
