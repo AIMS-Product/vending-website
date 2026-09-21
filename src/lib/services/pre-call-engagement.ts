@@ -107,12 +107,16 @@ export async function loadEngagementBySession(
 
   try {
     const client = createAdminClient();
+    const batches = await Promise.all(
+      chunk(unique, ID_BATCH).map((batch) =>
+        client
+          .from("lead_video_views")
+          .select("vp_session_id, embed_id, max_percent, last_seen_at")
+          .in("vp_session_id", batch),
+      ),
+    );
     const rows: VideoViewRow[] = [];
-    for (const batch of chunk(unique, ID_BATCH)) {
-      const { data, error } = await client
-        .from("lead_video_views")
-        .select("vp_session_id, embed_id, max_percent, last_seen_at")
-        .in("vp_session_id", batch);
+    for (const { data, error } of batches) {
       if (error || !data) continue;
       rows.push(...(data as (VideoViewRow & { vp_session_id: string })[]));
     }
@@ -182,12 +186,19 @@ export async function loadLeadFacts(
   // window is thousands of bookings, and one request carrying every id builds
   // a URL long enough that the request never comes back. Measured on the live
   // Video tab, where the 90-day range hung on exactly this.
-  for (const batch of chunk(unique, ID_BATCH)) {
-    const { data, error } = await client
-      .from("lead_submissions")
-      .select("id, metadata, close_lead_id")
-      .in("id", batch);
+  // In parallel, not in series. A 90-day window is ~20 batches, and awaiting
+  // them one at a time turned a correct page into one that never finished
+  // loading — the fix for the URL-length hang reintroduced the hang as latency.
+  const batches = await Promise.all(
+    chunk(unique, ID_BATCH).map((batch) =>
+      client
+        .from("lead_submissions")
+        .select("id, metadata, close_lead_id")
+        .in("id", batch),
+    ),
+  );
 
+  for (const { data, error } of batches) {
     if (error || !data) continue;
     for (const row of data) {
       facts.set(row.id, {

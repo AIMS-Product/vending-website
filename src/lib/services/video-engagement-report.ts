@@ -298,14 +298,18 @@ async function loadViewRows(
     // Chunked for the same reason as loadLeadFacts: a 90-day window carries
     // thousands of sessions, and one `in` list that long makes a URL the
     // request never returns from. The live Video tab hung on exactly this.
-    for (const batch of chunk(sessionIds, ID_BATCH)) {
-      const { data, error } = await client
-        .from("lead_video_views")
-        .select(
-          "vp_session_id, embed_id, max_percent, duration_seconds, last_seen_at",
-        )
-        .in("vp_session_id", batch);
+    const batches = await Promise.all(
+      chunk(sessionIds, ID_BATCH).map((batch) =>
+        client
+          .from("lead_video_views")
+          .select(
+            "vp_session_id, embed_id, max_percent, duration_seconds, last_seen_at",
+          )
+          .in("vp_session_id", batch),
+      ),
+    );
 
+    for (const { data, error } of batches) {
       if (error) return { rows: [], connected: false };
       rows.push(...(data ?? []));
     }
