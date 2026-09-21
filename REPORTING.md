@@ -92,14 +92,21 @@ still counted.
 
 **Cause: orphaned booking rows the sync can never clear.**
 
-`channel_daily.booked` has **three** writers, not two — `channel-confidence.ts:94` lists them
-(`leads`, `webinar-ingest`, `manychat-ingest`). The `leads` connector (`channel-sync.ts`) writes
-two of the four kinds:
+`channel_daily.booked` has **two** writers producing three kinds of row — the `leads` connector
+(`channel-sync.ts`) writes the first two, `manychat-ingest` the third:
 
 1. site leads carrying `call_booked_at` — credited to the day the **lead arrived**;
 2. Calendly bookings with no `lead_submission_id` — credited to the day the call was **booked**;
-3. `webinar-ingest` — the in-room CTA bookings, written as `source = internal-webinar`;
-4. `manychat-ingest` — `call_booked` events.
+3. `manychat-ingest` — `call_booked` events.
+
+**`webinar-ingest` writes no bookings.** It writes `booked: null` deliberately
+(`webinar-ingest.ts:203`), because a webinar's bookings already arrive through its tagged Calendly
+links and writing the sheet's count as well doubled every one of them. The in-room CTA bookings
+reach the spine from the Calendly path under `source = internal-webinar`, not from that connector.
+
+> Corrected 2026-09-21. This section previously cited `channel-confidence.ts:94` as the writer list.
+> That constant is `METRIC_CONNECTORS`, which names a likely cause when a metric is missing; it is
+> not a list of writers, and it still lists `webinar-ingest` under `booked`.
 
 Measured 2026-09-21: of 1,851 stored bookings since Jun 1, **327 are `internal-webinar`**. Any
 check that reconstructs expected bookings from `lead_submissions` + `calendly_bookings` alone is
