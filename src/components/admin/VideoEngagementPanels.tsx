@@ -34,8 +34,14 @@ export function VideoEngagementTab({
     );
   }
 
-  const engagedPct = report.bookedCount
-    ? Math.round((report.watcherCount / report.bookedCount) * 100)
+  // Over the people this page could actually observe — a session, and booked
+  // since recording started — not over every booking in the window. Three
+  // watchers against 3,038 bookings rounds to "0% of everyone who booked",
+  // which reads as "nobody watches these" when the real answer is half of
+  // everyone we could see. The denominator was measuring our blind spot.
+  const observed = report.watcherCount + report.coldCount;
+  const engagedPct = observed
+    ? Math.round((report.watcherCount / observed) * 100)
     : null;
 
   return (
@@ -52,8 +58,8 @@ export function VideoEngagementTab({
           value={report.watcherCount}
           caption={
             engagedPct === null
-              ? "No bookings yet"
-              : `${engagedPct}% of everyone who booked`
+              ? "Nobody trackable has booked yet"
+              : `${engagedPct}% of the ${observed} we could see`
           }
         />
         <AdminMetricPanel
@@ -74,7 +80,7 @@ export function VideoEngagementTab({
         <AdminMetricPanel
           label="Can't tell"
           value={report.unknownCount}
-          caption="No session on the booking; not the same as nothing"
+          caption="Booked since tracking began with no session to match; not the same as nothing"
         />
       </AdminMetricStrip>
 
@@ -90,7 +96,8 @@ function PeoplePanel({ report }: { report: VideoEngagementReport }) {
       <section className={`${adminPanelClass} mb-4 p-4`}>
         <h2 className={adminSectionTitleClass}>Who is engaging</h2>
         <p className="text-ui-text-muted mt-1 text-xs">
-          No booked calls in this window yet.
+          Nobody in this window has opened a video, and nobody booked since
+          tracking began.
         </p>
       </section>
     );
@@ -103,7 +110,12 @@ function PeoplePanel({ report }: { report: VideoEngagementReport }) {
         One line per booked prospect, most engaged first, then soonest call.
         Time is the furthest point they reached, not time spent — a rewatch is
         not counted twice. Matched per browser, so a phone booking watched on a
-        laptop shows as no session rather than as nothing.
+        laptop shows as no session rather than as nothing. Listed are the
+        bookings this page can answer for: everyone who has opened a video, plus
+        everyone who booked since tracking began. A booking made earlier with
+        nothing recorded against it is counted under &ldquo;Before
+        tracking&rdquo; and left off — no history exists to recover, so its
+        blank row would read as an answer.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[52rem] text-sm">
@@ -155,6 +167,13 @@ function PersonRow({ row, total }: { row: VideoWatcherRow; total: number }) {
             title="They booked before any of this was recorded. Whether they watched is unknowable — there is no earlier data anywhere to recover."
           >
             Not tracked yet
+          </span>
+        ) : row.videosStarted === 0 && !row.hasSession ? (
+          <span
+            className="text-ui-text-muted text-xs"
+            title="No browser session on this booking, so there is nothing to match their watching against. They may well have watched — this is our blind spot, not their silence."
+          >
+            No session
           </span>
         ) : row.videosStarted === 0 ? (
           <span className="text-ui-text-muted">None</span>

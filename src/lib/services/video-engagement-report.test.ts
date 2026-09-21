@@ -44,6 +44,18 @@ const bookings = [
     canceled: false,
     leadSubmissionId: "lead-3",
   },
+  // Booked before tracking began, but opened a video after it did, with the
+  // call still ahead of them. Real: one of the first three watchers on prod
+  // booked three days before recording started and had a call the next day.
+  {
+    id: "b-old-watcher",
+    inviteeName: "Michelle Early",
+    inviteeEmail: "michelle@x.com",
+    startAt: "2026-09-22T19:30:00Z",
+    bookedAt: "2026-09-18T00:27:00Z",
+    canceled: false,
+    leadSubmissionId: "lead-4",
+  },
 ];
 
 const views = [
@@ -61,6 +73,13 @@ const views = [
     duration_seconds: 60,
     last_seen_at: "2026-09-21T21:11:00Z",
   },
+  {
+    vp_session_id: "vp-4",
+    embed_id: hero.embedId,
+    max_percent: 80,
+    duration_seconds: 120,
+    last_seen_at: "2026-09-21T22:40:00Z",
+  },
 ];
 
 vi.mock("@/lib/services/call-credit-data", () => ({
@@ -77,6 +96,7 @@ vi.mock("@/lib/services/pre-call-engagement", () => ({
       ["lead-1", { sessionId: "vp-1", closeLeadId: null }],
       ["lead-2", { sessionId: "vp-2", closeLeadId: null }],
       ["lead-3", { sessionId: "vp-3", closeLeadId: null }],
+      ["lead-4", { sessionId: "vp-4", closeLeadId: null }],
     ]),
 }));
 vi.mock("@/lib/supabase/admin", () => ({
@@ -102,8 +122,8 @@ describe("getVideoEngagementReport", () => {
   it("separates engaged, cold, can't-tell and not-yet-tracked", async () => {
     const report = await getVideoEngagementReport({ now: NOW });
 
-    expect(report.bookedCount).toBe(4);
-    expect(report.watcherCount).toBe(1);
+    expect(report.bookedCount).toBe(5);
+    expect(report.watcherCount).toBe(2);
     expect(report.coldCount).toBe(1);
     // Booked with no session: silence, not a zero.
     expect(report.unknownCount).toBe(1);
@@ -112,19 +132,67 @@ describe("getVideoEngagementReport", () => {
     expect(report.trackingStartedAt).toBe(TRACKING_START);
   });
 
+  it("decomposes the window exactly, with no bucket counted twice", async () => {
+    // The defect this guards: "can't tell" counted every session-less booking
+    // in the window, including the thousands that predate tracking, so the
+    // strip showed 3,038 booked against 3,025 before-tracking and 2,362
+    // can't-tell — three buckets summing well past the total. A reader cannot
+    // tell which number to trust when they cannot both be true.
+    const report = await getVideoEngagementReport({ now: NOW });
+
+    expect(report.watcherCount + report.coldCount + report.unknownCount).toBe(
+      report.people.length,
+    );
+    expect(report.people.length + report.predatesTrackingCount).toBe(
+      report.bookedCount,
+    );
+  });
+
   it("never puts a pre-tracking booking on the call list", async () => {
     // The defect this guards: an August call rendered "None" and was counted
     // as watched-nothing, so a rep would chase someone for not doing something
     // nobody was recording. There is no earlier data to recover, anywhere.
+    // It is counted, so the gap is visible, but never listed as a row.
     const report = await getVideoEngagementReport({ now: NOW });
-    const pat = report.people.find((p) => p.name === "Pat Older");
 
-    expect(pat?.predatesTracking).toBe(true);
-    expect(pat?.videosStarted).toBe(0);
+    expect(report.people.find((p) => p.name === "Pat Older")).toBeUndefined();
+    expect(report.predatesTrackingCount).toBe(1);
     expect(report.coldCount).toBe(1);
     expect(
       report.people.find((p) => p.name === "Dana Cole")?.predatesTracking,
     ).toBe(false);
+  });
+
+  it("tells a booking with no session apart from one that watched nothing", async () => {
+    // The defect this guards: both render as a blank, so a rep phones someone
+    // whose watching we simply had no way to see. "No session" and "opened
+    // nothing" are different answers and only one of them is a reason to call.
+    const report = await getVideoEngagementReport({ now: NOW });
+
+    expect(report.people.find((p) => p.name === "Kim Lee")?.hasSession).toBe(
+      false,
+    );
+    expect(report.people.find((p) => p.name === "Dana Cole")?.hasSession).toBe(
+      true,
+    );
+    // Kim is listed but never counted as cold: the call list is only people we
+    // were actually watching.
+    expect(report.coldCount).toBe(1);
+  });
+
+  it("keeps someone who booked before tracking and watched after it", async () => {
+    // The defect this guards: bounding the query by the tracking start date
+    // made 90 days cheap by deleting everyone who booked earlier — including
+    // the watchers among them. Most calls on the books were set before
+    // recording began, so that is the row a rep needs most, and it vanished
+    // while the page still looked correct.
+    const report = await getVideoEngagementReport({ now: NOW });
+    const michelle = report.people.find((p) => p.name === "Michelle Early");
+
+    expect(michelle?.predatesTracking).toBe(false);
+    expect(michelle?.videosStarted).toBe(1);
+    expect(michelle?.upcoming).toBe(true);
+    expect(report.watcherCount).toBe(2);
   });
 
   it("reports furthest point as time, not as time spent", async () => {
@@ -147,7 +215,7 @@ describe("getVideoEngagementReport", () => {
     const report = await getVideoEngagementReport({ now: NOW });
     const top = report.videos.find((v) => v.embedId === hero.embedId);
 
-    expect(top?.started).toBe(1);
+    expect(top?.started).toBe(2);
     expect(top?.reached100).toBe(1);
     expect(
       report.videos.find((v) => v.embedId === second.embedId)?.reached75,

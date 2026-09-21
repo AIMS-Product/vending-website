@@ -69,6 +69,12 @@ export type VideoWatcherRow = {
    * row says nothing about them and must never reach a call list.
    */
   predatesTracking: boolean;
+  /**
+   * True when the booking resolved to a browser session, so a zero here means
+   * "opened nothing" rather than "we had no way to look". Without it the table
+   * renders both as the same blank and a rep phones someone who did watch.
+   */
+  hasSession: boolean;
 };
 
 export type VideoBreakdownRow = {
@@ -151,13 +157,26 @@ export async function getVideoEngagementReport({
     ]);
   }
 
-  const people = report.rows
+  const everyone = report.rows
     .map((row) => {
       const session = sessionByBooking.get(row.id);
       const views = session ? (bySession.get(session) ?? []) : [];
-      return buildWatcherRow(row, views, now, trackedFrom);
+      return buildWatcherRow(row, views, now, trackedFrom, Boolean(session));
     })
-    .filter((row): row is VideoWatcherRow => row !== null)
+    .filter((row): row is VideoWatcherRow => row !== null);
+
+  // Listed rows are the ones this page can answer for. A booking made before
+  // tracking began, with nothing recorded against it, is not a quiet prospect
+  // — it is a window we were not looking through, and a blank row reads as an
+  // answer. It stays in `predatesTrackingCount` and off the table.
+  //
+  // `predatesTracking` is already false for anyone who DID watch, which is the
+  // case that matters: most calls on the books were set before 2026-09-21, and
+  // those people are still opening the page today. Excluding them by booking
+  // date — as clamping the query window did — deletes the most useful row on
+  // the page, for the prospect whose call is soonest.
+  const people = everyone
+    .filter((row) => !row.predatesTracking)
     .sort(byEngagementThenSoonest);
 
   return {
@@ -168,14 +187,12 @@ export async function getVideoEngagementReport({
     // have a rep chase someone for not doing something we never looked for.
     coldCount: people.filter(
       (row) =>
-        !row.predatesTracking &&
-        row.videosStarted === 0 &&
-        sessionByBooking.has(row.bookingId),
+        !row.predatesTracking && row.videosStarted === 0 && row.hasSession,
     ).length,
-    predatesTrackingCount: people.filter((row) => row.predatesTracking).length,
-    trackingStartedAt: trackingStart,
-    unknownCount: report.rows.filter((row) => !sessionByBooking.has(row.id))
+    predatesTrackingCount: everyone.filter((row) => row.predatesTracking)
       .length,
+    trackingStartedAt: trackingStart,
+    unknownCount: people.filter((row) => !row.hasSession).length,
     totalVideos: preCallVideos.length,
     people,
     videos: buildVideoBreakdown(viewRows),
@@ -195,6 +212,7 @@ function buildWatcherRow(
   views: ViewRow[],
   now: Date,
   trackedFrom: number | null,
+  hasSession: boolean,
 ): VideoWatcherRow | null {
   const startsAt = row.startAt ? Date.parse(row.startAt) : Number.NaN;
 
@@ -217,6 +235,7 @@ function buildWatcherRow(
   return {
     bookingId: row.id,
     predatesTracking: predatesTracking && views.length === 0,
+    hasSession,
     name: row.inviteeName?.trim() || row.inviteeEmail || "Unknown",
     email: row.inviteeEmail,
     startAt: row.startAt,
