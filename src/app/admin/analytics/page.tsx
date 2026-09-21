@@ -9,6 +9,7 @@ import {
   AnalyticsKpiCard,
   AnalyticsCustomRange,
   AnalyticsRangeTabs,
+  AnalyticsWeekPicker,
   AnalyticsTabs,
   AnalyticsTrend,
   parseAnalyticsTab,
@@ -168,6 +169,12 @@ export default async function AdminAnalyticsPage({
           tab={tab}
         />
         <div className="flex flex-wrap items-center gap-2">
+          <AnalyticsWeekPicker
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+            today={new Date().toISOString().slice(0, 10)}
+          />
           <AnalyticsCustomRange
             active={range}
             includeInternal={includeInternal}

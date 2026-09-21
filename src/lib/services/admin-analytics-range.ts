@@ -141,3 +141,44 @@ function formatDay(day: string): string {
     timeZone: "UTC",
   });
 }
+
+/**
+ * The last `count` complete Mon-Sun weeks, newest first, as custom range keys.
+ *
+ * Mon-Sun is Stephen's convention and the one the MTD dashboard and Kody's
+ * scorecard both report on. Comparing a Mon-Fri window to a Mon-Sun one moves
+ * bookings by roughly 25 on its own (REPORTING.md section 8), so the selector
+ * only ever offers whole weeks.
+ *
+ * The current, incomplete week is excluded: a part-week sitting in a list of
+ * whole ones reads as a collapse in every rate on the page.
+ */
+export function recentWeekRanges(
+  today: string,
+  count = 12,
+): {
+  key: AdminAnalyticsCustomRangeKey;
+  label: string;
+  startDay: string;
+  endDay: string;
+}[] {
+  const anchor = Date.parse(`${today}T00:00:00.000Z`);
+  if (Number.isNaN(anchor)) return [];
+  // getUTCDay: 0 = Sunday. Days back to the Monday of the week `today` is in.
+  const sinceMonday = (new Date(anchor).getUTCDay() + 6) % 7;
+  const thisMonday = anchor - sinceMonday * DAY_MS;
+
+  const weeks = [];
+  for (let index = 1; index <= count; index += 1) {
+    const monday = thisMonday - index * 7 * DAY_MS;
+    const startDay = new Date(monday).toISOString().slice(0, 10);
+    const endDay = new Date(monday + 6 * DAY_MS).toISOString().slice(0, 10);
+    weeks.push({
+      key: `custom:${startDay}:${endDay}` as AdminAnalyticsCustomRangeKey,
+      label: `${formatDay(startDay)} – ${formatDay(endDay)}${index === 1 ? " (last week)" : ""}`,
+      startDay,
+      endDay,
+    });
+  }
+  return weeks;
+}

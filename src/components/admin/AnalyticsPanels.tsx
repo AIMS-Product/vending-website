@@ -20,6 +20,7 @@ import type {
 import {
   ADMIN_ANALYTICS_RANGES,
   ADMIN_ANALYTICS_RANGE_KEYS,
+  recentWeekRanges,
   resolveAdminAnalyticsRange,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -65,6 +66,73 @@ export function AnalyticsRangeTabs({
         );
       })}
     </div>
+  );
+}
+
+/**
+ * Named Mon-Sun weeks, so a whole week can be pulled without knowing its dates.
+ *
+ * The option values are `custom:` range keys the page already parses, so this
+ * adds no server vocabulary: it is the existing custom window with the dates
+ * filled in. Submits on change where JS is available and falls back to the
+ * button otherwise, keeping the page a Server Component.
+ */
+export function AnalyticsWeekPicker({
+  active,
+  includeInternal = false,
+  tab = "overview",
+  today,
+  action = "/admin/analytics",
+}: {
+  active: AdminAnalyticsRangeKey;
+  includeInternal?: boolean;
+  tab?: string;
+  today: string;
+  action?: string;
+}) {
+  const weeks = recentWeekRanges(today);
+  if (weeks.length === 0) return null;
+  const selected = weeks.find((week) => week.key === active)?.key ?? "";
+
+  return (
+    <form
+      method="get"
+      action={action}
+      className="border-ui-line rounded-ui bg-ui-surface shadow-ui flex items-center gap-1.5 border px-2 py-1"
+      aria-label="Whole week"
+    >
+      {tab && tab !== "overview" ? (
+        <input type="hidden" name="tab" value={tab} />
+      ) : null}
+      {includeInternal ? (
+        <input type="hidden" name="internal" value="1" />
+      ) : null}
+      <label
+        className="text-ui-text-subtle text-[0.75rem] font-medium"
+        htmlFor="range-week"
+      >
+        Week
+      </label>
+      <select
+        id="range-week"
+        name="range"
+        defaultValue={selected}
+        className="border-ui-line text-ui-text rounded-[4px] border bg-transparent px-1.5 py-0.5 text-[0.8125rem]"
+      >
+        <option value="">Pick a week…</option>
+        {weeks.map((week) => (
+          <option key={week.key} value={week.key}>
+            {week.label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="submit"
+        className="text-ui-accent hover:bg-ui-accent-soft rounded-[4px] px-1.5 py-0.5 text-[0.8125rem] font-medium transition"
+      >
+        Go
+      </button>
+    </form>
   );
 }
 

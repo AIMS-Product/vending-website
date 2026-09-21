@@ -296,6 +296,59 @@ const COLUMNS: ReadonlyArray<{
   { key: "won", label: "Won", format: "number" },
 ];
 
+/**
+ * One total over every source the table stands for, collapsed tail included,
+ * so the footer can never disagree with the rows above it.
+ *
+ * A column stays a dash when no source reported it: summing unobserved as zero
+ * is how a connector outage comes to look like a real number.
+ *
+ * The rate columns are deliberately empty. A rate over the totals is a
+ * different measure from the per-row rates above it — totals-over-totals moves
+ * Chatbot from 53.7% to 82.9% (REPORTING.md section 4) — and two definitions
+ * under one column heading is the mistake this dashboard keeps making.
+ */
+export function totalMetric(
+  rows: ChannelReportRow[],
+  key: keyof ChannelReportRow["metrics"],
+): number | null {
+  const seen = rows
+    .map((row) => row.metrics[key])
+    .filter((value): value is number => value != null);
+  return seen.length === 0 ? null : seen.reduce((a, b) => a + b, 0);
+}
+
+function ChannelTotals({ rows }: { rows: ChannelReportRow[] }) {
+  if (rows.length === 0) return null;
+  const sum = (key: keyof ChannelReportRow["metrics"]) =>
+    totalMetric(rows, key);
+  return (
+    <tfoot>
+      <tr className="border-ui-line text-ui-text border-t-2 font-semibold">
+        <td className="py-2.5 pr-3">Total ({rows.length})</td>
+        {COLUMNS.map((column) => (
+          <td key={column.key} className="py-2.5 pr-3 text-right tabular-nums">
+            <Cell value={sum(column.key)} format={column.format} />
+          </td>
+        ))}
+        <td
+          className="text-ui-text-subtle py-2.5 pr-3 text-right font-normal"
+          title="A rate over the totals is a different measure from the per-row rates. Read the rates on the rows."
+        >
+          —
+        </td>
+        <td
+          className="text-ui-text-subtle py-2.5 pr-3 text-right font-normal"
+          title="A rate over the totals is a different measure from the per-row rates. Read the rates on the rows."
+        >
+          —
+        </td>
+        <td className="text-ui-text-subtle py-2.5 text-right font-normal">—</td>
+      </tr>
+    </tfoot>
+  );
+}
+
 export function ChannelTable({
   title,
   rows,
@@ -358,6 +411,7 @@ export function ChannelTable({
                 />
               ))}
             </tbody>
+            <ChannelTotals rows={[...rows, ...tail]} />
           </table>
           {tail.length > 0 ? (
             <details className="border-ui-line mt-2 border-t pt-2">
