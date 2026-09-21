@@ -12,6 +12,7 @@ import {
   type CallCreditRow,
   type CallCreditSummary,
 } from "@/lib/services/call-credit";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -236,25 +237,21 @@ async function fetchCloseSetters(
   client: CallCreditClient,
 ): Promise<Map<string, string>> {
   const byEmail = new Map<string, string>();
-  const PAGE = 1000;
   try {
-    for (let from = 0; from < 100_000; from += PAGE) {
-      const { data, error } = await client
+    const { rows } = await readAllPages<{
+      email: string | null;
+      setter_name: string | null;
+    }>((from, to, count) =>
+      client
         .from("close_lead_funnel")
-        .select("email,setter_name")
+        .select("email,setter_name", { count })
         .order("lead_id")
-        .range(from, from + PAGE - 1);
-      if (error) return byEmail;
-      const batch = (data ?? []) as Array<{
-        email: string | null;
-        setter_name: string | null;
-      }>;
-      for (const row of batch) {
-        const email = row.email?.trim().toLowerCase();
-        const setter = row.setter_name?.trim();
-        if (email && setter && !byEmail.has(email)) byEmail.set(email, setter);
-      }
-      if (batch.length < PAGE) break;
+        .range(from, to),
+    );
+    for (const row of rows) {
+      const email = row.email?.trim().toLowerCase();
+      const setter = row.setter_name?.trim();
+      if (email && setter && !byEmail.has(email)) byEmail.set(email, setter);
     }
   } catch {
     return byEmail;
