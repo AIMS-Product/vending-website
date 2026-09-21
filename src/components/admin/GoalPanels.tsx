@@ -17,7 +17,6 @@ import {
   BASELINE_MONTH,
   MONTHLY_GROWTH,
   OTHER_TARGETS_IN_CIRCULATION,
-  UNTRACKED_LABEL,
 } from "@/lib/services/channel-targets";
 
 /**
@@ -197,7 +196,7 @@ export function GoalTable({ report }: { report: GoalReport }) {
               {report.untracked.toLocaleString()}
             </span>{" "}
             of {report.untracked === 1 ? "those belongs" : "those belong"} to a
-            lead with {UNTRACKED_LABEL.toLowerCase()} and{" "}
+            lead with no funnel in Close and{" "}
             {report.untracked === 1 ? "is" : "are"} in no channel row.
           </>
         ) : null}
