@@ -66,3 +66,59 @@ superseded. Bookings shows the conflict panel (12 calls) and per-row "Close says
 (was 6 failing nightly). The nightly audit stores verdicts for the first time.
 `cac_months` / `cac_routes` already existed — my earlier claim that the CAC tab was broken was wrong.
 **/admin/cac was not confirmed rendering** (it did not finish loading within 30s); check it.
+
+---
+
+# Performance + information architecture — diagnosis and plan (2026-09-21)
+
+## Measured, not guessed
+
+Table sizes read per request: `close_lead_funnel` **8,365** · `calendly_bookings` **4,276** ·
+`channel_daily` **32,720** · `lead_submissions` 1,139.
+
+**The cause is sequential full-table paging on every page load.** Both
+`fetchFunnels` (`booked-metrics-data.ts:217`) and `fetchCloseSetters`
+(`call-credit-data.ts:243`) read `close_lead_funnel` with **no filter at all** — every one of the
+8,365 rows — in a `for` loop that awaits one 1,000-row page at a time.
+
+| Page              | Work before first paint                                                                                                                 | Observed     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| `/admin/goals`    | 9 sequential pages of `close_lead_funnel` + 5 of `calendly_bookings` (with 2 JSON path extractions per row) ≈ **14 serial round trips** | 60s+         |
+| `/admin/bookings` | the above plus 9 more pages for `fetchCloseSetters`                                                                                     | slow         |
+| `/admin/channels` | up to **50 sequential Close API calls** (`MAX_PAGES` in `close-wins.ts`) plus the spine                                                 | **116–176s** |
+
+`fetchCloseSetters` was added this session for setter credit. It fixed 1,081 miscredited bookings
+and it made `/admin/bookings` slower. Both are true; the read needs bounding, not reverting.
+
+## Fix order (highest value first)
+
+1. **Parallelise the paging.** Read the exact count first, then issue every range request
+   concurrently instead of awaiting each. Turns 9 serial trips into one wave. No semantic change,
+   lowest risk, biggest single win. Applies to `fetchFunnels`, `fetchCloseSetters`, `fetchBookings`.
+2. **Bound `fetchFunnels` by date — carefully.** It looks up a booking's funnel by email to exclude
+   Lane 2. A naive `first_sales_call_booked_date` filter would drop leads whose first call sits
+   outside the window and silently count them as non-Lane-2, corrupting the daily pace. Safer: key
+   the lookup off the emails actually present in the booking window (`.in("email", …)` in chunks).
+3. **Cache the Close API on `/admin/channels`.** 50 serial external calls cannot be made fast.
+   Either persist won deals into a table on the existing cron and read that, or wrap in
+   `unstable_cache` with a short TTL.
+4. **Stream the page.** Wrap each panel in `<Suspense>` so the shell and the fast panels paint
+   immediately instead of the whole route waiting on the slowest query.
+5. **`channel_daily` is 32,720 rows** — check the read paths there next; same pattern likely.
+
+## Information architecture — 41 admin routes
+
+`find src/app/admin -name page.tsx` returns **41**. That is the "too many tabs" problem, measured.
+Rough shape of the overlap, to be confirmed with Adam before any move:
+
+- **Reporting surfaces that answer overlapping questions:** `goals`, `analytics`, `attribution`,
+  `cac`, `bookings`, `team`, `links/coverage`, `chatbot/insights`. A CEO should not have to know
+  which of eight tabs holds "how are we doing".
+- **Content/CMS surfaces:** `pages`, `news`, `case-studies`, `media`, `libraries`, `popups`,
+  `forms`, `links` — legitimately separate, but they sit in the same flat nav as reporting.
+- **Settings scattered:** `settings`, `settings/routes`, `settings/users`, `pages/redirects`,
+  `links/coverage`, `pages/block-preview-audit`.
+
+**Do not restructure this unilaterally.** It is a product decision about who reads what. Next
+session should open with the `brainstorming` skill, agree the grouping with Adam, and only then
+move routes. The performance work above is independent of it and should go first.
