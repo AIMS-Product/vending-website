@@ -69,6 +69,38 @@ async function findMatchingLeadId(
   return data?.id ?? null;
 }
 
+/**
+ * Every reader dates a booking from `raw_payload -> payload -> created_at`:
+ * Calendly's own record of when it was booked. Our row-insert time must never
+ * stand in for it, so a payload without it drops the booking out of every
+ * booked-on number rather than dating it wrongly.
+ *
+ * The live webhook body already carries it. The callers that build a payload
+ * themselves have to supply it, and the chatbot embed confirmation did not,
+ * which silently kept four September consultation calls out of the daily
+ * pace. The guard lives here because all three callers write through this one
+ * function.
+ */
+function withBookedAt(
+  rawPayload: unknown,
+  inviteeCreatedAt: string | null,
+): Json {
+  if (!inviteeCreatedAt) return rawPayload as Json;
+  const root = isRecord(rawPayload) ? rawPayload : {};
+  const payload = isRecord(root.payload) ? root.payload : {};
+  if (typeof payload.created_at === "string" && payload.created_at.trim()) {
+    return rawPayload as Json;
+  }
+  return {
+    ...root,
+    payload: { ...payload, created_at: inviteeCreatedAt },
+  } as Json;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function buildBookingRow(
   event: CalendlyWebhookEvent,
   leadSubmissionId: string | null,
@@ -95,7 +127,7 @@ function buildBookingRow(
       canceled_at: new Date().toISOString(),
       cancel_reason: event.cancelReason,
       lead_submission_id: leadSubmissionId,
-      raw_payload: event.rawPayload as Json,
+      raw_payload: withBookedAt(event.rawPayload, event.inviteeCreatedAt),
       ...attribution,
     };
   }
@@ -113,7 +145,7 @@ function buildBookingRow(
     canceled_at: null,
     cancel_reason: null,
     lead_submission_id: leadSubmissionId,
-    raw_payload: event.rawPayload as Json,
+    raw_payload: withBookedAt(event.rawPayload, event.inviteeCreatedAt),
     ...attribution,
   };
 }

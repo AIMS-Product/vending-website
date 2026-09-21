@@ -98,12 +98,21 @@ export async function POST(request: Request) {
       eventStartAt: scheduled?.start_time ?? null,
       eventEndAt: scheduled?.end_time ?? null,
       inviteeCreatedAt: invitee.created_at ?? null,
-      // scheduled_event is kept so the admin transcript can say who the
-      // call is with (event_memberships) without another Calendly round trip.
+      // The same shape the live webhook and the backfill sweep store, so
+      // every reader of raw_payload reads this row exactly like a live one.
+      // The old shape ({ source, inviteeUri, scheduled_event }) had no
+      // `payload`, so `payload -> created_at` was null and these bookings
+      // silently left every daily pace number. scheduled_event is kept nested
+      // so the admin transcript can still say who the call is with
+      // (event_memberships) without another Calendly round trip.
       rawPayload: {
-        source: "embed_postmessage",
-        inviteeUri,
-        scheduled_event: scheduled ?? null,
+        event: "invitee.created",
+        created_by: "embed_postmessage",
+        payload: {
+          ...invitee,
+          invitee_scheduled_by: invitee.scheduled_by ?? null,
+          scheduled_event: scheduled ?? null,
+        },
       },
     };
   } catch (error) {

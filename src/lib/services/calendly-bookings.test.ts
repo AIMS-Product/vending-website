@@ -135,6 +135,59 @@ describe("recordCalendlyBooking", () => {
     expect(mocks.select).not.toHaveBeenCalled();
   });
 
+  it("stamps Calendly's booked-at onto a payload that has none", async () => {
+    const { client, mocks } = buildCalendlyClient();
+
+    // The chatbot embed confirmation used to store this shape: no `payload`,
+    // so `payload -> created_at` was null and the booking left every
+    // booked-on number. The writer now fills it from the event.
+    await recordCalendlyBooking(client, {
+      ...createdEvent,
+      rawPayload: { source: "embed_postmessage", scheduled_event: null },
+    });
+
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        raw_payload: {
+          source: "embed_postmessage",
+          scheduled_event: null,
+          payload: { created_at: "2026-08-20T09:00:00.000Z" },
+        },
+      }),
+      { onConflict: "invitee_uri" },
+    );
+  });
+
+  it("leaves a payload that already carries Calendly's booked-at alone", async () => {
+    const { client, mocks } = buildCalendlyClient();
+    const rawPayload = {
+      event: "invitee.created",
+      payload: { created_at: "2026-07-04T12:00:00.000Z", name: "Jane" },
+    };
+
+    await recordCalendlyBooking(client, { ...createdEvent, rawPayload });
+
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ raw_payload: rawPayload }),
+      { onConflict: "invitee_uri" },
+    );
+  });
+
+  it("does not invent a booked-at when the event has none either", async () => {
+    const { client, mocks } = buildCalendlyClient();
+
+    await recordCalendlyBooking(client, {
+      ...createdEvent,
+      inviteeCreatedAt: null,
+      rawPayload: { source: "embed_postmessage" },
+    });
+
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ raw_payload: { source: "embed_postmessage" } }),
+      { onConflict: "invitee_uri" },
+    );
+  });
+
   it("throws when the lead lookup fails", async () => {
     const { client } = buildCalendlyClient({
       leadSelectError: { message: "boom" },
