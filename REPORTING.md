@@ -63,7 +63,7 @@ Three different tables count a booking, and they do not agree because they count
 | -------------------- | ---------------------------------------------------------- | -------------------------------------------- | --- | --- |
 | **Close mirror**     | `close_lead_funnel.first_sales_call_booked_date`           | A lead's first sales call booking            | 167 | 163 |
 | **Stephen's booked** | Close meeting activities, title-filtered, deduped per lead | Every qualifying meeting                     | 172 | 166 |
-| **Channel spine**    | `channel_daily.booked`                                     | Bookings attributable to a marketing channel | 83  | 81  |
+| **Channel spine**    | `channel_daily.booked`                                     | Bookings attributable to a marketing channel | 96  | 80  |
 
 Weeks are Mon–Sun (Stephen's convention). **Always compare like windows** — comparing our 5-day
 figure to his 7-day one manufactures a ~25 booking gap that does not exist.
@@ -82,20 +82,60 @@ reporting deliberately, so that ad spend is never divided by outcomes ads did no
 - **Marketing meetings booked** = total booked − Reactivation Scrapers.
 - Verified W10: Stephen 172 − 83 = 89; ours independently = 89. Exact.
 
-### Known defect — spine drift (unresolved)
+### Spine drift — root-caused 2026-09-21
 
-The spine's booked count disagrees with the Close mirror's marketing subset, and the disagreement
-changed over time:
+**Cause: orphaned booking rows the sync can never clear.**
 
-|                              | W8  | W9  | W10 | W11 |
-| ---------------------------- | --- | --- | --- | --- |
-| Spine                        | 153 | 119 | 83  | 81  |
-| Close mirror, marketing only | 75  | 73  | 89  | 83  |
+`channel_daily.booked` has two writers (`channel-sync.ts`):
 
-Roughly double in late August, roughly right now. **Root cause not yet found.** Until it is, do not
-compare channel-level Book % across August and September.
+1. site leads carrying `call_booked_at` — credited to the day the **lead arrived**;
+2. Calendly bookings with no `lead_submission_id` — credited to the day the call was **booked**.
 
----
+`syncLeads` zeroes stale rows before rewriting, but its clearing set is built only from keys that
+**current site leads** map to (`channel-sync.ts:510-528`). Calendly-derived rows carry `leads=null`
+and match no lead key, so they are never zeroed. When a booking's assigned day changes — a
+date-bucketing fix, a re-import, a corrected `booked_at` — the sync writes the booking at its new
+day and **leaves the row at the old day untouched, forever**. The read-time rollup then sums both.
+
+Proven by exact arithmetic against the Calendly source:
+
+| cohort          | Calendly source         | spine, correct | spine, duplicated      |
+| --------------- | ----------------------- | -------------- | ---------------------- |
+| `aug11_end_cta` | 13 @ Aug 11, 5 @ Aug 12 | 13 + 5         | **18 @ Aug 24**        |
+| `aug18_end_cta` | 9 @ Aug 18, 1 @ Aug 19  | 9 + 1          | **10 @ Aug 24**        |
+| `aug25_end_cta` | 18 @ Aug 25, 1 @ Aug 26 | 18 + 1         | **19 across Sep 8-11** |
+
+Each duplicate equals that cohort's total exactly. Every orphan was written by the syncs of
+2026-09-14 and 2026-09-18 and survived the 2026-09-21 resync.
+
+**Measured 2026-09-21: 34 orphan rows carrying 90 phantom bookings since 2026-06-01. All
+`leads=null`.**
+
+| Week | Spine reads | Orphaned | Corrected |
+| ---- | ----------- | -------- | --------- |
+| W8   | 164         | 56       | **108**   |
+| W9   | 112         | 0        | **112**   |
+| W10  | 128         | 32       | **96**    |
+| W11  | 81          | 1        | **80**    |
+
+An orphan is a `booked` row the most recent sync did not regenerate, identified by `synced_at`
+older than the latest run. That test is only valid while the latest run covered the day in
+question — check before reusing it.
+
+**Ruled out by measurement, not opinion:** double-counting a lead against an unlinked Calendly row
+(3 of 1,122 estate-wide, 0 in W8/W9); twinned keys from the Sept 11 channel rename (0 in every
+week — that migration worked); a null `booked_at` falling back to the import day (0 of 1,282);
+read truncation (both readers window by day and cap at 200,000 against 32,720 rows).
+
+**Residual, not yet explained.** W8 corrected 108 still sits above the Close mirror's marketing
+subset. Part of it is writer 1: a lead's booking lands on its **arrival** day while Close dates it
+on the **booking** day. Measured displacement across week boundaries: W8→W9 33, W9→W10 41,
+W10→W11 30. Bookings mature 1-6 days after arrival (428 of 587). This is a real definitional
+difference between the two systems, not a defect — but it means the spine and Close will never
+agree week-on-week at the boundary.
+
+**The earlier "spine W10 = 83" is not reproducible** and equals the Reactivation Scrapers count for
+the same week; treat it as a transcription slip, not a measurement.
 
 ## 4. Rates
 
@@ -197,12 +237,21 @@ directions per cohort.
   booked calls but no registrant figure — exclude it from any rate, never from a booking total.
 - GHL tag counts are not registrant counts. Aug 18: Zoom 809 vs GHL-tagged 1,341.
 - `close_lead_funnel` only holds leads that booked. It cannot answer lead-volume questions.
+- **A stale spine row is invisible.** `channel_daily` is append-and-update; nothing deletes. A row
+  whose key the sync stopped generating keeps its last value and is summed forever. Before trusting
+  any historical spine figure, check `synced_at` against the latest run for that day.
+- **`vitest.config.ts` pre-sets placeholder Supabase env vars** (`localhost:54321`). A diagnostic
+  that loads `.env.local` with `??=` silently reads nothing and returns null — assign with `=`.
+- Webinar-night spikes in `booked` are **real** (the night-of CTA bursts). A spike on a day with no
+  webinar is the thing to suspect.
 
 ---
 
 ## 9. Open questions
 
 1. Where does Kody's "New Form Submissions (VP)" come from?
-2. Why did the channel spine's booked count drift (double in Aug, correct now)?
-3. Should Spencer Reynolds' meetings be excluded from company booking totals? Stephen drops them.
-4. No end-to-end report of GHL form-fill volume exists, though Lane 2 works those leads.
+2. Should Spencer Reynolds' meetings be excluded from company booking totals? Stephen drops them.
+3. No end-to-end report of GHL form-fill volume exists, though Lane 2 works those leads.
+4. Should the spine credit a lead's booking to its arrival day or its booking day? Close uses the
+   booking day. Changing it would make the two systems comparable week-on-week; it would also
+   break `booked ÷ leads` as a rate over one population, which is why it is the way it is.
