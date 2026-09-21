@@ -90,6 +90,7 @@ export function OverviewHeadline({
   leads,
   booked,
   won,
+  contacts,
   prior,
   bookingRatePct,
   days,
@@ -99,7 +100,19 @@ export function OverviewHeadline({
   leads: number | null;
   booked: number | null;
   won: number | null;
-  prior: { leads: number | null; booked: number | null; won: number | null };
+  /**
+   * Everyone acquired who is not a site form fill: webinar registrations,
+   * off-site GHL form fills, ManyChat contacts. Roughly 10x `leads`, so a
+   * tile labelled "Leads" over `leads` alone reads as a collapse. See
+   * REPORTING.md section 2.
+   */
+  contacts: number | null;
+  prior: {
+    leads: number | null;
+    contacts: number | null;
+    booked: number | null;
+    won: number | null;
+  };
   /** Already measured against the leads it can honestly be measured against. */
   bookingRatePct: number | null;
   days: number;
@@ -107,14 +120,27 @@ export function OverviewHeadline({
 }) {
   const since = `vs the ${days} days before`;
   return (
-    <AdminMetricStrip>
+    <AdminMetricStrip columns={5}>
       <OverviewMetric
         canEdit={canEdit}
         href="/admin/leads"
-        label="Leads"
+        label="Site form fills"
         value={leads}
         caption={since}
         delta={<Delta current={leads} prior={prior.leads} />}
+      />
+      <OverviewMetric
+        canEdit={canEdit}
+        href={`/admin/analytics?range=${range}&tab=channels`}
+        label="Total captured"
+        value={total(leads, contacts)}
+        caption="form fills, registrations, GHL and ManyChat"
+        delta={
+          <Delta
+            current={total(leads, contacts)}
+            prior={total(prior.leads, prior.contacts)}
+          />
+        }
       />
       <OverviewMetric
         canEdit={canEdit}
@@ -148,6 +174,19 @@ export function OverviewHeadline({
       </Link>
     </AdminMetricStrip>
   );
+}
+
+/**
+ * Leads plus contacts, the one acquisition number. Null only when neither was
+ * observed: a channel reporting one of the two still has a real total, and
+ * treating an unobserved half as zero would understate it silently.
+ */
+export function total(
+  leads: number | null,
+  contacts: number | null,
+): number | null {
+  if (leads == null && contacts == null) return null;
+  return (leads ?? 0) + (contacts ?? 0);
 }
 
 const LEADERBOARD_LIMIT = 10;

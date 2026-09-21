@@ -81,10 +81,24 @@ export const adminEyebrowClass =
 // One bordered strip, divided into columns. Four separate cards each with
 // their own border and shadow is four times the visual weight for the same
 // four numbers.
-export function AdminMetricStrip({ children }: { children: ReactNode }) {
+/** Written out, not interpolated: Tailwind only keeps class names it can see. */
+const STRIP_COLUMNS = {
+  4: "xl:grid-cols-4",
+  5: "xl:grid-cols-5",
+} as const;
+
+export function AdminMetricStrip({
+  children,
+  columns = 4,
+}: {
+  children: ReactNode;
+  columns?: keyof typeof STRIP_COLUMNS;
+}) {
   return (
     <section className={`${adminPanelClass} mb-4`} aria-label="Admin summary">
-      <div className="divide-ui-line grid divide-y sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
+      <div
+        className={`divide-ui-line grid divide-y sm:grid-cols-2 sm:divide-x ${STRIP_COLUMNS[columns]} xl:divide-y-0`}
+      >
         {children}
       </div>
     </section>

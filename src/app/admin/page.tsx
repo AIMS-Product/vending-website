@@ -82,10 +82,12 @@ export default async function AdminOverviewPage({
           <OverviewHeadline
             canEdit={canEdit}
             leads={report.totals.leads}
+            contacts={report.totals.contacts ?? null}
             booked={report.totals.booked}
             won={report.totals.won}
             prior={{
               leads: report.priorTotals.leads,
+              contacts: report.priorTotals.contacts ?? null,
               booked: report.priorTotals.booked,
               won: report.priorTotals.won,
             }}

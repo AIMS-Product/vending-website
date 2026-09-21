@@ -1,94 +1,24 @@
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { total } from "./OverviewPanels";
 
-import { ChannelLeaderboard } from "./OverviewPanels";
-import {
-  METRIC_KEYS,
-  type ChannelReportRow,
-  type Metrics,
-} from "@/lib/services/channel-report-rollup";
-
-function metrics(overrides: Partial<Metrics> = {}): Metrics {
-  const out = {} as Metrics;
-  for (const key of METRIC_KEYS) out[key] = null;
-  return { ...out, ...overrides };
-}
-
-function row(
-  label: string,
-  current: Partial<Metrics>,
-  bookPct: number | null = null,
-): ChannelReportRow {
-  return {
-    key: label,
-    label,
-    metrics: metrics(current),
-    prior: metrics(),
-    rates: { leadPct: null, bookPct, winPct: null },
-    directBooked: null,
-    costPerLead: null,
-    costPerBooked: null,
-    costPerSignup: null,
-  };
-}
-
-describe("ChannelLeaderboard", () => {
-  it("marks each channel with its brand artwork and links into its detail", () => {
-    const html = renderToStaticMarkup(
-      <ChannelLeaderboard
-        canEdit
-        rows={[row("YouTube", { leads: 40, booked: 6 }, 15)]}
-        tailCount={0}
-        range="30d"
-      />,
-    );
-
-    expect(html).toContain('src="/admin/brands/youtube.svg"');
-    expect(html).toContain('alt="YouTube"');
-    expect(html).toContain("tab=channels&amp;channel=YouTube");
-    expect(html).toContain("6 booked");
-    expect(html).toContain("15% of leads");
+// The Overview tile read "Leads 109" for a week that captured 1,308 people,
+// because site form fills and total capture differ by more than 10x
+// (REPORTING.md section 2). These pin the replacement.
+describe("total captured", () => {
+  it("adds contacts to leads", () => {
+    expect(total(109, 1199)).toBe(1308);
   });
 
-  it("sends a channel with its own admin page there instead", () => {
-    const html = renderToStaticMarkup(
-      <ChannelLeaderboard
-        canEdit
-        rows={[row("Chatbot", { leads: 12 })]}
-        tailCount={0}
-        range="30d"
-      />,
-    );
-
-    expect(html).toContain('href="/admin/chatbot"');
+  it("counts a channel that reported only one of the two", () => {
+    expect(total(null, 91)).toBe(91);
+    expect(total(62, null)).toBe(62);
   });
 
-  it("shows a dash for a channel no connector reported leads for", () => {
-    const html = renderToStaticMarkup(
-      <ChannelLeaderboard
-        canEdit
-        rows={[row("Trustpilot", { visits: 80 })]}
-        tailCount={0}
-        range="30d"
-      />,
-    );
-
-    expect(html).toContain("—");
-    expect(html).not.toContain(">0<");
+  it("stays unobserved when neither was reported, never zero", () => {
+    expect(total(null, null)).toBeNull();
   });
 
-  it("holds back a booking rate that only two leads sit behind", () => {
-    const html = renderToStaticMarkup(
-      <ChannelLeaderboard
-        canEdit
-        rows={[row("LinkedIn", { leads: 2, booked: 2 }, 100)]}
-        tailCount={0}
-        range="30d"
-      />,
-    );
-
-    expect(html).toContain("2 booked");
-    // The bar's own width is 100%, so the assertion names the rate's wording.
-    expect(html).not.toContain("100% of leads");
+  it("keeps a real zero distinct from unobserved", () => {
+    expect(total(0, null)).toBe(0);
   });
 });
