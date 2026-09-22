@@ -30,11 +30,40 @@ the last one needs a push.
 None were findable without driving the live page. tsc, lint, 2,812 tests and
 the build were green through all four.
 
-## Not verified
+## The 90-day range — settled, 2026-09-21 evening
 
-**The 90-day range.** It hung at ~70s on sequential batches; 8c9e5f8 issues
-them in parallel but that is UNPUSHED and unmeasured against prod. Confirm it
-renders before trusting any 90-day number. 7d and 30d were fine.
+It renders. Driven on the real page at 90 days, 1.5s, 19 rows.
+
+**The hang was never the query.** Measured against prod data, the deployed code
+reads 3,038 bookings in 1.37s. What cost 70s was listing all 3,038 as rows that
+could only say "Not tracked yet".
+
+**The first fix clamped the query to the tracking start date, and that was
+wrong.** It made 90 days cheap by dropping everyone who booked earlier — which
+is almost everyone with a call coming up: 76 of 86 upcoming calls were set
+before 2026-09-21. Those people are watching NOW. Michelle Swetoha booked on
+the 18th, opened all fifteen videos at 22:06 on the 21st, call the next day at
+19:30 — the clamp deleted her row on the morning of her call, and the page
+still looked correct. Do not bound this query by the tracking date again.
+
+The filter belongs on the ROW: listed if it has views OR was booked since
+tracking began. A watcher is never dropped, whenever they booked.
+
+**Three panel numbers were measuring our blind spot, not the prospects**, and
+all three shipped green alongside the first four:
+
+5. "0% of everyone who booked" — watchers over all 3,038 bookings. Reads as
+   "nobody watches these"; the real answer was 56% of the nine people we could
+   see. Denominator is now the observable population.
+6. "Can't tell" counted every session-less booking in the window, so the strip
+   showed 3,038 booked against 3,019 before-tracking and 2,362 can't-tell —
+   buckets summing past their own total. Scoped; a test holds the arithmetic.
+7. The table rendered "None" both for someone watched who opened nothing and
+   for someone with no session. `/admin/bookings` already kept those apart;
+   this tab collapsed them, which is the one thing the memory file says must
+   never happen — it sends a rep after someone who did watch. Now "No session".
+
+Seven bugs on this feature, every one past tsc, lint, the suite and the build.
 
 ## There is no backfill, and there never will be
 
@@ -50,17 +79,31 @@ watching sessions, one matched a lead. The booking redirect keeps the session;
 a link sales emails does not, so they book on a phone and watch on a laptop as
 a new browser with no lead attached.
 
-Two open improvements, neither recovering the past:
+### Email-matching is a dead end. Measured, do not try it again.
 
-1. **Email-match the unlinked bookings.** 637 of 1,000 in the 90-day window had
-   no `lead_submission_id`, but they carry `invitee_email` and most will match a
-   lead by email, recovering the session. Self-contained; nobody else needs to
-   agree to it.
-2. **Identified link for sales.** A signed short token in what sales sends, so
-   the page can tie session to lead server-side. Use a signed token, NOT a raw
-   lead id — a forwarded link would otherwise attribute the forwardee's watching
-   to the original person. Needs Adam and Kody, because it changes what sales
-   sends.
+The "637 of 1,000" that motivated it was read under the PostgREST 1,000-row
+cap and does not describe the population. The real 90-day shape: 3,038
+bookings, 2,332 with no `lead_submission_id`, 1,820 distinct emails among them.
+
+**Four of those 1,820 match a lead row. 0.2%.** A case-insensitive `ilike` over
+a 40-email sample returned zero. Every stored lead email is already lowercase,
+so case and whitespace are not the problem.
+
+The reason is structural: `lead_submissions` holds 1,151 rows in total against
+3,038 bookings in 90 days. Most bookings have no lead row to match because
+those people never filled a form on the site — they came through webinar,
+reactivation and Close. There is nothing to join to.
+
+### The one open improvement: an identified link for sales
+
+A signed short token in what sales emails, so the page can tie session to
+person server-side. Signed, NOT a raw id — a forwarded link would otherwise
+attribute the forwardee's watching to whoever it was sent to.
+
+**What it keys on is now an open question, not a detail.** It cannot carry a
+`lead_submissions` id, because three quarters of the people sales emails have
+no lead row. It has to reference something that exists for all of them — the
+Calendly booking, or the Close contact. Settle that with Adam before building.
 
 ## Anything touching this again
 
@@ -71,3 +114,27 @@ Two open improvements, neither recovering the past:
   it has to play first. Matters for testing, not for real visitors.
 - Labels say REACHED, never watched. The stored number is a high-water mark, so
   a rewatch is not counted twice. Do not relabel it "watch time".
+
+## How to check this feature, and it is not the suite
+
+Seven bugs, none catchable by tsc, lint, 2,815 tests or the build. What caught
+every one: drive the page, then read a row back out of Supabase.
+
+The service layer can be measured directly without an admin session:
+
+```
+npx tsx --conditions=react-server --tsconfig tsconfig.json <script>
+```
+
+importing `@/lib/services/video-engagement-report` with `.env.local` loaded
+into `process.env`. That gives real counts against prod in about a second.
+
+Driving the page needs an admin session, and minting one via the Supabase
+admin API is refused by the agent sandbox as credential materialization — Adam
+has to log in himself at `/admin/login`. Budget for that in any session that
+touches this.
+
+One oddity that is NOT a bug: a prospect can appear twice with different
+answers. Tenisha Upshaw has two real bookings on 09-24 — an advisory call with
+no lead link and a consultation with one — so one row reads "7 of 15" and the
+other "No session". The table is one line per BOOKING, which is correct.
