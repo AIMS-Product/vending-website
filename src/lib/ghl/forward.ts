@@ -39,11 +39,31 @@ export const GHL_FORWARD_EVENT_TYPE = "ghl_forward";
 type CloseSyncEventInsert =
   Database["public"]["Tables"]["close_sync_events"]["Insert"];
 
-/** "booking" is our `contact` form, "application" our `apply` form. */
-export type GhlFormType = "booking" | "application";
+/**
+ * What kind of capture this was, and the `form_type` the partner receives.
+ *
+ * Every one of these is a real website capture, but they are not the same
+ * ask: `booking` and `application` filled a form requesting a call, `chat`
+ * typed a question and left an email, `lead_magnet` downloaded a PDF and
+ * `newsletter` subscribed. Which ones actually forward is an admin setting;
+ * the label always says which it was, so a partner's rep is never told a PDF
+ * download asked to be called.
+ */
+export const LEAD_CAPTURE_TYPES = [
+  "booking",
+  "application",
+  "chat",
+  "lead_magnet",
+  "newsletter",
+] as const;
+
+export type LeadCaptureType = (typeof LEAD_CAPTURE_TYPES)[number];
+
+/** The allowlist entry for a capture that arrived with no utm_source. */
+export const NO_TRAFFIC_SOURCE = "(none)";
 
 export type GhlForwardInput = {
-  formType: GhlFormType;
+  formType: LeadCaptureType;
   fullName: string;
   email: string;
   submittedAt: string;
@@ -79,7 +99,7 @@ export const ghlForwardPayloadSchema = z.object({
   email: z.string(),
   phone: z.string().nullable(),
   submitted_at: z.string(),
-  form_type: z.enum(["booking", "application"]),
+  form_type: z.enum(LEAD_CAPTURE_TYPES),
   source_page: z.string().nullable(),
   utm_source: z.string().nullable(),
   utm_medium: z.string().nullable(),
@@ -133,32 +153,65 @@ export class GhlForwardError extends Error {
 }
 
 /**
- * Whether a forward should be queued at all.
+ * The parts of the admin settings row this module needs, structurally typed.
+ *
+ * Declared here rather than imported so `services/lead-forward-settings` can
+ * import this file for the capture vocabulary without the two importing each
+ * other.
+ */
+export type GhlForwardDestination = {
+  enabled: boolean;
+  webhookUrl?: string | null;
+  captureTypes: readonly LeadCaptureType[];
+  trafficSourceMode: "all" | "allowlist";
+  trafficSources: readonly string[];
+  fieldIds?: Record<string, string>;
+};
+
+/**
+ * Whether there is anywhere to send, at all.
  *
  * Kept separate from `resolveGhlForwardTarget` so the submit path can answer
- * "is this switched on" without parsing field ids — a malformed
- * WESCALE_GHL_FIELD_IDS must fail a drain, never a visitor's submit.
+ * "is this switched on" without parsing field ids — a malformed field id map
+ * must fail a drain, never a visitor's submit.
  */
-export function ghlForwardConfigured(env: GhlForwardEnv): boolean {
+export function ghlForwardConfigured(
+  env: GhlForwardEnv,
+  destination?: Pick<GhlForwardDestination, "webhookUrl">,
+): boolean {
+  if (destination?.webhookUrl) return true;
   if (env.WESCALE_GHL_WEBHOOK_URL) return true;
   return Boolean(env.WESCALE_GHL_TOKEN && env.WESCALE_GHL_LOCATION_ID);
 }
 
-/** Webhook wins when both are configured: it is the mode they can change without us. */
-export function resolveGhlForwardTarget(env: GhlForwardEnv): GhlForwardTarget {
-  if (env.WESCALE_GHL_WEBHOOK_URL) {
-    return { mode: "webhook", url: env.WESCALE_GHL_WEBHOOK_URL };
+/**
+ * Webhook wins when both exist: it is the transport the partner can change
+ * without us. The admin-entered URL wins over the env var, which stays as the
+ * way to configure a destination before the settings table is applied.
+ */
+export function resolveGhlForwardTarget(
+  env: GhlForwardEnv,
+  destination?: Pick<GhlForwardDestination, "webhookUrl" | "fieldIds">,
+): GhlForwardTarget {
+  const webhookUrl = destination?.webhookUrl || env.WESCALE_GHL_WEBHOOK_URL;
+  if (webhookUrl) {
+    return { mode: "webhook", url: webhookUrl };
   }
   if (!env.WESCALE_GHL_TOKEN || !env.WESCALE_GHL_LOCATION_ID) {
     throw new GhlForwardConfigError(
-      "GHL forwarding needs WESCALE_GHL_WEBHOOK_URL, or WESCALE_GHL_TOKEN with WESCALE_GHL_LOCATION_ID.",
+      "GHL forwarding needs a webhook URL, or WESCALE_GHL_TOKEN with WESCALE_GHL_LOCATION_ID.",
     );
   }
   return {
     mode: "api",
     token: env.WESCALE_GHL_TOKEN,
     locationId: env.WESCALE_GHL_LOCATION_ID,
-    fieldIds: parseFieldIds(env.WESCALE_GHL_FIELD_IDS),
+    // Admin-entered ids win; the env map stays usable before the settings
+    // table is applied.
+    fieldIds:
+      destination?.fieldIds && Object.keys(destination.fieldIds).length > 0
+        ? destination.fieldIds
+        : parseFieldIds(env.WESCALE_GHL_FIELD_IDS),
   };
 }
 
@@ -259,18 +312,27 @@ export function buildGhlForwardEvent({
 }
 
 /**
- * Which of our form types a partner should receive.
+ * Whether this capture goes to the partner at all.
  *
- * `newsletter` is deliberately not forwarded: WeScale asked for application
- * and booking submissions, and a newsletter subscriber has not asked to be
- * called by anybody. Change this only with Adam's say-so.
+ * The decision is made once, at submit time, and frozen with the payload: a
+ * capture the settings excluded is never queued, so turning a type on later
+ * starts the flow from that moment rather than back-filling people who were
+ * deliberately held back.
  */
-export function ghlFormTypeFor(
-  formType: "apply" | "contact" | "newsletter",
-): GhlFormType | null {
-  if (formType === "apply") return "application";
-  if (formType === "contact") return "booking";
-  return null;
+export function shouldForwardCapture(
+  settings: {
+    enabled: boolean;
+    captureTypes: readonly LeadCaptureType[];
+    trafficSourceMode: "all" | "allowlist";
+    trafficSources: readonly string[];
+  },
+  capture: { captureType: LeadCaptureType; utmSource?: string | null },
+): boolean {
+  if (!settings.enabled) return false;
+  if (!settings.captureTypes.includes(capture.captureType)) return false;
+  if (settings.trafficSourceMode === "all") return true;
+  const source = capture.utmSource?.trim() || NO_TRAFFIC_SOURCE;
+  return settings.trafficSources.includes(source);
 }
 
 export type QueueGhlForwardResult =
@@ -292,22 +354,31 @@ export async function queueGhlForward(
   input: {
     leadSubmissionId: string;
     sessionId?: string | null;
-    formType: "apply" | "contact" | "newsletter";
+    captureType: LeadCaptureType;
     lead: Omit<GhlForwardInput, "formType">;
     nowIso: string;
+    destination: GhlForwardDestination;
   },
   deps: { env?: GhlForwardEnv } = {},
 ): Promise<QueueGhlForwardResult> {
   const env = deps.env ?? config;
-  if (!ghlForwardConfigured(env)) return "disabled";
-
-  const formType = ghlFormTypeFor(input.formType);
-  if (!formType) return "skipped";
+  if (!ghlForwardConfigured(env, input.destination)) return "disabled";
+  if (
+    !shouldForwardCapture(input.destination, {
+      captureType: input.captureType,
+      utmSource: input.lead.utmSource,
+    })
+  ) {
+    return "skipped";
+  }
 
   const event = buildGhlForwardEvent({
     leadSubmissionId: input.leadSubmissionId,
     sessionId: input.sessionId,
-    payload: buildGhlForwardPayload({ ...input.lead, formType }),
+    payload: buildGhlForwardPayload({
+      ...input.lead,
+      formType: input.captureType,
+    }),
     nowIso: input.nowIso,
   });
 

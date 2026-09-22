@@ -197,6 +197,13 @@ class FakeQuery {
     return { data: row, error: row ? null : { message: "Not found" } };
   }
 
+  // Tables this fake holds no rows for — lead_forward_settings, read by the
+  // ghl_forward drain — answer "no row", which is how a real read of an
+  // unconfigured destination answers.
+  async maybeSingle() {
+    return { data: this.rows()[0] ?? null, error: null };
+  }
+
   // The update stays pending until the query is awaited, so filters added
   // after it (`.eq(...).in(...).select()`) still apply. That mirrors
   // PostgREST, where a conditional update matches zero rows when its filters

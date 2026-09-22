@@ -43,7 +43,7 @@ utm_content, gclid, fbclid,
 city, state, business_stage, budget, timeline, message   (application only)
 ```
 
-`form_type` is `"booking"` (our `contact`) or `"application"` (our `apply`).
+`form_type` carries the capture type verbatim — see **Capture types** below.
 
 Deliberately withheld: the attribution session blob (session ids, referrer
 chain, landing URLs), user agent, Close lead/contact ids, lifecycle and
@@ -51,14 +51,37 @@ call-status columns, notification state, qualification session ids.
 
 ## Config
 
-- `WESCALE_GHL_WEBHOOK_URL` — option A. Wins if both are set.
-- `WESCALE_GHL_TOKEN` + `WESCALE_GHL_LOCATION_ID` — option B, private
-  integration token with `contacts.write`.
-- `WESCALE_GHL_FIELD_IDS` — option B only. JSON map of payload key to GHL
-  custom field **id**. The OpenAPI spec marks `id` required on a customFields
-  entry, so field keys alone are not enough.
+Edited at **/admin/settings/lead-forwarding** (super admin only), stored in
+`lead_forward_settings`:
 
-None set means nothing is enqueued — no dead rows accumulate before go-live.
+- on/off, the webhook URL, which capture types forward, whether every traffic
+  source forwards or only an allowlist, and the partner's custom field ids.
+- A "send test lead" button, because GoHighLevel's inbound-webhook trigger can
+  only build a field mapping from a request it has actually received.
+
+Credentials that stay environment variables:
+
+- `WESCALE_GHL_TOKEN` + `WESCALE_GHL_LOCATION_ID` — the API transport's private
+  integration token with `contacts.write`. A live partner token does not belong
+  in a table an admin session can read.
+- `WESCALE_GHL_WEBHOOK_URL`, `WESCALE_GHL_FIELD_IDS` — still honoured, as the
+  way to configure a destination before the settings table is applied. The
+  admin-entered values win.
+
+Off, or a missing settings table, means nothing is enqueued — no dead rows
+accumulate before go-live.
+
+## Capture types
+
+`booking` · `application` · `chat` · `lead_magnet` · `newsletter`. The label
+travels in the payload's `form_type`, so a roadmap download is never presented
+to a partner's reps as a call request. Defaults forward the first three.
+
+Which types forward is decided once, at submit time, and frozen with the
+payload: switching a type on later starts the flow from that moment rather
+than back-filling people who were deliberately held back. The destination is
+read at drain time instead, so fixing a wrong webhook URL redirects events
+already queued.
 
 ## Unsafe outcomes checked
 
@@ -74,7 +97,25 @@ None set means nothing is enqueued — no dead rows accumulate before go-live.
 
 ## Verification
 
-Unit tests on the payload builder, target resolution, both transports and the
-disabled path. Live verification is blocked until WeScale sends a URL or token;
-`scripts/ghl-forward-test.mjs` fires one sample payload at a URL on demand,
-which is also what their ops team needs to map fields against.
+Unit tests on the payload builder, the selection filter, target resolution,
+both transports, the fail-soft enqueue and the settings validation; drain tests
+proving a forward leaves the lead row untouched and a partner 502 fails only
+the event; component tests on the settings page.
+
+Live verification against WeScale's GoHighLevel is blocked until they send a
+URL or token. `scripts/ghl-forward-test.mjs` and the page's test button each
+fire one sample, which is also what their ops team needs to map fields against.
+
+## Unsafe outcomes checked (page)
+
+- An admin pasting an internal URL and having the server fetch it — the webhook
+  URL is https-only and rejects loopback, private ranges and cloud metadata
+  hosts.
+- Switching the feed on with nowhere to send, nothing selected, or an empty
+  allowlist — each refused at save with the fix named.
+- A saved traffic source with no recent traffic silently dropped on the next
+  save — it stays rendered and ticked.
+- A new campaign silently not forwarding — "every traffic source" is the
+  default and explicitly covers sources that do not exist yet.
+- A read-only admin changing the feed — every control is disabled and the
+  action requires super admin.

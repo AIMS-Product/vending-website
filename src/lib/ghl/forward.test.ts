@@ -4,7 +4,7 @@ import {
   buildGhlForwardPayload,
   forwardLeadToGhl,
   ghlForwardConfigured,
-  ghlFormTypeFor,
+  shouldForwardCapture,
   GhlForwardConfigError,
   GhlForwardError,
   ghlForwardPayloadSchema,
@@ -138,11 +138,73 @@ describe("buildGhlForwardPayload", () => {
   });
 });
 
-describe("ghlFormTypeFor", () => {
-  it("never forwards a newsletter signup", () => {
-    expect(ghlFormTypeFor("newsletter")).toBeNull();
-    expect(ghlFormTypeFor("apply")).toBe("application");
-    expect(ghlFormTypeFor("contact")).toBe("booking");
+describe("shouldForwardCapture", () => {
+  const on = {
+    enabled: true,
+    captureTypes: ["booking", "application", "chat"] as const,
+    trafficSourceMode: "all" as const,
+    trafficSources: [] as const,
+  };
+
+  it("sends nothing while the feed is off", () => {
+    expect(
+      shouldForwardCapture(
+        { ...on, enabled: false },
+        {
+          captureType: "booking",
+        },
+      ),
+    ).toBe(false);
+  });
+
+  it("only sends the capture types an admin selected", () => {
+    expect(shouldForwardCapture(on, { captureType: "booking" })).toBe(true);
+    expect(shouldForwardCapture(on, { captureType: "chat" })).toBe(true);
+    // A roadmap download and a newsletter signup did not ask for a call.
+    expect(shouldForwardCapture(on, { captureType: "lead_magnet" })).toBe(
+      false,
+    );
+    expect(shouldForwardCapture(on, { captureType: "newsletter" })).toBe(false);
+  });
+
+  it("forwards a brand new traffic source in 'all' mode", () => {
+    // The trap this mode exists to avoid: a campaign launched next week must
+    // not silently stop forwarding because nobody ticked a new box.
+    expect(
+      shouldForwardCapture(on, {
+        captureType: "booking",
+        utmSource: "tiktok-launched-today",
+      }),
+    ).toBe(true);
+  });
+
+  it("honours an allowlist, with '(none)' covering no utm_source", () => {
+    const allowlist = {
+      ...on,
+      trafficSourceMode: "allowlist" as const,
+      trafficSources: ["google", "(none)"],
+    };
+    expect(
+      shouldForwardCapture(allowlist, {
+        captureType: "booking",
+        utmSource: "google",
+      }),
+    ).toBe(true);
+    expect(
+      shouldForwardCapture(allowlist, {
+        captureType: "booking",
+        utmSource: "youtube",
+      }),
+    ).toBe(false);
+    expect(shouldForwardCapture(allowlist, { captureType: "booking" })).toBe(
+      true,
+    );
+    expect(
+      shouldForwardCapture(allowlist, {
+        captureType: "booking",
+        utmSource: "   ",
+      }),
+    ).toBe(true);
   });
 });
 
@@ -156,6 +218,15 @@ describe("resolveGhlForwardTarget", () => {
         WESCALE_GHL_LOCATION_ID: "loc1",
       }),
     ).toBe(true);
+  });
+
+  it("prefers the admin-entered webhook over the env var", () => {
+    expect(
+      resolveGhlForwardTarget(
+        { WESCALE_GHL_WEBHOOK_URL: "https://env.example.com/old" },
+        { webhookUrl: "https://hooks.example.com/new" },
+      ),
+    ).toEqual({ mode: "webhook", url: "https://hooks.example.com/new" });
   });
 
   it("prefers the webhook when both are configured", () => {
@@ -258,27 +329,52 @@ describe("queueGhlForward", () => {
     };
   };
 
-  const input = {
-    leadSubmissionId: "lead-1",
-    formType: "contact" as const,
-    nowIso: "2026-09-22T17:00:00.000Z",
-    lead: bookingLead,
+  const destination = {
+    enabled: true,
+    webhookUrl: "https://hooks.example.com/abc",
+    captureTypes: ["booking", "application", "chat"] as const,
+    trafficSourceMode: "all" as const,
+    trafficSources: [] as const,
   };
 
-  it("queues nothing at all until credentials are set", async () => {
+  const input = {
+    leadSubmissionId: "lead-1",
+    captureType: "booking" as const,
+    nowIso: "2026-09-22T17:00:00.000Z",
+    lead: bookingLead,
+    destination,
+  };
+
+  it("queues nothing at all until there is somewhere to send", async () => {
     const { supabase, inserted } = client(null);
-    await expect(queueGhlForward(supabase, input, { env: {} })).resolves.toBe(
-      "disabled",
-    );
+    await expect(
+      queueGhlForward(
+        supabase,
+        { ...input, destination: { ...destination, webhookUrl: null } },
+        { env: {} },
+      ),
+    ).resolves.toBe("disabled");
     expect(inserted).toHaveLength(0);
   });
 
-  it("skips a newsletter signup", async () => {
+  it("queues nothing while the admin toggle is off", async () => {
+    const { supabase, inserted } = client(null);
+    await expect(
+      queueGhlForward(
+        supabase,
+        { ...input, destination: { ...destination, enabled: false } },
+        { env: {} },
+      ),
+    ).resolves.toBe("skipped");
+    expect(inserted).toHaveLength(0);
+  });
+
+  it("skips a capture type the admin did not select", async () => {
     const { supabase, inserted } = client(null);
     const result = await queueGhlForward(
       supabase,
-      { ...input, formType: "newsletter" },
-      { env: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" } },
+      { ...input, captureType: "lead_magnet" },
+      { env: {} },
     );
     expect(result).toBe("skipped");
     expect(inserted).toHaveLength(0);
@@ -286,26 +382,21 @@ describe("queueGhlForward", () => {
 
   it("queues one forward per lead, forever", async () => {
     const { supabase } = client(null);
-    const result = await queueGhlForward(supabase, input, {
-      env: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" },
-    });
-    expect(result).toBe("queued");
+    await expect(queueGhlForward(supabase, input, { env: {} })).resolves.toBe(
+      "queued",
+    );
 
     const duplicate = client({ code: "23505" });
     await expect(
-      queueGhlForward(duplicate.supabase, input, {
-        env: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" },
-      }),
+      queueGhlForward(duplicate.supabase, input, { env: {} }),
     ).resolves.toBe("exists");
   });
 
   it("never fails the submit when the queue insert fails", async () => {
     const { supabase } = client({ code: "23514", message: "check violation" });
-    await expect(
-      queueGhlForward(supabase, input, {
-        env: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" },
-      }),
-    ).resolves.toBe("failed");
+    await expect(queueGhlForward(supabase, input, { env: {} })).resolves.toBe(
+      "failed",
+    );
   });
 });
 

@@ -33,6 +33,7 @@ type AdminSection =
   | "libraries"
   | "settings"
   | "routes"
+  | "lead-forwarding"
   | "attribution";
 type AdminShellIconName = Extract<
   AdminIconName,
@@ -202,6 +203,13 @@ const accountSections: AdminNavSection[] = [
     href: "/admin/settings/routes",
     description: "Builder URL prefixes",
     icon: "layers",
+  },
+  {
+    id: "lead-forwarding",
+    label: "Lead forwarding",
+    href: "/admin/settings/lead-forwarding",
+    description: "Send captures to partners",
+    icon: "mail",
   },
   {
     id: "attribution",

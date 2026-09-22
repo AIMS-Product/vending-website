@@ -24,6 +24,7 @@ import {
   GHL_FORWARD_EVENT_TYPE,
   type GhlForwardEnv,
 } from "@/lib/ghl/forward";
+import { getLeadForwardSettings } from "@/lib/services/lead-forward-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -447,7 +448,7 @@ async function dispatchCloseEvent(
     return syncWarmReplyActivity(event, { client, close, lead });
   }
   if (event.event_type === GHL_FORWARD_EVENT_TYPE) {
-    return syncGhlForward(event, { fetchImpl, ghlEnv });
+    return syncGhlForward(event, { client, fetchImpl, ghlEnv });
   }
   throw new Error(`Unsupported Close sync event type: ${event.event_type}`);
 }
@@ -464,13 +465,25 @@ async function dispatchCloseEvent(
  */
 async function syncGhlForward(
   event: CloseSyncEventRow,
-  { fetchImpl, ghlEnv }: { fetchImpl?: typeof fetch; ghlEnv: GhlForwardEnv },
+  {
+    client,
+    fetchImpl,
+    ghlEnv,
+  }: {
+    client: CloseSyncClient;
+    fetchImpl?: typeof fetch;
+    ghlEnv: GhlForwardEnv;
+  },
 ): Promise<CloseContactInfo> {
   const payload = ghlForwardPayloadSchema.safeParse(event.payload);
   if (!payload.success) {
     throw new Error("GHL forward payload is not the expected shape.");
   }
-  const target = resolveGhlForwardTarget(ghlEnv);
+  // The destination is read at drain time, not frozen with the payload: an
+  // admin who fixes a wrong webhook URL wants the events already queued to go
+  // to the new one. WHICH captures were forwarded stays frozen at submit.
+  const destination = await getLeadForwardSettings(client);
+  const target = resolveGhlForwardTarget(ghlEnv, destination);
   await forwardLeadToGhl(payload.data, target, fetchImpl);
   return { leadId: event.close_lead_id, contactId: event.close_contact_id };
 }

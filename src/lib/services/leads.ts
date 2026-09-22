@@ -22,7 +22,8 @@ import {
 } from "@/lib/close/dedupe";
 import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
 import { queueWarmReplyActivity } from "@/lib/close/warm-reply-activity";
-import { queueGhlForward } from "@/lib/ghl/forward";
+import { queueGhlForward, type LeadCaptureType } from "@/lib/ghl/forward";
+import { getLeadForwardSettings } from "@/lib/services/lead-forward-settings";
 import type { Database, Json, Tables } from "@/types/database";
 
 type LeadRow = Tables<"lead_submissions">;
@@ -215,7 +216,8 @@ export async function submitLead(
   // set.
   await queueGhlForward(client, {
     leadSubmissionId: inserted.id,
-    formType: lead.formType,
+    captureType: captureTypeFor(lead),
+    destination: await getLeadForwardSettings(client),
     nowIso: closeSyncQueuedAt,
     lead: {
       fullName: lead.fullName,
@@ -286,6 +288,21 @@ export async function submitLead(
     notificationStatus,
     notificationError,
   };
+}
+
+/**
+ * Which kind of capture the partner feed sees this as.
+ *
+ * A chat capture reaches submitLead through the same door as a form, so it is
+ * separated here: somebody who typed a question in the widget did not fill in
+ * the booking form, and the admin settings let those be forwarded, or not,
+ * independently.
+ */
+function captureTypeFor(lead: ValidLeadInput): LeadCaptureType {
+  if (lead.formType === "newsletter") return "newsletter";
+  if (lead.metadata?.source === CHATBOT_LEAD_SOURCE) return "chat";
+  if (lead.formType === "apply") return "application";
+  return "booking";
 }
 
 function parseLeadInput(input: SubmitLeadInput) {
