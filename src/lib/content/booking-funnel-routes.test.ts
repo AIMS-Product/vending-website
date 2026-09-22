@@ -85,6 +85,7 @@ describe("booking funnel routes", () => {
       "utf8",
     );
     expect(source).toContain("isFunnelChromePath(pathname)");
+    expect(source).toContain("isLegacyLeadPath(pathname)");
     expect(source).toContain("if (suppressIdleTeaser) return;");
   });
 

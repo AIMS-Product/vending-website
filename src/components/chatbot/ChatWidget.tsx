@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
+import { isLegacyLeadPath } from "@/lib/content/legacy-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -184,8 +185,11 @@ export function ChatWidget() {
   // footer are gone. It holds just as hard after the form: a teaser over the
   // questionnaire or the confirmation calendar interrupts a lead mid-booking.
   // The launcher still renders, so anyone who wants help can start the
-  // conversation; only the unprompted teaser is suppressed.
-  const suppressIdleTeaser = isFunnelChromePath(pathname);
+  // conversation; only the unprompted teaser is suppressed. The legacy lead
+  // pages keep their chrome for now but are booking pages all the same: the
+  // teaser opened on top of their Calendly month grid (UI audit, 2026-09-22).
+  const suppressIdleTeaser =
+    isFunnelChromePath(pathname) || isLegacyLeadPath(pathname);
 
   const setOpen = useCallback((value: boolean) => {
     setOpenState(value);
@@ -799,7 +803,7 @@ export function ChatWidget() {
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-[90] flex flex-col items-end gap-2",
+        "fixed right-4 bottom-[calc(1rem+var(--sticky-cta-offset,0px))] z-[90] flex flex-col items-end gap-2 transition-[bottom] duration-300",
         // Below 640px an open panel takes the whole screen: the 420x680 panel
         // leaves no room for a Calendly month view on a phone, which is
         // exactly where the booking has to work.

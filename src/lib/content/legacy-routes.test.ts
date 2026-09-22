@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getLegacyLeadRoute,
+  isLegacyLeadPath,
   legacyLeadRoutes,
 } from "@/lib/content/legacy-routes";
 import { CONTACT_CLONE_SLUGS } from "@/lib/content/contact-clone-pages";
@@ -62,5 +63,19 @@ describe("legacy lead routes", () => {
         expect(route.embed.kind).toBe("calendly");
       }
     }
+  });
+});
+
+describe("isLegacyLeadPath", () => {
+  it("matches every registered lead page", () => {
+    for (const route of legacyLeadRoutes) {
+      expect(isLegacyLeadPath(route.path)).toBe(true);
+    }
+  });
+
+  it("does not match other pages or deeper paths", () => {
+    expect(isLegacyLeadPath("/about")).toBe(false);
+    expect(isLegacyLeadPath("/")).toBe(false);
+    expect(isLegacyLeadPath("/booking-ig/extra")).toBe(false);
   });
 });
