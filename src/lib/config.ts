@@ -78,6 +78,20 @@ const envSchema = z.object({
   GHL_API_KEY: optionalTrimmedOptionalEnv,
   GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
   /**
+   * Forwarding leads OUT to WeScale's GoHighLevel sub-account — a different
+   * account from the GHL_* pair above, which is our own and read-only.
+   *
+   * Either the inbound-webhook URL from a workflow of theirs, or a private
+   * integration token with `contacts.write` plus their location id.
+   * WESCALE_GHL_FIELD_IDS is a JSON object mapping a payload key to a GHL
+   * custom field id, used only on the token path. All absent means no forward
+   * is queued at all, so nothing accumulates before they send credentials.
+   */
+  WESCALE_GHL_WEBHOOK_URL: optionalTrimmedOptionalEnv,
+  WESCALE_GHL_TOKEN: optionalTrimmedOptionalEnv,
+  WESCALE_GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
+  WESCALE_GHL_FIELD_IDS: optionalTrimmedOptionalEnv,
+  /**
    * Metricool REST API: the user token (sent as X-Mc-Auth), the account's
    * userId and the brands' blogIds (comma list; the single BLOG_ID is the
    * fallback). Read-only use. Absent means the metricool-posts connector
@@ -213,6 +227,10 @@ const parsed = envSchema.safeParse({
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
+  WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,
+  WESCALE_GHL_LOCATION_ID: process.env.WESCALE_GHL_LOCATION_ID,
+  WESCALE_GHL_FIELD_IDS: process.env.WESCALE_GHL_FIELD_IDS,
   METRICOOL_API_KEY: process.env.METRICOOL_API_KEY,
   METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
   METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,

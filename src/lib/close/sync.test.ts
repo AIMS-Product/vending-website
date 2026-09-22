@@ -357,6 +357,29 @@ describe("Close API client", () => {
   });
 });
 
+const ghlForwardSample = {
+  first_name: "Jane",
+  last_name: "Buyer",
+  email: "buyer@example.com",
+  phone: "415-555-0101",
+  submitted_at: "2026-06-17T09:00:00.000Z",
+  form_type: "booking",
+  source_page: "/booking-youtube",
+  utm_source: "youtube",
+  utm_medium: "video",
+  utm_campaign: "buy-first-machine",
+  utm_term: null,
+  utm_content: null,
+  gclid: null,
+  fbclid: null,
+  city: null,
+  state: null,
+  business_stage: null,
+  budget: null,
+  timeline: null,
+  message: null,
+};
+
 describe("adminRunCloseSync", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -401,6 +424,83 @@ describe("adminRunCloseSync", () => {
       close_sync_status: "needs_review",
       close_sync_last_error: "Multiple Close contacts matched",
     });
+    expect(
+      fake.state.updates.filter((u) => u.table === "lead_submissions"),
+    ).toHaveLength(0);
+  });
+
+  it("forwards a ghl_forward event to the partner and leaves Close alone", async () => {
+    const payload = ghlForwardSample;
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          id: "evt_ghl",
+          event_type: "ghl_forward",
+          dedupe_key: "ghl_forward:lead_local_1",
+          payload: payload as unknown as Json,
+        }),
+      ],
+      leads: [makeLead({ close_sync_status: "synced" })],
+    });
+    const posted: string[] = [];
+    const fetchMock = vi.fn(async (url: RequestInfo | URL) => {
+      posted.push(String(url));
+      return { ok: true, status: 200, text: async () => "{}" } as never;
+    });
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "key" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      ghlEnv: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" },
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ scanned: 1, synced: 1 });
+    // The partner got the payload, and Close was never called.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(posted).toEqual(["https://hooks.example.com/abc"]);
+    expect(fake.state.events[0].status).toBe("synced");
+    // The lead row is untouched: this event is not its Close sync state.
+    expect(
+      fake.state.updates.filter((u) => u.table === "lead_submissions"),
+    ).toHaveLength(0);
+  });
+
+  it("a partner outage never marks the LEAD's Close sync failed", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          id: "evt_ghl",
+          event_type: "ghl_forward",
+          dedupe_key: "ghl_forward:lead_local_1",
+          payload: ghlForwardSample as unknown as Json,
+        }),
+      ],
+      leads: [makeLead({ close_sync_status: "synced" })],
+    });
+    const fetchMock = vi.fn(async (url: RequestInfo | URL) => {
+      expect(String(url)).toBe("https://hooks.example.com/abc");
+      return {
+        ok: false,
+        status: 502,
+        text: async () => "Bad gateway",
+      } as never;
+    });
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "key" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      ghlEnv: { WESCALE_GHL_WEBHOOK_URL: "https://hooks.example.com/abc" },
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    // Their outage fails the event, which will retry, not the lead.
+    expect(result).toMatchObject({ failed: 1 });
+    expect(fake.state.events[0].last_error).toContain("502");
+    expect(fake.state.events[0].status).toBe("failed");
+    expect(fake.state.leads[0].close_sync_status).toBe("synced");
     expect(
       fake.state.updates.filter((u) => u.table === "lead_submissions"),
     ).toHaveLength(0);

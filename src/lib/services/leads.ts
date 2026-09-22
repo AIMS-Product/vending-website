@@ -22,6 +22,7 @@ import {
 } from "@/lib/close/dedupe";
 import { CHATBOT_LEAD_SOURCE } from "@/lib/chatbot/lead-capture";
 import { queueWarmReplyActivity } from "@/lib/close/warm-reply-activity";
+import { queueGhlForward } from "@/lib/ghl/forward";
 import type { Database, Json, Tables } from "@/types/database";
 
 type LeadRow = Tables<"lead_submissions">;
@@ -205,6 +206,37 @@ export async function submitLead(
     sourcePath: lead.sourcePath,
     message: lead.message,
     capturedAt: now(),
+  });
+
+  // Hand the capture to WeScale's GoHighLevel. New captures only, same as the
+  // warm reply above, and fail-soft by the same contract: the lead is stored
+  // and queued to Close before this runs, and a partner hand-off is never
+  // worth failing a submit over. No-ops entirely until their credentials are
+  // set.
+  await queueGhlForward(client, {
+    leadSubmissionId: inserted.id,
+    formType: lead.formType,
+    nowIso: closeSyncQueuedAt,
+    lead: {
+      fullName: lead.fullName,
+      email: lead.email,
+      phone: lead.phone,
+      submittedAt: closeSyncQueuedAt,
+      sourcePage: lead.sourcePath,
+      utmSource: lead.utmSource,
+      utmMedium: lead.utmMedium,
+      utmCampaign: lead.utmCampaign,
+      utmTerm: lead.utmTerm,
+      utmContent: lead.utmContent,
+      gclid: lead.gclid,
+      fbclid: lead.fbclid,
+      city: lead.city,
+      stateRegion: lead.stateRegion,
+      businessStage: lead.businessStage,
+      budget: lead.budget,
+      timeline: lead.timeline,
+      message: lead.message,
+    },
   });
 
   let notificationStatus: LeadRow["status"] = inserted.status;

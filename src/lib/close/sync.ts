@@ -17,6 +17,13 @@ import {
   CloseWarmReplyNoSenderError,
   syncWarmReplyActivity,
 } from "@/lib/close/warm-reply-activity";
+import {
+  forwardLeadToGhl,
+  ghlForwardPayloadSchema,
+  resolveGhlForwardTarget,
+  GHL_FORWARD_EVENT_TYPE,
+  type GhlForwardEnv,
+} from "@/lib/ghl/forward";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -58,10 +65,17 @@ export type AdminRunCloseSyncDeps = {
   fetchImpl?: typeof fetch;
   now?: () => Date;
   maxEvents?: number;
+  /** Partner forwarding credentials. Injected so the drain is testable. */
+  ghlEnv?: GhlForwardEnv;
 };
 
 type CloseContactInfo = {
-  leadId: string;
+  /**
+   * Null only for an event that never touches Close — today just
+   * `ghl_forward`, which forwards a lead to a partner's GoHighLevel and leaves
+   * this lead's Close record exactly as it found it.
+   */
+  leadId: string | null;
   contactId: string | null;
 };
 
@@ -155,6 +169,7 @@ export async function adminRunCloseSync(
         client,
         closeConfig,
         fetchImpl: deps.fetchImpl,
+        ghlEnv: deps.ghlEnv ?? config,
         now,
       });
     } catch (error) {
@@ -187,11 +202,13 @@ async function processCloseSyncEvent(
     client,
     closeConfig,
     fetchImpl,
+    ghlEnv,
     now,
   }: {
     client: CloseSyncClient;
     closeConfig: CloseConfig;
     fetchImpl?: typeof fetch;
+    ghlEnv: GhlForwardEnv;
     now: Date;
   },
 ): Promise<"synced" | "failed" | "dead_letter" | "needs_review" | "skipped"> {
@@ -241,6 +258,8 @@ async function processCloseSyncEvent(
       close,
       closeConfig,
       lead,
+      fetchImpl,
+      ghlEnv,
     });
 
     await updateEvent(client, event.id, {
@@ -268,11 +287,16 @@ async function processCloseSyncEvent(
       // post. writeChatbotEngagementNote swallows its own errors; the catch
       // here covers the unexpected rest. A lead with no chat behind it exits
       // after one indexed Supabase read and never touches Close.
+      const closeLeadId = syncedIds.leadId;
       try {
+        // Every event type that writes lead sync state creates or enriches the
+        // Close lead, so this is always set here; the check is what lets the
+        // id be nullable for `ghl_forward`, which never reaches this branch.
+        if (!closeLeadId) return "synced";
         await writeChatbotEngagementNote(
           {
             leadSubmissionId: event.lead_submission_id,
-            closeLeadId: syncedIds.leadId,
+            closeLeadId,
           },
           // Reuse the drain's own Supabase client rather than opening a
           // second admin connection, and so a test's injected client is
@@ -283,7 +307,7 @@ async function processCloseSyncEvent(
         await writeChatbotHandoffsToClose(
           {
             leadSubmissionId: event.lead_submission_id,
-            closeLeadId: syncedIds.leadId,
+            closeLeadId,
           },
           { client },
         );
@@ -360,8 +384,21 @@ async function processCloseSyncEvent(
  * Close" and into the row that means "did this job run".
  */
 function writesLeadSyncState(event: CloseSyncEventRow): boolean {
-  return event.event_type !== "warm_reply_activity";
+  return !NON_CLOSE_EVENT_TYPES.has(event.event_type);
 }
+
+/**
+ * Event types that do not touch Close, so their outcome is not this lead's
+ * Close sync state. `ghl_forward` pushes the lead to a partner's GoHighLevel:
+ * an outage there must not mark leads `failed`, light up the /admin/leads
+ * failed-sync banner, or overwrite a real Close diagnosis in
+ * close_sync_last_error. The event row still records its own status, retries
+ * and errors.
+ */
+const NON_CLOSE_EVENT_TYPES = new Set<string>([
+  "warm_reply_activity",
+  GHL_FORWARD_EVENT_TYPE,
+]);
 
 async function dispatchCloseEvent(
   event: CloseSyncEventRow,
@@ -370,11 +407,15 @@ async function dispatchCloseEvent(
     close,
     closeConfig,
     lead,
+    fetchImpl,
+    ghlEnv,
   }: {
     client: CloseSyncClient;
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
+    fetchImpl?: typeof fetch;
+    ghlEnv: GhlForwardEnv;
   },
 ): Promise<CloseContactInfo> {
   if (event.event_type === "lead_create_or_update") {
@@ -405,7 +446,33 @@ async function dispatchCloseEvent(
   if (event.event_type === "warm_reply_activity") {
     return syncWarmReplyActivity(event, { client, close, lead });
   }
+  if (event.event_type === GHL_FORWARD_EVENT_TYPE) {
+    return syncGhlForward(event, { fetchImpl, ghlEnv });
+  }
   throw new Error(`Unsupported Close sync event type: ${event.event_type}`);
+}
+
+/**
+ * Push one lead to WeScale's GoHighLevel.
+ *
+ * Everything sent is already in the event payload, frozen at submit time, so
+ * this never reads `lead_submissions` and cannot widen what a partner sees.
+ * The payload is re-validated because it has been through the database: a row
+ * edited by hand or written by an older build should fail the event, not send
+ * a malformed contact. Close ids come back untouched — this event neither
+ * creates nor enriches a Close record.
+ */
+async function syncGhlForward(
+  event: CloseSyncEventRow,
+  { fetchImpl, ghlEnv }: { fetchImpl?: typeof fetch; ghlEnv: GhlForwardEnv },
+): Promise<CloseContactInfo> {
+  const payload = ghlForwardPayloadSchema.safeParse(event.payload);
+  if (!payload.success) {
+    throw new Error("GHL forward payload is not the expected shape.");
+  }
+  const target = resolveGhlForwardTarget(ghlEnv);
+  await forwardLeadToGhl(payload.data, target, fetchImpl);
+  return { leadId: event.close_lead_id, contactId: event.close_contact_id };
 }
 
 type SourceFields = {

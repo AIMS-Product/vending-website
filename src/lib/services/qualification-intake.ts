@@ -25,6 +25,7 @@ import {
   isBookingIntentForm,
   queueWarmReplyActivity,
 } from "@/lib/close/warm-reply-activity";
+import { queueGhlForward } from "@/lib/ghl/forward";
 import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
@@ -206,6 +207,34 @@ export async function createQualificationIntakeSession(
       sourcePath: intake.sourcePath,
       message: null,
       capturedAt: now,
+    });
+
+    // Hand the capture to WeScale's GoHighLevel, behind the same gate: a
+    // newsletter subscriber reaches this function too and has not asked any
+    // partner to call them. Rides its own dedupe key and is fail-soft, so a
+    // re-submit queues nothing new and an outage never fails an intake that
+    // has already been accepted. No-ops until their credentials are set.
+    await queueGhlForward(client, {
+      leadSubmissionId: lead.id,
+      sessionId: session.id,
+      // Every intake lead is stored as `contact`; the apply form's extra
+      // answers are collected on the leads.ts path, not this one.
+      formType: "contact",
+      nowIso,
+      lead: {
+        fullName: intake.fullName,
+        email: intake.email,
+        phone: intake.phone,
+        submittedAt: nowIso,
+        sourcePage: intake.sourcePath,
+        utmSource: intake.utmSource,
+        utmMedium: intake.utmMedium,
+        utmCampaign: intake.utmCampaign,
+        utmTerm: intake.utmTerm,
+        utmContent: intake.utmContent,
+        gclid: intake.gclid,
+        fbclid: intake.fbclid,
+      },
     });
   }
 
