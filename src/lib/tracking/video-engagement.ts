@@ -44,6 +44,17 @@ export function percentWatched(
 }
 
 /**
+ * The first moment stored views mean what they say.
+ *
+ * Until the audible gate below deployed, a muted autoplay was recorded as
+ * viewing, so every `lead_video_views` row first played before this cannot
+ * tell a watcher from an open tab. Every reader filters on it rather than the
+ * rows being deleted: the evidence stays, the reports stop repeating it. Set a
+ * few minutes past the deploy so no pre-fix row slips through.
+ */
+export const VIDEO_VIEWS_TRUSTED_FROM = "2026-09-22T23:45:00Z";
+
+/**
  * Percent watched, counting only playback the visitor can hear.
  *
  * Vidalytics autoplays every player muted behind a "Click to unmute" card, so

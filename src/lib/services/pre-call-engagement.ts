@@ -5,6 +5,7 @@ import {
   preCallVideos,
 } from "@/lib/content/pre-call-resources";
 import { chunk, ID_BATCH } from "@/lib/batch";
+import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
 
@@ -112,7 +113,8 @@ export async function loadEngagementBySession(
         client
           .from("lead_video_views")
           .select("vp_session_id, embed_id, max_percent, last_seen_at")
-          .in("vp_session_id", batch),
+          .in("vp_session_id", batch)
+          .gte("first_played_at", VIDEO_VIEWS_TRUSTED_FROM),
       ),
     );
     const rows: VideoViewRow[] = [];
