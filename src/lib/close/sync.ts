@@ -547,12 +547,24 @@ async function writeLeadToClose(
   const sourceFields = sourceCustomFields(event, lead, closeConfig);
   const closeIds = existingCloseIds(event, lead);
   if (closeIds.leadId) {
-    return updateKnownCloseLead(close, {
-      contact,
-      contactId: closeIds.contactId,
-      leadId: closeIds.leadId,
-      sourceFields,
-    });
+    try {
+      return await updateKnownCloseLead(close, {
+        contact,
+        contactId: closeIds.contactId,
+        leadId: closeIds.leadId,
+        sourceFields,
+      });
+    } catch (error) {
+      if (!(error instanceof CloseApiError && error.status === 404)) {
+        throw error;
+      }
+      // The stored id points at a Close lead that was merged or deleted since.
+      // A returning visitor inherits their last submission's ids, so this
+      // 404'd on every retry until the lead dead-lettered. The person is
+      // usually still in Close under the lead they were merged into: find
+      // them by email as if new. The update path is additive, so any write
+      // that landed before the 404 is harmless to repeat.
+    }
   }
 
   return syncUnknownCloseLead(close, {
@@ -564,10 +576,15 @@ async function writeLeadToClose(
   });
 }
 
+/**
+ * The lead row first. An event keeps the ids it was queued with, but the row is
+ * rewritten whenever a sync resolves the person afresh, so it is never older.
+ * Event-first sent enrichment to a Close lead merged away weeks earlier.
+ */
 function existingCloseIds(event: CloseSyncEventRow, lead: LeadRow | null) {
   return {
-    leadId: event.close_lead_id ?? lead?.close_lead_id ?? null,
-    contactId: event.close_contact_id ?? lead?.close_contact_id ?? null,
+    leadId: lead?.close_lead_id ?? event.close_lead_id ?? null,
+    contactId: lead?.close_contact_id ?? event.close_contact_id ?? null,
   };
 }
 
@@ -745,14 +762,26 @@ async function updateKnownCloseLead(
   return { leadId, contactId: contactId ?? null };
 }
 
+/**
+ * The Close contact to file this submit under. Every match carries the
+ * submitted email exactly, so duplicates are the same person twice: take the
+ * one on the lead a rep touched last. This used to park for a human, and four
+ * leads sat unsynced for weeks because nobody ever picked. The update that
+ * follows only adds details, so choosing either duplicate cannot overwrite
+ * anyone.
+ */
 async function findSingleCloseContact(close: CloseClient, email: string) {
   const matches = await close.searchContactsByEmail(email);
-  if (matches.data.length > 1) {
-    throw new CloseNeedsReviewError(
-      `Multiple Close contacts matched ${email}.`,
-    );
-  }
-  return matches.data[0] ?? null;
+  return (
+    matches.data.reduce<(typeof matches.data)[number] | null>(
+      (best, match) =>
+        !best ||
+        (match.lead_date_updated ?? "") > (best.lead_date_updated ?? "")
+          ? match
+          : best,
+      null,
+    ) ?? null
+  );
 }
 
 async function updateMatchedCloseContact(
@@ -918,7 +947,7 @@ async function syncQualificationEnrichment(
     isNewsletter: boolean;
   },
 ): Promise<CloseContactInfo> {
-  const leadId = event.close_lead_id ?? lead?.close_lead_id;
+  const leadId = existingCloseIds(event, lead).leadId;
   if (!leadId) {
     // Retryable, NOT needs_review. The Close record is created by this lead's
     // lead_create_or_update event, which normally drains first because it was
@@ -930,7 +959,7 @@ async function syncQualificationEnrichment(
     // dead-letters after max_attempts.
     throw new Error(await missingCloseLeadMessage(client, event));
   }
-  const contactId = event.close_contact_id ?? lead?.close_contact_id ?? null;
+  const contactId = existingCloseIds(event, lead).contactId;
   await close.createNote({
     lead_id: leadId,
     contact_id: contactId,
@@ -976,7 +1005,7 @@ async function syncStaleFollowUpTask(
     lead: LeadRow | null;
   },
 ): Promise<CloseContactInfo> {
-  const leadId = event.close_lead_id ?? lead?.close_lead_id;
+  const leadId = existingCloseIds(event, lead).leadId;
   if (!leadId) {
     throw new CloseNeedsReviewError(
       "Stale follow-up task is missing a Close lead ID.",
@@ -995,7 +1024,7 @@ async function syncStaleFollowUpTask(
   });
   return {
     leadId,
-    contactId: event.close_contact_id ?? lead?.close_contact_id ?? null,
+    contactId: existingCloseIds(event, lead).contactId,
   };
 }
 

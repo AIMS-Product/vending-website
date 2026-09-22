@@ -774,7 +774,7 @@ describe("adminRunCloseSync", () => {
     }
   });
 
-  it("reuses one clear Close contact match and flags ambiguous matches for review", async () => {
+  it("reuses one clear Close contact match", async () => {
     const single = buildClient();
     const singleFetch = vi
       .fn()
@@ -818,42 +818,212 @@ describe("adminRunCloseSync", () => {
     expect(singleFetch.mock.calls[0]?.[0]).toContain(
       `/lead/?query=${encodeURIComponent('email:"buyer@example.com"')}`,
     );
+  });
 
-    const ambiguous = buildClient({
-      events: [makeEvent({ id: "event_ambiguous" })],
-    });
-    const ambiguousFetch = vi.fn().mockResolvedValueOnce(
-      jsonResponse({
-        data: [
-          {
-            id: "lead_a",
-            contacts: [
-              { id: "cont_a", emails: [{ email: "buyer@example.com" }] },
-            ],
-          },
-          {
-            id: "lead_b",
-            contacts: [
-              { id: "cont_b", emails: [{ email: "buyer@example.com" }] },
-            ],
-          },
-        ],
-      }),
-    );
+  // Parking every duplicate for a human left four leads stuck for weeks: nobody
+  // ever picked one. Every match carries the submitted email exactly, so they
+  // are the same person, and the update is additive either way.
+  it("uses the one Close lead when every matching contact sits on it", async () => {
+    const fake = buildClient();
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_one",
+              contacts: [
+                { id: "cont_a", emails: [{ email: "buyer@example.com" }] },
+                { id: "cont_b", emails: [{ email: "buyer@example.com" }] },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_a",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "+14155550101" }],
+        }),
+      );
 
-    const ambiguousResult = await adminRunCloseSync({
-      client: ambiguous.client,
+    const result = await adminRunCloseSync({
+      client: fake.client,
       closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
-      fetchImpl: ambiguousFetch as unknown as typeof fetch,
+      fetchImpl: fetchMock as unknown as typeof fetch,
       now: () => new Date("2026-06-17T09:00:00.000Z"),
     });
 
-    expect(ambiguousResult).toMatchObject({ needsReview: 1, synced: 0 });
-    expect(ambiguous.state.events[0]).toMatchObject({
-      status: "needs_review",
-      last_error: "Multiple Close contacts matched buyer@example.com.",
+    expect(result).toMatchObject({ synced: 1, needsReview: 0 });
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_one",
+      close_contact_id: "cont_a",
     });
-    expect(ambiguousFetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("picks the most recently worked Close lead when duplicates span leads", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ id: "event_ambiguous" })],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_old",
+              date_updated: "2026-03-01T00:00:00+00:00",
+              contacts: [
+                { id: "cont_old", emails: [{ email: "buyer@example.com" }] },
+              ],
+            },
+            {
+              id: "lead_active",
+              date_updated: "2026-06-16T00:00:00+00:00",
+              contacts: [
+                { id: "cont_active", emails: [{ email: "buyer@example.com" }] },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_active",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "+14155550101" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 1, needsReview: 0 });
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_active",
+      close_contact_id: "cont_active",
+    });
+    // Read-only on the other duplicate: only its search row was seen.
+    expect(fetchMock.mock.calls[1]?.[0]).toContain("/contact/cont_active/");
+  });
+
+  // Production, 2026-09-15: a returning visitor's new submissions inherited the
+  // Close lead id of their earlier one, which had since been merged away in
+  // Close. Every retry 404'd on it until all three dead-lettered.
+  it("finds the person again when the stored Close lead no longer exists", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          close_lead_id: "lead_gone",
+          close_contact_id: "cont_gone",
+        }),
+      ],
+      leads: [
+        makeLead({
+          close_lead_id: "lead_gone",
+          close_contact_id: "cont_gone",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ error: "not found" }, 404))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          data: [
+            {
+              id: "lead_merged_into",
+              contacts: [
+                { id: "cont_moved", emails: [{ email: "buyer@example.com" }] },
+              ],
+            },
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_moved",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "+14155550101" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 1, failed: 0 });
+    expect(fake.state.leads[0]).toMatchObject({
+      close_sync_status: "synced",
+      close_lead_id: "lead_merged_into",
+      close_contact_id: "cont_moved",
+    });
+  });
+
+  it("does not treat a Close outage on a known lead as a missing lead", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ close_lead_id: "lead_1", close_contact_id: "c_1" })],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ error: "busy" }, 503));
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 0, failed: 1 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  // The enrichment event keeps the id it was queued with; the lead row is
+  // rewritten when the create event recovers. The row is the current one.
+  it("writes enrichment to the lead's current Close id, not a stale one it was queued with", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          close_lead_id: "lead_gone",
+          close_contact_id: "cont_gone",
+          payload: { qualification: { status: "qualified" } },
+        }),
+      ],
+      leads: [
+        makeLead({
+          close_lead_id: "lead_current",
+          close_contact_id: "cont_current",
+        }),
+      ],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_1" }));
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const note = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(note).toMatchObject({
+      lead_id: "lead_current",
+      contact_id: "cont_current",
+    });
   });
 
   it("never rewrites a matched contact's identity from a public submit", async () => {
