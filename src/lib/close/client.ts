@@ -356,6 +356,13 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
   };
 }
 
+const MAX_ATTEMPTS_PER_REQUEST = 3;
+const MAX_RETRY_WAIT_MS = 10_000;
+
+function delayMs(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function createCloseClient({
   apiKey,
   baseUrl = "https://api.close.com/api/v1",
@@ -376,14 +383,31 @@ export function createCloseClient({
     path: string,
     body?: unknown,
   ): Promise<T> {
-    const response = await fetchImpl(`${normalizedBaseUrl}${path}`, {
-      method,
-      headers: {
-        Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`,
-        "Content-Type": "application/json",
-      },
-      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-    });
+    let response: Response;
+    for (let attempt = 1; ; attempt += 1) {
+      response = await fetchImpl(`${normalizedBaseUrl}${path}`, {
+        method,
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${apiKey}:`).toString("base64")}`,
+          "Content-Type": "application/json",
+        },
+        ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+      });
+      // Close answers a burst with 429 and a `retry-after`, and asks callers
+      // to wait that long (developer.close.com/api/overview/rate-limits). A
+      // 429 was never processed, so retrying a write is safe. The wait is
+      // capped so an admin page never hangs on a long lockout.
+      if (response.status !== 429 || attempt >= MAX_ATTEMPTS_PER_REQUEST) break;
+      const retryAfterSeconds = Number(response.headers.get("retry-after"));
+      await delayMs(
+        Math.min(
+          Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+            ? retryAfterSeconds * 1000
+            : 1000 * attempt,
+          MAX_RETRY_WAIT_MS,
+        ),
+      );
+    }
 
     if (!response.ok) {
       const text = await safeResponseText(response);

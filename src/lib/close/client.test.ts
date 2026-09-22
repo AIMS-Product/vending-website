@@ -139,3 +139,53 @@ describe("listLeadNotes", () => {
     expect(result.data).toEqual([{ id: "acti_1", note: "hi" }]);
   });
 });
+
+describe("rate limits", () => {
+  it("waits out a 429 for the retry-after Close sends, then succeeds", async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi
+        .fn()
+        .mockResolvedValueOnce(
+          new Response("", { status: 429, headers: { "retry-after": "2" } }),
+        )
+        .mockResolvedValueOnce(
+          new Response(JSON.stringify({ id: "lead_1" }), { status: 200 }),
+        );
+
+      const pending = client(fetchImpl as unknown as typeof fetch).getLead(
+        "lead_1",
+      );
+      await vi.advanceTimersByTimeAsync(1999);
+      expect(fetchImpl).toHaveBeenCalledTimes(1);
+      await vi.advanceTimersByTimeAsync(1);
+
+      await expect(pending).resolves.toEqual({ id: "lead_1" });
+      expect(fetchImpl).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("gives up after three attempts and reports the 429", async () => {
+    vi.useFakeTimers();
+    try {
+      const fetchImpl = vi.fn(
+        async () =>
+          new Response("", { status: 429, headers: { "retry-after": "1" } }),
+      );
+
+      const pending = client(fetchImpl as unknown as typeof fetch).getLead(
+        "lead_1",
+      );
+      const settled = expect(pending).rejects.toThrow(
+        "Close API request failed with 429",
+      );
+      await vi.advanceTimersByTimeAsync(5000);
+      await settled;
+      expect(fetchImpl).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

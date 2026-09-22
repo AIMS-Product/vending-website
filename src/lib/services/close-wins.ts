@@ -141,6 +141,7 @@ type WinsCloseClient = Pick<CloseClient, "listWonOpportunities" | "getLead">;
 
 /** 100 per page; 50 pages is 5,000 wins, far above any range the tabs ask for. */
 const MAX_PAGES = 50;
+const LEAD_READ_CONCURRENCY = 4;
 
 /**
  * Every won deal in [from, to] with its lead's funnel. The funnel comes from
@@ -182,18 +183,27 @@ export async function fetchCloseDeals(input: {
     for (const row of data ?? []) funnelByLead.set(row.lead_id, row.funnel);
   }
 
+  // A handful at a time, never all at once: every won lead the mirror lacks
+  // is one Close read, and firing them together is what tripped Close's rate
+  // limit on the month-over-month tab (2026-09-22).
   const missing = leadIds.filter((id) => !funnelByLead.has(id));
-  const fetched = await Promise.all(
-    missing.map(async (id) => {
-      const lead = await input.close.getLead(id);
-      const funnel = lead?.custom?.[FIELD_LABELS.funnel];
-      return [
-        id,
-        typeof funnel === "string" && funnel.trim() ? funnel : null,
-      ] as const;
-    }),
+  let next = 0;
+  const workers = Array.from(
+    { length: Math.min(LEAD_READ_CONCURRENCY, missing.length) },
+    async () => {
+      while (next < missing.length) {
+        const id = missing[next];
+        next += 1;
+        const lead = await input.close.getLead(id);
+        const funnel = lead?.custom?.[FIELD_LABELS.funnel];
+        funnelByLead.set(
+          id,
+          typeof funnel === "string" && funnel.trim() ? funnel : null,
+        );
+      }
+    },
   );
-  for (const [id, funnel] of fetched) funnelByLead.set(id, funnel);
+  await Promise.all(workers);
 
   return dated.map((opportunity) => ({
     leadId: opportunity.lead_id,

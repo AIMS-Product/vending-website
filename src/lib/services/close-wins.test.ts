@@ -152,6 +152,47 @@ describe("fetchCloseDeals", () => {
   });
 });
 
+describe("fetchCloseDeals lead reads", () => {
+  it("never has more than four Close lead reads in flight", async () => {
+    const opportunities = Array.from({ length: 20 }, (_, i) => ({
+      id: `o${i}`,
+      lead_id: `lead-${i}`,
+      date_won: "2026-08-12",
+      value: 100,
+    }));
+    let inFlight = 0;
+    let peak = 0;
+    const close = {
+      listWonOpportunities: async () => ({
+        data: opportunities,
+        has_more: false,
+      }),
+      getLead: async (id: string) => {
+        inFlight += 1;
+        peak = Math.max(peak, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        inFlight -= 1;
+        return { id, custom: {} };
+      },
+    };
+    const mirror = {
+      from: () => ({
+        select: () => ({ in: async () => ({ data: [], error: null }) }),
+      }),
+    };
+
+    const deals = await fetchCloseDeals({
+      from: "2026-08-01",
+      to: "2026-08-31",
+      close: close as never,
+      mirror: mirror as never,
+    });
+
+    expect(deals).toHaveLength(20);
+    expect(peak).toBe(4);
+  });
+});
+
 describe("summariseCloseWins by closer", () => {
   it("groups the same deals and the same totals by who won them", () => {
     const deals = [
