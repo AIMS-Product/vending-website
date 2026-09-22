@@ -25,6 +25,10 @@ import {
   isBookingIntentForm,
   queueWarmReplyActivity,
 } from "@/lib/close/warm-reply-activity";
+import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
+import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
+import { queueGhlForward, type LeadCaptureType } from "@/lib/ghl/forward";
+import { getLeadForwardSettings } from "@/lib/services/lead-forward-settings";
 import {
   getQualificationFormVersion,
   resolveDefaultQualificationFormVersion,
@@ -209,6 +213,34 @@ export async function createQualificationIntakeSession(
     });
   }
 
+  // Hand the capture to WeScale's GoHighLevel. Deliberately outside the
+  // booking-intent gate above: which kinds forward is an admin setting now,
+  // and the capture is labelled for what it actually was, so a roadmap
+  // download is never presented to their reps as a call request. Rides its own
+  // dedupe key and is fail-soft, so a re-submit queues nothing new and an
+  // outage never fails an intake that has already been accepted.
+  await queueGhlForward(client, {
+    leadSubmissionId: lead.id,
+    sessionId: session.id,
+    captureType: captureTypeForForm(formVersion.formId),
+    destination: await getLeadForwardSettings(client),
+    nowIso,
+    lead: {
+      fullName: intake.fullName,
+      email: intake.email,
+      phone: intake.phone,
+      submittedAt: nowIso,
+      sourcePage: intake.sourcePath,
+      utmSource: intake.utmSource,
+      utmMedium: intake.utmMedium,
+      utmCampaign: intake.utmCampaign,
+      utmTerm: intake.utmTerm,
+      utmContent: intake.utmContent,
+      gclid: intake.gclid,
+      fbclid: intake.fbclid,
+    },
+  });
+
   return {
     status: "accepted",
     leadId: lead.id,
@@ -220,6 +252,20 @@ export async function createQualificationIntakeSession(
     expiresAt,
     sessionToken: token,
   };
+}
+
+/**
+ * Which kind of capture this intake is, for the partner feed.
+ *
+ * Newsletter signups and lead-magnet downloads come through this same
+ * function (newsletter-signup.ts and the resource pages pass their own form
+ * ids), and they are not booking requests. The label travels with the
+ * payload so nobody downstream has to guess.
+ */
+function captureTypeForForm(formId: string): LeadCaptureType {
+  if (formId === NEWSLETTER_FORM_ID) return "newsletter";
+  if (formId === LEAD_MAGNET_FORM_ID) return "lead_magnet";
+  return "booking";
 }
 
 function parseIntakeInput(input: CreateQualificationIntakeInput) {

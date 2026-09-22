@@ -303,6 +303,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      lead_forward_settings: {
+        Row: {
+          capture_types: string[];
+          enabled: boolean;
+          field_ids: Json;
+          id: string;
+          traffic_source_mode: string;
+          traffic_sources: string[];
+          updated_at: string;
+          updated_by: string | null;
+          webhook_url: string | null;
+        };
+        Insert: {
+          capture_types?: string[];
+          enabled?: boolean;
+          field_ids?: Json;
+          id: string;
+          traffic_source_mode?: string;
+          traffic_sources?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_url?: string | null;
+        };
+        Update: {
+          capture_types?: string[];
+          enabled?: boolean;
+          field_ids?: Json;
+          id?: string;
+          traffic_source_mode?: string;
+          traffic_sources?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+          webhook_url?: string | null;
+        };
+        Relationships: [];
+      };
       lead_submissions: {
         Row: {
           budget: string | null;
