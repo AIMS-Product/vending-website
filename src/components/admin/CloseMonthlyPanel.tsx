@@ -37,6 +37,71 @@ function rate(part: number, whole: number): string {
 }
 
 /**
+ * Fewer booked calls than this behind a rate and the cell stays grey.
+ *
+ * One booked call is either 0% or 100%, and colouring that shouts louder than
+ * a real 300-call month. The number is still printed; only the colour waits
+ * for a sample worth reading.
+ */
+const MIN_BOOKED_TO_COLOUR = 8;
+
+/**
+ * How a rate is coloured: against the same metric's rate across every month on
+ * screen, not against a number somebody typed in.
+ *
+ * A fixed threshold would be wrong the month the business changes. Reading each
+ * cell against its own column's overall rate means green always means "better
+ * than we normally do" and red always means "worse", and the scale re-tunes
+ * itself when the months on screen change.
+ */
+const COLOUR_BANDS: ReadonlyArray<{ atLeast: number; className: string }> = [
+  { atLeast: 1.15, className: "text-ui-ok font-semibold" },
+  { atLeast: 0.85, className: "text-ui-text-muted" },
+  { atLeast: 0.6, className: "text-ui-warn" },
+  { atLeast: 0, className: "text-ui-bad font-semibold" },
+];
+
+function rateTone(
+  part: number,
+  booked: number,
+  benchmark: number | null,
+): string {
+  if (booked < MIN_BOOKED_TO_COLOUR || benchmark === null || benchmark <= 0)
+    return "text-ui-text-muted";
+  const ratio = part / booked / benchmark;
+  return (
+    COLOUR_BANDS.find((band) => ratio >= band.atLeast)?.className ??
+    "text-ui-text-muted"
+  );
+}
+
+/** The rate each column is read against: every month on screen, combined. */
+export type Benchmarks = {
+  showed: number | null;
+  qualified: number | null;
+  won: number | null;
+};
+
+function benchmarksOf(months: readonly MonthlyMonth[]): Benchmarks {
+  const total = months.reduce(
+    (sum, month) => ({
+      booked: sum.booked + month.totals.booked,
+      showed: sum.showed + month.totals.showed,
+      qualified: sum.qualified + month.totals.qualified,
+      won: sum.won + month.totals.won,
+    }),
+    { booked: 0, showed: 0, qualified: 0, won: 0 },
+  );
+  const over = (part: number) =>
+    total.booked > 0 ? part / total.booked : null;
+  return {
+    showed: over(total.showed),
+    qualified: over(total.qualified),
+    won: over(total.won),
+  };
+}
+
+/**
  * A cell nothing happened in prints dashes, never a row of zeros. Form fills
  * count as something happening: a source producing leads and booking nobody is
  * the row worth looking at, not one to blank out.
@@ -106,6 +171,7 @@ export function CloseMonthlyPanel({
   const visible = parseShownMonths(shown, funnel.months);
   const months = funnel.months.filter((month) => visible.has(month.key));
   const immature = months.filter((month) => !month.mature);
+  const marks = benchmarksOf(months);
 
   return (
     <div className="space-y-5">
@@ -113,36 +179,50 @@ export function CloseMonthlyPanel({
         <h2 className={adminSectionTitleClass}>
           Month over month, by Close funnel
         </h2>
-        <dl className="text-ui-text-subtle mt-2 grid max-w-[80ch] gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-          <dt className="text-ui-text font-medium">Leads</dt>
-          <dd>
-            Form fills on our own site, one per person. Close only holds people
-            who booked, so this is the one column from our tables, and it is
-            blank for a source with no form behind it.
-          </dd>
-          <dt className="text-ui-text font-medium">Booked</dt>
-          <dd>
-            The lead&rsquo;s <em>first</em> sales call, by Close&rsquo;s
-            &ldquo;First Sales Call Booked Date&rdquo;, one row per lead,
-            leaving out leads now &ldquo;Canceled (by Lead)&rdquo; or
-            &ldquo;Outside the US&rdquo;.
-          </dd>
-          <dt className="text-ui-text font-medium">Show %</dt>
-          <dd>
-            &ldquo;First Call Show Up (Opp)&rdquo; = Yes &mdash; the outcome
-            field for that meeting. Not the call disposition, which mostly
-            describes a later follow-up or reschedule.
-          </dd>
-          <dt className="text-ui-text font-medium">Qual %</dt>
-          <dd>&ldquo;Qualified (Opp)&rdquo; = Yes, the rep&rsquo;s call.</dd>
-          <dt className="text-ui-text font-medium">CW %</dt>
-          <dd>
-            The lead&rsquo;s stage being &ldquo;Closed / Won&rdquo;. All three
-            rates are over booked, never over each other.
-          </dd>
-          <dt className="text-ui-text font-medium">Revenue</dt>
-          <dd>The Close deal value those won leads carry.</dd>
-        </dl>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Colour reads each rate against that column&rsquo;s own rate across the
+          months shown, so{" "}
+          <span className="text-ui-ok font-semibold">green</span> is better than
+          we normally do and{" "}
+          <span className="text-ui-bad font-semibold">red</span> is well below
+          it. A rate with fewer than {MIN_BOOKED_TO_COLOUR} booked calls behind
+          it stays grey rather than shouting.
+        </p>
+        <details className="group mt-2">
+          <summary className="text-ui-text-muted hover:text-ui-text cursor-pointer text-xs font-medium">
+            Where each column comes from
+          </summary>
+          <dl className="text-ui-text-subtle mt-2 grid max-w-[80ch] gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
+            <dt className="text-ui-text font-medium">Leads</dt>
+            <dd>
+              Form fills on our own site, one per person. Close only holds
+              people who booked, so this is the one column from our tables, and
+              it is blank for a source with no form behind it.
+            </dd>
+            <dt className="text-ui-text font-medium">Booked</dt>
+            <dd>
+              The lead&rsquo;s <em>first</em> sales call, by Close&rsquo;s
+              &ldquo;First Sales Call Booked Date&rdquo;, one row per lead,
+              leaving out leads now &ldquo;Canceled (by Lead)&rdquo; or
+              &ldquo;Outside the US&rdquo;.
+            </dd>
+            <dt className="text-ui-text font-medium">Show %</dt>
+            <dd>
+              &ldquo;First Call Show Up (Opp)&rdquo; = Yes &mdash; the outcome
+              field for that meeting. Not the call disposition, which mostly
+              describes a later follow-up or reschedule.
+            </dd>
+            <dt className="text-ui-text font-medium">Qual %</dt>
+            <dd>&ldquo;Qualified (Opp)&rdquo; = Yes, the rep&rsquo;s call.</dd>
+            <dt className="text-ui-text font-medium">CW %</dt>
+            <dd>
+              The lead&rsquo;s stage being &ldquo;Closed / Won&rdquo;. All three
+              rates are over booked, never over each other.
+            </dd>
+            <dt className="text-ui-text font-medium">Revenue</dt>
+            <dd>The Close deal value those won leads carry.</dd>
+          </dl>
+        </details>
         <p className="text-ui-text-subtle mt-3 max-w-[80ch] text-xs">
           Every column reads off one lead row, so a win counts in the month that
           lead&rsquo;s call was <em>booked</em>, not the month the deal closed.
@@ -256,7 +336,12 @@ export function CloseMonthlyPanel({
                     </th>
                   </tr>
                   {rows.map((row) => (
-                    <Row key={row.label} row={row} months={months} />
+                    <Row
+                      key={row.label}
+                      row={row}
+                      months={months}
+                      marks={marks}
+                    />
                   ))}
                   {/* The subtotal is the point of the grouping: nobody should
                       have to subtract one lane from the total by hand. */}
@@ -265,7 +350,11 @@ export function CloseMonthlyPanel({
                       {group.subtotal}
                     </th>
                     {months.map((month) => (
-                      <Cells key={month.key} cell={month.byGroup[group.key]} />
+                      <Cells
+                        key={month.key}
+                        cell={month.byGroup[group.key]}
+                        marks={marks}
+                      />
                     ))}
                   </tr>
                 </tbody>
@@ -277,7 +366,7 @@ export function CloseMonthlyPanel({
                   Every first call
                 </th>
                 {months.map((month) => (
-                  <Cells key={month.key} cell={month.totals} />
+                  <Cells key={month.key} cell={month.totals} marks={marks} />
                 ))}
               </tr>
             </tbody>
@@ -330,7 +419,13 @@ function ColumnHeads() {
   );
 }
 
-function Cells({ cell }: { cell: MonthlyCell | undefined }) {
+function Cells({
+  cell,
+  marks,
+}: {
+  cell: MonthlyCell | undefined;
+  marks: Benchmarks;
+}) {
   if (isEmpty(cell)) {
     return (
       <>
@@ -358,17 +453,21 @@ function Cells({ cell }: { cell: MonthlyCell | undefined }) {
         {cell.leads === null ? "—" : cell.leads.toLocaleString()}
       </td>
       <td className={TD}>{cell.booked.toLocaleString()}</td>
-      <td className={`${TD} text-ui-text-muted`}>
+      <td
+        className={`${TD} ${rateTone(cell.showed, cell.booked, marks.showed)}`}
+      >
         {rate(cell.showed, cell.booked)}
       </td>
-      <td className={`${TD} text-ui-text-muted`}>
+      <td
+        className={`${TD} ${rateTone(cell.qualified, cell.booked, marks.qualified)}`}
+      >
         {rate(cell.qualified, cell.booked)}
       </td>
-      <td className={`${TD} text-ui-text-muted`}>
+      <td className={`${TD} ${rateTone(cell.won, cell.booked, marks.won)}`}>
         {rate(cell.won, cell.booked)}
       </td>
       <td
-        className={`${TD} ${cell.revenue > 0 ? "text-ui-good" : "text-ui-text-subtle"}`}
+        className={`${TD} ${cell.revenue > 0 ? "text-ui-ok" : "text-ui-text-subtle"}`}
       >
         {money(cell.revenue)}
       </td>
@@ -379,9 +478,11 @@ function Cells({ cell }: { cell: MonthlyCell | undefined }) {
 function Row({
   row,
   months,
+  marks,
 }: {
   row: MonthlyFunnelRow;
   months: readonly MonthlyMonth[];
+  marks: Benchmarks;
 }) {
   return (
     <tr className="border-ui-line/60 border-t">
@@ -392,7 +493,7 @@ function Row({
         </span>
       </th>
       {months.map((month) => (
-        <Cells key={month.key} cell={row.byMonth[month.key]} />
+        <Cells key={month.key} cell={row.byMonth[month.key]} marks={marks} />
       ))}
     </tr>
   );
