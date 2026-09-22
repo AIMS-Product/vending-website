@@ -44,6 +44,36 @@ export function percentWatched(
 }
 
 /**
+ * The first moment stored views mean what they say.
+ *
+ * Until the audible gate below deployed, a muted autoplay was recorded as
+ * viewing, so every `lead_video_views` row first played before this cannot
+ * tell a watcher from an open tab. Every reader filters on it rather than the
+ * rows being deleted: the evidence stays, the reports stop repeating it. Set a
+ * few minutes past the deploy so no pre-fix row slips through.
+ */
+export const VIDEO_VIEWS_TRUSTED_FROM = "2026-09-22T23:45:00Z";
+
+/**
+ * Percent watched, counting only playback the visitor can hear.
+ *
+ * Vidalytics autoplays every player muted behind a "Click to unmute" card, so
+ * a visitor who opens /pre-call-resources and walks away still runs fifteen
+ * videos, the short ones to the end. Counting that told reps a prospect had
+ * watched videos they never heard: 20 progress events in 75 seconds from a tab
+ * nobody touched (live check, 2026-09-22). Clicking the card restarts the
+ * video from 0:00 with sound, so gating on mute loses no real viewing.
+ */
+export function audiblePercentWatched(
+  currentTime: number,
+  duration: number,
+  muted: boolean,
+): number | null {
+  if (muted) return null;
+  return percentWatched(currentTime, duration);
+}
+
+/**
  * The milestones newly reached at `percent`, given those already reported.
  *
  * Returns every uncrossed milestone at or below the current position, not just

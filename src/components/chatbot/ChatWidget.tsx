@@ -2,8 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
-import { isLegacyLeadPath } from "@/lib/content/legacy-routes";
+import { suppressesChatTeaser } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -185,11 +184,10 @@ export function ChatWidget() {
   // footer are gone. It holds just as hard after the form: a teaser over the
   // questionnaire or the confirmation calendar interrupts a lead mid-booking.
   // The launcher still renders, so anyone who wants help can start the
-  // conversation; only the unprompted teaser is suppressed. The legacy lead
-  // pages keep their chrome for now but are booking pages all the same: the
-  // teaser opened on top of their Calendly month grid (UI audit, 2026-09-22).
-  const suppressIdleTeaser =
-    isFunnelChromePath(pathname) || isLegacyLeadPath(pathname);
+  // conversation; only the unprompted teaser is suppressed.
+  // The pre-call page and the legacy lead pages are added on top: see
+  // suppressesChatTeaser.
+  const suppressIdleTeaser = suppressesChatTeaser(pathname);
 
   const setOpen = useCallback((value: boolean) => {
     setOpenState(value);

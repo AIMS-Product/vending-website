@@ -5,6 +5,7 @@ import {
   BOOKING_FUNNEL_PATHS,
   isBookingFunnelPath,
   isFunnelChromePath,
+  suppressesChatTeaser,
 } from "./booking-funnel-routes";
 import { bookingPages } from "./booking-pages";
 import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
@@ -84,9 +85,19 @@ describe("booking funnel routes", () => {
       ),
       "utf8",
     );
-    expect(source).toContain("isFunnelChromePath(pathname)");
-    expect(source).toContain("isLegacyLeadPath(pathname)");
+    expect(source).toContain("suppressesChatTeaser(pathname)");
     expect(source).toContain("if (suppressIdleTeaser) return;");
+  });
+
+  it("keeps the teaser off the pre-call page without taking its chrome", () => {
+    expect(suppressesChatTeaser("/pre-call-resources")).toBe(true);
+    expect(isFunnelChromePath("/pre-call-resources")).toBe(false);
+    expect(suppressesChatTeaser("/contact")).toBe(true);
+    // Legacy lead pages keep their chrome but are booking pages (UI audit,
+    // 2026-09-22): the teaser opened over their Calendly grid.
+    expect(suppressesChatTeaser("/booking-ig")).toBe(true);
+    expect(isFunnelChromePath("/booking-ig")).toBe(false);
+    expect(suppressesChatTeaser("/")).toBe(false);
   });
 
   it.each([
