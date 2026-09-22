@@ -970,6 +970,64 @@ describe("adminRunCloseSync", () => {
     });
   });
 
+  // Production, 2026-09-22: two submissions from one person drained in the
+  // same batch. Close's search did not yet return the lead created a second
+  // earlier, so the second event created another one. Our own table is
+  // written the moment the first sync lands, so it is asked first.
+  it("files a second submission under the Close lead the first one just created", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          id: "event_first",
+          next_retry_at: "2026-06-17T08:00:00.000Z",
+        }),
+        makeEvent({
+          id: "event_second",
+          lead_submission_id: "lead_local_2",
+          dedupe_key: "lead_create_or_update:lead_local_2:session_1",
+          next_retry_at: "2026-06-17T08:01:00.000Z",
+        }),
+      ],
+      leads: [makeLead(), makeLead({ id: "lead_local_2" })],
+    });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "lead_created",
+          contacts: [{ id: "cont_created" }],
+        }),
+      )
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "cont_created",
+          emails: [{ email: "buyer@example.com" }],
+          phones: [{ phone: "+14155550101" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(result).toMatchObject({ synced: 2, failed: 0 });
+    const creates = fetchMock.mock.calls.filter(
+      ([url, init]) =>
+        String(url).endsWith("/lead/") && init?.method === "POST",
+    );
+    expect(creates).toHaveLength(1);
+    expect(fake.state.leads.find((l) => l.id === "lead_local_2")).toMatchObject(
+      {
+        close_lead_id: "lead_created",
+        close_contact_id: "cont_created",
+      },
+    );
+  });
+
   it("does not treat a Close outage on a known lead as a missing lead", async () => {
     const fake = buildClient({
       events: [makeEvent({ close_lead_id: "lead_1", close_contact_id: "c_1" })],

@@ -421,7 +421,7 @@ async function dispatchCloseEvent(
   },
 ): Promise<CloseContactInfo> {
   if (event.event_type === "lead_create_or_update") {
-    return syncLeadCreateOrUpdate(event, { close, closeConfig, lead });
+    return syncLeadCreateOrUpdate(event, { client, close, closeConfig, lead });
   }
   if (event.event_type === "qualification_enrichment") {
     return syncQualificationEnrichment(event, {
@@ -445,7 +445,7 @@ async function dispatchCloseEvent(
     return syncStaleFollowUpTask(event, { close, closeConfig, lead });
   }
   if (event.event_type === "manual_retry") {
-    return syncLeadCreateOrUpdate(event, { close, closeConfig, lead });
+    return syncLeadCreateOrUpdate(event, { client, close, closeConfig, lead });
   }
   if (event.event_type === "warm_reply_activity") {
     return syncWarmReplyActivity(event, { client, close, lead });
@@ -499,10 +499,12 @@ type SourceFields = {
 async function syncLeadCreateOrUpdate(
   event: CloseSyncEventRow,
   {
+    client,
     close,
     closeConfig,
     lead,
   }: {
+    client: CloseSyncClient;
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
@@ -510,7 +512,11 @@ async function syncLeadCreateOrUpdate(
 ): Promise<CloseContactInfo> {
   const contact = contactPayload(event, lead);
   try {
-    return await writeLeadToClose(event, { close, closeConfig, lead }, contact);
+    return await writeLeadToClose(
+      event,
+      { client, close, closeConfig, lead },
+      contact,
+    );
   } catch (error) {
     const { phones, ...withoutPhone } = contact;
     if (!phones || !isRejectedPhone(error)) throw error;
@@ -519,7 +525,11 @@ async function syncLeadCreateOrUpdate(
     // worth far more than no lead, so it goes in without one. Every Close
     // write here fails before anything is created or changed, so the retry
     // cannot duplicate a lead.
-    return writeLeadToClose(event, { close, closeConfig, lead }, withoutPhone);
+    return writeLeadToClose(
+      event,
+      { client, close, closeConfig, lead },
+      withoutPhone,
+    );
   }
 }
 
@@ -534,10 +544,12 @@ function isRejectedPhone(error: unknown) {
 async function writeLeadToClose(
   event: CloseSyncEventRow,
   {
+    client,
     close,
     closeConfig,
     lead,
   }: {
+    client: CloseSyncClient;
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
@@ -545,7 +557,10 @@ async function writeLeadToClose(
   contact: CloseContactPayload,
 ): Promise<CloseContactInfo> {
   const sourceFields = sourceCustomFields(event, lead, closeConfig);
-  const closeIds = existingCloseIds(event, lead);
+  const own = existingCloseIds(event, lead);
+  const closeIds = own.leadId
+    ? own
+    : await siblingCloseIds(client, primaryEmail(event, lead), lead?.id);
   if (closeIds.leadId) {
     try {
       return await updateKnownCloseLead(close, {
@@ -574,6 +589,37 @@ async function writeLeadToClose(
     sourceFields,
     closeConfig,
   });
+}
+
+/**
+ * Close ids another submission from the same email already resolved.
+ *
+ * Two submissions from one person can drain in the same batch, and Close's
+ * search does not return a lead created a second earlier, so the second one
+ * created a duplicate. Our own table is written the moment a sync lands, so it
+ * is asked before Close. A stale answer is safe: the caller falls back on 404.
+ */
+async function siblingCloseIds(
+  client: CloseSyncClient,
+  email: string | null,
+  ownLeadId: string | undefined,
+): Promise<{ leadId: string | null; contactId: string | null }> {
+  const none = { leadId: null, contactId: null };
+  if (!email) return none;
+  const { data, error } = await client
+    .from("lead_submissions")
+    .select("id,close_lead_id,close_contact_id,close_sync_last_attempted_at")
+    .eq("email", email)
+    .order("close_sync_last_attempted_at", { ascending: false })
+    .limit(10);
+  // Only a shortcut: on a failed read, Close's own search still runs.
+  if (error) return none;
+  const sibling = (data ?? []).find(
+    (row) => row.id !== ownLeadId && row.close_lead_id,
+  );
+  return sibling
+    ? { leadId: sibling.close_lead_id, contactId: sibling.close_contact_id }
+    : none;
 }
 
 /**
