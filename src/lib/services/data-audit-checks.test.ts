@@ -239,3 +239,38 @@ describe("runDataAudit", () => {
     ).toMatchObject({ status: "fail" });
   });
 });
+
+describe("day-holes", () => {
+  const holesRun = (youtube_video_daily: Array<Record<string, unknown>>) =>
+    runDataAudit({
+      now,
+      client: fakeClient({ youtube_video_daily }),
+      ga4: null,
+      close: null,
+      calendly: null,
+      metricool: null,
+      youtube: null,
+      ghl: null,
+    }).then((run) => run.results.find((r) => r.checkId === "day-holes")!);
+  const views = (from: string, to: string, skip: string[] = []) =>
+    daysBetween(from, to)
+      .filter((day) => !skip.includes(day))
+      .map((day) => ({ day, views: 4000 }));
+
+  // YouTube Analytics reports about three days late. The check ended two days
+  // back, so every night it called the newest day missing: 2026-09-19, then
+  // 2026-09-20, each of which filled in by itself a day later.
+  it("does not call a day missing that YouTube has not reported yet", async () => {
+    const check = await holesRun(views("2026-09-04", "2026-09-16"));
+    expect(check).toMatchObject({ status: "pass" });
+  });
+
+  it("still catches a real hole in YouTube views", async () => {
+    const check = await holesRun(
+      views("2026-09-04", "2026-09-16", ["2026-09-10"]),
+    );
+    expect(check).toMatchObject({ status: "fail" });
+    expect(check.detail).toContain("YouTube views on 2026-09-10");
+    expect(check.detail).not.toContain("2026-09-17");
+  });
+});

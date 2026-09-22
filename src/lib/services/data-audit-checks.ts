@@ -667,14 +667,27 @@ async function orphanedBookingsCheck(
  */
 async function findDayHoles(client: Client, now: Date): Promise<AuditResult> {
   const from = dayKey(addDays(now, -15));
-  const to = dayKey(addDays(now, -2));
+  // Each probe ends where its source has settled. YouTube Analytics reports
+  // about three days late, and ending it two days back failed this check every
+  // night on a day that then filled in by itself.
   const probes = [
-    { table: "channel_daily", column: "visits", label: "visits" },
-    { table: "youtube_video_daily", column: "views", label: "YouTube views" },
+    {
+      table: "channel_daily",
+      column: "visits",
+      label: "visits",
+      lag: SETTLED_LAG_DAYS.ga4,
+    },
+    {
+      table: "youtube_video_daily",
+      column: "views",
+      label: "YouTube views",
+      lag: SETTLED_LAG_DAYS.youtube,
+    },
   ] as const;
 
   const holes: string[] = [];
   for (const probe of probes) {
+    const to = dayKey(addDays(now, -probe.lag));
     const rows = await pageAll<Record<string, unknown>>(
       client,
       probe.table,
@@ -698,7 +711,7 @@ async function findDayHoles(client: Client, now: Date): Promise<AuditResult> {
   return assertion({
     checkId: "day-holes",
     label: "No day is missing",
-    window: `${from} to ${to}`,
+    window: `${from} to ${dayKey(addDays(now, -SETTLED_LAG_DAYS.ga4))} (YouTube to ${dayKey(addDays(now, -SETTLED_LAG_DAYS.youtube))})`,
     sourceName: "our tables",
     ok: holes.length === 0,
     count: holes.length,
