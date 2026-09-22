@@ -1102,7 +1102,7 @@ describe("adminRunCloseSync", () => {
   // these two people typed an email address and `1` into it. Close rejects what
   // it cannot parse by failing the WHOLE write, so an unusable phone must be
   // dropped before it is sent — the lead matters, the junk phone does not.
-  it.each(["tpeek@ryatech.us", "1", "  ", "abcdefghij"])(
+  it.each(["tpeek@ryatech.us", "1", "  ", "abcdefghij", "09078121075"])(
     "drops an unusable phone (%s) instead of losing the whole lead",
     async (phone) => {
       const fake = buildClient({
@@ -1144,6 +1144,127 @@ describe("adminRunCloseSync", () => {
       expect(result).toMatchObject({ synced: 1, deadLettered: 0, failed: 0 });
     },
   );
+
+  // Close's own phone parser is stricter than normalizePhone's digit count, so
+  // a number can pass ours and still 400 the whole write. Twelve leads were
+  // lost that way in Aug–Sep 2026. The lead goes in without the phone.
+  it("retries without the phone when Close rejects it, instead of losing the lead", async () => {
+    const fake = buildClient({
+      events: [makeEvent()],
+      leads: [makeLead({ phone: "+44 7911 123456" })],
+    });
+    const invalidPhone = {
+      errors: [],
+      "field-errors": {
+        contacts: {
+          errors: {
+            0: {
+              errors: [],
+              "field-errors": {
+                phones: {
+                  errors: {
+                    0: {
+                      errors: [],
+                      "field-errors": { phone: "Invalid phone number." },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(jsonResponse(invalidPhone, 400))
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse({
+          id: "lead_created",
+          contacts: [{ id: "cont_created" }],
+        }),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const [first, retry] = [1, 3].map(
+      (call) =>
+        JSON.parse(fetchMock.mock.calls[call]?.[1]?.body as string) as {
+          contacts: Array<Record<string, unknown>>;
+        },
+    );
+    expect(first.contacts[0]).toHaveProperty("phones");
+    expect(retry.contacts[0]).not.toHaveProperty("phones");
+    expect(retry.contacts[0]).toHaveProperty("emails");
+    expect(result).toMatchObject({ synced: 1, deadLettered: 0, failed: 0 });
+    expect(fake.state.leads[0].close_lead_id).toBe("lead_created");
+  });
+
+  it("does not retry a 400 that is not about the phone", async () => {
+    const fake = buildClient({ events: [makeEvent()], leads: [makeLead()] });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] }))
+      .mockResolvedValueOnce(
+        jsonResponse(
+          { errors: [], "field-errors": { name: "Required." } },
+          400,
+        ),
+      );
+
+    const result = await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ synced: 0 });
+  });
+
+  // "missing a Close lead ID" is never the cause: the lead_create_or_update in
+  // front of it failed. Ten leads showed only that symptom while the real error
+  // (a phone Close would not take) sat unread on the other event.
+  it("reports the blocking event's error when enrichment has no Close lead", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          status: "dead_letter",
+          last_error:
+            'Close API request failed with 400: {"phone": "Invalid phone number."}',
+          created_at: "2026-06-17T08:00:00.000Z",
+        }),
+        makeEvent({
+          id: "event_2",
+          event_type: "qualification_enrichment",
+          dedupe_key: "qualification_enrichment:lead_local_1:session_1",
+          payload: { qualification: { status: "qualified" } },
+        }),
+      ],
+      leads: [makeLead({ close_lead_id: null })],
+    });
+    const fetchMock = vi.fn();
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+
+    const enrichment = fake.state.events.find((e) => e.id === "event_2");
+    expect(enrichment?.last_error).toContain("lead_create_or_update");
+    expect(enrichment?.last_error).toContain("Invalid phone number");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 
   it("creates a Close lead/contact when no existing match is found", async () => {
     const fake = buildClient({
