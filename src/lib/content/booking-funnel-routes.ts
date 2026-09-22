@@ -71,3 +71,15 @@ export function isFunnelChromePath(pathname: string): boolean {
   // The questionnaire is one dynamic route per session token.
   return pathname.startsWith("/qualify/");
 }
+
+/**
+ * True where the chatbot keeps its unprompted teaser to itself: everywhere the
+ * chrome is off, plus /pre-call-resources. That page keeps its header and
+ * footer, but everyone on it has already booked, and the teaser opens with
+ * "Looking into starting a vending business?" over the middle of a phone
+ * screen, on top of the videos they were sent there to watch. The launcher
+ * still renders, so a question before the call is one tap away.
+ */
+export function suppressesChatTeaser(pathname: string): boolean {
+  return isFunnelChromePath(pathname) || pathname === "/pre-call-resources";
+}

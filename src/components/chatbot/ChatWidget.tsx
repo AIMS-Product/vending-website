@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
+import { suppressesChatTeaser } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -185,7 +185,8 @@ export function ChatWidget() {
   // questionnaire or the confirmation calendar interrupts a lead mid-booking.
   // The launcher still renders, so anyone who wants help can start the
   // conversation; only the unprompted teaser is suppressed.
-  const suppressIdleTeaser = isFunnelChromePath(pathname);
+  // The pre-call page is added on top: its visitors have already booked.
+  const suppressIdleTeaser = suppressesChatTeaser(pathname);
 
   const setOpen = useCallback((value: boolean) => {
     setOpenState(value);
