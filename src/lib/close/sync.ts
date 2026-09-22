@@ -35,6 +35,7 @@ import {
   closeTaggingPayload,
   CLOSE_RESOURCE_TAGS,
   CLOSE_TAGGING_VALUES,
+  CloseApiError,
   CloseConfigError,
   createCloseClient,
   sanitizeCloseErrorText,
@@ -424,6 +425,7 @@ async function dispatchCloseEvent(
   }
   if (event.event_type === "qualification_enrichment") {
     return syncQualificationEnrichment(event, {
+      client,
       close,
       closeConfig,
       lead,
@@ -432,6 +434,7 @@ async function dispatchCloseEvent(
   }
   if (event.event_type === "newsletter_enrichment") {
     return syncQualificationEnrichment(event, {
+      client,
       close,
       closeConfig,
       lead,
@@ -506,6 +509,41 @@ async function syncLeadCreateOrUpdate(
   },
 ): Promise<CloseContactInfo> {
   const contact = contactPayload(event, lead);
+  try {
+    return await writeLeadToClose(event, { close, closeConfig, lead }, contact);
+  } catch (error) {
+    const { phones, ...withoutPhone } = contact;
+    if (!phones || !isRejectedPhone(error)) throw error;
+    // normalizePhone only counts digits; Close parses numbering plans and
+    // fails the WHOLE write on a phone it refuses. A lead with no phone is
+    // worth far more than no lead, so it goes in without one. Every Close
+    // write here fails before anything is created or changed, so the retry
+    // cannot duplicate a lead.
+    return writeLeadToClose(event, { close, closeConfig, lead }, withoutPhone);
+  }
+}
+
+function isRejectedPhone(error: unknown) {
+  return (
+    error instanceof CloseApiError &&
+    error.status === 400 &&
+    error.message.includes("Invalid phone number")
+  );
+}
+
+async function writeLeadToClose(
+  event: CloseSyncEventRow,
+  {
+    close,
+    closeConfig,
+    lead,
+  }: {
+    close: CloseClient;
+    closeConfig: CloseConfig;
+    lead: LeadRow | null;
+  },
+  contact: CloseContactPayload,
+): Promise<CloseContactInfo> {
   const sourceFields = sourceCustomFields(event, lead, closeConfig);
   const closeIds = existingCloseIds(event, lead);
   if (closeIds.leadId) {
@@ -839,14 +877,41 @@ async function updateCloseLeadSourceFields(
     await close.updateLead(leadId, sourceFields.lead);
 }
 
+/**
+ * "Missing a Close lead ID" is never a root cause: the lead_create_or_update
+ * that creates the record failed first. Ten leads showed only this symptom on
+ * the nightly audit while the real error (a phone Close refused) sat unread on
+ * the other event, so name that event's error here.
+ */
+async function missingCloseLeadMessage(
+  client: CloseSyncClient,
+  event: CloseSyncEventRow,
+) {
+  const fallback = "Qualification enrichment is missing a Close lead ID.";
+  if (!event.lead_submission_id) return fallback;
+  const { data, error } = await client
+    .from("close_sync_events")
+    .select("event_type, status, last_error")
+    .eq("lead_submission_id", event.lead_submission_id)
+    .in("event_type", ["lead_create_or_update", "manual_retry"])
+    .order("created_at", { ascending: false })
+    .limit(1);
+  // The lookup only improves the message; the enrichment still fails either way.
+  const blocking = error ? null : data?.[0];
+  if (!blocking?.last_error) return fallback;
+  return `Qualification enrichment has no Close lead: its ${blocking.event_type} is ${blocking.status}: ${blocking.last_error}`;
+}
+
 async function syncQualificationEnrichment(
   event: CloseSyncEventRow,
   {
+    client,
     close,
     closeConfig,
     lead,
     isNewsletter,
   }: {
+    client: CloseSyncClient;
     close: CloseClient;
     closeConfig: CloseConfig;
     lead: LeadRow | null;
@@ -863,7 +928,7 @@ async function syncQualificationEnrichment(
     // outside Close forever with nothing to alert on. Retrying lets the
     // ordering resolve itself; a genuinely unresolvable event still
     // dead-letters after max_attempts.
-    throw new Error("Qualification enrichment is missing a Close lead ID.");
+    throw new Error(await missingCloseLeadMessage(client, event));
   }
   const contactId = event.close_contact_id ?? lead?.close_contact_id ?? null;
   await close.createNote({
