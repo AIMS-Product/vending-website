@@ -57,6 +57,7 @@ describe("searchContactsByEmail", () => {
       {
         id: "cont_1",
         lead_id: "lead_1",
+        lead_date_updated: null,
         emails: [{ email: "Lead@Example.com" }],
       },
     ]);

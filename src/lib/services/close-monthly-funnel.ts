@@ -322,6 +322,29 @@ export function buildCloseMonthlyFunnel(input: {
     }
   }
 
+  // A funnel's leads can arrive in a month it booked no call, and then there is
+  // no call cell to carry them: August 2026's 7 Newsletter leads showed
+  // nowhere. Give those leads a cell of their own, and a row if the funnel has
+  // never booked at all.
+  for (const key of input.leads?.keys() ?? []) {
+    const [month, label] = key.split("|");
+    if (!monthKeys.includes(month)) continue;
+    const existing = byLabel.get(label) ?? {
+      label,
+      group: groupOf(label),
+      byMonth: {},
+      total: EMPTY,
+    };
+    if (existing.byMonth[month]) continue;
+    const cell: MonthlyCell = { ...EMPTY, leads: leadsFor(month, label) };
+    if (cell.leads === null) continue;
+    byLabel.set(label, {
+      ...existing,
+      byMonth: { ...existing.byMonth, [month]: cell },
+      total: add(existing.total, cell),
+    });
+  }
+
   const rows = [...byLabel.values()].sort(
     (a, b) =>
       b.total.booked - a.total.booked ||

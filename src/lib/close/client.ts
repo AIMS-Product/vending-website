@@ -160,6 +160,8 @@ type CloseContactPhone = { phone?: string | null; type?: string };
 type CloseContactResult = {
   id: string;
   lead_id?: string | null;
+  /** On an email search only: when the contact's lead last changed. */
+  lead_date_updated?: string | null;
   emails?: CloseContactEmail[];
   phones?: CloseContactPhone[];
 };
@@ -172,6 +174,7 @@ type CloseLeadResult = {
 
 type CloseLeadSearchResult = {
   id: string;
+  date_updated?: string | null;
   contacts?: Array<{
     id?: string | null;
     emails?: Array<{ email?: string | null }>;
@@ -252,6 +255,7 @@ function contactsMatchingEmail(
       .map((contact) => ({
         id: contact.id,
         lead_id: lead.id,
+        lead_date_updated: lead.date_updated ?? null,
         emails: contact.emails,
       })),
   );

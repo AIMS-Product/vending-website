@@ -167,6 +167,44 @@ describe("buildCloseMonthlyFunnel", () => {
     expect(monthOf(funnel, "2026-02").totals.leads).toBe(40);
   });
 
+  // Production, August 2026: 7 Newsletter leads, but the Mike Newsletter funnel
+  // booked no call that month, so it had no cell and the leads showed nowhere.
+  it("shows a funnel's form fills in a month it booked no call", () => {
+    const funnel = build(
+      [
+        call({ leadId: "a", funnel: "YouTube", bookedDate: "2026-08-10" }),
+        call({
+          leadId: "b",
+          funnel: "Mike Newsletter",
+          bookedDate: "2026-07-10",
+        }),
+      ],
+      {
+        leads: new Map([
+          [leadsKey("2026-08", "YouTube"), 12],
+          [leadsKey("2026-08", "Mike Newsletter"), 7],
+          [leadsKey("2026-08", "Newsletter"), 3],
+        ]),
+        leadsFrom: "2026-07-06",
+      },
+    );
+    const mike = funnel.rows.find((row) => row.label === "Mike Newsletter")!;
+    expect(mike.byMonth["2026-08"]).toMatchObject({ booked: 0, leads: 7 });
+    expect(mike.byMonth["2026-07"].booked).toBe(1);
+    // A funnel that has never booked a call still gets its row.
+    const newsletter = funnel.rows.find((row) => row.label === "Newsletter")!;
+    expect(newsletter.byMonth["2026-08"]).toMatchObject({
+      booked: 0,
+      leads: 3,
+    });
+    expect(newsletter.group).toBe("marketing");
+    expect(monthOf(funnel, "2026-08").totals).toMatchObject({
+      booked: 1,
+      leads: 22,
+    });
+    expect(funnel.grandTotal.leads).toBe(22);
+  });
+
   it("reports no form fills for months before capture started", () => {
     const funnel = build(
       [

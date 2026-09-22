@@ -207,8 +207,10 @@ export async function syncWarmReplyActivity(
     enabled?: boolean;
   },
 ): Promise<{ leadId: string; contactId: string | null }> {
-  const contactId = event.close_contact_id ?? lead?.close_contact_id ?? null;
-  const leadId = event.close_lead_id ?? lead?.close_lead_id ?? null;
+  // Lead row first: it is rewritten when a sync finds the person afresh, while
+  // the event keeps whatever ids it was queued with (see existingCloseIds).
+  const contactId = lead?.close_contact_id ?? event.close_contact_id ?? null;
+  const leadId = lead?.close_lead_id ?? event.close_lead_id ?? null;
   if (!leadId) {
     // Retryable, NOT needs_review -- same reasoning as qualification
     // enrichment: the Close record is created by this lead's
