@@ -34,6 +34,41 @@ const HUBSPOT_ID = "48512363";
 // call here — that line used to double-count every pageview.
 const GTM_CONTAINER_ID = "GTM-57QRC275";
 
+/**
+ * The no-JavaScript fallbacks for GTM and the Meta pixel. Rendered on the
+ * server outside the admin gate: the tags themselves are mounted by a client
+ * component so they can skip /admin, and a <noscript> rendered that way never
+ * reaches the HTML. A browser with JavaScript on never loads these, so they
+ * cost admin pages nothing.
+ */
+export function TrackingNoscript() {
+  if (process.env.NEXT_PUBLIC_TRACKING_ENABLED !== "1") return null;
+
+  return (
+    <>
+      <noscript>
+        <iframe
+          src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
+          height="0"
+          width="0"
+          style={{ display: "none", visibility: "hidden" }}
+          title="Google Tag Manager"
+        />
+      </noscript>
+      <noscript>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          height="1"
+          width="1"
+          style={{ display: "none" }}
+          src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
+          alt=""
+        />
+      </noscript>
+    </>
+  );
+}
+
 export function TrackingScripts() {
   if (process.env.NEXT_PUBLIC_TRACKING_ENABLED !== "1") return null;
 
@@ -47,15 +82,6 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
 })(window,document,'script','dataLayer','${GTM_CONTAINER_ID}');`}
       </Script>
-      <noscript>
-        <iframe
-          src={`https://www.googletagmanager.com/ns.html?id=${GTM_CONTAINER_ID}`}
-          height="0"
-          width="0"
-          style={{ display: "none", visibility: "hidden" }}
-          title="Google Tag Manager"
-        />
-      </noscript>
 
       {/* Meta Pixel */}
       <Script id="meta-pixel" strategy="afterInteractive">
@@ -70,16 +96,6 @@ s.parentNode.insertBefore(t,s)}(window, document,'script',
 fbq('init', '${META_PIXEL_ID}');
 fbq('track', 'PageView');`}
       </Script>
-      <noscript>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          height="1"
-          width="1"
-          style={{ display: "none" }}
-          src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-          alt=""
-        />
-      </noscript>
 
       {/* ClickMagick — config must be set before the loader runs */}
       <Script id="clickmagick-config" strategy="afterInteractive">

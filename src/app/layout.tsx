@@ -4,7 +4,10 @@ import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
-import { TrackingScripts } from "@/components/tracking/TrackingScripts";
+import {
+  TrackingNoscript,
+  TrackingScripts,
+} from "@/components/tracking/TrackingScripts";
 import { SkipOnAdmin } from "@/components/tracking/SkipOnAdmin";
 import { FormTracker } from "@/components/tracking/FormTracker";
 import { Header } from "@/components/site/Header";
@@ -76,6 +79,7 @@ export default async function RootLayout({
         <SkipOnAdmin>
           <TrackingScripts />
         </SkipOnAdmin>
+        <TrackingNoscript />
         <ChatWidget />
         <Analytics />
         <SpeedInsights />
