@@ -3,6 +3,7 @@ import "server-only";
 import { preCallVideos } from "@/lib/content/pre-call-resources";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { chunk, ID_BATCH } from "@/lib/batch";
+import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
 import { loadLeadFacts } from "@/lib/services/pre-call-engagement";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -39,6 +40,7 @@ async function trackingStartedAt(): Promise<string | null> {
     const { data } = await createAdminClient()
       .from("lead_video_views")
       .select("first_played_at")
+      .gte("first_played_at", VIDEO_VIEWS_TRUSTED_FROM)
       .order("first_played_at", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -324,7 +326,8 @@ async function loadViewRows(
           .select(
             "vp_session_id, embed_id, max_percent, duration_seconds, last_seen_at",
           )
-          .in("vp_session_id", batch),
+          .in("vp_session_id", batch)
+          .gte("first_played_at", VIDEO_VIEWS_TRUSTED_FROM),
       ),
     );
 

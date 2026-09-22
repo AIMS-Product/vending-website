@@ -5,6 +5,7 @@ import {
   BOOKING_FUNNEL_PATHS,
   isBookingFunnelPath,
   isFunnelChromePath,
+  suppressesChatTeaser,
 } from "./booking-funnel-routes";
 import { bookingPages } from "./booking-pages";
 import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
@@ -84,8 +85,15 @@ describe("booking funnel routes", () => {
       ),
       "utf8",
     );
-    expect(source).toContain("isFunnelChromePath(pathname)");
+    expect(source).toContain("suppressesChatTeaser(pathname)");
     expect(source).toContain("if (suppressIdleTeaser) return;");
+  });
+
+  it("keeps the teaser off the pre-call page without taking its chrome", () => {
+    expect(suppressesChatTeaser("/pre-call-resources")).toBe(true);
+    expect(isFunnelChromePath("/pre-call-resources")).toBe(false);
+    expect(suppressesChatTeaser("/contact")).toBe(true);
+    expect(suppressesChatTeaser("/")).toBe(false);
   });
 
   it.each([

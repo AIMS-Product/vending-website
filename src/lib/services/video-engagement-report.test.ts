@@ -102,12 +102,15 @@ vi.mock("@/lib/services/pre-call-engagement", () => ({
 vi.mock("@/lib/supabase/admin", () => ({
   createAdminClient: () => ({
     from: () => ({
+      // Both reads filter on VIDEO_VIEWS_TRUSTED_FROM with .gte().
       select: () => ({
-        in: async () => ({ data: views, error: null }),
-        order: () => ({
-          limit: () => ({
-            maybeSingle: async () => ({
-              data: { first_played_at: TRACKING_START },
+        in: () => ({ gte: async () => ({ data: views, error: null }) }),
+        gte: () => ({
+          order: () => ({
+            limit: () => ({
+              maybeSingle: async () => ({
+                data: { first_played_at: TRACKING_START },
+              }),
             }),
           }),
         }),
