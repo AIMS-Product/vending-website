@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 import { createCloseClient, type CloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
 import {
@@ -138,6 +139,41 @@ export function summariseCloseWins(
 
 type MirrorClient = Pick<SupabaseClient<Database>, "from">;
 type WinsCloseClient = Pick<CloseClient, "listWonOpportunities" | "getLead">;
+
+/**
+ * Close reads for the reporting tabs, cached for five minutes (Adam,
+ * 2026-09-22). Every load of Month over month and the Close view re-read every
+ * won deal since January from Close, which was most of their load time and
+ * what tripped Close's rate limit. Our own mirror is still read fresh; only
+ * Close's answers are held, so revenue and closed-won can trail Close by up to
+ * five minutes. Failures are never cached.
+ */
+const CLOSE_READ_CACHE_SECONDS = 300;
+
+function liveCloseClient(): CloseClient {
+  return createCloseClient({ apiKey: config.CLOSE_API_KEY });
+}
+
+const cachedWonOpportunities = unstable_cache(
+  (from: string, to: string, skip: number) =>
+    liveCloseClient().listWonOpportunities({ from, to, skip }),
+  ["close-won-opportunities"],
+  { revalidate: CLOSE_READ_CACHE_SECONDS },
+);
+
+const cachedLead = unstable_cache(
+  (leadId: string) => liveCloseClient().getLead(leadId),
+  ["close-lead-for-wins"],
+  { revalidate: CLOSE_READ_CACHE_SECONDS },
+);
+
+export function cachedCloseReads(): WinsCloseClient {
+  return {
+    listWonOpportunities: ({ from, to, skip }) =>
+      cachedWonOpportunities(from, to, skip),
+    getLead: (leadId) => cachedLead(leadId),
+  };
+}
 
 /** 100 per page; 50 pages is 5,000 wins, far above any range the tabs ask for. */
 const MAX_PAGES = 50;

@@ -570,23 +570,39 @@ function formatShortDate(isoDate: string): string {
   return `${month}/${day}`;
 }
 
-export const ANALYTICS_TABS = [
-  { key: "overview", label: "Overview" },
-  { key: "exec", label: "Executive" },
-  { key: "acquisition", label: "Acquisition" },
-  { key: "pages", label: "Pages & funnel" },
-  { key: "funnels", label: "Funnels by month" },
-  { key: "journeys", label: "Journeys" },
-  { key: "quality", label: "Lead quality" },
-  { key: "youtube", label: "YouTube" },
+// Sixteen tabs in one row was too much to scan (Adam, 2026-09-22), so they sit
+// in four sections: pick a section, then one of its tabs. The first tab in
+// each section is where its section link lands.
+export const ANALYTICS_SECTIONS = [
+  { key: "leads", label: "Leads" },
   { key: "channels", label: "Channels" },
-  { key: "kpi", label: "KPI" },
-  { key: "booked", label: "Booked calls" },
-  { key: "video", label: "Pre-call video" },
-  { key: "mom", label: "Month over month" },
-  { key: "close", label: "Close view" },
-  { key: "map", label: "Funnel map" },
+  { key: "sales", label: "Sales" },
+  { key: "exec", label: "Executive" },
 ] as const;
+
+type AnalyticsSectionKey = (typeof ANALYTICS_SECTIONS)[number]["key"];
+
+export const ANALYTICS_TABS = [
+  { key: "overview", label: "Overview", section: "leads" },
+  { key: "acquisition", label: "Acquisition", section: "leads" },
+  { key: "pages", label: "Pages & funnel", section: "leads" },
+  { key: "quality", label: "Lead quality", section: "leads" },
+  { key: "journeys", label: "Journeys", section: "leads" },
+  { key: "map", label: "Funnel map", section: "leads" },
+  { key: "channels", label: "Channels", section: "channels" },
+  { key: "youtube", label: "YouTube", section: "channels" },
+  { key: "video", label: "Pre-call video", section: "channels" },
+  { key: "booked", label: "Booked calls", section: "sales" },
+  { key: "close", label: "Close view", section: "sales" },
+  { key: "mom", label: "Month over month", section: "sales" },
+  { key: "exec", label: "Executive", section: "exec" },
+  { key: "kpi", label: "KPI", section: "exec" },
+  { key: "funnels", label: "Funnels by month", section: "exec" },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  label: string;
+  section: AnalyticsSectionKey;
+}>;
 
 export type AnalyticsTabKey = (typeof ANALYTICS_TABS)[number]["key"];
 
@@ -607,29 +623,58 @@ export function AnalyticsTabs({
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
 }) {
+  const activeSection =
+    ANALYTICS_TABS.find((tab) => tab.key === active)?.section ?? "leads";
   return (
-    <nav
-      className="border-ui-line mb-5 flex flex-wrap gap-1 border-b"
-      aria-label="Analytics sections"
-    >
-      {ANALYTICS_TABS.map((tab) => {
-        const isActive = tab.key === active;
-        return (
-          <Link
-            key={tab.key}
-            href={analyticsHref(range, includeInternal, tab.key)}
-            aria-current={isActive ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-[0.8125rem] font-medium transition ${
-              isActive
-                ? "text-ui-text border-ui-accent"
-                : "text-ui-text-subtle hover:text-ui-text border-transparent"
-            }`}
-          >
-            {tab.label}
-          </Link>
-        );
-      })}
-    </nav>
+    <div className="mb-5">
+      <nav className="flex flex-wrap gap-1.5" aria-label="Analytics sections">
+        {ANALYTICS_SECTIONS.map((section) => {
+          const isActive = section.key === activeSection;
+          const first = ANALYTICS_TABS.find(
+            (tab) => tab.section === section.key,
+          );
+          if (!first) return null;
+          return (
+            <Link
+              key={section.key}
+              href={analyticsHref(range, includeInternal, first.key)}
+              aria-current={isActive ? "true" : undefined}
+              className={`rounded-full px-3.5 py-1.5 text-[0.8125rem] font-semibold transition ${
+                isActive
+                  ? "bg-ui-accent text-white"
+                  : "text-ui-text-muted hover:bg-ui-canvas hover:text-ui-text"
+              }`}
+            >
+              {section.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <nav
+        className="border-ui-line mt-3 flex flex-wrap gap-1 border-b"
+        aria-label="Analytics tabs"
+      >
+        {ANALYTICS_TABS.filter((tab) => tab.section === activeSection).map(
+          (tab) => {
+            const isActive = tab.key === active;
+            return (
+              <Link
+                key={tab.key}
+                href={analyticsHref(range, includeInternal, tab.key)}
+                aria-current={isActive ? "page" : undefined}
+                className={`-mb-px border-b-2 px-3 py-2 text-[0.8125rem] font-medium transition ${
+                  isActive
+                    ? "text-ui-text border-ui-accent"
+                    : "text-ui-text-subtle hover:text-ui-text border-transparent"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            );
+          },
+        )}
+      </nav>
+    </div>
   );
 }
 

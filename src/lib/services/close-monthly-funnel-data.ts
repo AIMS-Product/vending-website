@@ -1,6 +1,5 @@
 import "server-only";
 
-import { createCloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
 import {
   buildCloseMonthlyFunnel,
@@ -9,7 +8,7 @@ import {
 } from "@/lib/services/close-monthly-funnel";
 import type { CloseCall } from "@/lib/services/close-week-view";
 import { getMonthlyLeads } from "@/lib/services/close-monthly-leads";
-import { fetchCloseDeals } from "@/lib/services/close-wins";
+import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PAGE_SIZE = 1000;
@@ -85,7 +84,7 @@ export async function getCloseMonthlyFunnel(
     const deals = await fetchCloseDeals({
       from,
       to: today,
-      close: createCloseClient({ apiKey: config.CLOSE_API_KEY }),
+      close: cachedCloseReads(),
       mirror: client,
     });
     const dealValueByLead = new Map<string, number>();

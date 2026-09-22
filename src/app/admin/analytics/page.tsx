@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminMetricStrip, adminCardClass } from "@/components/admin/AdminUi";
 import {
@@ -61,6 +62,7 @@ import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
   parseAdminAnalyticsRange,
+  type AdminAnalyticsRangeKey,
   resolveAdminAnalyticsRange,
   toCustomRangeKey,
 } from "@/lib/services/admin-analytics-range";
@@ -93,6 +95,104 @@ export default async function AdminAnalyticsPage({
   );
   const includeInternal = singleParam(params.internal) === "1";
   const tab = parseAnalyticsTab(singleParam(params.tab));
+
+  // Auth first and on its own: it is fast, and nothing should query on behalf
+  // of a visitor who is about to be redirected.
+  const { user, role } = await requireReadAccess();
+
+  // Not awaited. The shell, controls and tab bar render straight away and the
+  // tab body streams in behind a skeleton (Adam, 2026-09-22): awaiting here
+  // froze the page for the slowest query, up to five seconds, on every click.
+  const data = loadTabData({ tab, range, includeInternal, params });
+  // A new key per view makes the skeleton show on every tab or range change;
+  // without it the old tab sat on screen until the new one finished.
+  const viewKey = JSON.stringify(params);
+
+  return (
+    <AdminShell
+      activeSection="analytics"
+      eyebrow="Reporting"
+      title="Analytics"
+      description="Leads, qualification, and bookings by source, page, and campaign."
+      userEmail={user.email}
+      userRole={role}
+    >
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+        <Suspense
+          key={viewKey}
+          fallback={
+            <AnalyticsInternalToggle
+              range={range}
+              includeInternal={includeInternal}
+              excludedCount={0}
+              tab={tab}
+            />
+          }
+        >
+          <InternalToggleWithCount
+            data={data}
+            range={range}
+            includeInternal={includeInternal}
+            tab={tab}
+          />
+        </Suspense>
+        <div className="flex flex-wrap items-center gap-2">
+          <AnalyticsWeekPicker
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+            today={new Date().toISOString().slice(0, 10)}
+          />
+          <AnalyticsCustomRange
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+            today={new Date().toISOString().slice(0, 10)}
+          />
+          <AnalyticsRangeTabs
+            active={range}
+            includeInternal={includeInternal}
+            tab={tab}
+          />
+        </div>
+      </div>
+
+      <AnalyticsTabs
+        active={tab}
+        range={range}
+        includeInternal={includeInternal}
+      />
+
+      <LeadDefinitionNote />
+
+      <Suspense key={viewKey} fallback={<TabSkeleton />}>
+        <TabBody
+          data={data}
+          tab={tab}
+          range={range}
+          includeInternal={includeInternal}
+          params={params}
+          canEdit={canEditAdmin(role)}
+        />
+      </Suspense>
+    </AdminShell>
+  );
+}
+
+type TabData = Awaited<ReturnType<typeof loadTabData>>;
+
+/** Fetches only what the active tab renders. */
+async function loadTabData({
+  tab,
+  range,
+  includeInternal,
+  params,
+}: {
+  tab: AnalyticsTabKey;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+  params: SearchParams;
+}) {
   const videoSort = parseYouTubeVideoSort(singleParam(params.sort));
 
   // The YouTube and Channels tabs read different tables, so each fetches its
@@ -109,7 +209,6 @@ export default async function AdminAnalyticsPage({
   const isMomTab = tab === "mom";
   const isVideoTab = tab === "video";
   const [
-    { user, role },
     analytics,
     youtube,
     channels,
@@ -124,7 +223,6 @@ export default async function AdminAnalyticsPage({
     closeMonthly,
     videoEngagement,
   ] = await Promise.all([
-    requireReadAccess(),
     isYouTubeTab ||
     isChannelsTab ||
     isKpiTab ||
@@ -174,54 +272,75 @@ export default async function AdminAnalyticsPage({
         })
       : null,
   ]);
-  const internalExcluded =
-    youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0;
+  return {
+    analytics,
+    youtube,
+    channels,
+    kpi,
+    map,
+    booked,
+    funnels,
+    journeys,
+    executive,
+    closeWeeks,
+    closeMtd,
+    closeMonthly,
+    videoEngagement,
+    videoSort,
+    internalExcluded:
+      youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0,
+  };
+}
+
+async function InternalToggleWithCount({
+  data,
+  ...props
+}: {
+  data: Promise<TabData>;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+  tab: AnalyticsTabKey;
+}) {
+  const { internalExcluded } = await data;
+  return (
+    <AnalyticsInternalToggle {...props} excludedCount={internalExcluded} />
+  );
+}
+
+async function TabBody({
+  data,
+  tab,
+  range,
+  includeInternal,
+  params,
+  canEdit,
+}: {
+  data: Promise<TabData>;
+  tab: AnalyticsTabKey;
+  range: AdminAnalyticsRangeKey;
+  includeInternal: boolean;
+  params: SearchParams;
+  canEdit: boolean;
+}) {
+  const {
+    analytics,
+    youtube,
+    channels,
+    kpi,
+    map,
+    booked,
+    funnels,
+    journeys,
+    executive,
+    closeWeeks,
+    closeMtd,
+    closeMonthly,
+    videoEngagement,
+    videoSort,
+  } = await data;
 
   return (
-    <AdminShell
-      activeSection="analytics"
-      eyebrow="Reporting"
-      title="Analytics"
-      description="Leads, qualification, and bookings by source, page, and campaign."
-      userEmail={user.email}
-      userRole={role}
-    >
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <AnalyticsInternalToggle
-          range={range}
-          includeInternal={includeInternal}
-          excludedCount={internalExcluded}
-          tab={tab}
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <AnalyticsWeekPicker
-            active={range}
-            includeInternal={includeInternal}
-            tab={tab}
-            today={new Date().toISOString().slice(0, 10)}
-          />
-          <AnalyticsCustomRange
-            active={range}
-            includeInternal={includeInternal}
-            tab={tab}
-            today={new Date().toISOString().slice(0, 10)}
-          />
-          <AnalyticsRangeTabs
-            active={range}
-            includeInternal={includeInternal}
-            tab={tab}
-          />
-        </div>
-      </div>
-
-      <AnalyticsTabs
-        active={tab}
-        range={range}
-        includeInternal={includeInternal}
-      />
-
-      <LeadDefinitionNote />
-
+    <>
       {closeMonthly ? (
         <CloseMonthlyPanel
           report={closeMonthly}
@@ -265,7 +384,7 @@ export default async function AdminAnalyticsPage({
         <KpiTab data={kpi} />
       ) : channels ? (
         <ChannelsTab
-          canEdit={canEditAdmin(role)}
+          canEdit={canEdit}
           data={channels}
           range={range}
           includeInternal={includeInternal}
@@ -280,7 +399,23 @@ export default async function AdminAnalyticsPage({
       ) : analytics ? (
         <TabContent tab={tab} analytics={analytics} />
       ) : null}
-    </AdminShell>
+    </>
+  );
+}
+
+function TabSkeleton() {
+  return (
+    <div aria-busy="true" aria-label="Loading" className="space-y-5">
+      <div className="grid gap-5 xl:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className={`${adminCardClass} bg-ui-canvas h-40 animate-pulse`}
+          />
+        ))}
+      </div>
+      <div className={`${adminCardClass} bg-ui-canvas h-72 animate-pulse`} />
+    </div>
   );
 }
 

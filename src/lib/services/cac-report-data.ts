@@ -1,8 +1,7 @@
 import "server-only";
 
-import { createCloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
-import { fetchCloseDeals } from "@/lib/services/close-wins";
+import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   buildCacReport,
@@ -49,7 +48,7 @@ async function closesByRoute(
     const deals = await fetchCloseDeals({
       from: month,
       to: end,
-      close: createCloseClient({ apiKey: config.CLOSE_API_KEY }),
+      close: cachedCloseReads(),
       mirror: client,
     });
     const routeOf = new Map(

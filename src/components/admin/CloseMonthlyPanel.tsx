@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import { useState } from "react";
 import {
   adminEyebrowClass,
   adminPanelClass,
@@ -119,24 +121,45 @@ function monthNameOf(day: string): string {
   });
 }
 
-function monthsHref(
+/**
+ * The months shown after toggling one. None or every month both mean "show
+ * all", which is the default and carries no URL parameter.
+ */
+function toggledMonths(
   months: readonly MonthlyMonth[],
   toggled: string,
   shown: ReadonlySet<string>,
-): string {
+): Set<string> {
   const next = new Set(shown);
   if (next.has(toggled)) next.delete(toggled);
   else next.add(toggled);
-  // Every month shown is the default, so it needs no parameter at all.
-  if (next.size === months.length || next.size === 0) return "?tab=mom";
-  const ordered = months
-    .filter((month) => next.has(month.key))
-    .map((month) => month.key);
-  return `?tab=mom&months=${ordered.join(",")}`;
+  return next.size === 0 ? new Set(months.map((month) => month.key)) : next;
+}
+
+/**
+ * Keeps `months=` in the address bar so a filtered view can still be shared,
+ * without a navigation. A Link here re-ran the whole page on the server,
+ * Close reads included, for what is only a column filter (Jess, 2026-09-22).
+ */
+function writeShownToUrl(
+  months: readonly MonthlyMonth[],
+  shown: ReadonlySet<string>,
+) {
+  const url = new URL(window.location.href);
+  if (shown.size === months.length) url.searchParams.delete("months");
+  else
+    url.searchParams.set(
+      "months",
+      months
+        .filter((month) => shown.has(month.key))
+        .map((month) => month.key)
+        .join(","),
+    );
+  window.history.replaceState(window.history.state, "", url);
 }
 
 /** The months to render: those named in `months=`, or all of them. */
-export function parseShownMonths(
+function parseShownMonths(
   value: string | null | undefined,
   all: readonly MonthlyMonth[],
 ): Set<string> {
@@ -155,6 +178,11 @@ export function CloseMonthlyPanel({
   report: CloseMonthlyReport;
   shown: string | null;
 }) {
+  const allMonths = report.ok ? report.funnel.months : [];
+  const [visible, setVisible] = useState(() =>
+    parseShownMonths(shown, allMonths),
+  );
+
   if (!report.ok) {
     return (
       <section className={`${adminPanelClass} p-4`}>
@@ -168,7 +196,6 @@ export function CloseMonthlyPanel({
   }
 
   const { funnel } = report;
-  const visible = parseShownMonths(shown, funnel.months);
   const months = funnel.months.filter((month) => visible.has(month.key));
   const immature = months.filter((month) => !month.mature);
   const marks = benchmarksOf(months);
@@ -263,9 +290,14 @@ export function CloseMonthlyPanel({
           {funnel.months.map((month) => {
             const on = visible.has(month.key);
             return (
-              <Link
+              <button
+                type="button"
                 key={month.key}
-                href={monthsHref(funnel.months, month.key, visible)}
+                onClick={() => {
+                  const next = toggledMonths(funnel.months, month.key, visible);
+                  setVisible(next);
+                  writeShownToUrl(funnel.months, next);
+                }}
                 aria-pressed={on}
                 className={`rounded-full px-3 py-1 text-xs font-medium transition ${
                   on
@@ -274,7 +306,7 @@ export function CloseMonthlyPanel({
                 }`}
               >
                 {month.label}
-              </Link>
+              </button>
             );
           })}
         </div>

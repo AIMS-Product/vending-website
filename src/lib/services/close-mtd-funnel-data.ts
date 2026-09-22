@@ -1,13 +1,12 @@
 import "server-only";
 
-import { createCloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
 import {
   buildCloseMtdFunnel,
   type CloseMtdFunnel,
 } from "@/lib/services/close-mtd-funnel";
 import type { CloseCall } from "@/lib/services/close-week-view";
-import { fetchCloseDeals } from "@/lib/services/close-wins";
+import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PAGE_SIZE = 1000;
@@ -73,7 +72,7 @@ export async function getCloseMtdFunnel(
     const deals = await fetchCloseDeals({
       from,
       to: today,
-      close: createCloseClient({ apiKey: config.CLOSE_API_KEY }),
+      close: cachedCloseReads(),
       mirror: client,
     });
     return {

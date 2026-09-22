@@ -1,8 +1,7 @@
 import "server-only";
 
-import { createCloseClient } from "@/lib/close/client";
 import { config } from "@/lib/config";
-import { fetchCloseDeals } from "@/lib/services/close-wins";
+import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import {
   buildCloseWeeks,
   recentWeeks,
@@ -69,7 +68,7 @@ export async function getCloseWeekView(
     const deals = await fetchCloseDeals({
       from,
       to,
-      close: createCloseClient({ apiKey: config.CLOSE_API_KEY }),
+      close: cachedCloseReads(),
       mirror: client,
     });
     return {
