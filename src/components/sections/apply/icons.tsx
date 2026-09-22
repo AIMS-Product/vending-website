@@ -6,22 +6,6 @@ import type { ToolIconKey } from "@/lib/content/apply-page";
 
 type IconProps = { className?: string };
 
-export function LockIcon({ className }: IconProps) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.2}
-      className={className}
-      aria-hidden
-    >
-      <rect x="4" y="11" width="16" height="9" rx="2" />
-      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-    </svg>
-  );
-}
-
 export function PlayIcon({ className }: IconProps) {
   return (
     <svg
@@ -62,29 +46,6 @@ export function ChevronDownIcon({ className }: IconProps) {
     >
       <path d="M6 9l6 6 6-6" />
     </svg>
-  );
-}
-
-export function StarRow({
-  className,
-  starClassName,
-}: {
-  className?: string;
-  starClassName?: string;
-}) {
-  return (
-    <div className={className} aria-hidden>
-      {[0, 1, 2, 3, 4].map((i) => (
-        <svg
-          key={i}
-          viewBox="0 0 24 24"
-          fill="currentColor"
-          className={starClassName}
-        >
-          <path d="M12 2l2.9 6.1 6.7.9-4.9 4.6 1.2 6.6L12 17.9 6.1 20.8l1.2-6.6L2.4 9.6l6.7-.9z" />
-        </svg>
-      ))}
-    </div>
   );
 }
 

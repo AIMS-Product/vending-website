@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { applyVsl } from "@/lib/content/apply-page";
+import { APPLY_VSL_ANCHOR, applyVsl } from "@/lib/content/apply-page";
 import { PlayIcon } from "./icons";
 
 // Click-to-play VSL facade: renders the YouTube thumbnail + play button
@@ -27,7 +27,10 @@ export function ApplyVsl({
   const [isPlaying, setIsPlaying] = useState(false);
 
   return (
-    <section className="mx-auto max-w-[940px] px-5 py-20 lg:px-10">
+    <section
+      id={APPLY_VSL_ANCHOR}
+      className="mx-auto max-w-[940px] scroll-mt-20 px-5 py-20 lg:px-10"
+    >
       {/* The heading runs to the video's width on desktop so it breaks to two
           lines instead of three (Kody, 2026-07-28). */}
       {vsl.title ? (

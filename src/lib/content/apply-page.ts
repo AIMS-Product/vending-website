@@ -35,13 +35,8 @@ export const applyHero = {
   // the only one on the page.
   body: "Map out what your route could look like: how many machines to start with, where to place them, and what that could earn in your market.",
   ctaLabel: "Book Your Free Strategy Call",
-  // Basic proof under the hero CTA (Kody, 2026-07-28). Same figures as the
-  // quiz rail so the two never disagree.
-  trustStats: [
-    { value: "850+", label: "entrepreneurs launched" },
-    { value: "3,000+", label: "locations placed" },
-    { value: "$3 million+", label: "in vending sales" },
-  ],
+  // Points at the VSL directly under the hero (Adam, 2026-09-22).
+  videoCue: "Watch Mike's story below",
 } as const;
 
 export const applyVsl = {
@@ -242,15 +237,6 @@ export const applyFaq = {
 
 export const applyQuiz = {
   submitLabel: "Submit",
-  rail: {
-    quote: "“With just 4 locations, I'm doing $25,000 a month in revenue.”",
-    attribution: "Shannon · Member",
-    stats: [
-      { value: "850+", label: "entrepreneurs launched" },
-      { value: "3,000+", label: "locations placed" },
-    ],
-    availabilityNote: "Availability is capped by market.",
-  },
 } as const;
 
 export const applyFooter = {
@@ -274,3 +260,6 @@ export const applySticky = {
 
 /** The in-page anchor every CTA scrolls to (the quiz section). */
 export const APPLY_QUIZ_ANCHOR = "apply-form";
+
+/** The VSL section, linked from the hero's "watch below" cue. */
+export const APPLY_VSL_ANCHOR = "watch";

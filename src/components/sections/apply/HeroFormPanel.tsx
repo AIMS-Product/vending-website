@@ -5,8 +5,7 @@
 //
 // PublicLeadForm already renders its own white card, so this is only the
 // wrapper. The card carries no heading and no proof rail of its own: the hero
-// headline beside it says what the page is for, and the member quote and trust
-// stats sit in the left column where they balance the form's height.
+// headline beside it says what the page is for.
 export function HeroFormPanel({ children }: { children: React.ReactNode }) {
   return <div className="w-full">{children}</div>;
 }

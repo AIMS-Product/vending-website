@@ -1,10 +1,10 @@
 import { Anton } from "next/font/google";
 import {
   APPLY_QUIZ_ANCHOR,
+  APPLY_VSL_ANCHOR,
   applyHero,
-  applyQuiz,
 } from "@/lib/content/apply-page";
-import { LockIcon, StarRow } from "./icons";
+import { ChevronDownIcon, PlayIcon } from "./icons";
 
 // The display face the home hero already uses. The booking funnels were set in
 // Inter black, which at headline size reads as bulk rather than emphasis
@@ -64,7 +64,7 @@ export function ApplyHero({
           backgroundSize: "22px 22px",
         }}
       />
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-start gap-x-14 gap-y-10 px-5 py-14 lg:grid-cols-[1fr_minmax(0,440px)] lg:px-10 lg:py-16">
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-x-14 gap-y-10 px-5 py-14 lg:grid-cols-[1fr_minmax(0,440px)] lg:px-10 lg:py-16">
         <div className="max-w-[620px]">
           <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
             {applyHero.eyebrow}
@@ -80,39 +80,22 @@ export function ApplyHero({
             {body}
           </p>
 
-          {/* The proof used to sit under the form, which left this column
-              ending in dead space beside a tall card. Next to the claim it
-              does more work and the two columns finish closer together. */}
-          <figure className="mt-8 max-w-[44ch] border-t-2 border-l-0 border-[#111111] pt-6">
-            <StarRow
-              className="flex gap-0.5 text-[#2a8fcc]"
-              starClassName="size-[17px]"
-            />
-            <blockquote className="mt-3 text-[17px] leading-[1.45] font-black text-[#111111]">
-              {applyQuiz.rail.quote}
-            </blockquote>
-            <figcaption className="mt-2.5 text-[13px] font-semibold text-slate-500">
-              {applyQuiz.rail.attribution}
-            </figcaption>
-          </figure>
-
-          <ul className="mt-7 flex flex-wrap items-baseline gap-x-7 gap-y-2.5">
-            {applyHero.trustStats.map((stat) => (
-              <li key={stat.label} className="flex items-baseline gap-1.5">
-                <span className="text-xl leading-none font-black text-[#066a99]">
-                  {stat.value}
-                </span>
-                <span className="text-[12.5px] font-semibold text-slate-500">
-                  {stat.label}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-5 flex items-center gap-2 text-[12.5px] font-semibold text-slate-500">
-            <LockIcon className="size-3.5 text-[#066a99]" />
-            {applyQuiz.rail.availabilityNote}
-          </p>
+          {/* Adam, 2026-09-22: the quote, stats and availability note that sat
+              here made this column far taller than the form beside it. The
+              only thing left under the pitch is a pointer to the VSL, which
+              visitors were not finding below the fold. */}
+          <a
+            href={`#${APPLY_VSL_ANCHOR}`}
+            className="group mt-8 inline-flex items-center gap-3 text-[15px] font-black tracking-[0.02em] text-[#111111] uppercase"
+          >
+            <span className="flex size-11 items-center justify-center rounded-full bg-[#2a8fcc] text-white shadow-[3px_3px_0_#111111] transition-transform group-hover:translate-y-0.5">
+              <PlayIcon className="size-4 translate-x-px" />
+            </span>
+            <span className="flex items-center gap-1.5 underline decoration-[#2a8fcc] decoration-2 underline-offset-4">
+              {applyHero.videoCue}
+              <ChevronDownIcon className="size-4 text-[#066a99] motion-safe:animate-bounce" />
+            </span>
+          </a>
         </div>
 
         {aside ? (
