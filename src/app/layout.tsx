@@ -5,6 +5,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
 import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import { TrackingScripts } from "@/components/tracking/TrackingScripts";
+import { SkipOnAdmin } from "@/components/tracking/SkipOnAdmin";
 import { FormTracker } from "@/components/tracking/FormTracker";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -72,7 +73,9 @@ export default async function RootLayout({
         <AttributionSessionTracker />
         <FormTracker />
         <SitePopup popups={popups} />
-        <TrackingScripts />
+        <SkipOnAdmin>
+          <TrackingScripts />
+        </SkipOnAdmin>
         <ChatWidget />
         <Analytics />
         <SpeedInsights />
