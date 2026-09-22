@@ -55,6 +55,8 @@ import { FunnelExecutiveTab } from "@/components/admin/FunnelExecutivePanel";
 import { CloseWeekTab } from "@/components/admin/CloseWeekPanel";
 import { CloseMtdFunnelPanel } from "@/components/admin/CloseMtdFunnelPanel";
 import { getCloseMtdFunnel } from "@/lib/services/close-mtd-funnel-data";
+import { CloseMonthlyPanel } from "@/components/admin/CloseMonthlyPanel";
+import { getCloseMonthlyFunnel } from "@/lib/services/close-monthly-funnel-data";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getChannelJourneys } from "@/lib/services/channel-journeys-data";
 import {
@@ -104,6 +106,7 @@ export default async function AdminAnalyticsPage({
   const isJourneysTab = tab === "journeys";
   const isExecTab = tab === "exec";
   const isCloseTab = tab === "close";
+  const isMomTab = tab === "mom";
   const isVideoTab = tab === "video";
   const [
     { user, role },
@@ -118,6 +121,7 @@ export default async function AdminAnalyticsPage({
     executive,
     closeWeeks,
     closeMtd,
+    closeMonthly,
     videoEngagement,
   ] = await Promise.all([
     requireReadAccess(),
@@ -130,6 +134,7 @@ export default async function AdminAnalyticsPage({
     isJourneysTab ||
     isExecTab ||
     isCloseTab ||
+    isMomTab ||
     isVideoTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
@@ -158,6 +163,9 @@ export default async function AdminAnalyticsPage({
     isExecTab ? getFunnelExecutive({ includeInternal }) : null,
     isCloseTab ? getCloseWeekView() : null,
     isCloseTab ? getCloseMtdFunnel() : null,
+    // Deliberately ignores `range`: this view IS the month series, so a
+    // 30-day window would render one partial month and call it a trend.
+    isMomTab ? getCloseMonthlyFunnel() : null,
     // Windowed on when the call was BOOKED, matching the bookings ledger, so
     // "booked prospects" means the same population on both pages.
     isVideoTab
@@ -214,7 +222,12 @@ export default async function AdminAnalyticsPage({
 
       <LeadDefinitionNote />
 
-      {closeWeeks ? (
+      {closeMonthly ? (
+        <CloseMonthlyPanel
+          report={closeMonthly}
+          shown={singleParam(params.months) ?? null}
+        />
+      ) : closeWeeks ? (
         <div className="space-y-5">
           {closeMtd ? <CloseMtdFunnelPanel report={closeMtd} /> : null}
           <CloseWeekTab

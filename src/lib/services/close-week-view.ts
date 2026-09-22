@@ -33,6 +33,8 @@ const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
 const EXCLUDED_FUNNELS = new Set(["ltf - quiz funnel"]);
 
 export type CloseCall = {
+  /** The Close lead this first call belongs to. Joins a win back to its booking. */
+  leadId: string;
   funnel: string | null;
   /** Close lead status label, e.g. "🔻 Canceled (by Lead)". */
   status: string | null;
@@ -115,23 +117,54 @@ export function labelOf(funnel: string | null): string {
 
 const EMPTY = { booked: 0, showed: 0, qualified: 0, won: 0, revenue: 0 };
 
-export function buildCloseWeeks(input: {
+export type ClosePeriod = {
+  key: string;
+  totals: Omit<CloseWeekRow, "label">;
+  rows: CloseWeekRow[];
+  /** Won deals with no value in Close: counted in won, not in revenue. */
+  unvalued: number;
+  /** First calls left out: lead now canceled by lead, outside the US, or quiz funnel. */
+  excluded: number;
+};
+
+export type ClosePeriodsReport = {
+  periods: ClosePeriod[];
+};
+
+/**
+ * The funnel aggregated into whatever periods the caller asks for.
+ *
+ * Weeks and months are the same arithmetic over different buckets, so they
+ * share this. `periodOf` decides the bucket; anything landing outside
+ * `periods` is left out.
+ *
+ * `outcomeOf` switches where a win comes from. Without it, wins come from
+ * `deals` and land in the period they were WON in, which is what "revenue in
+ * March" means. With it, the win is read off the lead's own row and lands in
+ * the period that lead's call was BOOKED in — the only way a closed-won rate
+ * can sit in a column beside show and qualified and be read down one cohort.
+ * `deals` is then unused.
+ */
+export function buildClosePeriods(input: {
   calls: readonly CloseCall[];
   deals: readonly CloseDeal[];
-  weeks: readonly string[];
-  today: string;
-}): CloseWeek[] {
-  const wanted = new Set(input.weeks);
-  const byWeek = new Map<string, Map<string, CloseWeekRow>>();
+  periods: readonly string[];
+  periodOf: (day: string) => string;
+  /** The win carried on the lead's own row, for a cohort reading. */
+  outcomeOf?: (call: CloseCall) => { won: number; revenue: number };
+}): ClosePeriodsReport {
+  const wanted = new Set(input.periods);
+  const byPeriod = new Map<string, Map<string, CloseWeekRow>>();
   const unvalued = new Map<string, number>();
+  const excluded = new Map<string, number>();
 
   const bump = (
-    week: string,
+    period: string,
     funnel: string | null,
     add: Partial<Omit<CloseWeekRow, "label">>,
   ) => {
-    if (!wanted.has(week)) return;
-    const rows = byWeek.get(week) ?? new Map<string, CloseWeekRow>();
+    if (!wanted.has(period)) return;
+    const rows = byPeriod.get(period) ?? new Map<string, CloseWeekRow>();
     const label = labelOf(funnel);
     const row = rows.get(label) ?? { label, ...EMPTY };
     rows.set(label, {
@@ -142,33 +175,46 @@ export function buildCloseWeeks(input: {
       won: row.won + (add.won ?? 0),
       revenue: row.revenue + (add.revenue ?? 0),
     });
-    byWeek.set(week, rows);
+    byPeriod.set(period, rows);
   };
 
-  const excluded = new Map<string, number>();
   for (const call of input.calls) {
+    const period = input.periodOf(call.bookedDate);
     if (isExcludedCall(call)) {
-      const week = weekStartOf(call.bookedDate);
-      if (wanted.has(week)) excluded.set(week, (excluded.get(week) ?? 0) + 1);
+      if (wanted.has(period))
+        excluded.set(period, (excluded.get(period) ?? 0) + 1);
       continue;
     }
-    bump(weekStartOf(call.bookedDate), call.funnel, {
+    const outcome = input.outcomeOf?.(call);
+    bump(period, call.funnel, {
       booked: 1,
       showed: isYes(call.showUp) ? 1 : 0,
       qualified: isYes(call.qualified) ? 1 : 0,
+      won: outcome?.won ?? 0,
+      revenue: outcome?.revenue ?? 0,
     });
+    // A lead Close calls won that carries no deal value: in won, not in revenue.
+    if (
+      outcome &&
+      outcome.won > 0 &&
+      outcome.revenue === 0 &&
+      wanted.has(period)
+    )
+      unvalued.set(period, (unvalued.get(period) ?? 0) + 1);
   }
-  for (const deal of input.deals) {
-    const week = weekStartOf(deal.dateWon);
-    bump(week, deal.funnel, { won: 1, revenue: deal.value ?? 0 });
-    if (deal.value === null && wanted.has(week)) {
-      unvalued.set(week, (unvalued.get(week) ?? 0) + 1);
+
+  if (!input.outcomeOf) {
+    for (const deal of input.deals) {
+      const period = input.periodOf(deal.dateWon);
+      bump(period, deal.funnel, { won: 1, revenue: deal.value ?? 0 });
+      if (deal.value === null && wanted.has(period)) {
+        unvalued.set(period, (unvalued.get(period) ?? 0) + 1);
+      }
     }
   }
 
-  return input.weeks.map((key) => {
-    const end = weekEndOf(key);
-    const rows = [...(byWeek.get(key)?.values() ?? [])].sort(
+  const periods = input.periods.map((key) => {
+    const rows = [...(byPeriod.get(key)?.values() ?? [])].sort(
       (a, b) =>
         b.booked - a.booked ||
         b.revenue - a.revenue ||
@@ -186,12 +232,29 @@ export function buildCloseWeeks(input: {
     );
     return {
       key,
-      end,
-      complete: end < input.today,
       totals,
       rows,
       unvalued: unvalued.get(key) ?? 0,
       excluded: excluded.get(key) ?? 0,
     };
+  });
+  return { periods };
+}
+
+export function buildCloseWeeks(input: {
+  calls: readonly CloseCall[];
+  deals: readonly CloseDeal[];
+  weeks: readonly string[];
+  today: string;
+}): CloseWeek[] {
+  const { periods } = buildClosePeriods({
+    calls: input.calls,
+    deals: input.deals,
+    periods: input.weeks,
+    periodOf: weekStartOf,
+  });
+  return periods.map((period) => {
+    const end = weekEndOf(period.key);
+    return { ...period, end, complete: end < input.today };
   });
 }

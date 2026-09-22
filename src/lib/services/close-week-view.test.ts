@@ -32,6 +32,7 @@ describe("buildCloseWeeks", () => {
       today: "2026-09-19",
       calls: [
         {
+          leadId: "lead_1",
           funnel: "YouTube",
           status: null,
           bookedDate: "2026-09-12",
@@ -39,6 +40,7 @@ describe("buildCloseWeeks", () => {
           qualified: "Yes",
         },
         {
+          leadId: "lead_2",
           funnel: "YouTube",
           status: null,
           bookedDate: "2026-09-17",
@@ -47,6 +49,7 @@ describe("buildCloseWeeks", () => {
         },
         // Unlogged show-up is not a show.
         {
+          leadId: "lead_3",
           funnel: "YouTube",
           status: null,
           bookedDate: "2026-09-15",
@@ -54,6 +57,7 @@ describe("buildCloseWeeks", () => {
           qualified: null,
         },
         {
+          leadId: "lead_4",
           funnel: null,
           status: null,
           bookedDate: "2026-09-16",
@@ -62,6 +66,7 @@ describe("buildCloseWeeks", () => {
         },
         // Outside the week.
         {
+          leadId: "lead_5",
           funnel: "YouTube",
           status: null,
           bookedDate: "2026-09-18",
@@ -133,6 +138,7 @@ describe("buildCloseWeeks", () => {
 
   it("leaves out canceled-by-lead, outside-the-US and quiz-funnel calls, and counts them", () => {
     const call = (status: string | null, funnel = "Instagram") => ({
+      leadId: `lead_${status ?? "none"}_${funnel}`,
       funnel,
       status,
       bookedDate: "2026-09-14",

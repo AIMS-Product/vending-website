@@ -4,6 +4,7 @@ import type { CloseCall } from "./close-week-view";
 import type { CloseDeal } from "./close-wins";
 
 const call = (over: Partial<CloseCall> = {}): CloseCall => ({
+  leadId: "lead_1",
   funnel: "Instagram",
   status: "Active",
   bookedDate: "2026-09-10",

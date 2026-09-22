@@ -57,6 +57,7 @@ export async function getCloseMtdFunnel(
       for (const row of data ?? []) {
         if (!row.first_sales_call_booked_date) continue;
         calls.push({
+          leadId: row.lead_id,
           funnel: row.funnel,
           status: row.status_label,
           bookedDate: row.first_sales_call_booked_date,

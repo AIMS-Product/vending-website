@@ -583,6 +583,7 @@ export const ANALYTICS_TABS = [
   { key: "kpi", label: "KPI" },
   { key: "booked", label: "Booked calls" },
   { key: "video", label: "Pre-call video" },
+  { key: "mom", label: "Month over month" },
   { key: "close", label: "Close view" },
   { key: "map", label: "Funnel map" },
 ] as const;
