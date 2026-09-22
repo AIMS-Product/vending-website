@@ -10,8 +10,8 @@ import {
   vidalyticsContainerId,
 } from "@/lib/tracking/vidalytics-player";
 import {
+  audiblePercentWatched,
   milestonesReached,
-  percentWatched,
 } from "@/lib/tracking/video-engagement";
 
 /**
@@ -85,7 +85,11 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
       function onTimeUpdate() {
         try {
           const duration = player.duration();
-          const percent = percentWatched(player.currentTime(), duration);
+          const percent = audiblePercentWatched(
+            player.currentTime(),
+            duration,
+            player.muted(),
+          );
           if (percent === null) return;
           report(percent, pagePath, duration);
         } catch {
@@ -96,6 +100,8 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
 
       function onEnded() {
         try {
+          // A muted autoplay runs short videos to the end on its own.
+          if (player.muted()) return;
           report(100, pagePath, player.duration());
         } catch {
           // Same contract as above: a throwing player is never our crash.

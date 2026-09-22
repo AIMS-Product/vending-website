@@ -52,6 +52,7 @@ export type VidalyticsPlayer = {
   off(eventName: string, callback: () => void): void;
   currentTime(): number;
   duration(): number;
+  muted(): boolean;
 };
 
 type VidalyticsEmbedSlot = { player?: VidalyticsPlayer };

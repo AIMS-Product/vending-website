@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  audiblePercentWatched,
   milestonesReached,
   percentWatched,
   VIDEO_MILESTONES,
@@ -19,6 +20,18 @@ describe("percentWatched", () => {
 
   it("clamps past the end rather than reporting over 100", () => {
     expect(percentWatched(130, 120)).toBe(100);
+  });
+});
+
+describe("audiblePercentWatched", () => {
+  it("counts nothing while the player is muted", () => {
+    // Vidalytics autoplays muted: an untouched tab would otherwise log a
+    // 90-second answer video as watched to the end.
+    expect(audiblePercentWatched(90, 90, true)).toBeNull();
+  });
+
+  it("counts normally once the visitor unmutes", () => {
+    expect(audiblePercentWatched(30, 120, false)).toBe(25);
   });
 });
 

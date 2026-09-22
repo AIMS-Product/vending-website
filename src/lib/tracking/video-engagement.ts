@@ -44,6 +44,25 @@ export function percentWatched(
 }
 
 /**
+ * Percent watched, counting only playback the visitor can hear.
+ *
+ * Vidalytics autoplays every player muted behind a "Click to unmute" card, so
+ * a visitor who opens /pre-call-resources and walks away still runs fifteen
+ * videos, the short ones to the end. Counting that told reps a prospect had
+ * watched videos they never heard: 20 progress events in 75 seconds from a tab
+ * nobody touched (live check, 2026-09-22). Clicking the card restarts the
+ * video from 0:00 with sound, so gating on mute loses no real viewing.
+ */
+export function audiblePercentWatched(
+  currentTime: number,
+  duration: number,
+  muted: boolean,
+): number | null {
+  if (muted) return null;
+  return percentWatched(currentTime, duration);
+}
+
+/**
  * The milestones newly reached at `percent`, given those already reported.
  *
  * Returns every uncrossed milestone at or below the current position, not just

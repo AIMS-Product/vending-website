@@ -1,6 +1,7 @@
 import Script from "next/script";
 import { vidalyticsContainerId } from "@/lib/tracking/vidalytics-player";
 import { VideoEngagement } from "./VideoEngagement";
+import { WhenNearViewport } from "./WhenNearViewport";
 
 /**
  * One Vidalytics player.
@@ -14,6 +15,10 @@ import { VideoEngagement } from "./VideoEngagement";
  *
  * The account segment (`erwZUUrS`) is the same for every Vendingpreneurs video,
  * so callers only pass the per-video embed id.
+ *
+ * Each snippet runs only when its player nears the viewport (WhenNearViewport).
+ * Every player autoplays, and running all fifteen on arrival left the lower ones
+ * black or stalled on phones and power-saving laptops.
  *
  * `fast.vidalytics.com` is already allowed in script-src / connect-src /
  * frame-src — see src/lib/content-security-policy.ts. There is no sitewide
@@ -39,8 +44,9 @@ export function VidalyticsPlayer({
       <div id={containerId} style={{ width: "100%", paddingTop: "56.25%" }} />
       {/* Counts quarters watched against this session. Renders nothing. */}
       <VideoEngagement embedId={embedId} />
-      <Script id={`vidalytics-${embedId}`} strategy="lazyOnload">
-        {`(function (v, i, d, a, l, y, t, c, s) {
+      <WhenNearViewport targetId={containerId}>
+        <Script id={`vidalytics-${embedId}`} strategy="afterInteractive">
+          {`(function (v, i, d, a, l, y, t, c, s) {
     y='_'+d.toLowerCase();c=d+'L';if(!v[d]){v[d]={};}if(!v[c]){v[c]={};}if(!v[y]){v[y]={};}var vl='Loader',vli=v[y][vl],vsl=v[c][vl + 'Script'],vlf=v[c][vl + 'Loaded'],ve='Embed';
     if (!vsl){vsl=function(u,cb){
         if(t){cb();return;}s=i.createElement("script");s.type="text/javascript";s.async=1;s.src=u;
@@ -49,7 +55,8 @@ export function VidalyticsPlayer({
     };}
     vsl(l+'loader.min.js',function(){if(!vli){var vlc=v[c][vl];vli=new vlc();}vli.loadScript(l+'player.min.js',function(){var vec=v[d][ve];t=new vec();t.run(a);});});
 })(window, document, 'Vidalytics', '${containerId}', 'https://fast.vidalytics.com/embeds/${ACCOUNT_ID}/${embedId}/');`}
-      </Script>
+        </Script>
+      </WhenNearViewport>
     </div>
   );
 }
