@@ -38,6 +38,8 @@ export const footerColumns: ReadonlyArray<{
   {
     items: [
       { label: "Case Studies", href: "/case-studies" },
+      // Jess, 2026-09-22: /newsletter was live with no link to it anywhere.
+      { label: "Newsletter", href: "/newsletter" },
       // Kody, 2026-08-11: this footer slot becomes the way back to the
       // pre-call resources page. He plans to build that page out further.
       { label: "Prepare for Your Call", href: "/pre-call-resources" },

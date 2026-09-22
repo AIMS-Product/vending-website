@@ -25,7 +25,10 @@ export const heroV2 = {
   ],
   secondaryCta: {
     label: "Get your free 90-day roadmap",
-    href: "/vending-route-blueprint",
+    // Jess, 2026-09-22: this pointed at /vending-route-blueprint, the old
+    // watch-and-apply page, which has no roadmap on it. The download and the
+    // email capture live on the roadmap lead-magnet page.
+    href: "/resources/roadmap",
   },
 } as const;
 

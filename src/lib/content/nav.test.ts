@@ -31,4 +31,11 @@ describe("site navigation", () => {
     );
     expect(prepare?.label).toBe("Prepare for Your Call");
   });
+
+  it("links the newsletter signup from the footer", () => {
+    const footerItems = footerColumns.flatMap((column) => column.items);
+    expect(footerItems.find((item) => item.href === "/newsletter")?.label).toBe(
+      "Newsletter",
+    );
+  });
 });
