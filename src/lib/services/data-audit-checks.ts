@@ -20,6 +20,11 @@ import { bookingLinkId, channelDailyKey } from "@/lib/services/channel-daily";
 import { formSubmissionRows } from "@/lib/services/ghl-sync";
 import { resolveFieldIds } from "@/lib/services/close-lead-funnel-sync";
 import {
+  getCloseMonthlyFunnel,
+  type CloseMonthlyReport,
+} from "@/lib/services/close-monthly-funnel-data";
+import { monthOverMonthChecks } from "@/lib/services/data-audit-mom-checks";
+import {
   assertion,
   compare,
   errorResult,
@@ -56,6 +61,8 @@ export type DataAuditDeps = {
   youtube?: YouTubeAnalyticsClient | null;
   calendly?: CalendlyApiClient | null;
   close?: CloseSearchClient | null;
+  /** The month-over-month tab's loader, so its numbers can be checked. */
+  monthly?: (input: { now: Date }) => Promise<CloseMonthlyReport>;
 };
 
 export type CloseSearchClient = {
@@ -65,6 +72,7 @@ export type CloseSearchClient = {
   searchLeads(body: Record<string, unknown>): Promise<{
     count?: { total?: number };
     data?: unknown[];
+    cursor?: string | null;
   }>;
 };
 
@@ -99,6 +107,14 @@ export async function runDataAudit(
   const results = [
     ...(await safe("ga4", () => ga4Checks(client, ga4, now))),
     ...(await safe("close", () => closeChecks(client, close, now))),
+    ...(await safe("mom", () =>
+      monthOverMonthChecks(
+        client,
+        close,
+        now,
+        deps.monthly ?? getCloseMonthlyFunnel,
+      ),
+    )),
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
     ...(await safe("ads", () => adSpendCheck(client, metricool, now))),
     ...(await safe("ghl", () => ghlFormsCheck(client, ghl, now))),

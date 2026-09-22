@@ -36,13 +36,18 @@ in about one, YouTube in three — so the windows end before that).
 | Off-site form fills        | `channel_daily.leads` on the form keys | GoHighLevel submissions                           | 1%        |
 | YouTube views              | `youtube_video_daily.views`            | YouTube, or Metricool when OAuth is not connected | 2%        |
 | Webinar numbers arriving   | `webinar_events.received_at`           | the vp-webinars push                              | 8 days    |
+| Month over month: won      | the tab's own loader, last full month  | Close leads booked that month, stage Closed / Won | 3%        |
+| Month over month: revenue  | the tab's own loader, last full month  | won deal value on those same Close leads          | 3%        |
+| Month over month: leads    | the grid's Leads cells, per channel    | `lead_submissions`, per channel                   | exact     |
 
 Plus the shapes past bugs left behind, checked against nothing but themselves:
 
 - **No campaign day counted twice.** A renamed ad campaign used to leave its
   old row behind with its spend intact (Sep 15 2026: $462 counted twice).
 - **No day is missing.** A failed fetch leaves a hole that is invisible in a
-  monthly total (YouTube had no Sep 10 until it was found this way).
+  monthly total (YouTube had no Sep 10 until it was found this way). Visits
+  are checked to two days back, YouTube to three: ending YouTube at two failed
+  this every night on a day YouTube had not reported yet.
 - **Every lead reached Close.** A lead that never synced is a lead no rep sees.
 - **Every connector ran cleanly.** Includes "nothing ran at all", which is a
   dead cron, not a healthy night.

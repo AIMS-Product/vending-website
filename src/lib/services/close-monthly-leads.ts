@@ -54,9 +54,19 @@ const FUNNEL_FOR_CHANNEL = new Map(
     .map(([funnel, channel]) => [channel, funnel] as const),
 );
 
+/** The Close funnel a channel's leads are shown under, if it has one. */
+export function funnelForChannel(channel: string): string | undefined {
+  return FUNNEL_FOR_CHANNEL.get(channel);
+}
+
 export type MonthlyLeads = {
   /** Keyed `<month>|<Close funnel>`. */
   byFunnel: Map<string, number>;
+  /**
+   * Keyed `<month>|<channel>`, every channel including those with no funnel,
+   * so the audit can see what the grid leaves out.
+   */
+  byChannel: Map<string, number>;
   /** The oldest form fill we hold. Nothing before it can be reported. */
   from: string | null;
 };
@@ -102,6 +112,7 @@ export async function getMonthlyLeads(
   });
 
   const byFunnel = new Map<string, number>();
+  const byChannel = new Map<string, number>();
   let earliest: string | null = null;
   for (const lead of leads) {
     const day = lead.created_at.slice(0, 10);
@@ -111,11 +122,13 @@ export async function getMonthlyLeads(
         !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
       medium: lead.utm_medium,
     });
+    const channelKey = `${day.slice(0, 7)}|${channel}`;
+    byChannel.set(channelKey, (byChannel.get(channelKey) ?? 0) + 1);
     const funnel = FUNNEL_FOR_CHANNEL.get(channel);
     // A channel with no Close funnel behind it gets no cell, never a zero.
     if (!funnel) continue;
     const key = leadsKey(day.slice(0, 7), funnel);
     byFunnel.set(key, (byFunnel.get(key) ?? 0) + 1);
   }
-  return { byFunnel, from: earliest };
+  return { byFunnel, byChannel, from: earliest };
 }
