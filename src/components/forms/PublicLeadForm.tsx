@@ -118,12 +118,6 @@ type PublicLeadFormProps = {
   // values. Production always starts idle and empty.
   initialFinishState?: PublicLeadActionState;
   initialSubmittedValues?: Record<string, string>;
-  // Submit-button + booking-CTA fill. "orange" is reserved for the /contact
-  // conversion surfaces (Kody, 2026-08-24) so the funnel's entry points stay
-  // visually distinct from the rest of the blue-accented page; every other
-  // embed of this form (vp-quiz, book-now, resource pages) leaves this unset
-  // and keeps the brand-blue button fill.
-  accent?: "blue" | "orange";
 };
 
 export type PublicLeadFormAction = (
@@ -166,7 +160,6 @@ export function PublicLeadForm({
   initialState = initialLeadActionState,
   initialFinishState = initialLeadActionState,
   initialSubmittedValues = {},
-  accent = "blue",
 }: PublicLeadFormProps) {
   const router = useRouter();
   const [submittedValues, setSubmittedValues] = useState<
@@ -432,7 +425,6 @@ export function PublicLeadForm({
         intent={intent}
         name={submittedValues.full_name}
         email={submittedValues.email}
-        accent={accent}
       />
     );
   }
@@ -477,7 +469,6 @@ export function PublicLeadForm({
         values={submittedValues}
         compact={isCompact}
         onFieldFocus={handleStage2FocusCapture}
-        accent={accent}
       />
     );
   }
@@ -693,7 +684,6 @@ export function PublicLeadForm({
         state={activeState}
         muted={hasSummary}
         dataGtm={`lead-form-submit-${intent}-step-1`}
-        accent={accent}
       />
 
       <PrivacyAssurance intent={intent} />
@@ -785,7 +775,6 @@ function QualificationQuestionsStage({
   values,
   compact,
   onFieldFocus,
-  accent = "blue",
 }: {
   action: (formData: FormData) => void;
   sessionToken: string;
@@ -799,7 +788,6 @@ function QualificationQuestionsStage({
   values: Record<string, string>;
   compact: boolean;
   onFieldFocus: () => void;
-  accent?: "blue" | "orange";
 }) {
   const hasSummary = summaryItems.length > 0;
   // Answers live in state (not uncontrolled inputs), so they survive the
@@ -951,7 +939,6 @@ function QualificationQuestionsStage({
           state={state}
           muted={hasSummary}
           dataGtm="lead-form-submit-qualification-step-2"
-          accent={accent}
         />
       )}
 
@@ -1019,14 +1006,12 @@ function SubmitRow({
   state,
   muted,
   dataGtm,
-  accent = "blue",
 }: {
   pending: boolean;
   submitLabel: string;
   state: PublicLeadActionState;
   muted: boolean;
   dataGtm: string;
-  accent?: "blue" | "orange";
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -1036,9 +1021,7 @@ function SubmitRow({
         data-gtm={dataGtm}
         className={cn(
           "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-7 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70",
-          accent === "orange"
-            ? "bg-[#f47b3b] text-[#111111]"
-            : "bg-brand-700 text-white",
+          "bg-brand-700 text-white",
         )}
       >
         {pending ? "Submitting..." : submitLabel}
@@ -1227,7 +1210,6 @@ function FitResultPanel({
   intent,
   name,
   email,
-  accent = "blue",
 }: {
   state: ThankYouStateKey;
   score: number;
@@ -1235,7 +1217,6 @@ function FitResultPanel({
   intent: LeadIntent;
   name?: string;
   email?: string;
-  accent?: "blue" | "orange";
 }) {
   const content = THANK_YOU_STATES[state];
   const links = THANK_YOU_STATE_LINKS[state];
@@ -1309,9 +1290,7 @@ function FitResultPanel({
         onClick={trackBookingClick(primaryHref)}
         className={cn(
           "inline-flex min-h-12 w-fit items-center justify-center rounded-[8px] border-2 border-[#111111] px-7 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none",
-          accent === "orange"
-            ? "bg-[#f47b3b] text-[#111111]"
-            : "bg-brand-700 text-white",
+          "bg-brand-700 text-white",
         )}
       >
         {content.cta}
@@ -1418,8 +1397,7 @@ function TextField({
 }
 
 type SelectFieldOption =
-  | string
-  | { readonly value: string; readonly label: string };
+  string | { readonly value: string; readonly label: string };
 
 function SelectField({
   name,

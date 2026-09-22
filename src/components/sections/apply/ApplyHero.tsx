@@ -25,12 +25,13 @@ const HIGHLIGHT = "$5-$60k/Month";
 
 function Headline() {
   const [before, after] = applyHero.headline.split(HIGHLIGHT);
-  // leading must stay at or above 1: an inline background on a tighter line
-  // box paints over the lines above and below it.
+  // An inline background paints the font's whole content area, which for
+  // Anton is taller than the line box, so it ran over the lines above and
+  // below (Adam, 2026-09-22). As an inline-block the line grows to fit it.
   return (
     <h1 className="mt-5 max-w-[17ch] text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.14] font-normal tracking-[0.015em] text-[#111111] uppercase">
       {before}
-      <span className="bg-[#2a8fcc] box-decoration-clone px-[0.08em] text-white shadow-[0.08em_0.08em_0_#111111]">
+      <span className="my-[0.08em] inline-block bg-[#2a8fcc] px-[0.08em] leading-[1.08] whitespace-nowrap text-white shadow-[0.08em_0.08em_0_#111111]">
         {HIGHLIGHT}
       </span>
       {after}

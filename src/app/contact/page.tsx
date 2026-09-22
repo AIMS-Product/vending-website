@@ -35,7 +35,6 @@ export default async function ContactPage({
       <ApplyLandingPage
         attribution={attribution}
         idempotencyKey={randomUUID()}
-        accent="orange"
       />
     </>
   );

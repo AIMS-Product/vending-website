@@ -14,7 +14,6 @@ type ApplyQuizProps = {
   // /book-now drops the scoring stage: stage 1 submits and this calendar takes
   // the card.
   bookingEmbedUrl?: string;
-  accent?: "blue" | "orange";
 };
 
 // The inline qualification form, rendered in the hero's right column (Adam,
@@ -29,7 +28,6 @@ export function ApplyQuiz({
   attribution,
   idempotencyKey,
   bookingEmbedUrl,
-  accent = "blue",
 }: ApplyQuizProps) {
   return (
     <HeroFormPanel>
@@ -46,7 +44,6 @@ export function ApplyQuiz({
         inlineQualification
         bookingEmbedUrl={bookingEmbedUrl}
         submitLabel={applyQuiz.submitLabel}
-        accent={accent}
       />
     </HeroFormPanel>
   );
