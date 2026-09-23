@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DEFAULT_CHATBOT_CONFIG } from "./config";
 import type { ChatbotMessage } from "./conversation-store";
+import { CASE_STUDY_SUMMARIES } from "./site-knowledge";
 import {
+  chatbotToolDefinitions,
   hasCostIntent,
   runChatbotTool,
   shouldForceBookingCalendar,
@@ -12,14 +14,37 @@ import type { Database } from "@/types/database";
 
 type ToolClient = Pick<SupabaseClient<Database>, "from" | "rpc">;
 
-const noopClient = {
-  from() {
-    return {
-      upsert: () => Promise.resolve({ error: null }),
-    };
-  },
-  rpc: () => Promise.resolve({ error: null }),
-} as unknown as ToolClient;
+/**
+ * `case_studies` answers select().eq("status","published") with `published`
+ * (default: every bundled story); null makes the read fail.
+ */
+function toolClient(
+  published: readonly string[] | null = CASE_STUDY_SUMMARIES.map((s) => s.slug),
+) {
+  return {
+    from(table: string) {
+      if (table === "case_studies") {
+        return {
+          select: () => ({
+            eq: async () =>
+              published
+                ? {
+                    data: published.map((slug) => ({ slug })),
+                    error: null,
+                  }
+                : { data: null, error: { message: "boom" } },
+          }),
+        };
+      }
+      return {
+        upsert: () => Promise.resolve({ error: null }),
+      };
+    },
+    rpc: () => Promise.resolve({ error: null }),
+  } as unknown as ToolClient;
+}
+
+const noopClient = toolClient();
 
 function makeContext(
   overrides: Partial<ChatbotToolContext> = {},
@@ -401,5 +426,146 @@ describe("shouldForceBookingCalendar on support and booked chats", () => {
         said("I'm a teacher looking for side income"),
       ]),
     ).toBe(true);
+  });
+});
+
+describe("value-first tools", () => {
+  it("do not run unless value-first is on for the conversation", async () => {
+    const story = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "I'm retired" }),
+      makeContext(),
+    );
+    const resource = await runChatbotTool(
+      "share_resource",
+      JSON.stringify({ resource: "roadmap" }),
+      makeContext(),
+    );
+    expect(story.message).toBeUndefined();
+    expect(story.result).toContain("Unknown tool");
+    expect(resource.message).toBeUndefined();
+  });
+
+  it("offers them only when value-first is on", () => {
+    const names = (valueFirst: boolean) =>
+      chatbotToolDefinitions(valueFirst).map((tool) => tool.function.name);
+    expect(names(false)).not.toContain("share_case_study");
+    expect(names(true)).toEqual(
+      expect.arrayContaining(["share_case_study", "share_resource"]),
+    );
+  });
+
+  it("share_case_study shows the matched member as a card, never a slug the model typed", async () => {
+    const outcome = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "retired, bored at home" }),
+      makeContext({ valueFirst: true }),
+    );
+    expect(outcome.message).toMatchObject({
+      kind: "case_study_card",
+      data: {
+        slug: "joe-retiree-route",
+        url: "/case-studies/joe-retiree-route",
+      },
+    });
+  });
+
+  it("share_case_study picks someone new the second time", async () => {
+    const first = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "retired" }),
+      makeContext({ valueFirst: true }),
+    );
+    const second = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "retired" }),
+      makeContext({ valueFirst: true, transcript: [first.message!] }),
+    );
+    expect(second.message?.data?.slug).not.toBe(first.message?.data?.slug);
+  });
+
+  it("share_case_study never shows a story that is unpublished in the CMS (its page would 404)", async () => {
+    const allButJoe = CASE_STUDY_SUMMARIES.map((s) => s.slug).filter(
+      (slug) => slug !== "joe-retiree-route",
+    );
+    const situation = JSON.stringify({ situation: "retired police officer" });
+    const withJoe = await runChatbotTool(
+      "share_case_study",
+      situation,
+      makeContext({ valueFirst: true }),
+    );
+    const withoutJoe = await runChatbotTool(
+      "share_case_study",
+      situation,
+      makeContext({ valueFirst: true, client: toolClient(allButJoe) }),
+    );
+    expect(withJoe.message?.data?.slug).toBe("joe-retiree-route");
+    expect(withoutJoe.message?.kind).toBe("case_study_card");
+    expect(withoutJoe.message?.data?.slug).not.toBe("joe-retiree-route");
+  });
+
+  it("share_case_study shows nothing when the published list cannot be read", async () => {
+    const outcome = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "retired" }),
+      makeContext({ valueFirst: true, client: toolClient(null) }),
+    );
+    expect(outcome.message).toBeUndefined();
+  });
+
+  it("share_case_study shows nothing when nothing they said fits", async () => {
+    const outcome = await runChatbotTool(
+      "share_case_study",
+      JSON.stringify({ situation: "hi" }),
+      makeContext({ valueFirst: true }),
+    );
+    expect(outcome.message).toBeUndefined();
+  });
+
+  it("share_resource shows the cost video card and tells the model not to price or push the calendar", async () => {
+    const outcome = await runChatbotTool(
+      "share_resource",
+      JSON.stringify({ resource: "cost_to_join" }),
+      makeContext({ valueFirst: true }),
+    );
+    expect(outcome.message).toMatchObject({
+      kind: "shared_resource",
+      data: { key: "cost_to_join", url: "/pre-call-resources#cost-to-join" },
+    });
+    expect(outcome.result).toContain("Never state a price");
+    expect(outcome.result).toContain("Do not open the calendar");
+  });
+
+  it("share_resource never repeats a card", async () => {
+    const first = await runChatbotTool(
+      "share_resource",
+      JSON.stringify({ resource: "roadmap" }),
+      makeContext({ valueFirst: true }),
+    );
+    const again = await runChatbotTool(
+      "share_resource",
+      JSON.stringify({ resource: "roadmap" }),
+      makeContext({ valueFirst: true, transcript: [first.message!] }),
+    );
+    expect(again.message).toBeUndefined();
+  });
+
+  it("share_resource rejects keys outside the catalog", async () => {
+    const outcome = await runChatbotTool(
+      "share_resource",
+      JSON.stringify({ resource: "https://evil.example" }),
+      makeContext({ valueFirst: true }),
+    );
+    expect(outcome.message).toBeUndefined();
+  });
+
+  it("show_booking_calendar declines while the calendar is held", async () => {
+    const outcome = await runChatbotTool(
+      "show_booking_calendar",
+      "{}",
+      makeContext({ holdCalendar: true }),
+    );
+    expect(outcome.message).toBeUndefined();
+    expect(outcome.result).toContain("Not yet");
   });
 });

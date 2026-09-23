@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import type { ChatDisplayMessage } from "@/components/chatbot/ChatTranscript";
@@ -22,6 +23,8 @@ export function ChatRichMessage({
       return <ResourceCard message={message} brandColor={brandColor} />;
     case "shared_resource":
       return <SharedResourceCard message={message} brandColor={brandColor} />;
+    case "case_study_card":
+      return <CaseStudyCard message={message} brandColor={brandColor} />;
     case "booking_confirmed":
       return <BookingConfirmedCard message={message} brandColor={brandColor} />;
     default:
@@ -151,6 +154,63 @@ function SharedResourceCard({
   );
 }
 
+const YOUTUBE_ID = /^[\w-]{6,20}$/;
+
+/**
+ * A member story picked by the server-side matcher (share_case_study). The
+ * link text and the line under it use the same templates as the resource
+ * email's case-study entry; only the header label is new. The video plays on
+ * the case study page, so the chat loads one thumbnail, not a player.
+ */
+function CaseStudyCard({
+  message,
+  brandColor,
+}: {
+  message: ChatDisplayMessage;
+  brandColor: string;
+}) {
+  const url = readString(message.data, "url");
+  const memberName = readString(message.data, "memberName");
+  if (!memberName || !url?.startsWith("/case-studies/")) {
+    return <FallbackLine content={message.content} />;
+  }
+  const headline = readString(message.data, "headlineResult");
+  const prior = readString(message.data, "priorBackground");
+  const videoId = readString(message.data, "videoId");
+
+  return (
+    <div className={cardClass}>
+      <CardHeader
+        brandColor={brandColor}
+        icon={<UserIcon />}
+        label="Member story"
+      />
+      <a href={url} target="_blank" rel="noopener" className="block">
+        {videoId && YOUTUBE_ID.test(videoId) ? (
+          <Image
+            src={`https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`}
+            alt=""
+            width={480}
+            height={360}
+            sizes="360px"
+            className="aspect-video w-full border-b-2 border-[#111111] object-cover"
+          />
+        ) : null}
+        <span className="block px-3 pt-2.5 text-[15px] font-black text-[#111111] underline">
+          {headline ? `${memberName}: ${headline}` : memberName}
+        </span>
+      </a>
+      {prior ? (
+        <p className="px-3 pt-0.5 pb-2.5 text-[13px] leading-snug text-[#4b5563]">
+          {`Was ${prior} before starting a route.`}
+        </p>
+      ) : (
+        <div className="pb-2.5" />
+      )}
+    </div>
+  );
+}
+
 function BookingConfirmedCard({
   message,
   brandColor,
@@ -235,6 +295,15 @@ function MailIcon() {
     <svg {...ICON_PROPS}>
       <rect x="2" y="4" width="20" height="16" rx="2" />
       <path d="m22 7-10 5L2 7" />
+    </svg>
+  );
+}
+
+function UserIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
     </svg>
   );
 }

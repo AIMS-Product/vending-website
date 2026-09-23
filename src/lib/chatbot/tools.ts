@@ -17,16 +17,30 @@ import { emailHandoff } from "@/lib/chatbot/handoff-email";
 import { extractLead } from "@/lib/chatbot/extract-lead";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
 import {
+  CASE_STUDY_OBJECTIONS,
+  matchCaseStudy,
+} from "@/lib/chatbot/case-study-match";
+import {
   CHATBOT_RESOURCE_KEYS,
   MAX_RESOURCES_PER_EMAIL,
+  PRE_CALL_VIDEO_KEY_LIST,
   resolveChatbotResources,
+  sharedResourceMessage,
 } from "@/lib/chatbot/resources";
 import type { ChatbotToolDefinition } from "@/lib/chatbot/openai";
+import { CASE_STUDY_SUMMARIES } from "@/lib/chatbot/site-knowledge";
 import {
   hasExplicitBookingIntent,
   triageConversation,
 } from "@/lib/chatbot/triage";
 import type { Database } from "@/types/database";
+
+/** Everything share_resource may show: the two free resources, then the videos. */
+const SHAREABLE_RESOURCE_KEYS = [
+  "roadmap",
+  "finance_templates",
+  ...PRE_CALL_VIDEO_KEY_LIST,
+] as const;
 
 /**
  * The four tools the chat model can call, and the single dispatcher that
@@ -75,6 +89,10 @@ export type ChatbotToolContext = {
   client: ToolClient;
   /** IANA zone from the visitor's browser, for get_available_times. */
   timeZone?: string | null;
+  /** CHATBOT_VALUE_FIRST is on for this conversation: the share_* tools run. */
+  valueFirst?: boolean;
+  /** show_booking_calendar declines this turn. See shouldHoldCalendar. */
+  holdCalendar?: boolean;
 };
 
 export type ChatbotToolOutcome = {
@@ -352,6 +370,68 @@ export const CHATBOT_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
 ];
 
 /**
+ * Offered only when CHATBOT_VALUE_FIRST is on for the conversation. Both put a
+ * card in the chat without asking for an email; neither lets the model supply
+ * a URL or a slug.
+ */
+export const VALUE_FIRST_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
+  {
+    type: "function",
+    function: {
+      name: "share_case_study",
+      description:
+        "Show a real member's story as a card in this chat. The server picks the member who best matches what the visitor told you, so describe them; never name a member or paste a case-study link yourself. Call it once they have shared their job, situation, goal or main worry, not before. Once per story; each call picks a different member.",
+      parameters: {
+        type: "object",
+        properties: {
+          situation: {
+            type: "string",
+            description:
+              "What they told you about themselves, in their words where possible: job, family, schedule, goal, experience. e.g. 'high school teacher, two kids, wants side income'.",
+          },
+          objection: {
+            type: "string",
+            enum: [...CASE_STUDY_OBJECTIONS],
+            description:
+              "Their main worry if they named one: price, spouse (partner not on board), timing (no time), implementation (not sure they can do it), need-fit (is this for someone like me), trust, roi, diy, status-quo.",
+          },
+        },
+        required: ["situation"],
+        additionalProperties: false,
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "share_resource",
+      description:
+        "Show a free resource or one of the team's short answer videos as a card in this chat, no email needed. roadmap = the 90-day plan members follow; finance_templates = the spreadsheet for running the numbers; the rest are short videos answering one question each: cost_to_join (any question about what it costs to join), what_you_get, locations (help finding locations), machine_cost, financing (financing or credit), earnings. One card per turn; never the same one twice.",
+      parameters: {
+        type: "object",
+        properties: {
+          resource: {
+            type: "string",
+            enum: [...SHAREABLE_RESOURCE_KEYS],
+          },
+        },
+        required: ["resource"],
+        additionalProperties: false,
+      },
+    },
+  },
+];
+
+/** The tool list for one turn. */
+export function chatbotToolDefinitions(
+  valueFirst: boolean,
+): readonly ChatbotToolDefinition[] {
+  return valueFirst
+    ? [...CHATBOT_TOOL_DEFINITIONS, ...VALUE_FIRST_TOOL_DEFINITIONS]
+    : CHATBOT_TOOL_DEFINITIONS;
+}
+
+/**
  * Runs one tool call. Never throws: an unknown name, malformed arguments, or
  * a failed side effect all come back as a result string the model can
  * recover from inside the same turn.
@@ -384,8 +464,16 @@ export async function runChatbotTool(
         return await getAvailableTimes(args, context);
       case "flag_for_team":
         return await flagForTeam(args, context);
+      case "share_case_study":
+        return context.valueFirst
+          ? await shareCaseStudy(args, context)
+          : unknownTool(name);
+      case "share_resource":
+        return context.valueFirst
+          ? shareResource(args, context)
+          : unknownTool(name);
       default:
-        return { result: `Unknown tool "${name}". Reply normally instead.` };
+        return unknownTool(name);
     }
   } catch (error) {
     console.warn("chatbot: tool execution failed", {
@@ -398,6 +486,132 @@ export async function runChatbotTool(
         "That didn't work on our side. Don't mention the failure; just keep helping them normally.",
     };
   }
+}
+
+function unknownTool(name: string): ChatbotToolOutcome {
+  return { result: `Unknown tool "${name}". Reply normally instead.` };
+}
+
+// ---------------------------------------------------------------------------
+// share_case_study / share_resource (value-first only)
+// ---------------------------------------------------------------------------
+
+const shareCaseStudyArgsSchema = z.object({
+  situation: z.string().max(500),
+  objection: z.string().max(40).optional(),
+});
+
+const NO_STORY_RESULT =
+  "No member story fits what they have said yet, so nothing was shown. Ask one short question about their work or situation instead of telling a story.";
+
+async function shareCaseStudy(
+  args: unknown,
+  context: ChatbotToolContext,
+): Promise<ChatbotToolOutcome> {
+  const parsed = shareCaseStudyArgsSchema.safeParse(args);
+  if (!parsed.success) {
+    return { result: "That wasn't understood. Reply normally instead." };
+  }
+
+  // The matcher reads the bundled data/case-studies files, but a story can be
+  // unpublished in the CMS, and its page then 404s. Only a story published
+  // right now may be shown; if that cannot be read, none is.
+  const published = await context.client
+    .from("case_studies")
+    .select("slug")
+    .eq("status", "published");
+  if (published.error || !published.data) {
+    console.warn("chatbot: could not read published case studies", {
+      conversationId: context.conversationId,
+      error: published.error?.message ?? "no data",
+    });
+    return { result: NO_STORY_RESULT };
+  }
+  const publishedSlugs = new Set(published.data.map((row) => row.slug));
+
+  const alreadyShared = context.transcript
+    .filter((m) => m.kind === "case_study_card")
+    .map((m) => m.data?.slug)
+    .filter((slug): slug is string => typeof slug === "string");
+
+  const study = matchCaseStudy({
+    situation: parsed.data.situation,
+    objection: parsed.data.objection,
+    excludeSlugs: [
+      ...alreadyShared,
+      ...CASE_STUDY_SUMMARIES.map((s) => s.slug).filter(
+        (slug) => !publishedSlugs.has(slug),
+      ),
+    ],
+  });
+  if (!study) return { result: NO_STORY_RESULT };
+
+  return {
+    result: `A card with ${study.memberName}'s story is now showing in the chat (was ${study.priorBackground}; now ${study.headlineResult}). In one sentence, say why it fits what THEY told you. Do not paste a link, and state nothing about this member beyond what is written here.`,
+    message: {
+      role: "assistant",
+      content: `Shared ${study.memberName}'s story in the chat.`,
+      ts: new Date().toISOString(),
+      kind: "case_study_card",
+      data: {
+        via: "model",
+        slug: study.slug,
+        memberName: study.memberName,
+        priorBackground: study.priorBackground,
+        headlineResult: study.headlineResult,
+        url: study.url,
+        videoId: study.videoId,
+      },
+    },
+  };
+}
+
+const shareResourceArgsSchema = z.object({
+  resource: z.enum(SHAREABLE_RESOURCE_KEYS),
+});
+
+function shareResource(
+  args: unknown,
+  context: ChatbotToolContext,
+): ChatbotToolOutcome {
+  const parsed = shareResourceArgsSchema.safeParse(args);
+  if (!parsed.success) {
+    return {
+      result:
+        "That resource doesn't exist, so nothing was shown. Reply normally.",
+    };
+  }
+  const key = parsed.data.resource;
+  if (
+    context.transcript.some(
+      (m) => m.kind === "shared_resource" && m.data?.key === key,
+    )
+  ) {
+    return {
+      result:
+        "That card is already further up in this chat. Point back to it in a few words instead of showing it again.",
+    };
+  }
+
+  const isVideo = (PRE_CALL_VIDEO_KEY_LIST as readonly string[]).includes(key);
+  const message = sharedResourceMessage(key, {
+    label: isVideo ? "Video answer" : "Free resource",
+    via: "model",
+    // Roadmap/finance: the delivered page only once we have their email.
+    emailCaptured: Boolean(context.capturedEmail),
+  });
+  if (!message) {
+    return { result: "That resource isn't available. Reply normally." };
+  }
+
+  const followUp =
+    key === "cost_to_join"
+      ? "Never state a price. In two or three short sentences: what they pay depends on the plan and on financing, this video is the team's own answer on how that works, and end with ONE question about what they are picturing (a couple of machines or a full route). Do not open the calendar this turn unless they asked to book."
+      : "In one sentence, say why it is useful for what they told you. Do not paste the link.";
+  return {
+    result: `A card for "${message.data?.title}" is now showing in the chat. ${followUp}`,
+    message,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -447,6 +661,13 @@ export async function openBookingCalendar(input: {
 async function showBookingCalendar(
   context: ChatbotToolContext,
 ): Promise<ChatbotToolOutcome> {
+  if (context.holdCalendar) {
+    return {
+      result:
+        "Not yet: they have not asked to book and have only just started talking. Nothing was opened. Do not mention the calendar or booking this turn. Answer what they asked, share a member story or a resource if it fits, and ask ONE question about them.",
+    };
+  }
+
   const alreadyShown = context.transcript.some(
     (message) => message.kind === "calendar",
   );

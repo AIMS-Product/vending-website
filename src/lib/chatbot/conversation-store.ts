@@ -19,6 +19,8 @@ export type ChatbotMessageKind =
   | "resource_card"
   /** A catalog resource shown in the chat, not emailed. See sharedResourceMessage. */
   | "shared_resource"
+  /** A member story picked by the server-side matcher. See share_case_study. */
+  | "case_study_card"
   | "booking_confirmed";
 
 export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
@@ -26,6 +28,7 @@ export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
   "calendar",
   "resource_card",
   "shared_resource",
+  "case_study_card",
   "booking_confirmed",
 ];
 
