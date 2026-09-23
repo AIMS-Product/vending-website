@@ -74,7 +74,19 @@ export async function GET(request: Request) {
 
   try {
     const result = await syncBitlyClicks(options);
-    return NextResponse.json({ ok: true, ...result });
+    // Same rule as the GA4 runner: a run that reports green while links fail is
+    // how bitly_link_clicks could sit at zero rows with nobody noticing. Each
+    // write is an upsert keyed by (bitly_id, day), so the next run retries the
+    // failed links rather than doubling the ones that worked.
+    //
+    // `invalid` links (malformed, or refused by Bitly with 404/403) do not turn
+    // the run red one by one: no retry fixes them. But when EVERY link in the
+    // batch is refused, the cause is the token or the account, not the links,
+    // and that must not read green.
+    const everyLinkRefused =
+      result.scanned > 0 && result.invalid === result.scanned;
+    const ok = result.failed === 0 && !everyLinkRefused;
+    return NextResponse.json({ ok, ...result }, { status: ok ? 200 : 500 });
   } catch (error) {
     console.error("bitly sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",

@@ -25,6 +25,22 @@ function pct(value: number | null): string {
   return value === null ? "—" : `${value}%`;
 }
 
+/**
+ * Why a step shows no rate. There are three reasons and only one of them is
+ * missing data: a step above of 0, or a step larger than the one above it
+ * (Closed / won counts sales whose show nobody logged).
+ */
+function noRateReason(
+  stage: YouTubeStage,
+  previous: YouTubeStage | undefined,
+): string {
+  if (stage.count === null || previous?.count == null) {
+    return "No rate: one of these two steps has no data yet.";
+  }
+  if (previous.count === 0) return "No rate: the step above is 0.";
+  return "No rate: this step counts more than the step above.";
+}
+
 /** The six-stage funnel, with the gaps left visibly empty. */
 export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
   const top = stages.find((stage) => stage.count !== null)?.count ?? 0;
@@ -59,7 +75,7 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
             {index > 0 ? (
               <p className="text-ui-text-subtle text-xs">
                 {stage.ofPreviousPct === null
-                  ? "No rate: one of these two steps has no data yet."
+                  ? noRateReason(stage, stages[index - 1])
                   : `${stage.ofPreviousPct}% continued from the step above`}
               </p>
             ) : null}
@@ -395,7 +411,9 @@ export function YouTubeCohortTable({
                     <th className="py-2 pr-3 text-right font-semibold">
                       Won same month
                     </th>
-                    <th className="py-2 text-right font-semibold">Won later</th>
+                    <th className="py-2 text-right font-semibold">
+                      Won another month
+                    </th>
                   </>
                 ) : null}
               </tr>
@@ -421,7 +439,7 @@ export function YouTubeCohortTable({
                         {row.closedSameMonth}
                       </td>
                       <td className="text-ui-text-muted py-2.5 text-right tabular-nums">
-                        {row.closedLaterMonth}
+                        {row.closedOtherMonth}
                       </td>
                     </>
                   ) : null}
@@ -436,6 +454,23 @@ export function YouTubeCohortTable({
 }
 
 /**
+ * Why Link clicks shows a dash, in the reader's terms. A broken read and an
+ * empty table both leave it blank, and only one of them needs setting up.
+ */
+function clicksGap(
+  coverage: YouTubeCoverage,
+  range: YouTubeAttribution["range"],
+): string {
+  if (coverage.clicksFailed) {
+    return "Link clicks could not be read just now. Nothing needs setting up; reload in a minute.";
+  }
+  if (coverage.clicksWindowStart) {
+    return `Link clicks only go back to ${coverage.clicksWindowStart}, so they are not shown for the ${range.label.toLowerCase()}.`;
+  }
+  return "Link clicks appear once Bitly is connected.";
+}
+
+/**
  * States plainly which stages are live and which are waiting on a switch, so a
  * dash in the table is never read as a zero.
  */
@@ -447,9 +482,7 @@ export function YouTubeCoverageNote({
   range: YouTubeAttribution["range"];
 }) {
   const gaps: string[] = [];
-  if (!coverage.clicksConnected) {
-    gaps.push("Link clicks appear once Bitly is connected.");
-  }
+  if (!coverage.clicksConnected) gaps.push(clicksGap(coverage, range));
   if (!coverage.visitsConnected) {
     gaps.push(
       "Landing page visits are not recorded yet: a database update is still to be applied.",
@@ -502,8 +535,8 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.bookedBeforeLead}
             </span>{" "}
-            booked before they filled in the form (Close already had them), so
-            they are left out of the days-to-sale figures.
+            booked a call before their first visit here (Close already had
+            them), so they are returning leads, not new ones.
           </>
         ) : null}
       </p>

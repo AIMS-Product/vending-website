@@ -62,7 +62,10 @@ async function fetchBookings(
         "invitee_email,invitee_name,status,scheduled_event_name,created_at,bookedAt:raw_payload->payload->>created_at",
       )
       .gte("created_at", since.toISOString())
+      // created_at alone ties across a page boundary (bulk inserts share a
+      // timestamp), so a page could repeat or skip a row; id makes it total.
       .order("created_at")
+      .order("id")
       .range(from, from + PAGE_SIZE - 1);
     if (error) {
       console.error("calendly_bookings read failed", {

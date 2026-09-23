@@ -2,8 +2,10 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  BitlyApiError,
   campaignFromLongUrl,
   createBitlyClient,
+  isBitlinkId,
   type BitlyClient,
 } from "@/lib/bitly/client";
 import { config } from "@/lib/config";
@@ -35,7 +37,15 @@ export type BitlyClickSyncResult = {
   scanned: number;
   updated: number;
   daysWritten: number;
+  /** Links the next run should retry: unreachable, or a write that errored. */
   failed: number;
+  /**
+   * Links whose stored id can never be requested, counted apart from
+   * `failed`. The runner turns `failed` into a 500, and a malformed id fails
+   * the same way every run: counting it there would page the cron forever
+   * over a data problem no retry fixes.
+   */
+  invalid: number;
   /** Links whose bitlink id was filled in from the Bitly group listing. */
   linksMapped: number;
 };
@@ -83,6 +93,7 @@ export async function syncBitlyClicks(
     updated: 0,
     daysWritten: 0,
     failed: 0,
+    invalid: 0,
     linksMapped: 0,
   };
 
@@ -116,6 +127,18 @@ export async function syncBitlyClicks(
       const row = rows[cursor++];
       if (!row) return;
 
+      // Refused before the request and never retried: stamped like a link
+      // with no clicks, so it leaves the front of the claim queue.
+      if (!isBitlinkId(row.bitly_id)) {
+        result.invalid += 1;
+        console.warn("bitly click sync: stored bitlink id is unusable", {
+          campaign: row.utm_campaign,
+          bitlyId: row.bitly_id,
+        });
+        await stamp(row);
+        continue;
+      }
+
       try {
         const series = await bitly.dailyClicks(row.bitly_id, { days });
 
@@ -139,24 +162,47 @@ export async function syncBitlyClicks(
 
         // Stamped even when the series was empty, so a link with genuinely no
         // clicks does not sit at the front of the queue forever.
-        if (row.table === "youtube_videos") {
-          await client
-            .from("youtube_videos")
-            .update({ clicks_synced_at: syncedAt })
-            .eq("utm_campaign", row.key);
-        } else {
-          await client
-            .from("marketing_links")
-            .update({ clicks_synced_at: syncedAt })
-            .eq("id", row.key);
-        }
+        await stamp(row);
 
         result.updated += 1;
-      } catch {
+      } catch (error) {
+        // Bitly says this link is gone (404) or not ours to read (403). No
+        // retry changes that, and unstamped it would be claimed first on every
+        // run and turn the cron red every hour. Counted and stamped like a
+        // malformed id instead.
+        if (isPermanentLinkError(error)) {
+          result.invalid += 1;
+          console.warn("bitly click sync: Bitly refuses this link", {
+            campaign: row.utm_campaign,
+            bitlyId: row.bitly_id,
+            status: error.status,
+          });
+          await stamp(row);
+          continue;
+        }
         // One unreachable link must not abort the batch. The row keeps its old
-        // clicks_synced_at and is retried on the next run.
+        // clicks_synced_at and is retried on the next run. Logged, because a
+        // link failing quietly every run is how the clicks table sat empty.
         result.failed += 1;
+        console.warn("bitly click sync: link failed, will retry next run", {
+          campaign: row.utm_campaign,
+          error: error instanceof Error ? error.message : "unknown error",
+        });
       }
+    }
+  }
+
+  async function stamp(row: ClaimedLink) {
+    if (row.table === "youtube_videos") {
+      await client
+        .from("youtube_videos")
+        .update({ clicks_synced_at: syncedAt })
+        .eq("utm_campaign", row.key);
+    } else {
+      await client
+        .from("marketing_links")
+        .update({ clicks_synced_at: syncedAt })
+        .eq("id", row.key);
     }
   }
 
@@ -165,6 +211,13 @@ export async function syncBitlyClicks(
   );
 
   return result;
+}
+
+function isPermanentLinkError(error: unknown): error is BitlyApiError {
+  return (
+    error instanceof BitlyApiError &&
+    (error.status === 404 || error.status === 403)
+  );
 }
 
 /**

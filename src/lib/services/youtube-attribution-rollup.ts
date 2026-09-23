@@ -102,7 +102,6 @@ export type YouTubeVideoFunnelRow = {
   /** Null until the Close outcome columns exist; see `outcomesConnected`. */
   attended: number | null;
   closed: number | null;
-  clickToLeadPct: number | null;
   visitToLeadPct: number | null;
   leadToBookedPct: number | null;
   bookedToClosedPct: number | null;
@@ -139,7 +138,12 @@ export type YouTubeCohortRow = {
   booked: number;
   closed: number;
   closedSameMonth: number;
-  closedLaterMonth: number;
+  /**
+   * Wins dated in any other month: usually later, and earlier for a lead Close
+   * already held. Under a strict "later" such a win matched neither column,
+   * and the row read "Won 1" with both sub-columns at 0.
+   */
+  closedOtherMonth: number;
 };
 
 /**
@@ -153,6 +157,13 @@ export type YouTubeCoverage = {
   videosWithLeads: number;
   campaignsMissingFromRegistry: string[];
   clicksConnected: boolean;
+  /**
+   * Earliest day the Bitly sync has written, `YYYY-MM-DD`; null when nothing
+   * has synced. Lets the page say how far back clicks go.
+   */
+  clicksWindowStart: string | null;
+  /** True when the clicks read broke, rather than having nothing to read. */
+  clicksFailed: boolean;
   visitsConnected: boolean;
   /** Which table the visits stage read. Null when it is not connected. */
   visitsSource: YouTubeVisitsSource | null;
@@ -181,6 +192,9 @@ export type YouTubeAttributionRollup = {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Stand-in campaign for a YouTube lead that carried no `utm_campaign`. */
+const UNTAGGED_CAMPAIGN = "(untagged)";
+
 const TIME_TO_CLOSE_BUCKETS: Array<{ label: string; max: number }> = [
   { label: "0-7 days", max: 7 },
   { label: "8-14 days", max: 14 },
@@ -205,6 +219,8 @@ export function buildYouTubeAttribution({
   clicks,
   pageViews,
   clicksConnected,
+  clicksWindowStart = null,
+  clicksFailed = false,
   visitsConnected,
   visitsSource = null,
   outcomesConnected,
@@ -215,6 +231,8 @@ export function buildYouTubeAttribution({
   clicks: BitlyClickRow[];
   pageViews: PageViewRow[];
   clicksConnected: boolean;
+  clicksWindowStart?: string | null;
+  clicksFailed?: boolean;
   visitsConnected: boolean;
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
@@ -238,7 +256,12 @@ export function buildYouTubeAttribution({
         campaign,
         leads: campaignLeads,
         video: videoByCampaign.get(campaign),
-        clicks: clicksConnected ? (clicksByCampaign.get(campaign) ?? 0) : null,
+        clicks: clicksConnected
+          ? videoClicks(
+              clicksByCampaign.get(campaign),
+              videoByCampaign.get(campaign),
+            )
+          : null,
         visits: visitsConnected ? (viewsByCampaign.get(campaign) ?? 0) : null,
         outcomesConnected,
         shows,
@@ -265,16 +288,37 @@ export function buildYouTubeAttribution({
     coverage: {
       registryVideos: videos.length,
       videosWithLeads: rows.length,
+      // UNTAGGED_CAMPAIGN is this module's placeholder for a lead with no
+      // campaign at all, not a slug somebody forgot to add to the registry.
       campaignsMissingFromRegistry: rows
-        .filter((row) => !row.inRegistry)
+        .filter(
+          (row) => !row.inRegistry && row.utmCampaign !== UNTAGGED_CAMPAIGN,
+        )
         .map((row) => row.utmCampaign),
       clicksConnected,
+      clicksWindowStart,
+      clicksFailed,
       visitsConnected,
       visitsSource: visitsConnected ? visitsSource : null,
       outcomesConnected,
       bookedBeforeLead: youtubeLeads.filter(bookedBeforeLead).length,
     },
   };
+}
+
+/**
+ * One video's clicks, or null when nothing could have counted them.
+ *
+ * `clicksConnected` is global, so without this every registry row with no
+ * Bitly link showed a hard 0 beside real leads. A 0 is only true for a link the
+ * sync actually reads.
+ */
+function videoClicks(
+  summed: number | undefined,
+  video: YouTubeVideoRow | undefined,
+): number | null {
+  if (summed !== undefined) return summed;
+  return video?.bitly_id ? 0 : null;
 }
 
 function buildVideoRow({
@@ -313,7 +357,6 @@ function buildVideoRow({
     booked,
     attended: countAttended(leads, shows),
     closed,
-    clickToLeadPct: ratePct(leads.length, clicks),
     visitToLeadPct: ratePct(leads.length, visits),
     leadToBookedPct: ratePct(booked, leads.length),
     bookedToClosedPct: ratePct(closed, booked),
@@ -428,8 +471,8 @@ function buildCohorts(leads: YouTubeLeadRow[]): YouTubeCohortRow[] {
         closedSameMonth: dated.filter(
           (lead) => monthKey(lead.closed_won_at!) === month,
         ).length,
-        closedLaterMonth: dated.filter(
-          (lead) => monthKey(lead.closed_won_at!) > month,
+        closedOtherMonth: dated.filter(
+          (lead) => monthKey(lead.closed_won_at!) !== month,
         ).length,
       };
     })
@@ -515,7 +558,7 @@ function groupByCampaign(
 ): Map<string, YouTubeLeadRow[]> {
   const groups = new Map<string, YouTubeLeadRow[]>();
   for (const lead of leads) {
-    const campaign = lead.utm_campaign?.trim() || "(untagged)";
+    const campaign = lead.utm_campaign?.trim() || UNTAGGED_CAMPAIGN;
     groups.set(campaign, [...(groups.get(campaign) ?? []), lead]);
   }
   return groups;

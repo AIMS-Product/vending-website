@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { syncBitlyClicks } from "./bitly-click-sync";
-import type { BitlyClient } from "@/lib/bitly/client";
+import { BitlyApiError, type BitlyClient } from "@/lib/bitly/client";
 import type { Database } from "@/types/database";
 
 vi.mock("@/lib/config", () => ({
@@ -212,6 +212,84 @@ describe("syncBitlyClicks", () => {
 
     expect(result).toMatchObject({ scanned: 2, updated: 1, failed: 1 });
     expect(recorded.videoUpdates.map((row) => row.campaign)).toEqual(["good"]);
+  });
+
+  it("counts a malformed id apart from failures, and moves it off the queue front", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, recorded } = buildClient({
+      claimable: [
+        { utm_campaign: "broken", bitly_id: "../users" },
+        { utm_campaign: "good", bitly_id: "bit.ly/good" },
+      ],
+    });
+    const bitlyClient = buildBitlyClient({
+      clicks: { "bit.ly/good": [{ date: "2026-09-09", clicks: 4 }] },
+    });
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    // No retry fixes it, so it must not be what turns the cron red.
+    expect(result).toMatchObject({ failed: 0, invalid: 1, updated: 1 });
+    expect(bitlyClient.dailyClicks).not.toHaveBeenCalledWith(
+      "../users",
+      expect.anything(),
+    );
+    expect(recorded.videoUpdates.map((row) => row.campaign).sort()).toEqual([
+      "broken",
+      "good",
+    ]);
+    expect(warn).toHaveBeenCalledWith(
+      "bitly click sync: stored bitlink id is unusable",
+      expect.objectContaining({ campaign: "broken" }),
+    );
+    warn.mockRestore();
+  });
+
+  it("stamps a link Bitly refuses for good, and keeps the run green", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, recorded } = buildClient({
+      claimable: [
+        { utm_campaign: "gone", bitly_id: "bit.ly/gone" },
+        { utm_campaign: "forbidden", bitly_id: "bit.ly/forbidden" },
+        { utm_campaign: "flaky", bitly_id: "bit.ly/flaky" },
+      ],
+    });
+    const bitlyClient = {
+      listGroupLinks: vi.fn(async () => []),
+      dailyClicks: vi.fn(async (bitlinkId: string) => {
+        if (bitlinkId === "bit.ly/gone") throw new BitlyApiError(404, "gone");
+        if (bitlinkId === "bit.ly/forbidden")
+          throw new BitlyApiError(403, "forbidden");
+        throw new BitlyApiError(503, "try later");
+      }),
+    } as unknown as BitlyClient;
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    // 404 and 403 will fail the same way every run: counted apart from
+    // `failed` (which turns the cron red) and moved off the queue front.
+    expect(result).toMatchObject({ invalid: 2, failed: 1, updated: 0 });
+    expect(recorded.videoUpdates.map((row) => row.campaign).sort()).toEqual([
+      "forbidden",
+      "gone",
+    ]);
+    warn.mockRestore();
+  });
+
+  it("logs a link that failed instead of swallowing it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client } = buildClient({
+      claimable: [{ utm_campaign: "bad", bitly_id: "bit.ly/bad" }],
+    });
+    const bitlyClient = buildBitlyClient({ failOn: ["bit.ly/bad"] });
+
+    await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    expect(warn).toHaveBeenCalledWith(
+      "bitly click sync: link failed, will retry next run",
+      { campaign: "bad", error: "bitly unreachable" },
+    );
+    warn.mockRestore();
   });
 
   it("does not stamp a link whose click write failed", async () => {

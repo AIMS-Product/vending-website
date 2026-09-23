@@ -78,15 +78,40 @@ describe("unmeasured stages", () => {
     expect(video?.clicks).toBeNull();
     expect(video?.visits).toBeNull();
     expect(video?.closed).toBeNull();
-    expect(video?.clickToLeadPct).toBeNull();
     expect(video?.visitToLeadPct).toBeNull();
   });
 
   it("distinguishes a connected zero from an unmeasured stage", () => {
     const connected = build([lead()], { clicksConnected: true });
     expect(connected.totals.clicks).toBe(0);
-    // Zero clicks with a lead is real data, but it is not a rate.
-    expect(connected.videos[0]?.clickToLeadPct).toBeNull();
+  });
+
+  it("gives a video 0 clicks only when it has a link the sync reads", () => {
+    const video = (utm_campaign: string, bitly_id: string | null) => ({
+      utm_campaign,
+      title: utm_campaign,
+      video_url: null,
+      published_at: null,
+      bitly_id,
+      in_description: true,
+    });
+    const result = build(
+      [lead({ utm_campaign: "linked" }), lead({ utm_campaign: "unlinked" })],
+      {
+        clicksConnected: true,
+        videos: [
+          video("linked", "booking.vendingpreneurs.com/yt-1"),
+          video("unlinked", null),
+        ],
+      },
+    );
+
+    const byCampaign = new Map(
+      result.videos.map((row) => [row.utmCampaign, row.clicks]),
+    );
+    expect(byCampaign.get("linked")).toBe(0);
+    // No short link, so nothing could have counted a click: unknown, not 0.
+    expect(byCampaign.get("unlinked")).toBeNull();
   });
 });
 
@@ -126,6 +151,13 @@ describe("per-video rows", () => {
     expect(result.coverage.campaignsMissingFromRegistry).toEqual([
       "orphan-slug",
     ]);
+  });
+
+  it("does not list leads with no campaign as a slug missing from the registry", () => {
+    const result = build([lead({ utm_campaign: null })]);
+
+    expect(result.videos[0]?.utmCampaign).toBe("(untagged)");
+    expect(result.coverage.campaignsMissingFromRegistry).toEqual([]);
   });
 
   it("sums clicks and visits onto the right campaign", () => {
@@ -350,9 +382,28 @@ describe("cohorts", () => {
     expect(august?.leads).toBe(1);
     expect(august?.booked).toBe(1);
     // Touched in August, closed in September — August gets the credit.
-    expect(august?.closedLaterMonth).toBe(1);
+    expect(august?.closedOtherMonth).toBe(1);
     expect(august?.closedSameMonth).toBe(0);
     expect(september?.leads).toBe(1);
+  });
+});
+
+describe("cohort wins dated before the cohort", () => {
+  it("still lands in a column, so the two columns add up to the wins", () => {
+    // Close already held this lead: the win predates its first touch here.
+    const result = build([
+      lead({
+        created_at: "2026-09-02T00:00:00.000Z",
+        closed_won_at: "2026-08-20",
+        closed_won_source: "close_opportunity",
+        call_booked_at: "2026-08-10",
+      }),
+    ]);
+
+    const september = result.cohorts.find((row) => row.month === "2026-09");
+    expect(september?.closed).toBe(1);
+    expect(september?.closedSameMonth).toBe(0);
+    expect(september?.closedOtherMonth).toBe(1);
   });
 });
 

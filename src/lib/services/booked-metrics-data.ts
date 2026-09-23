@@ -14,6 +14,7 @@ import {
   mappingReviewState,
   type MappingReviewState,
 } from "@/lib/services/calendly-event-class";
+import { CALENDLY_BOOKED_AT_PATH } from "@/lib/services/calendly-bookings";
 import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
@@ -177,12 +178,16 @@ async function fetchBookings(
         .from("calendly_bookings")
         .select(
           "invitee_email,status,scheduled_event_name,event_start_at,utm_source," +
-            "bookedAt:raw_payload->payload->>created_at," +
+            `bookedAt:${CALENDLY_BOOKED_AT_PATH},` +
             "eventTypeUri:raw_payload->payload->scheduled_event->>event_type",
           { count },
         )
         .gte("created_at", since.toISOString())
+        // Pages run concurrently, and created_at alone ties across a page
+        // boundary (bulk inserts share a timestamp): without id a row could
+        // land on two pages or on none.
         .order("created_at")
+        .order("id")
         .range(from, to) as unknown as PromiseLike<{
         data: Array<{
           invitee_email: string | null;

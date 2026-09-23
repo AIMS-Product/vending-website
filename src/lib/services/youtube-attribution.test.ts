@@ -16,8 +16,12 @@ type Call = { method: string; args: unknown[] };
  * returns itself, and awaiting it yields the canned result. `range` slices the
  * rows the way PostgREST does, so a paged read sees one page per request.
  */
-function builder(rows: unknown[], error: unknown) {
-  const calls: Call[] = [];
+function builder(
+  rows: unknown[],
+  error: unknown,
+  calls: Call[],
+  inFlight: { now: number; max: number },
+) {
   const target: Record<string, unknown> = {};
   let window: [number, number] | null = null;
   for (const method of [
@@ -40,35 +44,63 @@ function builder(rows: unknown[], error: unknown) {
     window = [from, to];
     return target;
   };
-  target.then = (resolve: unknown, reject: unknown) =>
-    Promise.resolve({
-      data: error ? null : window ? rows.slice(window[0], window[1] + 1) : rows,
-      error,
-    }).then(
+  target.then = (resolve: unknown, reject: unknown) => {
+    inFlight.now += 1;
+    inFlight.max = Math.max(inFlight.max, inFlight.now);
+    // Settles a macrotask later, so concurrent pages overlap the way real
+    // round trips do and sequential ones never do.
+    return new Promise((settle) => setTimeout(settle, 0))
+      .then(() => {
+        inFlight.now -= 1;
+        return {
+          data: error
+            ? null
+            : window
+              ? rows.slice(window[0], window[1] + 1)
+              : rows,
+          error,
+        };
+      })
+      .then(
       resolve as (v: unknown) => unknown,
-      reject as (e: unknown) => unknown,
-    );
+        reject as (e: unknown) => unknown,
+      );
+  };
   return { target, calls };
 }
 
-function buildClient(rows: Record<string, unknown[]>, failing: string[]) {
+function buildClient(
+  rows: Record<string, unknown[]>,
+  failing: string[],
+  errors: Record<string, unknown> = {},
+) {
+  // Accumulated per table: concurrent pages each build their own query.
   const calls: Record<string, Call[]> = {};
+  // Per table too: the tab reads its tables in parallel with each other.
+  const inFlight: Record<string, { now: number; max: number }> = {};
   const from = vi.fn((table: string) => {
+    calls[table] ??= [];
+    inFlight[table] ??= { now: 0, max: 0 };
     const b = builder(
       rows[table] ?? [],
-      failing.includes(table) ? { message: "boom" } : null,
+      errors[table] ??
+        (failing.includes(table) ? { message: "boom" } : null),
+      calls[table],
+      inFlight[table],
     );
-    calls[table] = b.calls;
     return b.target as never;
   });
-  return { client: { from } as never, calls };
+  return { client: { from } as never, calls, inFlight };
 }
 
 const NOW = new Date("2026-09-10T12:00:00.000Z");
 
+/** A click synced long before any range here starts, so clicks are read. */
+const SYNCED_CLICK = { utm_campaign: "zach", day: "2026-01-01", clicks: 1 };
+
 describe("getYouTubeAttribution reads", () => {
   it("reads the visit's channel and only scans rows that carry a campaign", async () => {
-    const { calls } = await run({});
+    const { calls } = await run({ bitly_link_clicks: [SYNCED_CLICK] });
 
     const select = calls.lead_page_views.find((c) => c.method === "select");
     expect(select?.args[0]).toContain("utm_source");
@@ -85,7 +117,7 @@ describe("getYouTubeAttribution reads", () => {
   });
 
   it("pages every read that can outgrow PostgREST's 1,000-row response cap", async () => {
-    const { calls } = await run({});
+    const { calls } = await run({ bitly_link_clicks: [SYNCED_CLICK] });
 
     for (const table of [
       "ga4_page_views",
@@ -116,6 +148,21 @@ describe("getYouTubeAttribution reads", () => {
       method: "order",
       args: ["day"],
     });
+  });
+
+  it("reads the pages of a long range concurrently, and every row once", async () => {
+    const rows = Array.from({ length: 7_001 }, () => ({
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      day: "2026-09-01",
+      sessions: 1,
+    }));
+
+    const { result, inFlight } = await run({ ga4_page_views: rows });
+
+    expect(result.totals.visits).toBe(7_001);
+    // Sequential pages never overlap: the 1-year read was 16 round trips.
+    expect(inFlight.ga4_page_views?.max).toBeGreaterThan(1);
   });
 
   it("reports a truncated read as unmeasured rather than as a low number", async () => {
@@ -197,8 +244,87 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsSource).toBeNull();
   });
 
-  async function run(rows: Record<string, unknown[]>, failing: string[] = []) {
-    const { client, calls } = buildClient(
+  it("logs a read that timed out instead of calling it not connected", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], {
+      ga4_page_views: { code: "57014", message: "statement timeout" },
+    });
+
+    // Still unmeasured, never zero...
+    expect(result.totals.visits).toBeNull();
+    // ...but a timeout is an outage, and it is said out loud.
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("ga4_page_views read failed (57014)"),
+    );
+    error.mockRestore();
+  });
+
+  it("stays quiet about a table that is simply not there yet", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], {
+      ga4_page_views: { code: "42P01", message: "relation does not exist" },
+    });
+
+    expect(result.coverage.visitsConnected).toBe(false);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("reads clicks as unmeasured, not 0, when nothing has ever synced", async () => {
+    const { result } = await run({ bitly_link_clicks: [] });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksWindowStart).toBeNull();
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  it("leaves clicks unmeasured when the range starts before the first synced day", async () => {
+    // The default 30-day range starts 2026-08-11; the sync only reached 09-05.
+    const { result } = await run({
+      bitly_link_clicks: [
+        { utm_campaign: "zach", day: "2026-09-05", clicks: 40 },
+      ],
+    });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksWindowStart).toBe("2026-09-05");
+  });
+
+  it("sums clicks once the synced window covers the range", async () => {
+    const { result, calls } = await run({
+      bitly_link_clicks: [
+        { utm_campaign: "zach", day: "2026-07-01", clicks: 3 },
+        { utm_campaign: "zach", day: "2026-09-05", clicks: 40 },
+      ],
+    });
+
+    // The fake ignores the date filter, so both rows arrive; the real read
+    // bounds them with gte("day").
+    expect(result.totals.clicks).toBe(43);
+    expect(calls.bitly_link_clicks).toContainEqual({
+      method: "gte",
+      args: ["day", "2026-08-11"],
+    });
+  });
+
+  it("says a broken clicks read broke, rather than asking for a Bitly token", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, ["bitly_link_clicks"]);
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksFailed).toBe(true);
+    error.mockRestore();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errors: Record<string, unknown> = {},
+  ) {
+    const { client, calls, inFlight } = buildClient(
       {
         lead_submissions: [],
         youtube_videos: [],
@@ -208,8 +334,9 @@ describe("getYouTubeAttribution reads", () => {
         ...rows,
       },
       failing,
+      errors,
     );
     const result = await getYouTubeAttribution({ client, now: NOW });
-    return { result, calls };
+    return { result, calls, inFlight };
   }
 });

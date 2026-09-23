@@ -8,6 +8,14 @@ type CalendlyBookingInsert =
   Database["public"]["Tables"]["calendly_bookings"]["Insert"];
 type CalendlyBookingClient = Pick<SupabaseClient<Database>, "from">;
 
+/**
+ * PostgREST path to Calendly's own booked-at: the one date a booking is
+ * counted on. `created_at` on the row is when we saved it, which a backfill
+ * sets to the day of the backfill. `withBookedAt` below makes every writer
+ * fill this path. Select it as `alias:${CALENDLY_BOOKED_AT_PATH}`.
+ */
+export const CALENDLY_BOOKED_AT_PATH = "raw_payload->payload->>created_at";
+
 export type RecordCalendlyBookingResult = {
   ok: true;
   bookingMatchedLead: boolean;

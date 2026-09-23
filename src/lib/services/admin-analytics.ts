@@ -7,6 +7,8 @@ import {
   inLeadWindow,
   lookbackStart,
 } from "@/lib/analytics/lead-definition";
+import { CALENDLY_BOOKED_AT_PATH } from "@/lib/services/calendly-bookings";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import {
@@ -68,7 +70,10 @@ type BookingAnalyticsRow = Pick<
   | "invitee_email"
   | "invitee_name"
   | "lead_submission_id"
->;
+> & {
+  /** Calendly's own booked-at. Null when the payload never carried one. */
+  booked_at: string | null;
+};
 
 type AdminAnalyticsClient = Pick<SupabaseClient<Database>, "from">;
 
@@ -156,8 +161,7 @@ const TOP_N = 12;
 
 const LEAD_ANALYTICS_FIELDS =
   "id,created_at,email,full_name,source_path,landing_path,referrer,utm_source,utm_medium,utm_campaign,utm_term,utm_content,timeline,budget,business_stage,state_region,lifecycle_status,close_sync_status,qualification_summary,latest_qualification_form_id,latest_qualification_started_at,latest_qualification_completed_at,call_booked_at,metadata" as const;
-const BOOKING_ANALYTICS_FIELDS =
-  "id,created_at,status,scheduled_event_name,invitee_email,invitee_name,lead_submission_id" as const;
+const BOOKING_ANALYTICS_FIELDS = `id,created_at,status,scheduled_event_name,invitee_email,invitee_name,lead_submission_id,booked_at:${CALENDLY_BOOKED_AT_PATH}`;
 
 /**
  * Read-only rollups powering /admin/analytics.
@@ -231,11 +235,15 @@ export async function getAdminAnalytics(
   // survive only to describe WHICH calendar a booking landed on.
   const currentBooked = current.filter(hasBookedCall);
   const priorBooked = prior.filter(hasBookedCall);
-  const bookedInRange = booked.filter((row) =>
-    inWindow(row.created_at, start, end),
+  // Dated by Calendly's booked-at, the rule every booked-on number uses.
+  // `created_at` is when we saved the row: a backfill dates every booking it
+  // writes to the backfill's own day. A row with no booked-at cannot be dated
+  // and is left out rather than dated by the save.
+  const bookedInRange = booked.filter(
+    (row) => row.booked_at !== null && inWindow(row.booked_at, start, end),
   );
-  const attributedInRange = attributed.filter((row) =>
-    inWindow(row.created_at, start, end),
+  const attributedInRange = attributed.filter(
+    (row) => row.booked_at !== null && inWindow(row.booked_at, start, end),
   );
 
   const qualifiedCurrent = current.filter(isQualified);
@@ -473,18 +481,35 @@ async function fetchBookings(
   sinceIso: string,
 ): Promise<BookingsFetchResult> {
   try {
-    const { data, error } = await client
-      .from("calendly_bookings")
-      .select(BOOKING_ANALYTICS_FIELDS)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: true });
+    // Paged, like the lead read above. Unpaged, this returned the oldest 1,000
+    // of 2,004 rows on 2026-09-11 and the Overview read 861 bookings against a
+    // real 1,748: nothing after 24 August was on the page.
+    //
+    // Bounded on created_at only because it is indexed. We save a row at or
+    // after its booked-at, so every booking made since `sinceIso` is inside.
+    const { rows, error } = await readAllPages<BookingAnalyticsRow>(
+      (from, to, count) =>
+        client
+          .from("calendly_bookings")
+          .select(BOOKING_ANALYTICS_FIELDS, { count })
+          .gte("created_at", sinceIso)
+          // `id` breaks created_at ties, so pages neither overlap nor skip.
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to) as unknown as PromiseLike<{
+          data: BookingAnalyticsRow[] | null;
+          count?: number | null;
+          error: { message: string; code?: string } | null;
+        }>,
+      { maxRows: MAX_ANALYTICS_LEAD_ROWS },
+    );
 
     if (error) {
       // Most commonly Postgres 42P01 (relation does not exist) before the
       // calendly_bookings migration + webhook are wired into an environment.
       return { rows: [], connected: false };
     }
-    return { rows: (data ?? []) as BookingAnalyticsRow[], connected: true };
+    return { rows, connected: true };
   } catch {
     return { rows: [], connected: false };
   }
