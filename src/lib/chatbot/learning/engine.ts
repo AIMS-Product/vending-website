@@ -4,6 +4,7 @@ import { chatbotBookingUrl, CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
 import type { ChatbotFlag } from "@/lib/services/chatbot-admin";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
+import { triageConversation } from "@/lib/chatbot/triage";
 import type { Json } from "@/types/database";
 
 /**
@@ -44,6 +45,10 @@ export type LearningConversationInput = {
   capturedPhone: string | null;
   prospectProfile: ProspectProfile | null;
   flags: ChatbotFlag[];
+  /** A call is on the calendar: this chat's own stamp, or its lead's Close booking. */
+  booked: boolean;
+  /** flag_for_team handed this chat to a person; it is theirs, not a draft's. */
+  handedOff: boolean;
 };
 
 export type LearningCaseOutput = {
@@ -129,7 +134,7 @@ const TOPIC_LABELS: Record<LearningTopic, string> = {
 // every plural mention. Caught by scripts/chatbot-learning-smoke.mjs.
 const TOPIC_KEYWORDS: Record<Exclude<LearningTopic, "other">, RegExp> = {
   call_booking:
-    /\b(book a call|schedule a call|talk to (someone|a person|the team)|hop on a call|jump on a call|set up a call|speak (with|to) (someone|a rep|the team)|phone calls?)\b/gi,
+    /\b(book a call|schedule a call|talk to (someone|a person|the team)|hop on a call|jump on a call|set up a call|speak (with|to) (someone|a rep|the team))\b/gi,
   pricing_cost:
     /\b(prices?|pricing|costs?|how much|fees?|invest(?:ment)?s?|capital|budgets?|expensive|cheap|afford)\b/gi,
   resources:
@@ -343,7 +348,7 @@ function buildFollowUpTasks(
   for (const learningCase of cases) {
     if (!TASK_ELIGIBLE_CASE_TYPES.has(learningCase.caseType)) continue;
     const conv = conversationById.get(learningCase.conversationId);
-    if (!conv?.capturedEmail) continue;
+    if (!conv?.capturedEmail || !wantsSalesFollowUp(conv)) continue;
 
     // Tagged with the conversation id, so a booking made from a rep-sent
     // draft still attributes back to the chat that started it.
@@ -371,6 +376,17 @@ function buildFollowUpTasks(
   }
 
   return tasks;
+}
+
+/**
+ * A sales follow-up only goes to someone we are still trying to book: not a
+ * person already on the calendar ("Checking back in... still exploring?" to a
+ * booked visitor), not a member asking for support or to cancel their call,
+ * and not a chat already handed to a teammate, whose own queue owns it.
+ */
+function wantsSalesFollowUp(conv: LearningConversationInput): boolean {
+  if (conv.booked || conv.handedOff) return false;
+  return triageConversation(conv.messages) === "sales";
 }
 
 function draftForCase(
