@@ -22,6 +22,7 @@ import {
   resolveChatbotResources,
 } from "@/lib/chatbot/resources";
 import type { ChatbotToolDefinition } from "@/lib/chatbot/openai";
+import { triageConversation } from "@/lib/chatbot/triage";
 import type { Database } from "@/types/database";
 
 /**
@@ -209,8 +210,20 @@ export function hasCostIntent(message: string): boolean {
  * The single question the chat route asks before deciding to require
  * show_booking_calendar rather than offer it. Callers must also check the
  * calendar has not already been shown.
+ *
+ * Never for a support or already-booked chat (triage.ts), judged on the whole
+ * visitor side so far: a refund complaint that mentions a fee was being handed
+ * the sales calendar, and one booked a sales slot.
  */
-export function shouldForceBookingCalendar(message: string): boolean {
+export function shouldForceBookingCalendar(
+  message: string,
+  priorMessages: readonly ChatbotMessage[] = [],
+): boolean {
+  const triage = triageConversation([
+    ...priorMessages,
+    { role: "user", content: message },
+  ]);
+  if (triage !== "sales") return false;
   return hasExplicitBookingIntent(message) || hasCostIntent(message);
 }
 

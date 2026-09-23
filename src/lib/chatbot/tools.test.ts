@@ -351,3 +351,37 @@ describe("shouldForceBookingCalendar", () => {
     },
   );
 });
+
+describe("shouldForceBookingCalendar on support and booked chats", () => {
+  const said = (content: string): ChatbotMessage => ({
+    role: "user",
+    content,
+    ts: "2026-09-20T12:00:00.000Z",
+  });
+
+  it.each([
+    // A refund complaint got the sales calendar and booked a sales slot.
+    "I want a refund, how much did I pay in fees",
+    "I need to cancel my call, can I talk to someone",
+    "can I reschedule my appointment, show me the calendar",
+    "I'm already a member, what does the renewal cost",
+  ])("never forces the calendar on %j", (message) => {
+    expect(shouldForceBookingCalendar(message)).toBe(false);
+  });
+
+  it("stays off once the visitor has said they are a member", () => {
+    expect(
+      shouldForceBookingCalendar("how much is it", [
+        said("I'm an existing member and cannot log in to the portal"),
+      ]),
+    ).toBe(false);
+  });
+
+  it("still forces it for a sales chat with history", () => {
+    expect(
+      shouldForceBookingCalendar("how much is it", [
+        said("I'm a teacher looking for side income"),
+      ]),
+    ).toBe(true);
+  });
+});

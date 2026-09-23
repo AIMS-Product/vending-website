@@ -256,7 +256,8 @@ export async function POST(request: Request) {
   // asked plainly and no calendar is open yet, require the call instead of
   // requesting it.
   const forceTool =
-    !promptInput.hasSeenCalendar && shouldForceBookingCalendar(message)
+    !promptInput.hasSeenCalendar &&
+    shouldForceBookingCalendar(message, priorMessages)
       ? "show_booking_calendar"
       : undefined;
 
