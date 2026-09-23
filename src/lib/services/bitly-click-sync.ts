@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  BitlyApiError,
   campaignFromLongUrl,
   createBitlyClient,
   isBitlinkId,
@@ -165,6 +166,20 @@ export async function syncBitlyClicks(
 
         result.updated += 1;
       } catch (error) {
+        // Bitly says this link is gone (404) or not ours to read (403). No
+        // retry changes that, and unstamped it would be claimed first on every
+        // run and turn the cron red every hour. Counted and stamped like a
+        // malformed id instead.
+        if (isPermanentLinkError(error)) {
+          result.invalid += 1;
+          console.warn("bitly click sync: Bitly refuses this link", {
+            campaign: row.utm_campaign,
+            bitlyId: row.bitly_id,
+            status: error.status,
+          });
+          await stamp(row);
+          continue;
+        }
         // One unreachable link must not abort the batch. The row keeps its old
         // clicks_synced_at and is retried on the next run. Logged, because a
         // link failing quietly every run is how the clicks table sat empty.
@@ -196,6 +211,13 @@ export async function syncBitlyClicks(
   );
 
   return result;
+}
+
+function isPermanentLinkError(error: unknown): error is BitlyApiError {
+  return (
+    error instanceof BitlyApiError &&
+    (error.status === 404 || error.status === 403)
+  );
 }
 
 /**

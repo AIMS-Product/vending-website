@@ -136,6 +136,23 @@ describe("Bitly sync runner route", () => {
     expect(await response.json()).toMatchObject({ ok: true, invalid: 1 });
   });
 
+  it("returns 500 when Bitly refuses every link in the batch", async () => {
+    // A revoked token 403s every link. Each one alone is "invalid", but all of
+    // them at once is a token problem, and it must not read green.
+    mocks.syncBitlyClicks.mockResolvedValue({
+      scanned: 12,
+      updated: 0,
+      failed: 0,
+      invalid: 12,
+      daysWritten: 0,
+      linksMapped: 0,
+    });
+
+    const response = await GET(request("cron-secret-123456"));
+
+    expect(response.status).toBe(500);
+  });
+
   it("returns 500 and leaks nothing when the sync throws", async () => {
     const logged = vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.syncBitlyClicks.mockRejectedValue(

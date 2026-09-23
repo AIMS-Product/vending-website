@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { syncBitlyClicks } from "./bitly-click-sync";
-import type { BitlyClient } from "@/lib/bitly/client";
+import { BitlyApiError, type BitlyClient } from "@/lib/bitly/client";
 import type { Database } from "@/types/database";
 
 vi.mock("@/lib/config", () => ({
@@ -242,6 +242,37 @@ describe("syncBitlyClicks", () => {
       "bitly click sync: stored bitlink id is unusable",
       expect.objectContaining({ campaign: "broken" }),
     );
+    warn.mockRestore();
+  });
+
+  it("stamps a link Bitly refuses for good, and keeps the run green", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, recorded } = buildClient({
+      claimable: [
+        { utm_campaign: "gone", bitly_id: "bit.ly/gone" },
+        { utm_campaign: "forbidden", bitly_id: "bit.ly/forbidden" },
+        { utm_campaign: "flaky", bitly_id: "bit.ly/flaky" },
+      ],
+    });
+    const bitlyClient = {
+      listGroupLinks: vi.fn(async () => []),
+      dailyClicks: vi.fn(async (bitlinkId: string) => {
+        if (bitlinkId === "bit.ly/gone") throw new BitlyApiError(404, "gone");
+        if (bitlinkId === "bit.ly/forbidden")
+          throw new BitlyApiError(403, "forbidden");
+        throw new BitlyApiError(503, "try later");
+      }),
+    } as unknown as BitlyClient;
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    // 404 and 403 will fail the same way every run: counted apart from
+    // `failed` (which turns the cron red) and moved off the queue front.
+    expect(result).toMatchObject({ invalid: 2, failed: 1, updated: 0 });
+    expect(recorded.videoUpdates.map((row) => row.campaign).sort()).toEqual([
+      "forbidden",
+      "gone",
+    ]);
     warn.mockRestore();
   });
 
