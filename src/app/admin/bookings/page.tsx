@@ -18,8 +18,13 @@ import {
 } from "@/lib/services/pre-call-briefing";
 import {
   loadEngagementBySession,
-  loadSessionIdsByLead,
+  loadLeadFacts,
+  resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
+import {
+  loadBookingLinks,
+  NO_BOOKING_LINKS,
+} from "@/lib/services/calendly-booking-sessions";
 import {
   creditConflict,
   SETTER_NAMES,
@@ -79,21 +84,38 @@ export default async function AdminBookingsPage({
     : report.rows;
   const summary = chatOnly ? summarizeCallCredits(rows) : report.summary;
 
-  // What each upcoming call has watched. Two hops because the session id is
-  // the join: booking -> its lead row -> the session that lead was captured
-  // under -> that session's video rows.
-  const sessionByLead = await loadSessionIdsByLead(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  // What each upcoming call has watched. The session id is the join: booking
+  // -> its lead row's session, or the browser that booked it on-site -> that
+  // session's video rows. Same resolver as the Pre-call video tab.
+  const [leadFacts, links] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
+    loadBookingLinks(),
+  ]);
+  const sessionsByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    links ?? NO_BOOKING_LINKS,
+  );
+  const engagementBySession = await loadEngagementBySession(
+    [...sessionsByBooking.values()].flat(),
   );
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByLead,
-    engagementBySession: await loadEngagementBySession([
-      ...sessionByLead.values(),
-    ]),
+    sessionsByBooking,
+    engagementBySession,
   });
+  // Said on the page, because the table can only show "No session" and that
+  // must not be read as "we never had a browser for them".
+  const watchingIncomplete =
+    engagementBySession === null
+      ? "What each call has watched could not be read in full just now, so every call below shows \u201cNo session\u201d. Reload to try again."
+      : links === null
+        ? "The booking-to-browser links could not be read just now, so some people who booked on our site calendar show \u201cNo session\u201d below. Reload to try again."
+        : null;
 
   return (
     <AdminShell
@@ -189,6 +211,11 @@ export default async function AdminBookingsPage({
         />
       </AdminMetricStrip>
 
+      {watchingIncomplete ? (
+        <p className={`${adminPanelClass} mb-4 p-3 text-xs`}>
+          {watchingIncomplete}
+        </p>
+      ) : null}
       <PreCallBriefingPanel rows={briefing} />
 
       <PeoplePanel summary={summary} />
@@ -277,7 +304,7 @@ function WatchedCell({ row }: { row: BriefingRow }) {
     return (
       <span
         className="text-ui-text-muted text-xs"
-        title="This booking has no first-party session id, so we cannot tell what they watched. Not the same as watching nothing."
+        title="We cannot tie this booking to a browser, so we cannot tell what they watched. Not the same as watching nothing."
       >
         No session
       </span>

@@ -2,9 +2,25 @@ import "server-only";
 
 import { preCallVideos } from "@/lib/content/pre-call-resources";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
-import { chunk, ID_BATCH } from "@/lib/batch";
+import { chunk } from "@/lib/batch";
 import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
-import { loadLeadFacts } from "@/lib/services/pre-call-engagement";
+import {
+  loadLeadFacts,
+  POSTGREST_MAX_ROWS,
+  resolveBookingSessions,
+  VIEW_SESSION_BATCH,
+} from "@/lib/services/pre-call-engagement";
+import {
+  loadBookingLinks,
+  NO_BOOKING_LINKS,
+} from "@/lib/services/calendly-booking-sessions";
+import {
+  compareShowUp,
+  firstCallOutcome,
+  loadFirstCallMirror,
+  type FirstCallOutcome,
+  type ShowUpComparison,
+} from "@/lib/services/video-engagement-outcomes";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -77,6 +93,8 @@ export type VideoWatcherRow = {
    * renders both as the same blank and a rep phones someone who did watch.
    */
   hasSession: boolean;
+  /** Close's answer for this call, when this booking is their first call. */
+  firstCall: FirstCallOutcome;
 };
 
 export type VideoBreakdownRow = {
@@ -97,6 +115,12 @@ export type VideoBreakdownRow = {
 export type VideoEngagementReport = {
   /** Booked prospects in the window, engaged or not. */
   bookedCount: number;
+  /**
+   * The people this page can answer for: booked since tracking began, plus
+   * anyone who booked earlier and has opened a video since. Exactly
+   * watcherCount + coldCount + unknownCount.
+   */
+  trackedCount: number;
   /** Of those, how many opened at least one video. */
   watcherCount: number;
   /** Booked, matched, tracked, and watched nothing — the outreach list. */
@@ -108,10 +132,17 @@ export type VideoEngagementReport = {
   /** Booked but with no session id, so we genuinely cannot say. */
   unknownCount: number;
   totalVideos: number;
+  /** Did watchers turn up more than non-watchers? First calls only. */
+  showUp: ShowUpComparison;
   people: VideoWatcherRow[];
   videos: VideoBreakdownRow[];
   /** False when the table is missing, so the tab can say so plainly. */
   connected: boolean;
+  /**
+   * False when the booking-link table could not be read. People reachable
+   * only through it then show as "No session", and the tab says why.
+   */
+  linksAvailable: boolean;
 };
 
 type ViewRow = {
@@ -133,22 +164,22 @@ export async function getVideoEngagementReport({
     trackingStartedAt(),
   ]);
   const trackedFrom = trackingStart ? Date.parse(trackingStart) : null;
-  const leadFacts = await loadLeadFacts(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  const [leadFacts, links] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
+    loadBookingLinks(),
+  ]);
+  const sessionsByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    links ?? NO_BOOKING_LINKS,
   );
 
-  const sessionByBooking = new Map<string, string>();
-  for (const row of report.rows) {
-    const session = row.leadSubmissionId
-      ? leadFacts.get(row.leadSubmissionId)?.sessionId
-      : null;
-    if (session) sessionByBooking.set(row.id, session);
-  }
-
   const { rows: viewRows, connected } = await loadViewRows([
-    ...new Set(sessionByBooking.values()),
+    ...new Set([...sessionsByBooking.values()].flat()),
   ]);
 
   const bySession = new Map<string, ViewRow[]>();
@@ -159,13 +190,17 @@ export async function getVideoEngagementReport({
     ]);
   }
 
+  const viewsByBooking = new Map<string, ViewRow[]>();
   const everyone = report.rows
     .map((row) => {
-      const session = sessionByBooking.get(row.id);
-      const views = session ? (bySession.get(session) ?? []) : [];
-      return buildWatcherRow(row, views, now, trackedFrom, Boolean(session));
+      const sessions = sessionsByBooking.get(row.id) ?? [];
+      const views = deepestPerVideo(
+        sessions.flatMap((session) => bySession.get(session) ?? []),
+      );
+      viewsByBooking.set(row.id, views);
+      return buildWatcherRow(row, views, now, trackedFrom, sessions.length > 0);
     })
-    .filter((row): row is VideoWatcherRow => row !== null);
+    .filter((row): row is Omit<VideoWatcherRow, "firstCall"> => row !== null);
 
   // Listed rows are the ones this page can answer for. A booking made before
   // tracking began, with nothing recorded against it, is not a quiet prospect
@@ -177,12 +212,29 @@ export async function getVideoEngagementReport({
   // those people are still opening the page today. Excluding them by booking
   // date — as clamping the query window did — deletes the most useful row on
   // the page, for the prospect whose call is soonest.
-  const people = everyone
-    .filter((row) => !row.predatesTracking)
+  const listed = everyone.filter((row) => !row.predatesTracking);
+
+  // Outcomes only for the listed rows: a few hundred emails, not the window.
+  const mirror = await loadFirstCallMirror(
+    listed.flatMap((row) => (row.email ? [row.email] : [])),
+  );
+  const today = now.toISOString().slice(0, 10);
+  const people = listed
+    .map((row) => ({
+      ...row,
+      firstCall: mirror
+        ? firstCallOutcome(
+            { inviteeEmail: row.email, startAt: row.startAt },
+            mirror.get(row.email?.trim().toLowerCase() ?? "") ?? [],
+            today,
+          )
+        : ("unavailable" as const),
+    }))
     .sort(byEngagementThenSoonest);
 
   return {
     bookedCount: report.rows.length,
+    trackedCount: people.length,
     watcherCount: people.filter((p) => p.videosStarted > 0).length,
     // Cold means "we were watching and they did nothing". Anyone who booked
     // before tracking existed is excluded: putting them on a call list would
@@ -196,9 +248,11 @@ export async function getVideoEngagementReport({
     trackingStartedAt: trackingStart,
     unknownCount: people.filter((row) => !row.hasSession).length,
     totalVideos: preCallVideos.length,
+    showUp: compareShowUp(people, mirror !== null),
     people,
-    videos: buildVideoBreakdown(viewRows),
+    videos: buildVideoBreakdown(onePerPerson(everyone, viewsByBooking)),
     connected,
+    linksAvailable: links !== null,
   };
 }
 
@@ -215,7 +269,7 @@ function buildWatcherRow(
   now: Date,
   trackedFrom: number | null,
   hasSession: boolean,
-): VideoWatcherRow | null {
+): Omit<VideoWatcherRow, "firstCall"> | null {
   const startsAt = row.startAt ? Date.parse(row.startAt) : Number.NaN;
 
   const deepest = views
@@ -274,6 +328,52 @@ function byEngagementThenSoonest(a: VideoWatcherRow, b: VideoWatcherRow) {
   return Date.parse(a.startAt ?? "") - Date.parse(b.startAt ?? "");
 }
 
+/**
+ * One row per video, keeping the furthest point any of the person's sessions
+ * reached. Within one session the table already holds one row per video.
+ */
+function deepestPerVideo(views: ViewRow[]): ViewRow[] {
+  const byEmbed = new Map<string, ViewRow>();
+  for (const view of views) {
+    const seen = byEmbed.get(view.embed_id);
+    if (!seen) {
+      byEmbed.set(view.embed_id, view);
+      continue;
+    }
+    byEmbed.set(view.embed_id, {
+      ...(view.max_percent > seen.max_percent ? view : seen),
+      duration_seconds: seen.duration_seconds ?? view.duration_seconds,
+      last_seen_at:
+        view.last_seen_at > seen.last_seen_at
+          ? view.last_seen_at
+          : seen.last_seen_at,
+    });
+  }
+  return [...byEmbed.values()];
+}
+
+/**
+ * The views behind the per-video table, counted once per PERSON. A person
+ * with two bookings (a reschedule) or two browsers would otherwise start the
+ * same video twice. Keyed on email, falling back to the booking.
+ */
+function onePerPerson(
+  everyone: { bookingId: string; email: string | null }[],
+  viewsByBooking: Map<string, ViewRow[]>,
+): ViewRow[] {
+  const byPerson = new Map<string, ViewRow[]>();
+  for (const row of everyone) {
+    const views = viewsByBooking.get(row.bookingId) ?? [];
+    if (views.length === 0) continue;
+    const key = row.email?.trim().toLowerCase() || row.bookingId;
+    byPerson.set(
+      key,
+      deepestPerVideo([...(byPerson.get(key) ?? []), ...views]),
+    );
+  }
+  return [...byPerson.values()].flat();
+}
+
 function buildVideoBreakdown(viewRows: ViewRow[]): VideoBreakdownRow[] {
   const byEmbed = new Map<string, ViewRow[]>();
   for (const row of viewRows) {
@@ -319,8 +419,10 @@ async function loadViewRows(
     // Chunked for the same reason as loadLeadFacts: a 90-day window carries
     // thousands of sessions, and one `in` list that long makes a URL the
     // request never returns from. The live Video tab hung on exactly this.
+    // VIEW_SESSION_BATCH, not ID_BATCH: a session holds a row per video, so
+    // 200 sessions could pass PostgREST's silent 1,000-row cap.
     const batches = await Promise.all(
-      chunk(sessionIds, ID_BATCH).map((batch) =>
+      chunk(sessionIds, VIEW_SESSION_BATCH).map((batch) =>
         client
           .from("lead_video_views")
           .select(
@@ -332,7 +434,11 @@ async function loadViewRows(
     );
 
     for (const { data, error } of batches) {
-      if (error) return { rows: [], connected: false };
+      // A batch at the cap may have been cut short. Blank beats partial: a
+      // missing row would move a watcher onto the call list.
+      if (error || (data?.length ?? 0) >= POSTGREST_MAX_ROWS) {
+        return { rows: [], connected: false };
+      }
       rows.push(...(data ?? []));
     }
 

@@ -10,7 +10,12 @@ import {
 import {
   loadEngagementBySession,
   loadLeadFacts,
+  resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
+import {
+  loadBookingLinks,
+  NO_BOOKING_LINKS,
+} from "@/lib/services/calendly-booking-sessions";
 
 /**
  * Puts what a prospect watched on their Close lead, shortly before the call.
@@ -43,6 +48,8 @@ export type PreCallNoteResult = {
   skipped: number;
   /** Upcoming calls with no Close lead to write to. */
   unwritable: number;
+  /** Upcoming calls with no browser tied to them, so nothing honest to say. */
+  untracked: number;
 };
 
 /**
@@ -95,30 +102,41 @@ export async function sweepPreCallNotes({
     posted: 0,
     skipped: 0,
     unwritable: 0,
+    untracked: 0,
   };
 
   // A call happening in the next few hours was booked at most a couple of
   // months ago in every realistic case; 90 days of booking history is the
   // window that holds them all without reading the whole table.
   const report = await buildCallCreditReport({ days: 90 });
-  const leadFacts = await loadLeadFacts(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  const [leadFacts, links] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
+    loadBookingLinks(),
+  ]);
+  const sessionsByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    links ?? NO_BOOKING_LINKS,
   );
 
-  const sessionByLead = new Map(
-    [...leadFacts].flatMap(([leadId, { sessionId }]) =>
-      sessionId ? ([[leadId, sessionId]] as [string, string][]) : [],
-    ),
+  const engagementBySession = await loadEngagementBySession(
+    [...sessionsByBooking.values()].flat(),
   );
+  // A note posts once and cannot be edited later (Close has no note update),
+  // so a run that cannot read every view row posts nothing rather than tell a
+  // rep that a prospect "opened nothing". The next hourly run tries again.
+  // Same for the booking links: without them a person's own booking browser
+  // is missing, and a laptop session with no views would read "Nothing opened".
+  if (!engagementBySession || !links) return result;
 
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByLead,
-    engagementBySession: await loadEngagementBySession([
-      ...sessionByLead.values(),
-    ]),
+    sessionsByBooking,
+    engagementBySession,
     now,
     // Fractional days: the window is "about to happen", not "this fortnight".
     horizonDays: hoursAhead / 24,
@@ -130,6 +148,13 @@ export async function sweepPreCallNotes({
   const close = createCloseClient({ apiKey: config.CLOSE_API_KEY });
 
   for (const row of briefing) {
+    // No browser tied to this booking means we could not watch, not that they
+    // watched nothing. A note saying "Nothing opened" would be a claim we
+    // cannot back, and it can never be corrected once posted.
+    if (row.unknownSession) {
+      result.untracked += 1;
+      continue;
+    }
     const closeLeadId = closeLeadIdFor(row, report.rows, leadFacts);
     if (!closeLeadId) {
       result.unwritable += 1;

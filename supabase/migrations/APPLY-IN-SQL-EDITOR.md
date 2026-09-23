@@ -121,6 +121,31 @@ comment on function public.record_video_view is
 revoke all on function public.record_video_view from public, anon, authenticated;
 ```
 
+## 6. Booking -> browser link (20260923120000)
+
+Separate paste, safe to run twice. Without it, pre-call videos watched by
+people who booked on the site's own calendar but never filled a site form
+(webinar attendees on /start) stay "No session" on the Pre-call video tab and
+/admin/bookings. The site code works with or without it; links are only
+recorded once this exists.
+
+```sql
+create table if not exists public.calendly_booking_sessions (
+  invitee_uri   text primary key,
+  vp_session_id text not null,
+  linked_at     timestamptz not null default now(),
+  constraint calendly_booking_sessions_uri_len
+    check (length(invitee_uri) <= 300),
+  constraint calendly_booking_sessions_session_len
+    check (length(vp_session_id) <= 160)
+);
+
+create index if not exists calendly_booking_sessions_session_idx
+  on public.calendly_booking_sessions (vp_session_id);
+
+alter table public.calendly_booking_sessions enable row level security;
+```
+
 Then re-run the audit so the first verdicts are stored:
 
 ```bash
