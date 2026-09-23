@@ -21,7 +21,10 @@ import {
   loadLeadFacts,
   resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
-import { loadSessionsByInvitee } from "@/lib/services/calendly-booking-sessions";
+import {
+  loadBookingLinks,
+  NO_BOOKING_LINKS,
+} from "@/lib/services/calendly-booking-sessions";
 import {
   creditConflict,
   SETTER_NAMES,
@@ -84,27 +87,25 @@ export default async function AdminBookingsPage({
   // What each upcoming call has watched. The session id is the join: booking
   // -> its lead row's session, or the browser that booked it on-site -> that
   // session's video rows. Same resolver as the Pre-call video tab.
-  const [leadFacts, sessionByInvitee] = await Promise.all([
+  const [leadFacts, links] = await Promise.all([
     loadLeadFacts(
       report.rows.flatMap((row) =>
         row.leadSubmissionId ? [row.leadSubmissionId] : [],
       ),
     ),
-    loadSessionsByInvitee(
-      report.rows.flatMap((row) => (row.inviteeUri ? [row.inviteeUri] : [])),
-    ),
+    loadBookingLinks(),
   ]);
-  const sessionByBooking = resolveBookingSessions(
+  const sessionsByBooking = resolveBookingSessions(
     report.rows,
     leadFacts,
-    sessionByInvitee,
+    links ?? NO_BOOKING_LINKS,
   );
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByBooking,
-    engagementBySession: await loadEngagementBySession([
-      ...sessionByBooking.values(),
-    ]),
+    sessionsByBooking,
+    engagementBySession: await loadEngagementBySession(
+      [...sessionsByBooking.values()].flat(),
+    ),
   });
 
   return (

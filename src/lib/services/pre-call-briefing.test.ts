@@ -105,7 +105,7 @@ describe("buildPreCallBriefing with sessions resolved per booking", () => {
     // was linked to the browser that made it.
     const [row] = buildPreCallBriefing({
       rows: [call({ id: "webinar", leadSubmissionId: null })],
-      sessionByBooking: new Map([["webinar", "vp-9"]]),
+      sessionsByBooking: new Map([["webinar", ["vp-9"]]]),
       engagementBySession: new Map([["vp-9", watched]]),
       now: NOW,
     });
@@ -117,12 +117,25 @@ describe("buildPreCallBriefing with sessions resolved per booking", () => {
   it("treats a booking missing from the map as no session", () => {
     const [row] = buildPreCallBriefing({
       rows: [call({ id: "a" })],
-      sessionByBooking: new Map(),
+      sessionsByBooking: new Map(),
       engagementBySession: new Map([["vp-1", watched]]),
       now: NOW,
     });
 
     expect(row.unknownSession).toBe(true);
+  });
+
+  it("reads everyone as unknown, never as watched nothing, when views could not be read", () => {
+    // A partial or failed view read must not put people on the call list.
+    const briefing = buildPreCallBriefing({
+      rows: [call({ id: "a" })],
+      sessionsByBooking: new Map([["a", ["vp-1"]]]),
+      engagementBySession: null,
+      now: NOW,
+    });
+
+    expect(briefing[0].unknownSession).toBe(true);
+    expect(coldBookings(briefing)).toEqual([]);
   });
 });
 

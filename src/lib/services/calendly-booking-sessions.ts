@@ -51,24 +51,30 @@ export async function recordBookingSession({
   }
 }
 
-/**
- * Session id by invitee URI, for the URIs asked about.
- *
- * Reads the whole table rather than an `in` list: invitee URIs are ~100
- * characters, so a 90-day window's worth would need dozens of batched
- * requests, while the table itself only grows by the site's own bookings.
- * ponytail: whole-table read, ~50 rows a day; switch to batched `in` lists if
- * it ever passes ~50k rows.
- *
- * An unreadable table returns an empty map: every booking then falls back to
- * its lead row, which is exactly how the reports behaved before this existed.
- */
-export async function loadSessionsByInvitee(
-  inviteeUris: string[],
-): Promise<Map<string, string>> {
-  const wanted = new Set(inviteeUris.filter(Boolean));
-  if (wanted.size === 0) return new Map();
+export type BookingLinks = {
+  sessionByInvitee: Map<string, string>;
+  /** Every invitee a session ever booked, for the shared-browser check. */
+  inviteesBySession: Map<string, string[]>;
+};
 
+export const NO_BOOKING_LINKS: BookingLinks = {
+  sessionByInvitee: new Map(),
+  inviteesBySession: new Map(),
+};
+
+/**
+ * The whole link table, both ways round.
+ *
+ * Whole-table because the shared-browser check in resolveBookingSessions needs
+ * every booking a session ever made, not only the ones in the report window.
+ * ponytail: whole-table read, ~50 rows a day; move the check into SQL if it
+ * ever passes ~50k rows.
+ *
+ * Null when the table exists but cannot be read, so the page can say the
+ * links are missing instead of quietly showing linked people as "No session".
+ * A table that does not exist yet (migration not applied) is simply empty.
+ */
+export async function loadBookingLinks(): Promise<BookingLinks | null> {
   try {
     const { rows, error } = await readAllPages<{
       invitee_uri: string;
@@ -80,15 +86,19 @@ export async function loadSessionsByInvitee(
         .order("invitee_uri")
         .range(from, to),
     );
-    // A partial read would silently drop some links and move people from
-    // "watched" to "no session" without saying so. All or nothing.
-    if (error) return new Map();
-    return new Map(
-      rows
-        .filter((row) => wanted.has(row.invitee_uri))
-        .map((row) => [row.invitee_uri, row.vp_session_id]),
-    );
+    if (error) return error.code === "PGRST205" ? NO_BOOKING_LINKS : null;
+
+    const sessionByInvitee = new Map<string, string>();
+    const inviteesBySession = new Map<string, string[]>();
+    for (const row of rows) {
+      sessionByInvitee.set(row.invitee_uri, row.vp_session_id);
+      inviteesBySession.set(row.vp_session_id, [
+        ...(inviteesBySession.get(row.vp_session_id) ?? []),
+        row.invitee_uri,
+      ]);
+    }
+    return { sessionByInvitee, inviteesBySession };
   } catch {
-    return new Map();
+    return null;
   }
 }

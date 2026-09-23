@@ -52,10 +52,18 @@ export function firstCallOutcome(
     new Date(startMs).toISOString().slice(0, 10),
     pacificDay(startMs),
   ]);
-  const match = mirrorRows.find((row) =>
+  const matches = mirrorRows.filter((row) =>
     days.has(row.first_sales_call_booked_date?.slice(0, 10) ?? ""),
   );
-  if (!match) return "notFirstCall";
+  if (matches.length === 0) return "notFirstCall";
+  // Duplicate Close leads for one email can both claim the day. If they
+  // disagree there is no single answer, so say it is not logged rather than
+  // pick one.
+  const answers = new Set(
+    matches.map((row) => row.first_call_show_up?.trim().toLowerCase() ?? ""),
+  );
+  const match =
+    answers.size > 1 ? { ...matches[0], first_call_show_up: null } : matches[0];
 
   const key = emailKey(booking.inviteeEmail);
   const { state } = classifyBookedCall(key, new Map([[key, match]]), today);
@@ -119,6 +127,7 @@ export type ShowUpComparison = {
  */
 export function compareShowUp(
   people: {
+    email: string | null;
     hasSession: boolean;
     canceled: boolean;
     videosStarted: number;
@@ -128,9 +137,16 @@ export function compareShowUp(
 ): ShowUpComparison {
   const watched: ShowUpGroup = { held: 0, noShow: 0 };
   const watchedNothing: ShowUpGroup = { held: 0, noShow: 0 };
+  // One answer per person: Close holds one first call per lead, and two
+  // bookings can both land on its day (a no-show rebooked for the next
+  // morning matches in UTC and Pacific), which would count it twice.
+  const counted = new Set<string>();
   for (const person of people) {
     if (!person.hasSession || person.canceled) continue;
     if (person.firstCall !== "held" && person.firstCall !== "noShow") continue;
+    const key = person.email?.trim().toLowerCase();
+    if (!key || counted.has(key)) continue;
+    counted.add(key);
     const group = person.videosStarted > 0 ? watched : watchedNothing;
     if (person.firstCall === "held") group.held += 1;
     else group.noShow += 1;

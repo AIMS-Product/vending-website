@@ -5,6 +5,7 @@ import {
   preCallVideos,
 } from "@/lib/content/pre-call-resources";
 import { chunk, ID_BATCH } from "@/lib/batch";
+import type { BookingLinks } from "@/lib/services/calendly-booking-sessions";
 import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
@@ -68,8 +69,20 @@ type VideoViewRow = {
  * labelled by their id — dropping them would quietly shrink a prospect's
  * engagement because we changed the page after they watched it.
  */
-export function summariseEngagement(rows: VideoViewRow[]): PreCallEngagement {
-  if (rows.length === 0) return EMPTY_ENGAGEMENT;
+export function summariseEngagement(
+  allRows: VideoViewRow[],
+): PreCallEngagement {
+  if (allRows.length === 0) return EMPTY_ENGAGEMENT;
+
+  // One row per video: the same video seen in two sessions keeps its furthest.
+  const deepest = new Map<string, VideoViewRow>();
+  for (const row of allRows) {
+    const seen = deepest.get(row.embed_id);
+    if (!seen || row.max_percent > seen.max_percent) {
+      deepest.set(row.embed_id, row);
+    }
+  }
+  const rows = [...deepest.values()];
 
   const videos = rows
     .map((row) => ({
@@ -85,12 +98,23 @@ export function summariseEngagement(rows: VideoViewRow[]): PreCallEngagement {
     finishedCount: videos.filter((v) => v.percent >= FINISHED_PERCENT).length,
     videos,
     lastSeenAt:
-      rows
+      allRows
         .map((row) => row.last_seen_at)
+        .filter(Boolean)
         .sort()
         .at(-1) ?? null,
   };
 }
+
+/**
+ * Sessions per view request. A session holds one row per video (fifteen
+ * today), and PostgREST silently stops at 1,000 rows, so 200 sessions could
+ * lose rows without an error. 50 x 15 = 750.
+ */
+export const VIEW_SESSION_BATCH = 50;
+
+/** PostgREST's silent row ceiling; a batch that reaches it may be cut short. */
+export const POSTGREST_MAX_ROWS = 1000;
 
 /**
  * Engagement for a set of sessions, keyed by session id.
@@ -99,17 +123,21 @@ export function summariseEngagement(rows: VideoViewRow[]): PreCallEngagement {
  * so a caller can tell "watched nothing" from "we never had a session id for
  * this booking at all" — they read differently to a rep and only one of them
  * is a reason to pick up the phone.
+ *
+ * Null when any batch fails or may have been truncated. A partial map would
+ * read everyone in the missing batch as "watched nothing" — the call list —
+ * so callers must treat null as "cannot tell", never as zero.
  */
 export async function loadEngagementBySession(
   sessionIds: string[],
-): Promise<Map<string, PreCallEngagement>> {
+): Promise<Map<string, PreCallEngagement> | null> {
   const unique = [...new Set(sessionIds.filter((id) => id.trim()))];
   if (unique.length === 0) return new Map();
 
   try {
     const client = createAdminClient();
     const batches = await Promise.all(
-      chunk(unique, ID_BATCH).map((batch) =>
+      chunk(unique, VIEW_SESSION_BATCH).map((batch) =>
         client
           .from("lead_video_views")
           .select("vp_session_id, embed_id, max_percent, last_seen_at")
@@ -119,7 +147,7 @@ export async function loadEngagementBySession(
     );
     const rows: VideoViewRow[] = [];
     for (const { data, error } of batches) {
-      if (error || !data) continue;
+      if (error || !data || data.length >= POSTGREST_MAX_ROWS) return null;
       rows.push(...(data as (VideoViewRow & { vp_session_id: string })[]));
     }
 
@@ -137,10 +165,26 @@ export async function loadEngagementBySession(
       ]),
     );
   } catch {
-    // The table may not exist yet (migration is hand-applied). A booking list
-    // that renders without an engagement column beats one that 500s.
-    return new Map();
+    return null;
   }
+}
+
+/**
+ * One person's engagement across every session tied to them: the furthest
+ * point reached per video, whichever browser reached it.
+ */
+export function mergeEngagement(parts: PreCallEngagement[]): PreCallEngagement {
+  if (parts.length === 0) return EMPTY_ENGAGEMENT;
+  if (parts.length === 1) return parts[0];
+  return summariseEngagement(
+    parts.flatMap((part) =>
+      part.videos.map((video) => ({
+        embed_id: video.embedId,
+        max_percent: video.percent,
+        last_seen_at: part.lastSeenAt ?? "",
+      })),
+    ),
+  );
 }
 
 /**
@@ -214,35 +258,71 @@ export async function loadLeadFacts(
 }
 
 /**
- * The browser session behind each booking, by booking id.
+ * The browser sessions behind each booking, by booking id.
  *
- * Two routes, in this order:
- *  1. The lead row's session — the browser that filled a site form. Checked
- *     first so everyone matched before the booking link existed keeps exactly
- *     the session they had.
+ * Up to two, merged by every reader:
+ *  1. The lead row's session — the browser that filled a site form.
  *  2. The booking's own link (calendly_booking_sessions) — the browser that
- *     booked in an on-site calendar. This is the only route for webinar
- *     attendees, who book on /start without ever filling a site form.
+ *     booked in an on-site calendar. The only route for webinar attendees,
+ *     who book on /start without ever filling a site form.
+ * Someone who fills the form on a laptop and books and watches on a phone has
+ * both, and their watching is the union; taking only one would put a watcher
+ * on the call list.
  *
- * Pure so the precedence is testable; callers load both maps.
+ * A link is trusted only when its browser booked for ONE person. A setter or
+ * a family member booking several people from one browser would otherwise
+ * credit every one of them with whatever that browser watched. Every booking
+ * the browser made must be in `rows` under the same email; a booking outside
+ * the window cannot be checked, so the link is dropped (reads as unknown,
+ * never as watched).
+ *
+ * Pure so the rules are testable; callers load leadFacts and links.
  */
 export function resolveBookingSessions(
   rows: {
     id: string;
     leadSubmissionId: string | null;
     inviteeUri?: string | null;
+    inviteeEmail?: string | null;
   }[],
   leadFacts: Map<string, LeadFacts>,
-  sessionByInvitee: Map<string, string>,
-): Map<string, string> {
-  const sessionByBooking = new Map<string, string>();
+  links: BookingLinks,
+): Map<string, string[]> {
+  const emailByInvitee = new Map<string, string>();
   for (const row of rows) {
-    const session =
-      (row.leadSubmissionId
-        ? leadFacts.get(row.leadSubmissionId)?.sessionId
-        : null) ??
-      (row.inviteeUri ? sessionByInvitee.get(row.inviteeUri) : null);
-    if (session) sessionByBooking.set(row.id, session);
+    if (row.inviteeUri) {
+      emailByInvitee.set(
+        row.inviteeUri,
+        row.inviteeEmail?.trim().toLowerCase() ?? "",
+      );
+    }
   }
-  return sessionByBooking;
+
+  const onePerson = (session: string): boolean => {
+    const emails = (links.inviteesBySession.get(session) ?? []).map((uri) =>
+      emailByInvitee.get(uri),
+    );
+    return (
+      emails.length > 0 && emails.every((email) => email && email === emails[0])
+    );
+  };
+
+  const sessionsByBooking = new Map<string, string[]>();
+  for (const row of rows) {
+    const leadSession = row.leadSubmissionId
+      ? leadFacts.get(row.leadSubmissionId)?.sessionId
+      : null;
+    const linked = row.inviteeUri
+      ? links.sessionByInvitee.get(row.inviteeUri)
+      : undefined;
+    const sessions = [
+      ...new Set(
+        [leadSession, linked && onePerson(linked) ? linked : null].filter(
+          (session): session is string => Boolean(session),
+        ),
+      ),
+    ];
+    if (sessions.length > 0) sessionsByBooking.set(row.id, sessions);
+  }
+  return sessionsByBooking;
 }

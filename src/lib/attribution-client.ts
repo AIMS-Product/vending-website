@@ -74,7 +74,11 @@ export function emitAttributionEvent(
   // Mirrored into PostHog so popup and CTA behaviour sits next to the
   // pageviews and form events there. The first-party route below stays the
   // record; PostHog's copy is for funnels and replay filters.
-  captureEvent(eventType, payload.properties);
+  // Except booking_linked: its only payload is a Calendly invitee id, which
+  // stays first-party.
+  if (eventType !== "booking_linked") {
+    captureEvent(eventType, payload.properties);
+  }
 
   if (navigator.sendBeacon) {
     const sent = navigator.sendBeacon(

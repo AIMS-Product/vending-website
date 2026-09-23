@@ -12,7 +12,10 @@ import {
   loadLeadFacts,
   resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
-import { loadSessionsByInvitee } from "@/lib/services/calendly-booking-sessions";
+import {
+  loadBookingLinks,
+  NO_BOOKING_LINKS,
+} from "@/lib/services/calendly-booking-sessions";
 
 /**
  * Puts what a prospect watched on their Close lead, shortly before the call.
@@ -45,6 +48,8 @@ export type PreCallNoteResult = {
   skipped: number;
   /** Upcoming calls with no Close lead to write to. */
   unwritable: number;
+  /** Upcoming calls with no browser tied to them, so nothing honest to say. */
+  untracked: number;
 };
 
 /**
@@ -97,34 +102,39 @@ export async function sweepPreCallNotes({
     posted: 0,
     skipped: 0,
     unwritable: 0,
+    untracked: 0,
   };
 
   // A call happening in the next few hours was booked at most a couple of
   // months ago in every realistic case; 90 days of booking history is the
   // window that holds them all without reading the whole table.
   const report = await buildCallCreditReport({ days: 90 });
-  const [leadFacts, sessionByInvitee] = await Promise.all([
+  const [leadFacts, links] = await Promise.all([
     loadLeadFacts(
       report.rows.flatMap((row) =>
         row.leadSubmissionId ? [row.leadSubmissionId] : [],
       ),
     ),
-    loadSessionsByInvitee(
-      report.rows.flatMap((row) => (row.inviteeUri ? [row.inviteeUri] : [])),
-    ),
+    loadBookingLinks(),
   ]);
-  const sessionByBooking = resolveBookingSessions(
+  const sessionsByBooking = resolveBookingSessions(
     report.rows,
     leadFacts,
-    sessionByInvitee,
+    links ?? NO_BOOKING_LINKS,
   );
+
+  const engagementBySession = await loadEngagementBySession(
+    [...sessionsByBooking.values()].flat(),
+  );
+  // A note posts once and cannot be edited later (Close has no note update),
+  // so a run that cannot read every view row posts nothing rather than tell a
+  // rep that a prospect "opened nothing". The next hourly run tries again.
+  if (!engagementBySession) return result;
 
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByBooking,
-    engagementBySession: await loadEngagementBySession([
-      ...sessionByBooking.values(),
-    ]),
+    sessionsByBooking,
+    engagementBySession,
     now,
     // Fractional days: the window is "about to happen", not "this fortnight".
     horizonDays: hoursAhead / 24,
@@ -136,6 +146,13 @@ export async function sweepPreCallNotes({
   const close = createCloseClient({ apiKey: config.CLOSE_API_KEY });
 
   for (const row of briefing) {
+    // No browser tied to this booking means we could not watch, not that they
+    // watched nothing. A note saying "Nothing opened" would be a claim we
+    // cannot back, and it can never be corrected once posted.
+    if (row.unknownSession) {
+      result.untracked += 1;
+      continue;
+    }
     const closeLeadId = closeLeadIdFor(row, report.rows, leadFacts);
     if (!closeLeadId) {
       result.unwritable += 1;

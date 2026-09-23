@@ -134,11 +134,21 @@ vi.mock("@/lib/services/call-credit-data", () => ({
     since: "",
   }),
 }));
-vi.mock("@/lib/services/calendly-booking-sessions", () => ({
-  loadSessionsByInvitee: async () =>
-    new Map([
+vi.mock("@/lib/services/calendly-booking-sessions", async (importActual) => ({
+  ...(await importActual<
+    typeof import("@/lib/services/calendly-booking-sessions")
+  >()),
+  loadBookingLinks: async () => ({
+    sessionByInvitee: new Map([
       ["https://api.calendly.com/scheduled_events/ev-5/invitees/inv-5", "vp-5"],
     ]),
+    inviteesBySession: new Map([
+      [
+        "vp-5",
+        ["https://api.calendly.com/scheduled_events/ev-5/invitees/inv-5"],
+      ],
+    ]),
+  }),
 }));
 vi.mock("@/lib/services/video-engagement-outcomes", async (importActual) => ({
   ...(await importActual<
@@ -297,6 +307,7 @@ describe("getVideoEngagementReport", () => {
 
     expect(wes?.hasSession).toBe(true);
     expect(wes?.videosStarted).toBe(1);
+    expect(report.linksAvailable).toBe(true);
   });
 
   it("counts tracked people as exactly opened + watched nothing + can't tell", async () => {

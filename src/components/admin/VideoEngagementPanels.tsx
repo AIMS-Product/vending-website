@@ -97,6 +97,14 @@ export function VideoEngagementTab({
           : "Recording has not started, so none of them can be shown yet."}
       </p>
 
+      {report.linksAvailable ? null : (
+        <p className={`${adminPanelClass} mb-4 p-3 text-xs`}>
+          The booking-to-browser links could not be read just now, so some
+          people who booked on our site calendar show as &ldquo;No
+          session&rdquo; below. Reload to try again.
+        </p>
+      )}
+
       <VideoShowUpPanel showUp={report.showUp} />
       <PeoplePanel report={report} />
       <VideoPanel report={report} />

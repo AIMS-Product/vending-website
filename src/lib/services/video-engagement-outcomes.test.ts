@@ -43,6 +43,16 @@ describe("firstCallOutcome", () => {
     ).toBe("noShow");
   });
 
+  it("reads unlogged when duplicate Close leads disagree about the same call", () => {
+    expect(
+      firstCallOutcome(
+        { inviteeEmail: "a@x.com", startAt: "2026-09-25T17:00:00Z" },
+        [row("2026-09-25", "yes"), row("2026-09-25", "no")],
+        "2026-09-30",
+      ),
+    ).toBe("unlogged");
+  });
+
   it("is pending until the grace day has passed, then unlogged if blank", () => {
     const booking = {
       inviteeEmail: "a@x.com",
@@ -58,7 +68,9 @@ describe("firstCallOutcome", () => {
 });
 
 describe("compareShowUp", () => {
+  let n = 0;
   const person = (over: Partial<Parameters<typeof compareShowUp>[0][0]>) => ({
+    email: `p${(n += 1)}@x.com` as string | null,
     hasSession: true,
     canceled: false,
     videosStarted: 1,
@@ -81,6 +93,14 @@ describe("compareShowUp", () => {
       watched: { held: 1, noShow: 1 },
       watchedNothing: { held: 0, noShow: 1 },
     });
+  });
+
+  it("counts a person once even when two bookings land on their first-call day", () => {
+    const result = compareShowUp(
+      [person({ email: "a@x.com" }), person({ email: "A@x.com" })],
+      true,
+    );
+    expect(result.watched).toEqual({ held: 1, noShow: 0 });
   });
 
   it("leaves out anyone we could not see, canceled calls and unanswered ones", () => {

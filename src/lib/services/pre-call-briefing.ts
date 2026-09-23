@@ -1,6 +1,6 @@
 import type { CallCreditRow } from "@/lib/services/call-credit";
 import {
-  EMPTY_ENGAGEMENT,
+  mergeEngagement,
   type PreCallEngagement,
 } from "@/lib/services/pre-call-engagement";
 
@@ -38,7 +38,7 @@ export type BriefingRow = {
 export function buildPreCallBriefing({
   rows,
   sessionByLead = new Map(),
-  sessionByBooking,
+  sessionsByBooking,
   engagementBySession,
   now = new Date(),
   horizonDays = 14,
@@ -46,12 +46,16 @@ export function buildPreCallBriefing({
   rows: CallCreditRow[];
   sessionByLead?: Map<string, string>;
   /**
-   * Session per booking id, from resolveBookingSessions. When given it is the
+   * Sessions per booking id, from resolveBookingSessions. When given it is the
    * answer: it already includes every lead-row session and adds bookings
-   * linked in the on-site calendar.
+   * linked in the on-site calendar. Engagement is merged across them.
    */
-  sessionByBooking?: Map<string, string>;
-  engagementBySession: Map<string, PreCallEngagement>;
+  sessionsByBooking?: Map<string, string[]>;
+  /**
+   * Null when the views could not be read in full: every booking then reads
+   * as "no session" (cannot tell), never as "watched nothing".
+   */
+  engagementBySession: Map<string, PreCallEngagement> | null;
   now?: Date;
   horizonDays?: number;
 }): BriefingRow[] {
@@ -65,11 +69,16 @@ export function buildPreCallBriefing({
       return Number.isFinite(startsAt) && startsAt >= from && startsAt <= until;
     })
     .map((row) => {
-      const session = sessionByBooking
-        ? sessionByBooking.get(row.id)
-        : row.leadSubmissionId
-          ? sessionByLead.get(row.leadSubmissionId)
-          : undefined;
+      const leadSession = row.leadSubmissionId
+        ? sessionByLead.get(row.leadSubmissionId)
+        : undefined;
+      const sessions = engagementBySession
+        ? sessionsByBooking
+          ? (sessionsByBooking.get(row.id) ?? [])
+          : leadSession
+            ? [leadSession]
+            : []
+        : [];
       return {
         id: row.id,
         name: row.inviteeName?.trim() || row.inviteeEmail || "Unknown",
@@ -77,10 +86,13 @@ export function buildPreCallBriefing({
         calendar: row.calendar,
         startAt: row.startAt as string,
         setBy: row.credit.who,
-        engagement: session
-          ? (engagementBySession.get(session) ?? EMPTY_ENGAGEMENT)
-          : EMPTY_ENGAGEMENT,
-        unknownSession: !session,
+        engagement: mergeEngagement(
+          sessions.flatMap((session) => {
+            const found = engagementBySession?.get(session);
+            return found ? [found] : [];
+          }),
+        ),
+        unknownSession: sessions.length === 0,
       };
     })
     .sort((a, b) => Date.parse(a.startAt) - Date.parse(b.startAt));
