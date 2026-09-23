@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CaseStudyCard } from "@/components/sections/CaseStudyCard";
+import { Container } from "@/components/ui/Container";
 import type { CaseStudyCard as CaseStudyCardData } from "@/lib/services/case-studies";
 import {
   caseStudySectionHeadings,
@@ -94,8 +95,8 @@ export function CaseStudyIndex({
   };
 
   return (
-    <section className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
-      <div className="mx-auto max-w-[1500px]">
+    <section className="border-t-2 border-[#111111] bg-[#f5fbff] py-16 lg:py-20">
+      <Container>
         <h2 className="text-[clamp(1.75rem,2.6vw,2.5rem)] leading-[1.05] font-black text-[#111111] uppercase">
           {caseStudySectionHeadings.stories}
         </h2>
@@ -103,23 +104,43 @@ export function CaseStudyIndex({
           {caseStudySectionIntro}
         </p>
 
-        <div className="space-y-6">{PRIMARY_ROWS.map(rowFor)}</div>
-
         {/*
-          Open when one of its own filters is active, so a shared link like
-          ?location=apartments does not look like it filtered nothing.
+          On a phone the chip rows ran ~850px before the first story, so they
+          sit behind one button there. From lg the disclosure is always open
+          and its summary hidden (globals.css .filters-disclosure; browsers
+          without ::details-content keep the button, never lose the filters).
+          Open whenever a filter is active, so a filtered link shows why.
         */}
-        <details className="group mt-6" open={hiddenActive}>
-          <summary className="inline-flex cursor-pointer list-none items-center gap-2 text-xs font-black tracking-[0.12em] text-[#066a99] uppercase underline decoration-2 underline-offset-4 hover:text-[#111111]">
-            More filters
+        <details className="filters-disclosure group/filters" open={isFiltered}>
+          <summary className="border-ink shadow-btn rounded-control inline-flex min-h-12 cursor-pointer list-none items-center gap-3 border-2 bg-white px-5 text-sm font-black text-[#111111] uppercase">
+            Filter stories
             <span
               aria-hidden="true"
-              className="transition group-open:rotate-90"
+              className="transition group-open/filters:rotate-90"
             >
               &rsaquo;
             </span>
           </summary>
-          <div className="mt-5 space-y-6">{SECONDARY_ROWS.map(rowFor)}</div>
+          <div className="mt-6 space-y-6 lg:mt-0">
+            {PRIMARY_ROWS.map(rowFor)}
+          </div>
+
+          {/*
+            Open when one of its own filters is active, so a shared link like
+            ?location=apartments does not look like it filtered nothing.
+          */}
+          <details className="group mt-6" open={hiddenActive}>
+            <summary className="inline-flex cursor-pointer list-none items-center gap-2 text-xs font-black tracking-[0.12em] text-[#066a99] uppercase underline decoration-2 underline-offset-4 hover:text-[#111111]">
+              More filters
+              <span
+                aria-hidden="true"
+                className="transition group-open:rotate-90"
+              >
+                &rsaquo;
+              </span>
+            </summary>
+            <div className="mt-5 space-y-6">{SECONDARY_ROWS.map(rowFor)}</div>
+          </details>
         </details>
 
         <div className="mt-8 flex flex-wrap items-center gap-4">
@@ -152,7 +173,7 @@ export function CaseStudyIndex({
             .
           </p>
         ) : (
-          <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className="mt-10 grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {caseStudies.map((caseStudy) => (
               <li key={caseStudy.slug} className="min-w-0">
                 <CaseStudyCard caseStudy={caseStudy} />
@@ -160,7 +181,7 @@ export function CaseStudyIndex({
             ))}
           </ul>
         )}
-      </div>
+      </Container>
     </section>
   );
 }

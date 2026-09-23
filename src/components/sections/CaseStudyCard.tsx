@@ -93,7 +93,7 @@ export function CaseStudyCard({
             {badges.map((badge) => (
               <li
                 key={badge}
-                className="rounded-full border border-[#111111] bg-[#eaf8ff] px-2.5 py-1 text-[11px] leading-none font-black text-[#111111]"
+                className="rounded-full border border-[#111111] bg-[#eaf8ff] px-2.5 py-1 text-xs leading-none font-black text-[#111111]"
               >
                 {badge}
               </li>

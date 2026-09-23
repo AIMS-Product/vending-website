@@ -96,14 +96,29 @@ describe("CaseStudyIndex filter rows", () => {
         filters={{ ...filters, career: "healthcare" }}
       />,
     );
-    expect(markup).toContain('open=""');
+    expect(markup).toContain('<details class="group mt-6" open=""');
   });
 
   it("leaves the disclosure shut when only a primary filter is active", () => {
     const markup = renderToStaticMarkup(
       <CaseStudyIndex {...props} filters={{ ...filters, who: "women" }} />,
     );
-    expect(markup).not.toContain('open=""');
+    expect(markup).not.toContain('<details class="group mt-6" open');
+  });
+
+  // The phone-only "Filter stories" disclosure around every row: shut on a
+  // plain visit, open on any filtered link so the active chip is visible.
+  it("opens the phone filter disclosure only when a filter is active", () => {
+    const plain = renderToStaticMarkup(<CaseStudyIndex {...props} />);
+    const filtered = renderToStaticMarkup(
+      <CaseStudyIndex {...props} filters={{ ...filters, who: "women" }} />,
+    );
+    expect(plain).toContain(
+      '<details class="filters-disclosure group/filters">',
+    );
+    expect(filtered).toContain(
+      '<details class="filters-disclosure group/filters" open=""',
+    );
   });
 
   it("hides a row entirely when it has no facets", () => {

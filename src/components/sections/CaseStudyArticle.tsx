@@ -359,78 +359,80 @@ function ArticleSidebar({
   const badges = humanBadges(tags);
 
   return (
-    <aside className="hidden lg:block">
-      <div className="sticky top-32 space-y-10">
-        {/*
+    // The whole stack was sticky, but at ~1,000px it is taller than a laptop
+    // screen, so its call to action never came into view and the right third
+    // of the page went empty once the facts scrolled by. Now the facts scroll
+    // away and the call to action rides alongside the rest of the article.
+    <aside className="hidden lg:flex lg:flex-col lg:gap-10">
+      {/*
           Deliberately above "Their route". The revenue is why the story is
           on the site; who they were is why a visitor keeps reading it.
         */}
-        {(priorOccupation || badges.length > 0) && (
-          <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
-            <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
-              Who they are
-            </p>
-            {priorOccupation && (
-              <div className="mt-6">
-                <p className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
-                  Before vending
-                </p>
-                <p className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
-                  {priorOccupation}
-                </p>
-              </div>
-            )}
-            {badges.length > 0 && (
-              <ul className="mt-6 flex flex-wrap gap-2">
-                {badges.map((badge) => (
-                  <li
-                    key={badge}
-                    className="rounded-full border border-[#111111] bg-[#eaf8ff] px-3 py-1.5 text-xs leading-none font-black text-[#111111]"
-                  >
-                    {badge}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        )}
-        {highlights.length > 0 && (
-          <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
-            <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
-              Their route
-            </p>
-            {/* A description list, not an ordered list: these are labelled
-                facts about the member, and the order carries no meaning. */}
-            <dl className="mt-6 space-y-5">
-              {highlights.map((highlight) => (
-                <div key={highlight.label}>
-                  <dt className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
-                    {highlight.label}
-                  </dt>
-                  <dd className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
-                    {highlight.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </section>
-        )}
-
-        <section className="rounded-[12px] border-2 border-[#066a99] bg-[#066a99] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
-          <h2 className="text-3xl leading-tight font-black uppercase">
-            Start your own story.
-          </h2>
-          <p className="mt-5 text-lg leading-7 font-semibold text-white">
-            Get the complete A-Z blueprint to building a vending route.
+      {(priorOccupation || badges.length > 0) && (
+        <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
+          <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
+            Who they are
           </p>
-          <Link
-            href="/contact"
-            className="bg-brand-700 mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] border-2 border-white px-6 text-sm font-black text-white uppercase transition hover:-translate-y-0.5"
-          >
-            Book a call
-          </Link>
+          {priorOccupation && (
+            <div className="mt-6">
+              <p className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
+                Before vending
+              </p>
+              <p className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
+                {priorOccupation}
+              </p>
+            </div>
+          )}
+          {badges.length > 0 && (
+            <ul className="mt-6 flex flex-wrap gap-2">
+              {badges.map((badge) => (
+                <li
+                  key={badge}
+                  className="rounded-full border border-[#111111] bg-[#eaf8ff] px-3 py-1.5 text-xs leading-none font-black text-[#111111]"
+                >
+                  {badge}
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
-      </div>
+      )}
+      {highlights.length > 0 && (
+        <section className="rounded-[12px] border-2 border-[#066a99] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
+          <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
+            Their route
+          </p>
+          {/* A description list, not an ordered list: these are labelled
+                facts about the member, and the order carries no meaning. */}
+          <dl className="mt-6 space-y-5">
+            {highlights.map((highlight) => (
+              <div key={highlight.label}>
+                <dt className="text-xs font-black tracking-[0.12em] text-[#066a99] uppercase">
+                  {highlight.label}
+                </dt>
+                <dd className="mt-1.5 text-base leading-6 font-semibold text-[#111111]">
+                  {highlight.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
+
+      <section className="sticky top-28 rounded-[12px] border-2 border-[#066a99] bg-[#066a99] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
+        <h2 className="text-3xl leading-tight font-black uppercase">
+          Start your own story.
+        </h2>
+        <p className="mt-5 text-lg leading-7 font-semibold text-white">
+          Get the complete A-Z blueprint to building a vending route.
+        </p>
+        <Link
+          href="/contact"
+          className="bg-brand-700 mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] border-2 border-white px-6 text-sm font-black text-white uppercase transition hover:-translate-y-0.5"
+        >
+          Book a call
+        </Link>
+      </section>
     </aside>
   );
 }

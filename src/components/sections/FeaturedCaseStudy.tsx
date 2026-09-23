@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { parseStats } from "@/lib/case-studies/stats";
+import { Container } from "@/components/ui/Container";
 import type { FeaturedCaseStudy as FeaturedCaseStudyData } from "@/lib/services/case-studies";
 
 /**
@@ -29,9 +30,9 @@ export function FeaturedCaseStudy({
   return (
     <section
       aria-labelledby="featured-case-study-title"
-      className="border-b-2 border-[#111111] bg-white px-5 py-14 lg:px-10 lg:py-16"
+      className="border-b-2 border-[#111111] bg-white py-14 lg:py-16"
     >
-      <div className="mx-auto max-w-[1500px]">
+      <Container>
         <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
           Featured story
         </p>
@@ -116,7 +117,7 @@ export function FeaturedCaseStudy({
             </p>
           </div>
         </article>
-      </div>
+      </Container>
     </section>
   );
 }
