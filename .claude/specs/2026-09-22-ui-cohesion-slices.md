@@ -13,19 +13,25 @@ Each slice: typecheck, lint, tests, build, then `/cap` with only that slice's fi
 - [x] 02 Chat teaser off on legacy booking pages (in suppressesChatTeaser, merged with main #39); launcher lifts above sticky CTA — b551bb3
 - [x] 03 Sticky CTA hidden while #apply-form is on screen — eedc835
   - PR #40 squash-merged fa7d2d5 (2026-09-23 00:02Z), verified live on www.
-- [ ] 04 VSL poster/overlay collision (ApplyVsl.tsx + asset)
-- [ ] 05 Reviews as HTML cards (ApplyTestimonials.tsx, apply-page.ts)
-- [ ] 06 Member story posters (ApplyMembers.tsx)
-- [ ] 07 t5/ak-t5 short form layout (BookingForm, PublicLeadForm simpleContact)
-- [ ] 08 Branded thank-you shell
-- [ ] 09a/9b Legacy lead template onto funnel system; nav off
-- [ ] 10 Lead-magnet pages
-- [ ] 11 404: proxy raw HTML + soft-404 (HTTP 200)
-- [ ] 12 Home: highlight overlap, video cards, review wall, sticky column
-- [ ] 13 ContentPage template (phone tabs, 2-col steps)
+- [x] 04 VSL poster/overlay collision (ApplyVsl.tsx + asset)
+- [x] 05 Reviews as HTML cards (ApplyTestimonials.tsx, apply-page.ts) — feat/ui-05-review-cards (stacked on 01)
+- [x] 06 Member story posters (ApplyMembers.tsx)
+- [x] 07 t5/ak-t5 short form layout (BookingForm, PublicLeadForm simpleContact)
+- [x] 08 Branded thank-you shell
+- [ ] 09a/9b Legacy lead template onto funnel system; nav off — 09a done, 9b open (form-length decision)
+- [x] 10 Lead-magnet pages
+- [x] 11 404: proxy raw HTML + soft-404 (HTTP 200)
+- [x] 12 Home: highlight overlap, video cards, review wall, sticky column
+- [x] 13 ContentPage template (phone tabs, 2-col steps)
 - [ ] 14 Case studies · 15 News article · 16 Newsletter · 17 Pre-call one autoplay · 18 About/Solutions/tablet
 - [ ] 19 Headline system (decision: Anton site-wide?) · 20 Button/card sweep
 - [ ] 21 Admin screenshot pass (needs Adam sign-in) · 22 admin loading.tsx · 23 token cleanup · 24 auth card
+
+### PRs (2026-09-23, all open, none merged)
+
+Merge #43 first. #47, #51, #55 and #52 are based on `feat/ui-01-foundations`; the rest are cut from main.
+
+- 01 #43 · 04 #45 · 05 #47 · 06 #49 · 07 #50 · 08 #51 · 09a #52 · 10 #53 · 11 #54 · 12 #55 · 13 #56
 
 ## Open decisions
 
@@ -41,6 +47,7 @@ Each slice: typecheck, lint, tests, build, then `/cap` with only that slice's fi
 ## Gotchas learned
 
 - Tracker block regex must be host-only (`/posthog\.com/`): dev chunk names contain "posthog", blocking them kills hydration and fakes results.
-- Stop `next dev` before `npm run build` (guard-next-build refuses otherwise).
+- Stop `next dev` before `npm run build` (guard-next-build refuses otherwise), and `rm -rf .next` before restarting dev: a dev server started after a build can serve the build's stale CSS (new theme utilities silently missing).
+- tailwind-merge drops a `leading-*` that comes before a `text-[size]` class in the same cn() call; put the size first.
 - Worktree needs a real `npm ci`; Turbopack rejects a symlinked node_modules.
 - In `next dev`, scrollTo right after load can land before hydration; use mouse.wheel + 1.5s waits.
