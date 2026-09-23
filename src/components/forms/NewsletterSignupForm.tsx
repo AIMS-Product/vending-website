@@ -14,6 +14,7 @@ import {
   NEWSLETTER_QUESTION_IDS,
   NEWSLETTER_SMS_CONSENT_LABEL,
 } from "@/lib/content/newsletter";
+import { fieldClass } from "@/components/ui/Field";
 import { emitPopupConversionIfAttributed } from "@/lib/attribution-client";
 import { trackFormResult } from "@/lib/tracking/form-tracking";
 import type { LeadAttribution } from "@/lib/lead-attribution";
@@ -41,8 +42,8 @@ type Props = {
   initialSubmittedValues?: SubmittedValues;
 };
 
-const inputClass =
-  "min-h-12 w-full rounded-lg border-2 border-slate-900 bg-white px-4 py-3 text-base font-semibold text-slate-950 outline-none transition placeholder:text-slate-400 focus:border-sky-600 focus:ring-2 focus:ring-sky-300";
+// The shared public field (ui/Field): 52px, 8px radius, 2px ink border.
+const inputClass = fieldClass;
 
 export function NewsletterSignupForm({
   action,
@@ -168,12 +169,12 @@ export function NewsletterSignupForm({
     return (
       <div
         role="status"
-        className="rounded-xl border-2 border-slate-900 bg-amber-50 p-8 text-center shadow-[7px_7px_0_#0f172a]"
+        className="border-ink rounded-card shadow-card bg-tint border-2 p-8 text-center"
       >
         <p className="text-xs font-black tracking-[0.18em] text-[#066a99] uppercase">
           Signup complete
         </p>
-        <h2 className="mt-3 text-3xl font-black text-slate-950">
+        <h2 className="text-ink mt-3 text-3xl font-black uppercase">
           You&apos;re on The Route
         </h2>
         <p className="mt-3 text-base font-medium text-slate-600">
@@ -424,7 +425,7 @@ function SubmitButton({
       type="submit"
       disabled={pending}
       data-gtm="newsletter-signup-submit"
-      className="bg-brand-700 min-h-14 w-full rounded-lg border-2 border-slate-950 px-6 py-3 text-base font-black text-white shadow-[5px_5px_0_#0f172a] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+      className="bg-brand-700 border-ink rounded-control shadow-btn hover:shadow-btn-hover min-h-14 w-full border-2 px-7 py-3.5 text-sm font-black text-white uppercase transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
     >
       {pending ? "Submitting..." : children}
     </button>
