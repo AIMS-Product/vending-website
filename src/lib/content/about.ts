@@ -6,8 +6,11 @@ export const about = {
       "I walked away from 60-hour workweeks and $1,200 paychecks to build a life powered by Passive Income, one that gives me the freedom to choose how I spend my time, where I live, and what my days look like. It didn't happen overnight, and it definitely wasn't easy at the start, but it was simpler than I ever imagined.",
       "Whether you're just starting out or already on the path and ready to scale, this journey is possible for you too. I'm not here to sell a dream, I'm here to show you a system that works.",
     ],
+    // The colour portrait. about-hero.avif is a blue-grey duotone that washed
+    // Mike out, and this photo also ran as a 1,300px band further down the
+    // page; now it appears once, here (2026-09-23).
     image: {
-      src: "/images/sections/about-hero.avif",
+      src: "/images/sections/about-how.avif",
       alt: "Mike, founder of Vendingpreneurs",
     },
   },
@@ -20,10 +23,6 @@ export const about = {
       "Now, as our second kid is on the way, I have focused on generational wealth through a Vending route that includes over a dozen machines and thousands of dollars in monthly income.",
       "If there's one thing my journey has taught me: The process is easier than I thought and I only wish I had started sooner.",
     ],
-    image: {
-      src: "/images/sections/about-how.avif",
-      alt: "Mike on his vending route",
-    },
   },
   approach: {
     title: "Mike's Unique Approach",
