@@ -219,6 +219,12 @@ function sumMetrics(
 export type SyncRunOutcome = {
   connector: string;
   rowsWritten: number;
+  /**
+   * A real failure, or `skipped: <why>`. Nothing else: any other text marks the
+   * run failed on the trust bar and in the nightly connector check, however
+   * much it wrote. Metricool's untagged-link count sat here and made fresh
+   * posts read four days old (2026-09-23).
+   */
   error: string | null;
 };
 

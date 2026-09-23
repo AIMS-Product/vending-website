@@ -56,6 +56,33 @@ describe("DataTrustBar", () => {
     expect(mark).toContain("title=");
   });
 
+  it("says a feed is not connected in words, apart from the date", () => {
+    const html = renderToStaticMarkup(
+      <DataTrustBar
+        model={buildTrustBar({
+          scope: "booked",
+          feeds: [
+            { feed: "close", lastSuccessAt: hoursAgo(1) },
+            { feed: "calendly", lastSuccessAt: hoursAgo(1) },
+          ],
+          run: null,
+          now: NOW,
+        })}
+      />,
+    );
+    expect(html).not.toContain("is not");
+
+    const model = buildTrustBar({
+      scope: "data",
+      feeds: [{ feed: "bitly", lastSuccessAt: null, connected: false }],
+      run: null,
+      now: NOW,
+    });
+    const withBitly = renderToStaticMarkup(<DataTrustBar model={model} />);
+    expect(withBitly).toContain("Bitly clicks</span> is not");
+    expect(withBitly).toContain("no click has ever been stored");
+  });
+
   it("renders nothing next to a number whose check passed", () => {
     expect(renderToStaticMarkup(<UnverifiedMark flag={undefined} />)).toBe("");
   });

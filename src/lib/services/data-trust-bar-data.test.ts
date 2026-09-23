@@ -76,4 +76,62 @@ describe("getTrustBar", () => {
     });
     expect(bar.problems[0].problem).toContain("denied");
   });
+
+  it("marks ManyChat not connected when manychat_events has no row", async () => {
+    const testRun = new Date(NOW.getTime() - 300 * 3_600_000).toISOString();
+    const events: unknown[] = [];
+    const client = {
+      from: (table: string) => {
+        if (table === "channel_sync_runs") {
+          return query({
+            data: [
+              {
+                connector: "manychat-ingest",
+                started_at: testRun,
+                finished_at: testRun,
+                rows_written: 2,
+                error: null,
+              },
+            ],
+            error: null,
+          });
+        }
+        if (table === "manychat_events") {
+          return query({ data: events, error: null });
+        }
+        return query({ data: [], error: null });
+      },
+    };
+    const empty = await getTrustBar("channels", {
+      client: client as never,
+      now: NOW,
+    });
+    expect(empty.notConnected.map((v) => v.feed)).toContain("manychat");
+    expect(empty.problems.map((v) => v.feed)).not.toContain("manychat");
+
+    events.push({ day: "2026-09-11" });
+    const filled = await getTrustBar("channels", {
+      client: client as never,
+      now: NOW,
+    });
+    expect(filled.notConnected.map((v) => v.feed)).not.toContain("manychat");
+    expect(filled.problems.find((v) => v.feed === "manychat")?.problem).toBe(
+      "last updated 13 days ago",
+    );
+  });
+
+  it("never calls a feed not connected because its table could not be read", async () => {
+    const client = {
+      from: (table: string) =>
+        table === "manychat_events"
+          ? query({ data: null, error: { message: "denied" } })
+          : query({ data: [], error: null }),
+    };
+    const bar = await getTrustBar("channels", {
+      client: client as never,
+      now: NOW,
+    });
+    expect(bar.notConnected.map((v) => v.feed)).not.toContain("manychat");
+    expect(bar.problems.map((v) => v.feed)).toContain("manychat");
+  });
 });

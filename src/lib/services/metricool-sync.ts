@@ -166,17 +166,15 @@ export async function syncMetricool(
         rows.filter((row) => row.network !== "youtube").map(channelRow),
         { now },
       );
-      const nonCompliant = rows.filter(
-        (row) => row.link_compliant === false,
-      ).length;
+      // Untagged post links are not a sync failure: "Fix these links" reads
+      // them from metricool_posts.link_compliant. Counting them here marked
+      // every run failed, so the posts read days old while syncing daily.
       return {
         rowsWritten: rows.length + result.written,
         error:
           result.failed > 0
             ? `${result.failed} channel_daily rows failed to write; see the server log.`
-            : nonCompliant > 0
-              ? `${nonCompliant} posts link somewhere without the standard UTMs.`
-              : null,
+            : null,
       };
     },
   );

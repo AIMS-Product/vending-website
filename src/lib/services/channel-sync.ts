@@ -341,7 +341,13 @@ async function syncBitlyClicks(
       .order("day")
       .range(from, to),
   );
-  if (clicks.length === 0) return { rowsWritten: 0 };
+  if (clicks.length === 0) {
+    // With no token the hourly Bitly sync never runs, so an empty table means
+    // not connected. Recorded as a clean 0-row run it read "adds no data".
+    return bitly
+      ? { rowsWritten: 0 }
+      : skipped("BITLY_ACCESS_TOKEN is not set.");
+  }
 
   const utmsById = await bitlyLinkUtms(client, bitly);
   let unmapped = 0;
@@ -359,15 +365,14 @@ async function syncBitlyClicks(
     };
   });
   const result = await upsertChannelDaily(client, rows, { now });
-  return {
-    ...written(result),
-    // Not an error: an unmapped click is still a click. It lands under
-    // "(not set)" / Website and the count here says how many did.
-    error:
-      unmapped > 0
-        ? `${unmapped} click rows had no UTMs on their long URL.`
-        : null,
-  };
+  // Not an error: an unmapped click is still a click, and lands under
+  // "(not set)" / Website. Logged, not stored on the run, because any text in
+  // the run's error marks it failed (see SyncRunOutcome).
+  if (unmapped > 0)
+    console.warn("bitly clicks: rows with no UTMs on their long URL", {
+      unmapped,
+    });
+  return written(result);
 }
 
 type LinkUtms = {
