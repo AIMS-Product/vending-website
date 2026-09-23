@@ -361,6 +361,50 @@ function DeltaChip({
 }
 
 /**
+ * A path label as a link to the live page, in a new tab so the reader keeps
+ * their place in the list.
+ *
+ * The labels come from `source_path`, which the visitor supplies, so the value
+ * is checked rather than trusted: `//evil.example.com` and `/\evil.example.com`
+ * both start with a slash and both resolve off-site. Anything that is not a
+ * plain same-site path stays text.
+ */
+function BreakdownLabel({
+  label,
+  linkPaths,
+}: {
+  label: string;
+  linkPaths: boolean;
+}) {
+  const className = "text-ui-text min-w-0 flex-1 truncate";
+  const isPath =
+    linkPaths &&
+    label.startsWith("/") &&
+    !label.startsWith("//") &&
+    !label.startsWith("/\\");
+
+  if (!isPath) {
+    return (
+      <span className={className} title={label}>
+        {label}
+      </span>
+    );
+  }
+  return (
+    <Link
+      className={`${className} hover:text-ui-accent underline decoration-dotted underline-offset-2`}
+      href={label}
+      target="_blank"
+      rel="noopener noreferrer"
+      prefetch={false}
+      title={`Open ${label} in a new tab`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+/**
  * A ranked list. Rows are already sorted by count, so the job here is to make
  * the decline from first to last legible: an explicit rank, one line of text
  * per row, and a bar with nothing behind it.
@@ -370,12 +414,15 @@ export function AnalyticsBreakdown({
   rows,
   logos = false,
   emptyLabel = "No data in this range.",
+  linkPaths = false,
 }: {
   title: string;
   rows: AdminAnalyticsBreakdownRow[];
   /** True when the rows are channels or sources and so carry a mark. */
   logos?: boolean;
   emptyLabel?: string;
+  /** True when the rows are site paths: each one links to the live page. */
+  linkPaths?: boolean;
 }) {
   const maxCount = Math.max(1, ...rows.map((row) => row.count));
   const total = rows.reduce((sum, row) => sum + row.count, 0);
@@ -402,12 +449,7 @@ export function AnalyticsBreakdown({
                     <ChannelLogo label={row.label} />
                   </span>
                 ) : null}
-                <span
-                  className="text-ui-text min-w-0 flex-1 truncate"
-                  title={row.label}
-                >
-                  {row.label}
-                </span>
+                <BreakdownLabel label={row.label} linkPaths={linkPaths} />
                 {typeof row.booked === "number" ? (
                   <span
                     className="shrink-0 text-xs font-semibold text-emerald-700 tabular-nums"
