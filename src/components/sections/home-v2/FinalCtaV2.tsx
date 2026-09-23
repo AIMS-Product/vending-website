@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Button } from "@/components/ui/Button";
+import { Highlight } from "@/components/ui/Highlight";
 import { CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { finalCta } from "@/lib/content/home";
 import { finalCtaV2 } from "@/lib/content/home-v2";
@@ -40,9 +41,11 @@ export function FinalCtaV2() {
         >
           <span className="block">{finalCtaV2.titleLines[0]}</span>
           <span className="mt-[0.08em] block">
-            <span className="v2-highlight text-[#111111]">
+            {/* ui/Highlight is an inline-block, so it can no longer paint
+                over the line above (it clipped "CURIOUS IF YOUR MARKET"). */}
+            <Highlight className="text-ink whitespace-normal">
               {finalCtaV2.titleLines[1]}
-            </span>
+            </Highlight>
           </span>
         </h2>
 
@@ -59,11 +62,9 @@ export function FinalCtaV2() {
           className="mt-10 flex flex-col items-center gap-3.5"
           style={{ "--v2-delay": "0.18s" } as CSSProperties}
         >
-          <Button
-            href={finalCta.cta.href}
-            showArrow
-            className="px-10 py-5 text-base"
-          >
+          {/* On the ink band an ink border and ink shadow disappear, so this
+              is the onInk button: white, sky shadow. */}
+          <Button href={finalCta.cta.href} showArrow size="lg" variant="onInk">
             {finalCta.cta.label}
           </Button>
           {/* Slate-500 would fail contrast on this near-black band. */}

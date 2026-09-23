@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/Button";
+import { Highlight } from "@/components/ui/Highlight";
 import { CTA_TRUST_LINE } from "@/lib/content/apply-page";
 import { hero } from "@/lib/content/home";
 import { heroV2 } from "@/lib/content/home-v2";
@@ -37,9 +38,7 @@ export function HeroV2() {
                 >
                   {line.map((segment) =>
                     segment.highlight ? (
-                      <span key={segment.text} className="v2-highlight">
-                        {segment.text}
-                      </span>
+                      <Highlight key={segment.text}>{segment.text}</Highlight>
                     ) : (
                       segment.text
                     ),

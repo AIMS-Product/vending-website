@@ -1,3 +1,4 @@
+import { VideoCard } from "@/components/ui/VideoCard";
 import {
   caseStudyQuotes,
   caseStudyVideos,
@@ -42,16 +43,12 @@ export function Testimonials() {
 
 export function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   return (
-    <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-5 text-left shadow-[7px_7px_0_#55b8e8]">
-      <video
-        controls
-        preload="none"
+    <article className="rounded-card border-ink shadow-card flex h-full flex-col gap-4 border-2 bg-white p-5 text-left">
+      <VideoCard
+        src={video.videoUrl}
         poster={video.posterUrl}
-        className="aspect-video w-full rounded-[8px] border-2 border-[#111111] bg-slate-100 object-contain focus-visible:ring-4 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
-        aria-label={`Video testimonial from ${video.name}`}
-      >
-        <source src={video.videoUrl} type="video/mp4" />
-      </video>
+        label={`Video testimonial from ${video.name}`}
+      />
       <header>
         <h3 className="text-base font-black text-[#111111] uppercase">
           {video.name}
@@ -64,7 +61,7 @@ export function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
 
 export function QuoteTestimonialCard({ quote }: { quote: CaseStudyQuote }) {
   return (
-    <article className="flex h-full flex-col gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-6 text-left shadow-[7px_7px_0_#55b8e8]">
+    <article className="rounded-card border-ink shadow-card flex h-full flex-col gap-4 border-2 bg-white p-6 text-left">
       <header>
         <h3 className="text-base font-black text-[#111111] uppercase">
           {quote.name}

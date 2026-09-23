@@ -29,15 +29,6 @@
   -webkit-text-stroke: 2px rgba(255, 255, 255, 0.85);
 }
 
-/* Marker-style highlight inside the hero headline. */
-.v2-highlight {
-  background: #2a8fcc;
-  box-shadow: 0.1em 0.1em 0 #111111;
-  padding: 0 0.1em;
-  box-decoration-break: clone;
-  -webkit-box-decoration-break: clone;
-}
-
 /* --- Load-in choreography (hero only — everything below the fold uses
    the scroll-reveal system instead) --- */
 @keyframes v2-rise {
