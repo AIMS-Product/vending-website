@@ -100,13 +100,22 @@ export default async function AdminBookingsPage({
     leadFacts,
     links ?? NO_BOOKING_LINKS,
   );
+  const engagementBySession = await loadEngagementBySession(
+    [...sessionsByBooking.values()].flat(),
+  );
   const briefing = buildPreCallBriefing({
     rows: report.rows,
     sessionsByBooking,
-    engagementBySession: await loadEngagementBySession(
-      [...sessionsByBooking.values()].flat(),
-    ),
+    engagementBySession,
   });
+  // Said on the page, because the table can only show "No session" and that
+  // must not be read as "we never had a browser for them".
+  const watchingIncomplete =
+    engagementBySession === null
+      ? "What each call has watched could not be read in full just now, so every call below shows \u201cNo session\u201d. Reload to try again."
+      : links === null
+        ? "The booking-to-browser links could not be read just now, so some people who booked on our site calendar show \u201cNo session\u201d below. Reload to try again."
+        : null;
 
   return (
     <AdminShell
@@ -202,6 +211,11 @@ export default async function AdminBookingsPage({
         />
       </AdminMetricStrip>
 
+      {watchingIncomplete ? (
+        <p className={`${adminPanelClass} mb-4 p-3 text-xs`}>
+          {watchingIncomplete}
+        </p>
+      ) : null}
       <PreCallBriefingPanel rows={briefing} />
 
       <PeoplePanel summary={summary} />
@@ -290,7 +304,7 @@ function WatchedCell({ row }: { row: BriefingRow }) {
     return (
       <span
         className="text-ui-text-muted text-xs"
-        title="This booking has no first-party session id, so we cannot tell what they watched. Not the same as watching nothing."
+        title="We cannot tie this booking to a browser, so we cannot tell what they watched. Not the same as watching nothing."
       >
         No session
       </span>

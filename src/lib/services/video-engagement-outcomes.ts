@@ -59,11 +59,16 @@ export function firstCallOutcome(
   // Duplicate Close leads for one email can both claim the day. If they
   // disagree there is no single answer, so say it is not logged rather than
   // pick one.
+  // A blank duplicate is silence, not a disagreement.
   const answers = new Set(
-    matches.map((row) => row.first_call_show_up?.trim().toLowerCase() ?? ""),
+    matches
+      .map((row) => row.first_call_show_up?.trim().toLowerCase() ?? "")
+      .filter(Boolean),
   );
+  const answered =
+    matches.find((row) => row.first_call_show_up?.trim()) ?? matches[0];
   const match =
-    answers.size > 1 ? { ...matches[0], first_call_show_up: null } : matches[0];
+    answers.size > 1 ? { ...answered, first_call_show_up: null } : answered;
 
   const key = emailKey(booking.inviteeEmail);
   const { state } = classifyBookedCall(key, new Map([[key, match]]), today);

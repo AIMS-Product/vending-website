@@ -129,7 +129,9 @@ export async function sweepPreCallNotes({
   // A note posts once and cannot be edited later (Close has no note update),
   // so a run that cannot read every view row posts nothing rather than tell a
   // rep that a prospect "opened nothing". The next hourly run tries again.
-  if (!engagementBySession) return result;
+  // Same for the booking links: without them a person's own booking browser
+  // is missing, and a laptop session with no views would read "Nothing opened".
+  if (!engagementBySession || !links) return result;
 
   const briefing = buildPreCallBriefing({
     rows: report.rows,

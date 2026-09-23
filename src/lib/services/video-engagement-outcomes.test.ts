@@ -53,6 +53,16 @@ describe("firstCallOutcome", () => {
     ).toBe("unlogged");
   });
 
+  it("keeps a real answer when a duplicate Close lead is blank", () => {
+    expect(
+      firstCallOutcome(
+        { inviteeEmail: "a@x.com", startAt: "2026-09-25T17:00:00Z" },
+        [row("2026-09-25", null), row("2026-09-25", "yes")],
+        "2026-09-30",
+      ),
+    ).toBe("held");
+  });
+
   it("is pending until the grace day has passed, then unlogged if blank", () => {
     const booking = {
       inviteeEmail: "a@x.com",

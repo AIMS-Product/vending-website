@@ -56,3 +56,13 @@ Real problems, measured on prod 09-23:
   (CLOSE_MATURITY_DAYS = 30). Add when there is data.
 - Pre-call Close note for webinar bookers: they have no lead row, so no Close
   lead id; could resolve via close_lead_funnel.email -> lead_id.
+
+## Known limits after two review passes
+
+- The shared-browser check trusts a booking link only when every booking that
+  browser made falls inside the range being viewed, so one person can read
+  "No session" on 7 days and "watched" on 30 days. It errs toward "can't
+  tell", never toward "watched".
+- Two form-fill emails sharing one lead-row browser are each credited with
+  that browser's watching (true before this branch too); the shared-browser
+  check covers booking links only.
