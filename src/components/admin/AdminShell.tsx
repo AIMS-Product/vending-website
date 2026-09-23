@@ -310,6 +310,23 @@ export function AdminShell({
   );
 }
 
+/**
+ * The nav section a Studio URL belongs to: the section whose href is the
+ * longest prefix of the path. Used by app/admin/loading.tsx, which only knows
+ * the URL, so the skeleton highlights the same sidebar item the page will.
+ */
+export function adminSectionForPath(pathname: string): AdminSection {
+  let best: AdminNavSection | null = null;
+  for (const section of sections) {
+    const matches =
+      pathname === section.href || pathname.startsWith(`${section.href}/`);
+    if (matches && (!best || section.href.length > best.href.length)) {
+      best = section;
+    }
+  }
+  return best?.id ?? "overview";
+}
+
 function getAdminActiveLabel(activeSection: AdminSection) {
   return (
     (activeSection === blogSection.id

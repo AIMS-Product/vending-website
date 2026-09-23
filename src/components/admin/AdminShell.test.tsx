@@ -1,6 +1,18 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { AdminShell } from "./AdminShell";
+import { AdminShell, adminSectionForPath } from "./AdminShell";
+
+describe("adminSectionForPath", () => {
+  it("picks the longest matching section href", () => {
+    expect(adminSectionForPath("/admin")).toBe("overview");
+    expect(adminSectionForPath("/admin/leads")).toBe("leads");
+    expect(adminSectionForPath("/admin/leads/abc")).toBe("leads");
+    expect(adminSectionForPath("/admin/news/new")).toBe("posts");
+    expect(adminSectionForPath("/admin/settings/routes")).toBe("routes");
+    expect(adminSectionForPath("/admin/settings/users")).toBe("settings");
+    expect(adminSectionForPath("/admin/pages-archive")).toBe("overview");
+  });
+});
 
 vi.mock("@/app/admin/actions", () => ({
   signOut: vi.fn(),
