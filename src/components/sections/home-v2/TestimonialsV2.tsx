@@ -7,7 +7,8 @@ import {
 import { caseStudyQuotes, caseStudyVideos } from "@/lib/content/case-studies";
 import { accelerator } from "@/lib/content/home";
 import { testimonialsV2 } from "@/lib/content/home-v2";
-import { cn } from "@/lib/utils";
+
+const VISIBLE_QUOTES = 4;
 
 export function TestimonialsV2() {
   return (
@@ -48,22 +49,15 @@ export function TestimonialsV2() {
                 { "--v2-delay": `${(index % 4) * 0.08}s` } as CSSProperties
               }
             >
-              {/* Offset alternating columns for a collage rhythm; lives on an
-                  inner div so the reveal transform can't overwrite it. */}
-              <div
-                className={cn(
-                  "h-full transition hover:-translate-y-1",
-                  index % 2 === 1 && "lg:translate-y-6 lg:hover:translate-y-5",
-                )}
-              >
-                <VideoTestimonialCard video={video} />
-              </div>
+              <VideoTestimonialCard video={video} />
             </li>
           ))}
         </ul>
 
+        {/* Fourteen full reviews stacked into ~6,000px on a phone (UI audit,
+            2026-09-22). The first few show; the rest sit one tap away. */}
         <ul className="mt-16 grid gap-6 lg:grid-cols-2">
-          {caseStudyQuotes.map((quote, index) => (
+          {caseStudyQuotes.slice(0, VISIBLE_QUOTES).map((quote, index) => (
             <li
               key={quote.id}
               data-reveal
@@ -71,19 +65,25 @@ export function TestimonialsV2() {
                 { "--v2-delay": `${(index % 2) * 0.08}s` } as CSSProperties
               }
             >
-              <div
-                className={cn(
-                  "h-full transition duration-300 hover:rotate-0",
-                  index % 2 === 1
-                    ? "lg:rotate-[0.75deg]"
-                    : "lg:rotate-[-0.75deg]",
-                )}
-              >
-                <QuoteTestimonialCard quote={quote} />
-              </div>
+              <QuoteTestimonialCard quote={quote} />
             </li>
           ))}
         </ul>
+
+        {caseStudyQuotes.length > VISIBLE_QUOTES ? (
+          <details className="group mt-6">
+            <summary className="rounded-control border-ink text-ink shadow-btn hover:shadow-btn-hover focus-visible:ring-sky mx-auto flex w-fit cursor-pointer list-none items-center gap-2 border-2 bg-white px-5 py-3 text-sm font-black uppercase transition group-open:hidden hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
+              Read {caseStudyQuotes.length - VISIBLE_QUOTES} more reviews
+            </summary>
+            <ul className="grid gap-6 lg:grid-cols-2">
+              {caseStudyQuotes.slice(VISIBLE_QUOTES).map((quote) => (
+                <li key={quote.id}>
+                  <QuoteTestimonialCard quote={quote} />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
 
         {/* The section now sits high on the page, so it has to offer the next
             step itself rather than relying on the final CTA band far below. */}
