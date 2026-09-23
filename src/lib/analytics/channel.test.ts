@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   CHATBOT_CHANNEL,
+  isInternalHost,
+  REFERRAL_CHANNEL,
   resolveChannel,
   resolveDestination,
   UNKNOWN_CHANNEL,
@@ -111,6 +113,54 @@ describe("resolveChannel", () => {
 
   it("flags a punctuation-only tag rather than counting it as Website", () => {
     expect(resolveChannel("_____").channel).toBe(UNKNOWN_CHANNEL);
+  });
+
+  it("titleCases an unmatched localhost referrer instead of excluding it here", () => {
+    // resolveChannel alone still turns this into its own row ("Localhost:3000");
+    // isInternalHost is what a caller filters on before this ever runs.
+    expect(resolveChannel("localhost:3000").channel).toBe("Localhost:3000");
+  });
+});
+
+describe("isInternalHost", () => {
+  it("flags localhost, with or without a port", () => {
+    expect(isInternalHost("localhost")).toBe(true);
+    expect(isInternalHost("localhost:3000")).toBe(true);
+    expect(isInternalHost("LOCALHOST:3000")).toBe(true);
+  });
+
+  it("flags the loopback IP", () => {
+    expect(isInternalHost("127.0.0.1")).toBe(true);
+    expect(isInternalHost("127.0.0.1:3000")).toBe(true);
+  });
+
+  it("flags this project's own preview hosts", () => {
+    expect(
+      isInternalHost("vending-website-4f8a1b2-aimanagingservices.vercel.app"),
+    ).toBe(true);
+    expect(isInternalHost("vending-website-git-fix-abc123.vercel.app")).toBe(
+      true,
+    );
+  });
+
+  it("does not flag a vercel.app host we deliberately label Website", () => {
+    expect(isInternalHost("aimanagingservices.vercel.app")).toBe(false);
+  });
+
+  it("does not flag another team's real vercel.app property", () => {
+    // A real sales tool that links real prospects to the site; only this
+    // project's own preview hosts count as internal, not every vercel.app.
+    expect(isInternalHost("objection-library.vercel.app")).toBe(false);
+    expect(resolveChannel("objection-library.vercel.app").channel).toBe(
+      REFERRAL_CHANNEL,
+    );
+  });
+
+  it("does not flag a real channel or blank", () => {
+    expect(isInternalHost("instagram")).toBe(false);
+    expect(isInternalHost("vendingpreneurs.com")).toBe(false);
+    expect(isInternalHost(null)).toBe(false);
+    expect(isInternalHost("")).toBe(false);
   });
 });
 

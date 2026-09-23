@@ -114,7 +114,7 @@ export async function getFunnelMap(
       now,
       includeInternal: input.includeInternal,
     }),
-    getGhlSummary(client, startDay, endDay),
+    getGhlSummary(client, startDay, endDay, input.includeInternal ?? false),
     fetchCohortRows(client, startDay, endDay),
   ]);
 
@@ -207,6 +207,7 @@ async function getGhlSummary(
   client: MapClient,
   startDay: string,
   endDay: string,
+  includeInternal: boolean,
 ): Promise<GhlSummary> {
   const { data: newest } = await client
     .from("ghl_email_stats")
@@ -227,7 +228,7 @@ async function getGhlSummary(
     // `fetchFacts` is the paged read the Channels tab already trusts, and
     // `normaliseFacts` re-derives the channel label the same way, so a form's
     // credited channel here always matches the row it lands in there.
-    fetchFacts(client, startDay, endDay),
+    fetchFacts(client, startDay, endDay, { includeInternal }),
   ]);
 
   const rangeByCampaign = new Map<
@@ -237,7 +238,9 @@ async function getGhlSummary(
   const formsByKey = new Map<string, GhlForm>();
   let formLeads = 0;
 
-  for (const row of normaliseFacts((facts ?? []) as ChannelFact[])) {
+  for (const row of normaliseFacts((facts ?? []) as ChannelFact[], {
+    includeInternal,
+  })) {
     if (row.source === "ghl_email") {
       const seen = rangeByCampaign.get(row.campaign);
       rangeByCampaign.set(row.campaign, {

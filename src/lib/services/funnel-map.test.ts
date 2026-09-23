@@ -12,8 +12,17 @@ vi.mock("@/lib/services/channel-report", async (importOriginal) => ({
     report: { rows: [], funnel: [] },
   }),
 }));
+// normaliseFacts itself is exercised elsewhere (channel-report-rollup.test.ts);
+// spied on here only to confirm getGhlSummary threads its includeInternal
+// input through, the way Channels does.
+vi.mock("@/lib/services/channel-report-rollup", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("./channel-report-rollup")>();
+  return { ...actual, normaliseFacts: vi.fn(actual.normaliseFacts) };
+});
 
 import { getFunnelMap } from "./funnel-map";
+import { normaliseFacts } from "./channel-report-rollup";
 
 type Row = Record<string, unknown>;
 
@@ -189,6 +198,27 @@ describe("getFunnelMap", () => {
     expect(ghl.workflows[0].sentInRange).toBeNull();
     expect(ghl.inRange.sent).toBeNull();
     expect(ghl.lifetime.sent).toBe(10);
+  });
+});
+
+describe("getFunnelMap, internal-traffic toggle", () => {
+  it("threads includeInternal into the GHL summary's normaliseFacts call", async () => {
+    await getFunnelMap({
+      client: buildClient({}),
+      includeInternal: true,
+    });
+
+    expect(normaliseFacts).toHaveBeenCalledWith(expect.any(Array), {
+      includeInternal: true,
+    });
+  });
+
+  it("defaults to excluding internal traffic, same as Channels", async () => {
+    await getFunnelMap({ client: buildClient({}) });
+
+    expect(normaliseFacts).toHaveBeenCalledWith(expect.any(Array), {
+      includeInternal: false,
+    });
   });
 });
 

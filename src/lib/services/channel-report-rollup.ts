@@ -1,4 +1,4 @@
-import { resolveChannel } from "@/lib/analytics/channel";
+import { isInternalHost, resolveChannel } from "@/lib/analytics/channel";
 import type { Tables } from "@/types/database";
 
 /**
@@ -65,14 +65,20 @@ export type Metrics = Record<MetricKey, number | null>;
  */
 const PROGRAM_CHANNELS = new Set(["Webinar"]);
 
-export function normaliseFacts(facts: ChannelFact[]): ChannelFact[] {
-  return facts.map((fact) => {
-    if (PROGRAM_CHANNELS.has(fact.channel)) return fact;
-    const channel = resolveChannel(fact.source, {
-      medium: fact.medium,
-    }).channel;
-    return channel === fact.channel ? fact : { ...fact, channel };
-  });
+export function normaliseFacts(
+  facts: ChannelFact[],
+  options: { includeInternal?: boolean } = {},
+): ChannelFact[] {
+  const includeInternal = options.includeInternal ?? false;
+  return facts
+    .filter((fact) => includeInternal || !isInternalHost(fact.source))
+    .map((fact) => {
+      if (PROGRAM_CHANNELS.has(fact.channel)) return fact;
+      const channel = resolveChannel(fact.source, {
+        medium: fact.medium,
+      }).channel;
+      return channel === fact.channel ? fact : { ...fact, channel };
+    });
 }
 
 /**

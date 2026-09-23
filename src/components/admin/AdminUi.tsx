@@ -81,10 +81,18 @@ export const adminEyebrowClass =
 // One bordered strip, divided into columns. Four separate cards each with
 // their own border and shadow is four times the visual weight for the same
 // four numbers.
-/** Written out, not interpolated: Tailwind only keeps class names it can see. */
+/**
+ * Written out, not interpolated: Tailwind only keeps class names it can see.
+ * Each entry owns its full responsive column ramp (not just the widest
+ * breakpoint) so a 5-tile strip can settle into one row a tier earlier than a
+ * 4-tile one: at the old shared `sm:grid-cols-2`, 5 tiles wrapped 2/2/1, with
+ * Won alone on a third row, all the way up to `xl`. `lg:grid-cols-5` plus its
+ * own `sm:grid-cols-3` removes that lonely row (3/2, never 1) and starts the
+ * single-row layout one breakpoint sooner.
+ */
 const STRIP_COLUMNS = {
-  4: "xl:grid-cols-4",
-  5: "xl:grid-cols-5",
+  4: "sm:grid-cols-2 xl:grid-cols-4 xl:divide-y-0",
+  5: "sm:grid-cols-3 lg:grid-cols-5 lg:divide-y-0",
 } as const;
 
 export function AdminMetricStrip({
@@ -97,7 +105,7 @@ export function AdminMetricStrip({
   return (
     <section className={`${adminPanelClass} mb-4`} aria-label="Admin summary">
       <div
-        className={`divide-ui-line grid divide-y sm:grid-cols-2 sm:divide-x ${STRIP_COLUMNS[columns]} xl:divide-y-0`}
+        className={`divide-ui-line grid divide-y sm:divide-x ${STRIP_COLUMNS[columns]}`}
       >
         {children}
       </div>

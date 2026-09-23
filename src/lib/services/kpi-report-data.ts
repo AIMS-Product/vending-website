@@ -82,7 +82,9 @@ export async function getKpiTab(
   return {
     range: { key: rangeKey, label, days, startDay, endDay },
     report: buildKpiReport({
-      facts: normaliseFacts(facts ?? []),
+      facts: normaliseFacts(facts ?? [], {
+        includeInternal: input.includeInternal ?? false,
+      }),
       webinars,
       emailSnapshots,
       setterBookings,

@@ -152,7 +152,8 @@ export function ChannelsTab({
   );
 }
 
-function ChannelKpis({
+/** Exported for tests only; not part of the module's public surface. */
+export function ChannelKpis({
   report,
   days,
 }: {
@@ -178,7 +179,7 @@ function ChannelKpis({
     />
   );
   return (
-    <AdminMetricStrip>
+    <AdminMetricStrip columns={5}>
       {kpi("Spend", totals.spend, priorTotals.spend, "money")}
       {kpi("Leads", totals.leads, priorTotals.leads)}
       {kpi("Registrations & contacts", totals.contacts, priorTotals.contacts)}
@@ -528,7 +529,7 @@ function ChannelRow({
       {COLUMNS.map((column) => (
         <td
           key={column.key}
-          className="text-ui-text py-2.5 pr-3 text-right tabular-nums"
+          className="text-ui-text py-2.5 pr-3 text-right whitespace-nowrap tabular-nums"
         >
           <Cell value={row.metrics[column.key]} format={column.format} />
           {column.key === "leads" && row.metrics.leads != null ? (
