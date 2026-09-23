@@ -454,17 +454,32 @@ body:has([data-hide-site-footer="true"]) > footer {
 .public-news-prose li + li {
   margin-top: 0.65rem;
 }
+/* A pull-quote is large type on a left rule. It was a bordered, shadowed
+   white box, which read as an input field in the middle of the article. */
 .public-news-prose blockquote {
   max-width: 72ch;
-  border: 2px solid #111111;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 6px 6px 0 #55b8e8;
+  margin-block: 2.25rem;
+  border-left: 4px solid var(--brand-600);
   color: #111111;
-  font-size: 1.25rem;
+  font-size: clamp(1.3rem, 2vw, 1.6rem);
   font-weight: 800;
-  line-height: 1.55;
-  padding: 1.5rem;
+  line-height: 1.4;
+  padding-left: 1.5rem;
+}
+
+/* Case-study filters: one "Filter stories" button on a phone, always open
+   from lg. Only where ::details-content exists; elsewhere the button stays,
+   so the filters are never unreachable. */
+@supports selector(::details-content) {
+  @media (min-width: 64rem) {
+    .filters-disclosure::details-content {
+      content-visibility: visible;
+      display: block;
+    }
+    .filters-disclosure > summary {
+      display: none;
+    }
+  }
 }
 .public-news-prose code {
   border: 1px solid #bfeeff;
