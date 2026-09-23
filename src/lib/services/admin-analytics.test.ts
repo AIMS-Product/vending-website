@@ -160,6 +160,40 @@ describe("getAdminAnalytics", () => {
     expect(analytics.metrics.leads.value).toBe(1500);
   });
 
+  /**
+   * Production held 2,004 booking rows on 2026-09-11 while the Overview read
+   * 861: one unpaged ascending read got the oldest 1,000, so every booking
+   * after 24 August was missing from the page.
+   */
+  it("counts every booking past the 1,000-row response cap, newest included", async () => {
+    const client = buildClient({
+      lead_submissions: { rows: [] },
+      calendly_bookings: {
+        rows: Array.from({ length: 2004 }, (_, index) =>
+          makeBooking({
+            id: `b${String(index).padStart(4, "0")}`,
+            invitee_email: `caller${index}@aol.com`,
+            // The newest 4 are on their own calendar, past the first 1,000.
+            scheduled_event_name:
+              index >= 2000 ? "Consultation Call" : "Discovery call",
+          }),
+        ),
+      },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "90d",
+    });
+
+    expect(analytics.bookingsTotal).toBe(2004);
+    expect(analytics.bookingsUnattributed).toBe(2004);
+    expect(analytics.bookingsByCalendar).toContainEqual(
+      expect.objectContaining({ label: "Consultation Call", count: 4 }),
+    );
+  });
+
   it("counts one person who submitted twice as one lead, and skips newsletter signups", async () => {
     const client = buildClient({
       lead_submissions: {

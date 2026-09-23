@@ -7,6 +7,7 @@ import {
   inLeadWindow,
   lookbackStart,
 } from "@/lib/analytics/lead-definition";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import {
@@ -473,18 +474,28 @@ async function fetchBookings(
   sinceIso: string,
 ): Promise<BookingsFetchResult> {
   try {
-    const { data, error } = await client
-      .from("calendly_bookings")
-      .select(BOOKING_ANALYTICS_FIELDS)
-      .gte("created_at", sinceIso)
-      .order("created_at", { ascending: true });
+    // Paged, like the lead read above. Unpaged, this returned the oldest 1,000
+    // of 2,004 rows on 2026-09-11 and the Overview read 861 bookings against a
+    // real 1,748: nothing after 24 August was on the page.
+    const { rows, error } = await readAllPages<BookingAnalyticsRow>(
+      (from, to, count) =>
+        client
+          .from("calendly_bookings")
+          .select(BOOKING_ANALYTICS_FIELDS, { count })
+          .gte("created_at", sinceIso)
+          // `id` breaks created_at ties, so pages neither overlap nor skip.
+          .order("created_at", { ascending: true })
+          .order("id", { ascending: true })
+          .range(from, to),
+      { maxRows: MAX_ANALYTICS_LEAD_ROWS },
+    );
 
     if (error) {
       // Most commonly Postgres 42P01 (relation does not exist) before the
       // calendly_bookings migration + webhook are wired into an environment.
       return { rows: [], connected: false };
     }
-    return { rows: (data ?? []) as BookingAnalyticsRow[], connected: true };
+    return { rows, connected: true };
   } catch {
     return { rows: [], connected: false };
   }
