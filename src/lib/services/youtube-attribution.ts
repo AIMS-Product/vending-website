@@ -15,6 +15,7 @@ import {
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
 import { fetchShowIndex } from "@/lib/services/kpi-report-data";
+import { readAllPages, type PageError } from "@/lib/services/paged-read";
 import {
   buildYouTubeAttribution,
   type BitlyClickRow,
@@ -260,10 +261,10 @@ async function fetchClicks(
     readAllRows<BitlyClickRow>(
       "bitly_link_clicks",
       MAX_CLICK_ROWS,
-      (from, to) =>
+      (from, to, count) =>
         client
           .from("bitly_link_clicks")
-          .select("utm_campaign,day,clicks")
+          .select("utm_campaign,day,clicks", { count })
           .gte("day", sinceIso.slice(0, 10))
           // Uses the partial (utm_campaign, day) index instead of scanning, and
           // drops rows the rollup discards anyway -- it sums by campaign.
@@ -313,12 +314,12 @@ async function fetchGa4PageViews(
     const rows = await readAllRows<Ga4VisitRow>(
       "ga4_page_views",
       MAX_PAGE_VIEW_ROWS,
-      (from, to) =>
+      (from, to, count) =>
         client
           .from("ga4_page_views")
           // Sessions, not screen_page_views: one click through to the site is
           // one session however many pages it goes on to view.
-          .select("utm_source,utm_campaign,day,sessions")
+          .select("utm_source,utm_campaign,day,sessions", { count })
           .gte("day", sinceIso.slice(0, 10))
           // GA4 writes the literal "(not set)" where lead_page_views has null.
           .neq("utm_campaign", "(not set)")
@@ -348,12 +349,12 @@ async function fetchPageViews(
     readAllRows<PageViewRow>(
       "lead_page_views",
       MAX_PAGE_VIEW_ROWS,
-      (from, to) =>
+      (from, to, count) =>
         client
           .from("lead_page_views")
           // utm_source: the table holds every tagged channel's visits, and the
           // rollup keeps only the YouTube ones.
-          .select("utm_source,utm_campaign,occurred_at")
+          .select("utm_source,utm_campaign,occurred_at", { count })
           .gte("occurred_at", sinceIso)
           .not("utm_campaign", "is", null)
           .order("id")
@@ -363,37 +364,35 @@ async function fetchPageViews(
 }
 
 /**
- * PostgREST caps every response at the project's `max_rows` — 1,000, both in
- * `supabase/config.toml` and on the hosted project — and silently ignores a
- * larger `.limit()`. One select therefore returns the first 1,000 rows as if
- * they were all of them. Pages until a short page comes back.
+ * PostgREST caps every response at the project's `max_rows` (1,000) and
+ * silently ignores a larger `.limit()`, so every read here pages. The shared
+ * `readAllPages` sends the pages concurrently: sequential, the 1-year GA4 read
+ * was 16 round trips at ~1.4s (measured 2026-09-10) and grows a page every
+ * couple of weeks.
  *
- * ponytail: pages are sequential, so a 1-year GA4 read is ~30 round trips.
- * Replace with a grouped-sum RPC if the analytics page ever feels slow.
+ * `page` must pass `count` straight to `select` and apply a total ordering, or
+ * two pages can overlap or skip.
  */
-const PAGE_ROWS = 1000;
-
 async function readAllRows<T>(
   table: string,
   limit: number,
   page: (
     from: number,
     to: number,
+    count: "exact" | undefined,
   ) => PromiseLike<{ data: unknown; error: unknown }>,
 ): Promise<T[] | null> {
-  const rows: T[] = [];
-  while (rows.length < limit) {
-    const { data, error } = await page(
-      rows.length,
-      rows.length + PAGE_ROWS - 1,
-    );
-    if (error) {
-      noteReadError(table, error);
-      return null;
-    }
-    const batch = (data ?? []) as T[];
-    rows.push(...batch);
-    if (batch.length < PAGE_ROWS) return rows;
+  const { rows, error } = await readAllPages<T>(
+    page as (
+      from: number,
+      to: number,
+      count: "exact" | undefined,
+    ) => PromiseLike<{ data: T[] | null; error: PageError | null }>,
+    { maxRows: limit },
+  );
+  if (error) {
+    noteReadError(table, error);
+    return null;
   }
   return capped(rows, limit, table);
 }

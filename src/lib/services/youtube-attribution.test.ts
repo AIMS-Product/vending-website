@@ -16,8 +16,12 @@ type Call = { method: string; args: unknown[] };
  * returns itself, and awaiting it yields the canned result. `range` slices the
  * rows the way PostgREST does, so a paged read sees one page per request.
  */
-function builder(rows: unknown[], error: unknown) {
-  const calls: Call[] = [];
+function builder(
+  rows: unknown[],
+  error: unknown,
+  calls: Call[],
+  inFlight: { now: number; max: number },
+) {
   const target: Record<string, unknown> = {};
   let window: [number, number] | null = null;
   for (const method of [
@@ -40,14 +44,28 @@ function builder(rows: unknown[], error: unknown) {
     window = [from, to];
     return target;
   };
-  target.then = (resolve: unknown, reject: unknown) =>
-    Promise.resolve({
-      data: error ? null : window ? rows.slice(window[0], window[1] + 1) : rows,
-      error,
-    }).then(
+  target.then = (resolve: unknown, reject: unknown) => {
+    inFlight.now += 1;
+    inFlight.max = Math.max(inFlight.max, inFlight.now);
+    // Settles a macrotask later, so concurrent pages overlap the way real
+    // round trips do and sequential ones never do.
+    return new Promise((settle) => setTimeout(settle, 0))
+      .then(() => {
+        inFlight.now -= 1;
+        return {
+          data: error
+            ? null
+            : window
+              ? rows.slice(window[0], window[1] + 1)
+              : rows,
+          error,
+        };
+      })
+      .then(
       resolve as (v: unknown) => unknown,
-      reject as (e: unknown) => unknown,
-    );
+        reject as (e: unknown) => unknown,
+      );
+  };
   return { target, calls };
 }
 
@@ -56,16 +74,23 @@ function buildClient(
   failing: string[],
   errors: Record<string, unknown> = {},
 ) {
+  // Accumulated per table: concurrent pages each build their own query.
   const calls: Record<string, Call[]> = {};
+  // Per table too: the tab reads its tables in parallel with each other.
+  const inFlight: Record<string, { now: number; max: number }> = {};
   const from = vi.fn((table: string) => {
+    calls[table] ??= [];
+    inFlight[table] ??= { now: 0, max: 0 };
     const b = builder(
       rows[table] ?? [],
-      errors[table] ?? (failing.includes(table) ? { message: "boom" } : null),
+      errors[table] ??
+        (failing.includes(table) ? { message: "boom" } : null),
+      calls[table],
+      inFlight[table],
     );
-    calls[table] = b.calls;
     return b.target as never;
   });
-  return { client: { from } as never, calls };
+  return { client: { from } as never, calls, inFlight };
 }
 
 const NOW = new Date("2026-09-10T12:00:00.000Z");
@@ -120,6 +145,21 @@ describe("getYouTubeAttribution reads", () => {
       method: "order",
       args: ["day"],
     });
+  });
+
+  it("reads the pages of a long range concurrently, and every row once", async () => {
+    const rows = Array.from({ length: 7_001 }, () => ({
+      utm_source: "youtube",
+      utm_campaign: "zach",
+      day: "2026-09-01",
+      sessions: 1,
+    }));
+
+    const { result, inFlight } = await run({ ga4_page_views: rows });
+
+    expect(result.totals.visits).toBe(7_001);
+    // Sequential pages never overlap: the 1-year read was 16 round trips.
+    expect(inFlight.ga4_page_views?.max).toBeGreaterThan(1);
   });
 
   it("reports a truncated read as unmeasured rather than as a low number", async () => {
@@ -234,7 +274,7 @@ describe("getYouTubeAttribution reads", () => {
     failing: string[] = [],
     errors: Record<string, unknown> = {},
   ) {
-    const { client, calls } = buildClient(
+    const { client, calls, inFlight } = buildClient(
       {
         lead_submissions: [],
         youtube_videos: [],
@@ -247,6 +287,6 @@ describe("getYouTubeAttribution reads", () => {
       errors,
     );
     const result = await getYouTubeAttribution({ client, now: NOW });
-    return { result, calls };
+    return { result, calls, inFlight };
   }
 });
