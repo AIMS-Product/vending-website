@@ -25,7 +25,8 @@ export type FeedSource =
         | "calendly_bookings"
         | "ga4_page_views"
         | "lead_video_views";
-      column: "created_at" | "synced_at" | "last_seen_at";
+      /** `day` is a date: the newest day of data, read as the end of that day. */
+      column: "created_at" | "day" | "last_seen_at";
     };
 
 export type FeedDef = {
@@ -52,8 +53,10 @@ export const FEEDS = {
   },
   "ga4-pages": {
     label: "Google Analytics page visits",
-    staleAfterHours: DAILY,
-    source: { kind: "table", table: "ga4_page_views", column: "synced_at" },
+    // Newest day held (indexed; synced_at is not). The daily sync writes
+    // through yesterday, so two days is late.
+    staleAfterHours: 48,
+    source: { kind: "table", table: "ga4_page_views", column: "day" },
   },
   "video-views": {
     label: "Pre-call video views",
@@ -155,6 +158,7 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // channel-journeys-data.ts: spine impressions/clicks, Close, leads, webinars
   journeys: [
     "site-leads",
+    "ga4-pages",
     "close",
     "metricool-posts",
     "bitly",
@@ -166,7 +170,7 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // channel-report.ts: the whole spine, Close wins, Calendly, lead forms
   channels: [...SPINE, "close", "calendly", "site-leads"],
   // youtube-attribution.ts: leads, Bitly clicks, YouTube videos, Close shows
-  youtube: ["site-leads", "bitly", "youtube", "close"],
+  youtube: ["site-leads", "ga4-pages", "bitly", "youtube", "close"],
   // video-engagement-report.ts: video views, leads, Calendly, Close
   video: ["video-views", "site-leads", "calendly", "close"],
   // booked-calls-data.ts: Calendly, Close
@@ -347,51 +351,138 @@ export function judgeAudit(
 
 export type CoveredMetric = "leads" | "booked" | "won" | "revenue" | "calendly";
 
-/**
- * THE map of audit check to the numbers on screen it verifies. When one of
- * these checks does not pass, those numbers are marked Unverified.
- */
-export const CHECK_COVERS: ReadonlyArray<{
+/** Days a check compares, inclusive, as YYYY-MM-DD. */
+export type DayRange = { from: string; to: string };
+
+/** Which window a covered check compares when it runs; see `expectedWindow`. */
+type CheckWindow = "last-closed-month" | "last-7-settled-days";
+
+type CheckCover = {
   checkId: string;
+  /**
+   * Rows the audit stores INSTEAD of `checkId` when the check could not run:
+   * `<group>-group` when the whole group threw (`safe()` in
+   * data-audit-checks.ts), `<source>-config` when the source has no key. The
+   * month-over-month group returns nothing at all without Close, so
+   * `close-config` explains its absence too.
+   */
+  standIns: readonly string[];
+  window: CheckWindow;
   tab: AnalyticsTabKey;
   metric: CoveredMetric;
   /** The number's name as the tab prints it. */
   number: string;
-}> = [
-  { checkId: "mom-leads", tab: "mom", metric: "leads", number: "Leads" },
+};
+
+const MOM_STAND_INS = ["mom-group", "close-config", "close-group"] as const;
+const CLOSE_STAND_INS = ["close-group", "close-config"] as const;
+const CALENDLY_STAND_INS = ["calendly-group", "calendly-config"] as const;
+
+/**
+ * THE map of audit check to the numbers on screen it verifies. A number is
+ * Unverified unless its check is in last night's run and passed (or warned,
+ * which is within twice the tolerance). A check missing from the run is not a
+ * pass: silence never reads as verified.
+ */
+export const CHECK_COVERS: ReadonlyArray<CheckCover> = [
+  {
+    checkId: "mom-leads",
+    standIns: MOM_STAND_INS,
+    window: "last-closed-month",
+    tab: "mom",
+    metric: "leads",
+    number: "Leads",
+  },
   {
     checkId: "close-first-calls",
+    standIns: CLOSE_STAND_INS,
+    window: "last-7-settled-days",
     tab: "mom",
     metric: "booked",
     number: "Booked",
   },
-  { checkId: "mom-won", tab: "mom", metric: "won", number: "CW % (won)" },
-  { checkId: "mom-revenue", tab: "mom", metric: "revenue", number: "Revenue" },
+  {
+    checkId: "mom-won",
+    standIns: MOM_STAND_INS,
+    window: "last-closed-month",
+    tab: "mom",
+    metric: "won",
+    number: "CW % (won)",
+  },
+  {
+    checkId: "mom-revenue",
+    standIns: MOM_STAND_INS,
+    window: "last-closed-month",
+    tab: "mom",
+    metric: "revenue",
+    number: "Revenue",
+  },
   {
     checkId: "close-first-calls",
+    standIns: CLOSE_STAND_INS,
+    window: "last-7-settled-days",
     tab: "close",
     metric: "booked",
     number: "Booked (first calls)",
   },
   {
     checkId: "calendly-bookings",
+    standIns: CALENDLY_STAND_INS,
+    window: "last-7-settled-days",
     tab: "overview",
     metric: "calendly",
     number: "Calls booked on Calendly",
   },
   {
     checkId: "calendly-bookings",
+    standIns: CALENDLY_STAND_INS,
+    window: "last-7-settled-days",
     tab: "booked",
     metric: "calendly",
     number: "Marketing booked",
   },
 ];
 
+const DAY_MS = 86_400_000;
+const dayKey = (date: Date) => date.toISOString().slice(0, 10);
+
+/**
+ * The window a check compares when run at `at`, for a check that left no row
+ * to read it from. Mirrors `lastClosedMonth` (data-audit-mom-checks.ts) and
+ * `settledWindow(now, 1)` over 7 days (data-audit-checks.ts); a test pins
+ * both against those functions.
+ */
+export function expectedWindow(window: CheckWindow, at: Date): DayRange {
+  if (window === "last-closed-month") {
+    const start = new Date(
+      Date.UTC(at.getUTCFullYear(), at.getUTCMonth() - 1, 1),
+    );
+    const end = new Date(Date.UTC(at.getUTCFullYear(), at.getUTCMonth(), 1));
+    return {
+      from: dayKey(start),
+      to: dayKey(new Date(end.getTime() - DAY_MS)),
+    };
+  }
+  return {
+    from: dayKey(new Date(at.getTime() - 7 * DAY_MS)),
+    to: dayKey(new Date(at.getTime() - DAY_MS)),
+  };
+}
+
+/** The first and last YYYY-MM-DD in a stored window label, when it has any. */
+function rangeOf(label: string): DayRange | null {
+  const days = (label.match(/\d{4}-\d{2}-\d{2}/g) ?? []).sort();
+  const [from] = days;
+  const to = days.at(-1);
+  return from && to ? { from, to } : null;
+}
+
 export type UnverifiedFlag = {
   metric: CoveredMetric;
   number: string;
-  /** Months (YYYY-MM) the failed check's window touches. */
-  months: string[];
+  /** The days the check covers (or would have covered). */
+  from: string;
+  to: string;
   reason: string;
 };
 
@@ -404,51 +495,84 @@ const WHY: Record<AuditCheck["status"], string> = {
 };
 
 /**
- * Numbers on this tab whose check failed, errored or was skipped last run. A
- * warning is within twice the tolerance and still counts as checked.
+ * Numbers on this tab that last night's audit did not confirm: the check
+ * failed, errored or was skipped, its group crashed, its source is not
+ * configured, it is missing from the run, or no run happened in 26 hours.
  */
 export function unverifiedFlags(
   scope: TrustScope,
   run: AuditRun | null,
+  now: Date,
+  auditError: string | null = null,
 ): UnverifiedFlag[] {
-  if (!run) return [];
-  const byId = new Map(run.checks.map((check) => [check.checkId, check]));
-  return CHECK_COVERS.filter((cover) => cover.tab === scope).flatMap(
-    (cover) => {
-      const check = byId.get(cover.checkId);
-      if (!check || check.status === "pass" || check.status === "warn") {
-        return [];
-      }
+  const covers = CHECK_COVERS.filter((cover) => cover.tab === scope);
+  const byId = new Map((run?.checks ?? []).map((c) => [c.checkId, c]));
+  const stale =
+    !run ||
+    (now.getTime() - new Date(run.runAt).getTime()) / HOUR_MS >
+      AUDIT_MISSING_AFTER_HOURS;
+
+  return covers.flatMap((cover): UnverifiedFlag[] => {
+    const base = { metric: cover.metric, number: cover.number };
+    if (!run || stale) {
       return [
         {
-          metric: cover.metric,
-          number: cover.number,
-          months: monthsOf(check.window),
+          ...base,
+          ...expectedWindow(cover.window, now),
+          reason: auditError
+            ? `Unverified: the audit results could not be read (${auditError}).`
+            : !run
+              ? "Unverified: no audit run is stored, so this number has never been checked."
+              : `Not checked last night: the newest audit run is from ${run.runAt.slice(0, 10)}.`,
+        },
+      ];
+    }
+    const runAt = new Date(run.runAt);
+    const check = byId.get(cover.checkId);
+    if (check) {
+      if (check.status === "pass" || check.status === "warn") return [];
+      return [
+        {
+          ...base,
+          ...(rangeOf(check.window) ?? expectedWindow(cover.window, runAt)),
           reason: `Last night's check "${check.label}" (${check.window}) ${WHY[check.status]} the source: ${check.detail}`,
         },
       ];
-    },
-  );
+    }
+    const standIn = cover.standIns
+      .map((id) => byId.get(id))
+      .find((row) => row && row.status !== "pass");
+    return [
+      {
+        ...base,
+        ...expectedWindow(cover.window, runAt),
+        reason: standIn
+          ? `Not checked last night: "${standIn.label}" did not run. ${standIn.detail}`
+          : "Not checked last night: this check is missing from the latest audit run.",
+      },
+    ];
+  });
 }
 
-function monthsOf(window: string): string[] {
-  const days = window.match(/\d{4}-\d{2}-\d{2}/g) ?? [];
-  return [...new Set(days.map((day) => day.slice(0, 7)))];
-}
-
-/** Flags for one metric, optionally within one month (YYYY-MM). */
+/**
+ * The flag for one metric whose window overlaps the days a number shows.
+ * Without `shown`, any flag for the metric matches.
+ */
 export function flagFor(
   flags: readonly UnverifiedFlag[] | undefined,
   metric: CoveredMetric,
-  month?: string,
+  shown?: DayRange,
 ): UnverifiedFlag | undefined {
   return flags?.find(
     (flag) =>
       flag.metric === metric &&
-      (month === undefined ||
-        flag.months.length === 0 ||
-        flag.months.includes(month)),
+      (!shown || (flag.from <= shown.to && flag.to >= shown.from)),
   );
+}
+
+/** A calendar month (YYYY-MM) as the days it spans. */
+export function monthRange(month: string): DayRange {
+  return { from: `${month}-01`, to: `${month}-31` };
 }
 
 // ---------------------------------------------------------------------------
@@ -500,6 +624,11 @@ export function buildTrustBar(input: {
     problems,
     feedCount: verdicts.length,
     audit: judgeAudit(input.run, input.now, input.auditError ?? null),
-    flags: unverifiedFlags(input.scope, input.run),
+    flags: unverifiedFlags(
+      input.scope,
+      input.run,
+      input.now,
+      input.auditError ?? null,
+    ),
   };
 }

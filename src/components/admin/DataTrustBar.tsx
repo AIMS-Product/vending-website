@@ -153,8 +153,8 @@ export function DataTrustBar({ model }: { model: TrustBarModel }) {
                 className="text-ui-text"
               >
                 <span className="font-semibold">{flag.number}</span>
-                {flag.months.length > 0 ? ` (${flag.months.join(", ")})` : null}
-                : <span className="text-ui-text-muted">{flag.reason}</span>
+                {` (${flag.from} to ${flag.to})`}:{" "}
+                <span className="text-ui-text-muted">{flag.reason}</span>
               </li>
             ))}
           </ul>

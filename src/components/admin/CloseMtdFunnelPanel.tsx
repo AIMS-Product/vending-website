@@ -78,7 +78,12 @@ export function CloseMtdFunnelPanel({
               <dt className={adminEyebrowClass}>
                 {stage.label}
                 {stage.key === "booked" ? (
-                  <UnverifiedMark flag={flagFor(unverified, "booked")} />
+                  <UnverifiedMark
+                    flag={flagFor(unverified, "booked", {
+                      from: funnel.from,
+                      to: funnel.to,
+                    })}
+                  />
                 ) : null}
               </dt>
               <dd className="text-ui-text mt-2 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">

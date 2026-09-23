@@ -1,20 +1,27 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
+import type { AnalyticsTabKey } from "@/components/admin/AnalyticsPanels";
 import { ANALYTICS_TABS } from "@/components/admin/AnalyticsPanels";
 import { GLOSSARY } from "@/components/admin/AnalyticsGlossary";
 import {
   AUDIT_MISSING_AFTER_HOURS,
   buildTrustBar,
   CHECK_COVERS,
+  expectedWindow,
   FEEDS,
   flagFor,
   judgeAudit,
   judgeFeed,
+  monthRange,
   TAB_FEEDS,
   unverifiedFlags,
   type AuditCheck,
   type AuditRun,
   type FeedKey,
 } from "@/lib/analytics/data-trust-bar";
+import { settledWindow } from "@/lib/services/data-audit-checks";
+import { lastClosedMonth } from "@/lib/services/data-audit-mom-checks";
 
 const NOW = new Date("2026-09-22T18:00:00Z");
 const hoursAgo = (hours: number) =>
@@ -60,6 +67,100 @@ describe("tab to feed mapping", () => {
     const keys = new Set<string>(ANALYTICS_TABS.map((tab) => tab.key));
     for (const cover of CHECK_COVERS) expect(keys.has(cover.tab)).toBe(true);
   });
+});
+
+describe("tab to feed mapping matches what each loader reads", () => {
+  /**
+   * The service files each tab's data comes from (the loader and the helpers
+   * it calls that select from tables). Adding a table read to one of these
+   * files without adding its feed to TAB_FEEDS fails here.
+   */
+  const LOADERS: Record<AnalyticsTabKey, readonly string[]> = {
+    overview: ["admin-analytics"],
+    acquisition: ["admin-analytics"],
+    pages: ["admin-analytics"],
+    quality: ["admin-analytics"],
+    journeys: ["channel-journeys-data"],
+    map: ["funnel-map"],
+    channels: ["channel-report", "close-wins"],
+    youtube: ["youtube-attribution"],
+    video: [
+      "video-engagement-report",
+      "pre-call-engagement",
+      "call-credit-data",
+    ],
+    booked: ["booked-calls-data"],
+    close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
+    mom: ["close-monthly-funnel-data", "close-monthly-leads", "close-wins"],
+    exec: ["funnel-executive", "funnel-monthly-data", "close-wins"],
+    kpi: ["kpi-report-data", "call-credit-data", "channel-report"],
+    funnels: ["funnel-monthly-data"],
+  };
+
+  /** Table read -> the feed that keeps it current. */
+  const TABLE_FEED: Record<string, FeedKey | "spine"> = {
+    lead_submissions: "site-leads",
+    calendly_bookings: "calendly",
+    ga4_page_views: "ga4-pages",
+    lead_video_views: "video-views",
+    close_lead_funnel: "close",
+    bitly_link_clicks: "bitly",
+    youtube_videos: "youtube",
+    webinar_events: "webinar",
+    ghl_email_stats: "ghl-email",
+    metricool_posts: "metricool-posts",
+    // Written by many connectors; the tab must list at least one of them.
+    channel_daily: "spine",
+  };
+
+  /** Read, but not a data feed with a schedule of its own. */
+  const NOT_FEEDS = new Set([
+    "channel_sync_runs", // the health log itself
+    "marketing_links", // a registry edited by hand
+    "qualification_sessions", // written with the lead it belongs to
+    "lead_page_views", // written live by the site's page tracker
+    "chatbot_conversations", // written live by the chatbot
+  ]);
+
+  const SPINE_FEEDS = new Set<FeedKey>([
+    "ga4-visits",
+    "spine-leads",
+    "ghl-forms",
+    "ghl-email",
+    "bitly",
+    "metricool-posts",
+    "metricool-ads",
+    "youtube",
+    "webinar",
+    "manychat",
+  ]);
+
+  const tablesIn = (file: string) => {
+    const source = readFileSync(
+      path.join(process.cwd(), "src/lib/services", `${file}.ts`),
+      "utf8",
+    );
+    return [...source.matchAll(/\.from\(\s*"([a-z_]+)"/g)].map((m) => m[1]);
+  };
+
+  for (const [tab, files] of Object.entries(LOADERS)) {
+    it(`${tab} lists a feed for every table its loader reads`, () => {
+      const feeds = TAB_FEEDS[tab as AnalyticsTabKey];
+      for (const table of files.flatMap(tablesIn)) {
+        if (NOT_FEEDS.has(table)) continue;
+        const feed = TABLE_FEED[table];
+        expect(feed, `${tab} reads ${table}, which has no feed`).toBeDefined();
+        if (feed === "spine") {
+          expect(
+            feeds.some((f) => SPINE_FEEDS.has(f)),
+            `${tab} reads channel_daily but lists no spine feed`,
+          ).toBe(true);
+        } else {
+          expect(feeds, `${tab} reads ${table}`).toContain(feed);
+        }
+      }
+    });
+  }
 });
 
 describe("feed staleness", () => {
@@ -187,58 +288,209 @@ describe("last night's audit", () => {
 });
 
 describe("unverified numbers", () => {
-  it("marks a number whose check failed, with the reason and month", () => {
+  /** Every covered check passing, so each test only varies what it names. */
+  const allPass = () =>
+    [...new Set(CHECK_COVERS.map((cover) => cover.checkId))].map((id) =>
+      check({ checkId: id, label: id }),
+    );
+  const without = (ids: string[], extra: AuditCheck[] = []) =>
+    run([...allPass().filter((c) => !ids.includes(c.checkId)), ...extra]);
+
+  it("marks nothing when every covered check passed last night", () => {
+    for (const tab of ["mom", "close", "overview", "booked"] as const) {
+      expect(unverifiedFlags(tab, run(allPass()), NOW)).toEqual([]);
+    }
+  });
+
+  it("marks a number whose check failed, with the reason and its days", () => {
     const flags = unverifiedFlags(
       "mom",
-      run([
-        check({
-          checkId: "mom-revenue",
-          label: "Month over month: revenue",
-          window: "2026-08-01 to 2026-08-31",
-          status: "fail",
-          detail: "We show $100; Close says $150.",
-        }),
-      ]),
+      without(
+        ["mom-revenue"],
+        [
+          check({
+            checkId: "mom-revenue",
+            label: "Month over month: revenue",
+            window: "2026-08-01 to 2026-08-31",
+            status: "fail",
+            detail: "We show $100; Close says $150.",
+          }),
+        ],
+      ),
+      NOW,
     );
     expect(flags).toHaveLength(1);
-    expect(flags[0].metric).toBe("revenue");
-    expect(flags[0].months).toEqual(["2026-08"]);
+    expect(flags[0]).toMatchObject({
+      metric: "revenue",
+      from: "2026-08-01",
+      to: "2026-08-31",
+    });
     expect(flags[0].reason).toContain("disagreed with");
     expect(flags[0].reason).toContain("Close says $150");
-    expect(flagFor(flags, "revenue", "2026-08")).toBeDefined();
-    expect(flagFor(flags, "revenue", "2026-07")).toBeUndefined();
-    expect(flagFor(flags, "leads", "2026-08")).toBeUndefined();
+    expect(flagFor(flags, "revenue", monthRange("2026-08"))).toBeDefined();
+    expect(flagFor(flags, "revenue", monthRange("2026-07"))).toBeUndefined();
+    expect(flagFor(flags, "revenue", monthRange("2026-09"))).toBeUndefined();
+    expect(flagFor(flags, "leads", monthRange("2026-08"))).toBeUndefined();
   });
 
-  it("marks errored and skipped checks too, never passed or warned ones", () => {
-    const checks = [
-      check({ checkId: "mom-won", status: "error" }),
-      check({ checkId: "mom-leads", status: "skipped" }),
-      check({ checkId: "mom-revenue", status: "warn" }),
-      check({ checkId: "close-first-calls", status: "pass" }),
-    ];
-    const metrics = unverifiedFlags("mom", run(checks)).map((f) => f.metric);
-    expect(metrics.sort()).toEqual(["leads", "won"]);
+  it("marks errored and skipped checks, never passed or warned ones", () => {
+    const flags = unverifiedFlags(
+      "mom",
+      without(
+        ["mom-won", "mom-leads", "mom-revenue"],
+        [
+          check({ checkId: "mom-won", status: "error" }),
+          check({ checkId: "mom-leads", status: "skipped" }),
+          check({ checkId: "mom-revenue", status: "warn" }),
+        ],
+      ),
+      NOW,
+    );
+    expect(flags.map((f) => f.metric).sort()).toEqual(["leads", "won"]);
   });
 
-  it("spreads a check across every tab that shows its number", () => {
-    const failed = run([check({ status: "fail" })]);
-    expect(unverifiedFlags("mom", failed).map((f) => f.metric)).toEqual([
-      "booked",
-    ]);
-    expect(unverifiedFlags("close", failed).map((f) => f.metric)).toEqual([
-      "booked",
-    ]);
-    expect(unverifiedFlags("overview", failed)).toEqual([]);
-    const calendly = run([
-      check({ checkId: "calendly-bookings", status: "fail" }),
-    ]);
-    expect(unverifiedFlags("overview", calendly)).toHaveLength(1);
-    expect(unverifiedFlags("booked", calendly)).toHaveLength(1);
+  it("marks a covered check missing from the run as not checked", () => {
+    const flags = unverifiedFlags("close", without(["close-first-calls"]), NOW);
+    expect(flags).toHaveLength(1);
+    expect(flags[0].reason).toContain("missing from the latest audit run");
+    // Window the check would have compared, from the run's own time.
+    expect(flags[0]).toMatchObject({ from: "2026-09-15", to: "2026-09-21" });
   });
 
-  it("flags nothing when there is no run; the bar says so instead", () => {
-    expect(unverifiedFlags("mom", null)).toEqual([]);
+  it("marks MoM numbers when the whole month-over-month group crashed", () => {
+    const flags = unverifiedFlags(
+      "mom",
+      without(
+        ["mom-won", "mom-revenue", "mom-leads"],
+        [
+          check({
+            checkId: "mom-group",
+            label: "mom",
+            window: "the checked window",
+            status: "error",
+            detail: "Close timed out.",
+          }),
+        ],
+      ),
+      NOW,
+    );
+    expect(flags.map((f) => f.metric).sort()).toEqual([
+      "leads",
+      "revenue",
+      "won",
+    ]);
+    expect(flags[0].reason).toContain("Close timed out.");
+    // Stored window has no dates, so the expected one is used: last month.
+    expect(flags[0]).toMatchObject({ from: "2026-08-01", to: "2026-08-31" });
+  });
+
+  it("marks MoM numbers when Close is not configured and the group stored nothing", () => {
+    const flags = unverifiedFlags(
+      "mom",
+      without(
+        ["mom-won", "mom-revenue", "mom-leads", "close-first-calls"],
+        [
+          check({
+            checkId: "close-config",
+            label: "First calls checked against Close",
+            status: "fail",
+            detail: "CLOSE_API_KEY is not set.",
+          }),
+        ],
+      ),
+      NOW,
+    );
+    expect(flags).toHaveLength(4);
+    for (const flag of flags) {
+      expect(flag.reason).toContain("CLOSE_API_KEY is not set.");
+    }
+  });
+
+  it("marks Calendly numbers when the token is missing (config row only)", () => {
+    const run2 = without(
+      ["calendly-bookings"],
+      [
+        check({
+          checkId: "calendly-config",
+          label: "Bookings checked against Calendly",
+          status: "fail",
+          detail: "CALENDLY_API_TOKEN is not set.",
+        }),
+      ],
+    );
+    for (const tab of ["overview", "booked"] as const) {
+      const flags = unverifiedFlags(tab, run2, NOW);
+      expect(flags).toHaveLength(1);
+      expect(flags[0].reason).toContain("CALENDLY_API_TOKEN");
+    }
+  });
+
+  it("marks Calendly numbers when the Calendly group crashed", () => {
+    const flags = unverifiedFlags(
+      "overview",
+      without(
+        ["calendly-bookings"],
+        [
+          check({
+            checkId: "calendly-group",
+            label: "calendly",
+            window: "the checked window",
+            status: "error",
+            detail: "401",
+          }),
+        ],
+      ),
+      NOW,
+    );
+    expect(flags).toHaveLength(1);
+  });
+
+  it("marks every covered number when no run is stored or the run is stale", () => {
+    expect(unverifiedFlags("mom", null, NOW)).toHaveLength(4);
+    const stale = run(allPass(), AUDIT_MISSING_AFTER_HOURS + 1);
+    const flags = unverifiedFlags("close", stale, NOW);
+    expect(flags).toHaveLength(1);
+    expect(flags[0].reason).toContain("Not checked last night");
+    const unread = unverifiedFlags("booked", null, NOW, "denied");
+    expect(unread[0].reason).toContain("could not be read (denied)");
+  });
+
+  it("only matches a displayed range that overlaps the check's days", () => {
+    const flags = unverifiedFlags(
+      "close",
+      without(
+        ["close-first-calls"],
+        [
+          check({
+            checkId: "close-first-calls",
+            window: "2026-08-25 to 2026-08-31",
+            status: "fail",
+          }),
+        ],
+      ),
+      NOW,
+    );
+    // September month-to-date shows no August days: no chip.
+    expect(
+      flagFor(flags, "booked", { from: "2026-09-01", to: "2026-09-01" }),
+    ).toBeUndefined();
+    expect(
+      flagFor(flags, "booked", { from: "2026-08-01", to: "2026-08-31" }),
+    ).toBeDefined();
+  });
+
+  it("names the same window the audit itself compares", () => {
+    const at = new Date("2026-09-02T12:30:00Z");
+    const month = lastClosedMonth(at);
+    expect(expectedWindow("last-closed-month", at)).toEqual({
+      from: month.from,
+      to: month.label.slice(-10),
+    });
+    const settled = settledWindow(at, 1);
+    expect(expectedWindow("last-7-settled-days", at)).toEqual({
+      from: settled.from,
+      to: settled.to,
+    });
   });
 });
 

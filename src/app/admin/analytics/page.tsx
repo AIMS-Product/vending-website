@@ -548,7 +548,10 @@ function OverviewTab({
         connected={analytics.bookingsConnected}
         total={analytics.bookingsTotal}
         unattributed={analytics.bookingsUnattributed}
-        unverified={flagFor(flags, "calendly")}
+        unverified={flagFor(flags, "calendly", {
+          from: analytics.range.startIso.slice(0, 10),
+          to: analytics.range.endIso.slice(0, 10),
+        })}
       />
 
       <div className="grid gap-5 xl:grid-cols-3">

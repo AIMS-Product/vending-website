@@ -8,7 +8,11 @@ import {
 } from "@/components/admin/AdminUi";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { UnverifiedMark } from "@/components/admin/TrustMarks";
-import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
+import {
+  flagFor,
+  monthRange,
+  type UnverifiedFlag,
+} from "@/lib/analytics/data-trust-bar";
 import {
   FUNNEL_GROUPS,
   MATURE_AFTER_DAYS,
@@ -453,11 +457,15 @@ function ColumnHeads({
     <>
       <th scope="col" className={`${TH} border-ui-line border-l`}>
         Leads
-        <UnverifiedMark flag={flagFor(unverified, "leads", month)} />
+        <UnverifiedMark
+          flag={flagFor(unverified, "leads", monthRange(month))}
+        />
       </th>
       <th scope="col" className={TH}>
         Booked
-        <UnverifiedMark flag={flagFor(unverified, "booked", month)} />
+        <UnverifiedMark
+          flag={flagFor(unverified, "booked", monthRange(month))}
+        />
       </th>
       <th scope="col" className={TH}>
         Show %
@@ -467,11 +475,13 @@ function ColumnHeads({
       </th>
       <th scope="col" className={TH}>
         CW %
-        <UnverifiedMark flag={flagFor(unverified, "won", month)} />
+        <UnverifiedMark flag={flagFor(unverified, "won", monthRange(month))} />
       </th>
       <th scope="col" className={TH}>
         Revenue
-        <UnverifiedMark flag={flagFor(unverified, "revenue", month)} />
+        <UnverifiedMark
+          flag={flagFor(unverified, "revenue", monthRange(month))}
+        />
       </th>
     </>
   );

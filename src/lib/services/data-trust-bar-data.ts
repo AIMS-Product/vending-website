@@ -21,6 +21,14 @@ import type { Database } from "@/types/database";
 type Client = Pick<SupabaseClient<Database>, "from">;
 
 /**
+ * Two days of an hourly connector plus slack: enough for the latest run, the
+ * last clean one, and `summariseSyncRuns`' 48-hour "adds nothing" rule. A feed
+ * whose last clean run is older than this reads as having none, which is red
+ * either way.
+ */
+const RUNS_PER_CONNECTOR = 60;
+
+/**
  * Everything one tab's trust bar needs, read in parallel. Every read reports
  * its own failure; a failed read renders red with its reason, never green.
  */
@@ -74,7 +82,7 @@ async function observeFeeds(
   );
   const [runObs, tableObs] = await Promise.all([
     runFeeds.length > 0 ? observeRuns(client, runFeeds, now) : [],
-    Promise.all(tableFeeds.map((feed) => observeTable(client, feed))),
+    Promise.all(tableFeeds.map((feed) => observeTable(client, feed, now))),
   ]);
   return [...runObs, ...tableObs];
 }
@@ -88,24 +96,23 @@ async function observeRuns(
     const source = FEEDS[feed].source;
     return source.kind === "run" ? source.connector : "";
   };
-  const connectors = feeds.map(connectorOf);
-  const { data, error } = await client
-    .from("channel_sync_runs")
-    .select("connector,started_at,finished_at,rows_written,error")
-    .in("connector", connectors)
-    .order("started_at", { ascending: false })
-    // Two hourly feeds for a week is ~340 runs; this holds the latest of each.
-    .limit(1000);
-  if (error) {
-    return feeds.map((feed) => ({
-      feed,
-      lastSuccessAt: null,
-      error: error.message,
-    }));
-  }
-  const runs = (data ?? []) as SyncRun[];
-  const health = summariseSyncRuns(runs, connectors, now);
-  return feeds.map((feed) => {
+  // One small read per connector on (connector, started_at desc), rather than
+  // one wide read that a single chatty connector can crowd the others out of.
+  const reads = await Promise.all(
+    feeds.map(async (feed) => {
+      const { data, error } = await client
+        .from("channel_sync_runs")
+        .select("connector,started_at,finished_at,rows_written,error")
+        .eq("connector", connectorOf(feed))
+        .order("started_at", { ascending: false })
+        .limit(RUNS_PER_CONNECTOR);
+      return { feed, runs: (data ?? []) as SyncRun[], error };
+    }),
+  );
+  const runs = reads.flatMap((read) => read.runs);
+  const health = summariseSyncRuns(runs, feeds.map(connectorOf), now);
+  return reads.map(({ feed, error }) => {
+    if (error) return { feed, lastSuccessAt: null, error: error.message };
     const connector = connectorOf(feed);
     const row = health.find((entry) => entry.connector === connector);
     const lastSuccessAt =
@@ -126,6 +133,7 @@ async function observeRuns(
 async function observeTable(
   client: Client,
   feed: FeedKey,
+  now: Date,
 ): Promise<FeedObservation> {
   const source = FEEDS[feed].source;
   if (source.kind !== "table") return { feed, lastSuccessAt: null };
@@ -139,5 +147,15 @@ async function observeTable(
     string,
     string | null
   > | null;
-  return { feed, lastSuccessAt: row?.[source.column] ?? null };
+  const value = row?.[source.column] ?? null;
+  if (!value || source.column !== "day") return { feed, lastSuccessAt: value };
+  // A date column holds the newest day of data, complete at its end, but never
+  // later than now: a part day of today must not read as data from the future.
+  const endOfDay = new Date(`${value}T23:59:59.999Z`);
+  return {
+    feed,
+    lastSuccessAt: new Date(
+      Math.min(endOfDay.getTime(), now.getTime()),
+    ).toISOString(),
+  };
 }

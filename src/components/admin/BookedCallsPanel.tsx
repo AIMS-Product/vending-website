@@ -23,6 +23,13 @@ const TH_LEFT = "px-4 py-2.5 text-left font-semibold whitespace-nowrap";
 const TD = "px-3 py-2.5 text-right tabular-nums whitespace-nowrap";
 const TD_LEFT = "px-4 py-2.5 text-left whitespace-nowrap";
 
+/** The Sunday a Monday-start week ends on, YYYY-MM-DD. */
+function weekEnd(weekStart: string): string {
+  const end = new Date(`${weekStart}T12:00:00Z`);
+  end.setUTCDate(end.getUTCDate() + 6);
+  return end.toISOString().slice(0, 10);
+}
+
 function weekLabel(weekStart: string): string {
   const start = new Date(`${weekStart}T12:00:00Z`);
   const end = new Date(start);
@@ -83,7 +90,16 @@ export function BookedCallsPanel({
               <th className={TH_LEFT}>Week</th>
               <th className={TH}>
                 Marketing booked
-                <UnverifiedMark flag={flagFor(unverified, "calendly")} />
+                <UnverifiedMark
+                  flag={
+                    current
+                      ? flagFor(unverified, "calendly", {
+                          from: weeks[0].weekStart,
+                          to: weekEnd(current.weekStart),
+                        })
+                      : undefined
+                  }
+                />
               </th>
               <th className={TH}>vs prior week</th>
               <th className={TH}>Reactivation (partial)</th>
