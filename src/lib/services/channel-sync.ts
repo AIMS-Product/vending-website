@@ -226,8 +226,14 @@ async function clearSupersededGa4Metrics(
       )
       .gte("day", startDate)
       .lte("day", endDate)
+      // The whole primary key: `.range()` pages over a sort with ties can
+      // skip or repeat rows at a page boundary.
       .order("day")
       .order("source")
+      .order("medium")
+      .order("campaign")
+      .order("content")
+      .order("destination")
       .range(from, to),
   );
 
@@ -648,9 +654,14 @@ async function clearMovedBookingRows(
       .gte("day", days[0]!)
       .lte("day", days.at(-1)!)
       .or("booked.gt.0,showed.gt.0,won.gt.0")
+      // The whole primary key: `.range()` pages over a sort with ties can
+      // skip or repeat rows at a page boundary.
       .order("day")
       .order("source")
+      .order("medium")
       .order("campaign")
+      .order("content")
+      .order("destination")
       .range(from, to),
   );
 

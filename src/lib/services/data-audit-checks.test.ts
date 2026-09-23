@@ -5,6 +5,7 @@ import type { Database } from "@/types/database";
 vi.mock("@/lib/config", () => ({ config: {} }));
 
 import { daysBetween, runDataAudit, settledWindow } from "./data-audit-checks";
+import { staleOnOwnDay } from "./data-audit-spine-orphans";
 
 const now = new Date("2026-09-19T12:30:00.000Z");
 
@@ -409,6 +410,81 @@ describe("spine orphans beyond bookings", () => {
     });
   });
 
+  it("does not fail spend when one ad network came back empty on a clean run", async () => {
+    // This morning Metricool listed Google campaigns for 09-18 and no Meta
+    // ones. The Meta rows keep yesterday's stamp; nothing says they moved.
+    const check = await audit([
+      row(
+        { source: "google", medium: "cpc", campaign: "2380", content: "Brand" },
+        "2026-09-18",
+        { spend: 210, clicks: 90 },
+        "2026-09-19",
+      ),
+      row(
+        meta("Webinar Sep 22"),
+        "2026-09-18",
+        { spend: 698.43, clicks: 40 },
+        "2026-09-18",
+      ),
+      row(
+        meta("90 Days"),
+        "2026-09-18",
+        { spend: 120, clicks: 12 },
+        "2026-09-18",
+      ),
+    ]);
+    expect(check("spine-orphaned-spend")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+    expect(check("spine-orphaned-clicks")).toMatchObject({ status: "pass" });
+  });
+
+  it("skips the oldest day of a window, which a run may only partly re-read", async () => {
+    // GA4 re-reads 09-16..09-19 on 09-19; 09-16 is the day it cuts in half.
+    const check = await audit([
+      row({ source: "google" }, "2026-09-16", { visits: 120 }, "2026-09-19"),
+      row({ source: "(not set)" }, "2026-09-16", { visits: 40 }, "2026-09-18"),
+    ]);
+    expect(check("spine-orphaned-visits")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+    expect(check("spine-orphaned-visits").window).toBe(
+      "2026-09-17 to 2026-09-19",
+    );
+  });
+
+  it("ends the YouTube window yesterday, where its re-read ends", async () => {
+    const video = (content: string) => ({
+      source: "youtube",
+      medium: "organic",
+      content,
+    });
+    const check = await audit([
+      // Today: YouTube has not re-read it, so an old stamp means nothing.
+      row(video("a1"), "2026-09-19", { clicks: 5 }, "2026-09-19"),
+      row(video("b2"), "2026-09-19", { clicks: 3 }, "2026-09-17"),
+      // Yesterday: re-read this morning, so the old stamp was dropped.
+      row(video("a1"), "2026-09-18", { clicks: 6 }, "2026-09-19"),
+      row(video("b2"), "2026-09-18", { clicks: 2 }, "2026-09-17"),
+    ]);
+    expect(check("spine-orphaned-clicks")).toMatchObject({
+      status: "warn",
+      ours: 2,
+    });
+  });
+
+  it("says what to do, since a warn repeats in Slack every night", async () => {
+    const check = await audit([
+      row({ campaign: "spring" }, "2026-08-20", { leads: 2 }, "2026-09-19"),
+      row({ campaign: "sprnig" }, "2026-08-20", { leads: 1 }, "2026-09-02"),
+    ]);
+    expect(check("spine-orphaned-leads").detail).toContain(
+      "set leads to null on the stranded row",
+    );
+  });
+
   it("catches visits GA4 moved to another key and passes rewritten ones", async () => {
     const stale = await audit([
       row({ source: "google" }, "2026-09-18", { visits: 120 }, "2026-09-19"),
@@ -541,6 +617,8 @@ describe("spine orphans beyond bookings", () => {
   });
 
   it("warns on post clicks under a key Metricool no longer writes", async () => {
+    // The same Instagram post, first stored under its graph id, now under its
+    // media id (AGENTS.md: the two endpoints disagree).
     const check = await audit([
       row(
         { source: "mike-ig", medium: "organic", content: "18042" },
@@ -549,7 +627,7 @@ describe("spine orphans beyond bookings", () => {
         "2026-09-19",
       ),
       row(
-        { source: "instagram", medium: "organic", content: "18042" },
+        { source: "mike-ig", medium: "organic", content: "17901" },
         "2026-09-05",
         { clicks: 7 },
         "2026-09-11",
@@ -579,5 +657,29 @@ describe("spine orphans beyond bookings", () => {
     );
     expect(check("spine-orphaned-spend")).toMatchObject({ status: "skipped" });
     expect(check("spine-orphaned-spend").detail).toContain("metricool-ads");
+  });
+});
+
+describe("staleOnOwnDay", () => {
+  const stamped = (day: string, synced: string) => ({
+    day,
+    synced_at: `${synced}T11:10:00.000Z`,
+  });
+
+  it("caps a family's newest stamp at its writer's last clean run", () => {
+    // Another connector bumped one row to 09-19; the writer last ran 09-18.
+    const rows = [
+      stamped("2026-09-10", "2026-09-19"),
+      stamped("2026-09-10", "2026-09-18"),
+    ];
+    expect(
+      staleOnOwnDay(
+        rows,
+        () => "leads",
+        () => "2026-09-18",
+      ),
+    ).toEqual([]);
+    // Without the cap the untouched row reads as stranded.
+    expect(staleOnOwnDay(rows, () => "leads")).toEqual([rows[1]]);
   });
 });

@@ -85,6 +85,14 @@ type Writer = {
   back: number;
   /** Days before its run day the re-read stops; YouTube ends yesterday. */
   endLag?: number;
+  /**
+   * Judge each source on its own. Metricool answers per ad network and per
+   * brand, and a clean run can get an empty list back for one of them (no
+   * Meta campaigns that day) while the other answers: pooled, every Meta row
+   * would look older than the Google rows beside it. The cost: a row that
+   * moved to another source (a post re-owned by another brand) is not caught.
+   */
+  perSource?: boolean;
   owns: (row: SpineRow) => boolean;
 };
 
@@ -145,6 +153,7 @@ const ADS: Writer = {
   connector: METRICOOL_ADS_CONNECTOR,
   back: ADS_WINDOW_DAYS,
   owns: isAdRow,
+  perSource: true,
 };
 const LEADS: Writer = {
   connector: CHANNEL_CONNECTORS.leads,
@@ -231,6 +240,7 @@ const ORPHAN_CHECKS: readonly OrphanCheck[] = [
         connector: METRICOOL_CONNECTOR,
         back: POSTS_WINDOW_DAYS,
         owns: () => true,
+        perSource: true,
       },
     ],
   },
@@ -248,6 +258,14 @@ const ORPHAN_CHECKS: readonly OrphanCheck[] = [
     writers: [LEADS],
   },
 ];
+
+/**
+ * What to do about a hit. A warn posts to Slack like a fail does
+ * (`alertOnAuditFailure`), so a stranded row repeats every night until it is
+ * repaired or ages out of its sync's window, up to 120 days for leads and won.
+ */
+const REPAIR = (metric: OrphanMetric) =>
+  `This repeats in Slack every night until repaired: set ${metric} to null on the stranded row (deleting the row would also drop other connectors' numbers on it), or re-key it onto the link it belongs to. docs/marketing/data-audit.md, "Stranded spine rows", has the query that lists them all.`;
 
 /** How far back a writer's latest clean run is looked for. */
 const RUN_LOOKBACK_DAYS = 7;
@@ -389,10 +407,13 @@ async function orphanCheck(
     const span = owner && windows.get(owner.connector);
     if (!owner || !span || row.day < span.from || row.day > span.to)
       return null;
-    return owner.connector;
+    return owner.perSource
+      ? `${owner.connector}\u0000${row.source}`
+      : owner.connector;
   };
+  // The ceiling is the writer's run, whichever source the family is.
   const orphans = staleOnOwnDay(rows, familyOf, (family) =>
-    lastRun.get(family),
+    lastRun.get(family.split("\u0000")[0]!),
   ).filter((row) => Number(row[metric]) !== 0);
 
   const value = (row: SpineRow) => Number(row[metric] ?? 0);
@@ -420,7 +441,7 @@ async function orphanCheck(
     detail:
       (orphans.length === 0
         ? `Every stored row its sync still re-reads was rewritten by that sync's latest run.`
-        : `${orphans.length === 1 ? "1 row" : `${orphans.length} rows`} the latest run of its own sync did not rewrite still ${orphans.length === 1 ? "carries" : "carry"} ${format(total)} ${check.noun}, counted on top of whatever replaced ${orphans.length === 1 ? "it" : "them"}. Largest: ${worst.join("; ")}.`) +
+        : `${orphans.length === 1 ? "1 row" : `${orphans.length} rows`} the latest run of its own sync did not rewrite still ${orphans.length === 1 ? "carries" : "carry"} ${format(total)} ${check.noun}, counted on top of whatever replaced ${orphans.length === 1 ? "it" : "them"}. Largest: ${worst.join("; ")}. ${REPAIR(metric)}`) +
       notRun,
   });
 }
