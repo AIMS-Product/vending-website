@@ -75,6 +75,15 @@ export const CHATBOT_CHANNEL = "Chatbot";
 
 /** Search engines, organic. `google` lands here too: it is not Google Ads. */
 export const SEARCH_CHANNEL = "Organic search";
+/**
+ * The spine source Search Console's own numbers are written under: Google's
+ * count of how often the site showed in web search (Seen) and was clicked
+ * (Clicked). Its own source rather than GA4's google/organic key, because
+ * that key is whatever GA4 reports that day (campaign "(organic)", a term of
+ * "(not provided)" or "(not set)") and a guessed copy of it would be a phantom
+ * key. See search-console-sync.ts.
+ */
+export const SEARCH_CONSOLE_SOURCE = "google-search-console";
 /** ChatGPT, Claude, Copilot, Perplexity sending people to the site. */
 export const AI_CHANNEL = "AI assistants";
 /** Any other outside site that linked to us. */
@@ -106,6 +115,7 @@ const EXACT: Record<string, ChannelRule> = {
   // YouTube in two.
   yt: { channel: "YouTube" },
   google: { channel: SEARCH_CHANNEL },
+  [SEARCH_CONSOLE_SOURCE]: { channel: SEARCH_CHANNEL },
   bing: { channel: SEARCH_CHANNEL },
   yahoo: { channel: SEARCH_CHANNEL },
   duckduckgo: { channel: SEARCH_CHANNEL },

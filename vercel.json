@@ -58,6 +58,10 @@
       "schedule": "40 11 * * *"
     },
     {
+      "path": "/api/admin/search-console-sync/run",
+      "schedule": "50 11 * * *"
+    },
+    {
       "path": "/api/admin/close-lead-funnel-sync/run",
       "schedule": "5 * * * *"
     },
