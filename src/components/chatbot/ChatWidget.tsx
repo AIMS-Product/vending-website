@@ -185,7 +185,8 @@ export function ChatWidget() {
   // questionnaire or the confirmation calendar interrupts a lead mid-booking.
   // The launcher still renders, so anyone who wants help can start the
   // conversation; only the unprompted teaser is suppressed.
-  // The pre-call page is added on top: its visitors have already booked.
+  // The pre-call page and the legacy lead pages are added on top: see
+  // suppressesChatTeaser.
   const suppressIdleTeaser = suppressesChatTeaser(pathname);
 
   const setOpen = useCallback((value: boolean) => {
@@ -800,7 +801,7 @@ export function ChatWidget() {
   return (
     <div
       className={cn(
-        "fixed right-4 bottom-4 z-[90] flex flex-col items-end gap-2",
+        "fixed right-4 bottom-[calc(1rem+var(--sticky-cta-offset,0px))] z-[90] flex flex-col items-end gap-2 transition-[bottom] duration-300",
         // Below 640px an open panel takes the whole screen: the 420x680 panel
         // leaves no room for a Calendly month view on a phone, which is
         // exactly where the booking has to work.

@@ -93,6 +93,10 @@ describe("booking funnel routes", () => {
     expect(suppressesChatTeaser("/pre-call-resources")).toBe(true);
     expect(isFunnelChromePath("/pre-call-resources")).toBe(false);
     expect(suppressesChatTeaser("/contact")).toBe(true);
+    // Legacy lead pages keep their chrome but are booking pages (UI audit,
+    // 2026-09-22): the teaser opened over their Calendly grid.
+    expect(suppressesChatTeaser("/booking-ig")).toBe(true);
+    expect(isFunnelChromePath("/booking-ig")).toBe(false);
     expect(suppressesChatTeaser("/")).toBe(false);
   });
 

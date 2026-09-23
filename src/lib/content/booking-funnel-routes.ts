@@ -1,5 +1,6 @@
 import { bookingPages } from "./booking-pages";
 import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
+import { isLegacyLeadPath } from "./legacy-routes";
 
 /**
  * Every booking funnel: /contact, /book-now, the contact clones and the
@@ -79,7 +80,15 @@ export function isFunnelChromePath(pathname: string): boolean {
  * "Looking into starting a vending business?" over the middle of a phone
  * screen, on top of the videos they were sent there to watch. The launcher
  * still renders, so a question before the call is one tap away.
+ *
+ * The legacy lead pages (`[legacyLeadPath]`) keep their chrome too, but they
+ * are booking pages: the teaser opened over their Calendly month grid (UI
+ * audit, 2026-09-22).
  */
 export function suppressesChatTeaser(pathname: string): boolean {
-  return isFunnelChromePath(pathname) || pathname === "/pre-call-resources";
+  return (
+    isFunnelChromePath(pathname) ||
+    isLegacyLeadPath(pathname) ||
+    pathname === "/pre-call-resources"
+  );
 }

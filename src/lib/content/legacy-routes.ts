@@ -227,3 +227,8 @@ const legacyLeadRouteBySlug: ReadonlyMap<string, LegacyLeadRoute> = new Map(
 export function getLegacyLeadRoute(slug: string) {
   return legacyLeadRouteBySlug.get(slug);
 }
+
+/** True on a page rendered by `[legacyLeadPath]` — a booking or lead page. */
+export function isLegacyLeadPath(pathname: string): boolean {
+  return legacyLeadRouteBySlug.has(pathname.slice(1));
+}
