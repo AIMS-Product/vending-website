@@ -182,7 +182,11 @@ async function fetchBookings(
           { count },
         )
         .gte("created_at", since.toISOString())
+        // Pages run concurrently, and created_at alone ties across a page
+        // boundary (bulk inserts share a timestamp): without id a row could
+        // land on two pages or on none.
         .order("created_at")
+        .order("id")
         .range(from, to) as unknown as PromiseLike<{
         data: Array<{
           invitee_email: string | null;
