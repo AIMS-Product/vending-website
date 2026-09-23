@@ -4,6 +4,7 @@ import { resolveRedirectDestination } from "@/lib/redirects";
 import { hasPublishedPostSlug } from "@/lib/services/news";
 import { hasPublishedCaseStudySlug } from "@/lib/services/case-studies";
 import { listProcessSlugs } from "@/lib/content/process";
+import { DEFAULT_ROUTE_PREFIXES } from "@/lib/page-builder/route-prefix-defaults";
 import {
   getBuilderRedirectBySourcePath,
   hasPublishedSeoPagePath,
@@ -48,7 +49,24 @@ const TWO_SEGMENT_DYNAMIC_EXISTS: Record<
 > = {
   process: (slug) => listProcessSlugs().includes(slug),
   "case-studies": (slug) => hasPublishedCaseStudySlug(slug),
+  demo: (slug) => slug === "book-a-call",
 };
+
+/**
+ * Two-segment families with their own routes whose existence the proxy
+ * cannot (or need not) check here: qualification sessions are tokens the
+ * page validates; the builder prefixes, /news, /admin and /auth are decided
+ * by an earlier branch.
+ */
+const TWO_SEGMENT_ROUTED_ELSEWHERE = new Set<string>([
+  // Route handlers such as /api/csp-report match the two-segment matcher.
+  "api",
+  "qualify",
+  "news",
+  "admin",
+  "auth",
+  ...DEFAULT_ROUTE_PREFIXES.map((entry) => entry.prefix.slice(1)),
+]);
 
 /**
  * Public paths the app could only answer with notFound(), which the root
@@ -62,7 +80,15 @@ async function isMissingPublicPage(path: string): Promise<boolean> {
   if (segments.length > 2) return true;
   if (segments.length !== 2) return false;
   const exists = TWO_SEGMENT_DYNAMIC_EXISTS[segments[0]];
-  if (!exists) return false;
+  if (!exists) {
+    // The two-segment matcher also admits public files
+    // (/brand/wordmark.png); those are static assets, never pages.
+    if (segments[1].includes(".")) return false;
+    // Any other two-segment path reaching this check is not under a
+    // configured builder prefix (handleCustomBuilderPath lets those through
+    // first), so the builder catch-all could only notFound() it: /about/x.
+    return !TWO_SEGMENT_ROUTED_ELSEWHERE.has(segments[0]);
+  }
   let slug: string;
   try {
     slug = decodeURIComponent(segments[1]);
