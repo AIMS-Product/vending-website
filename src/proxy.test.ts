@@ -28,6 +28,10 @@ vi.mock("@/lib/services/news", () => ({
   hasPublishedPostSlug: vi.fn(),
 }));
 
+vi.mock("@/lib/services/case-studies", () => ({
+  hasPublishedCaseStudySlug: vi.fn(),
+}));
+
 vi.mock("@/lib/services/seo-page-public", () => ({
   getBuilderRedirectBySourcePath: mocks.getBuilderRedirectBySourcePath,
   hasPublishedSeoPagePath: mocks.hasPublishedSeoPagePath,
@@ -431,5 +435,63 @@ describe("proxy Studio redirects for any public path", () => {
     expect(response.headers.get("location")).toBe(
       "https://vending-website.vercel.app/admin/login",
     );
+  });
+});
+
+/*
+  UI cohesion slice 11 (2026-09-22). A missing page must answer 404 with the
+  site's own not-found page. Before this, proxy 404s were a bare HTML string
+  (unstyled Times), and /case-studies/*, /process/* and deeper paths reached
+  notFound() only after the root loading.tsx shell had streamed a 200.
+*/
+describe("proxy real 404s", () => {
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    mocks.lookupRedirectForPath.mockResolvedValue(null);
+    mocks.getBuilderRedirectBySourcePath.mockResolvedValue(null);
+    mocks.listRoutePrefixes.mockResolvedValue([]);
+    const { hasPublishedCaseStudySlug } =
+      await import("@/lib/services/case-studies");
+    vi.mocked(hasPublishedCaseStudySlug).mockImplementation(
+      async (slug: string) => slug === "musa-sadi",
+    );
+  });
+
+  it("renders the app's not-found page instead of a bare HTML string", async () => {
+    const response = await proxy(request("/test-leadscore-a"));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "https://vending-website.vercel.app/_not-found",
+    );
+    expect(response.headers.get("x-robots-tag")).toBe("noindex");
+  });
+
+  it.each(["/case-studies/nope", "/process/nope", "/a/b/c", "/about/x/y"])(
+    "answers %s with a real 404",
+    async (path) => {
+      const response = await proxy(request(path));
+      expect(response.status).toBe(404);
+    },
+  );
+
+  it.each(["/case-studies/musa-sadi", "/process/find-locations"])(
+    "lets %s through to its route",
+    async (path) => {
+      const response = await proxy(request(path));
+      expect(response.status).toBe(200);
+      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+    },
+  );
+
+  it("serves a Studio redirect for a retired story before 404ing it", async () => {
+    mocks.lookupRedirectForPath.mockResolvedValue({
+      destination_path: "/case-studies",
+      status_code: 301,
+    });
+
+    const response = await proxy(request("/case-studies/retired"));
+
+    expect(response.status).toBe(301);
   });
 });

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { lookupRedirectForPath } from "@/lib/redirect-table";
 import { resolveRedirectDestination } from "@/lib/redirects";
 import { hasPublishedPostSlug } from "@/lib/services/news";
+import { hasPublishedCaseStudySlug } from "@/lib/services/case-studies";
+import { listProcessSlugs } from "@/lib/content/process";
 import {
   getBuilderRedirectBySourcePath,
   hasPublishedSeoPagePath,
@@ -24,30 +26,50 @@ import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
 import { trailingSlashRedirectPath } from "@/lib/routing/trailing-slash";
 
-const NOT_FOUND_HTML = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <title>Not found | Vendingpreneurs</title>
-  </head>
-  <body>
-    <main>
-      <h1>Not found</h1>
-      <p>The requested page could not be found.</p>
-    </main>
-  </body>
-</html>`;
-
-function notFoundResponse() {
-  return new Response(NOT_FOUND_HTML, {
+/**
+ * A real 404 that still looks like the site. Rewriting to Next's built-in
+ * `/_not-found` route renders `src/app/not-found.tsx` inside the root layout,
+ * and the status set here is the response status because nothing has
+ * streamed yet (node_modules/next/dist/docs/01-app/03-api-reference/
+ * 03-file-conventions/loading.md, "Status Codes": check in proxy and rewrite
+ * missing slugs to a not-found route). Until 2026-09-22 this returned a bare
+ * HTML string, which visitors saw as an unstyled Times page.
+ */
+function notFoundResponse(request: NextRequest) {
+  return NextResponse.rewrite(new URL("/_not-found", request.url), {
     status: 404,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "X-Robots-Tag": "noindex",
-    },
+    headers: { "X-Robots-Tag": "noindex" },
   });
+}
+
+const TWO_SEGMENT_DYNAMIC_EXISTS: Record<
+  string,
+  (slug: string) => boolean | Promise<boolean>
+> = {
+  process: (slug) => listProcessSlugs().includes(slug),
+  "case-studies": (slug) => hasPublishedCaseStudySlug(slug),
+};
+
+/**
+ * Public paths the app could only answer with notFound(), which the root
+ * loading.tsx boundary streams as HTTP 200 (a soft 404). Checked pre-routing,
+ * after Studio redirects, so the 404 status is still ours to set.
+ */
+async function isMissingPublicPage(path: string): Promise<boolean> {
+  const segments = path.split("/").filter(Boolean);
+  // The builder catch-all only serves /{prefix}/{slug}; every deeper public
+  // path without its own branch above lands in its notFound().
+  if (segments.length > 2) return true;
+  if (segments.length !== 2) return false;
+  const exists = TWO_SEGMENT_DYNAMIC_EXISTS[segments[0]];
+  if (!exists) return false;
+  let slug: string;
+  try {
+    slug = decodeURIComponent(segments[1]);
+  } catch {
+    return true;
+  }
+  return !(await exists(slug));
 }
 
 const REMOVED_PUBLIC_PATHS = new Set(["/test-leadscore-a"]);
@@ -123,6 +145,7 @@ async function redirectOrNext(request: NextRequest, path: string) {
       redirect.status_code,
     );
   }
+  if (await isMissingPublicPage(path)) return notFoundResponse(request);
   return NextResponse.next();
 }
 
@@ -171,11 +194,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (REMOVED_PUBLIC_PATHS.has(path)) {
-    return notFoundResponse();
+    return notFoundResponse(request);
   }
 
   if (path.startsWith("/blog/author/")) {
-    return notFoundResponse();
+    return notFoundResponse(request);
   }
 
   if (path.startsWith("/resources/preview/")) {
@@ -183,11 +206,11 @@ export async function proxy(request: NextRequest) {
     try {
       token = decodeURIComponent(path.replace(/^\/resources\/preview\//, ""));
     } catch {
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
     const exists = await hasActiveSeoPagePreviewToken(token);
     if (!exists) {
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
     return NextResponse.next();
   }
@@ -208,7 +231,7 @@ export async function proxy(request: NextRequest) {
     try {
       routePath = decodeURIComponent(path);
     } catch {
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
     if (isCodedRoutePath(routePath)) {
       return NextResponse.next();
@@ -228,7 +251,7 @@ export async function proxy(request: NextRequest) {
           );
         }
       }
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
 
     return NextResponse.next();
@@ -265,11 +288,11 @@ export async function proxy(request: NextRequest) {
     try {
       slug = decodeURIComponent(path.replace(/^\/news\//, ""));
     } catch {
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
     const exists = await hasPublishedPostSlug(slug);
     if (!exists) {
-      return notFoundResponse();
+      return notFoundResponse(request);
     }
 
     return NextResponse.next();
@@ -296,8 +319,11 @@ export async function proxy(request: NextRequest) {
     // the real 404 here, pre-routing, where the status is still ours.
     // next.config redirects fired before the proxy and the Studio redirect
     // lookup ran above, so nothing redirectable reaches this check.
-    if (isUnknownSingleSegmentPublicPath(path)) {
-      return notFoundResponse();
+    if (
+      isUnknownSingleSegmentPublicPath(path) ||
+      (await isMissingPublicPage(path))
+    ) {
+      return notFoundResponse(request);
     }
 
     return NextResponse.next();
