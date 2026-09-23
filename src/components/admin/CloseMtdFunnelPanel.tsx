@@ -4,6 +4,8 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
+import { UnverifiedMark } from "@/components/admin/TrustMarks";
+import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
 import { SCRAPER_FUNNEL } from "@/lib/services/close-mtd-funnel";
 import type { CloseMtdReport } from "@/lib/services/close-mtd-funnel-data";
 
@@ -36,7 +38,13 @@ function rate(part: number, whole: number): string {
   return whole > 0 ? `${Math.round((part / whole) * 100)}%` : "—";
 }
 
-export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
+export function CloseMtdFunnelPanel({
+  report,
+  unverified,
+}: {
+  report: CloseMtdReport;
+  unverified?: readonly UnverifiedFlag[];
+}) {
   if (!report.ok) {
     return (
       <section className={adminPanelClass}>
@@ -67,7 +75,12 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
         <dl className="divide-ui-line border-ui-line mt-3 grid divide-y border-t sm:grid-cols-2 sm:divide-x xl:grid-cols-4 xl:divide-y-0">
           {funnel.stages.map((stage) => (
             <div key={stage.key} className="px-4 py-3.5">
-              <dt className={adminEyebrowClass}>{stage.label}</dt>
+              <dt className={adminEyebrowClass}>
+                {stage.label}
+                {stage.key === "booked" ? (
+                  <UnverifiedMark flag={flagFor(unverified, "booked")} />
+                ) : null}
+              </dt>
               <dd className="text-ui-text mt-2 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
                 {stage.count.toLocaleString("en-US")}
                 {stage.ofBookedPct === null ? null : (

@@ -56,7 +56,7 @@ export async function getDataTrust(
  * so the newest timestamp is read first and its checks fetched by equality
  * rather than by guessing how many checks a run contains.
  */
-async function readLatestRun(
+export async function readLatestRun(
   client: Client,
 ): Promise<Pick<DataTrust, "run" | "checksError">> {
   const latest = await client
@@ -79,17 +79,19 @@ async function readLatestRun(
     .order("check_id");
   if (rows.error) return { run: null, checksError: rows.error.message };
 
-  const checks = (rows.data ?? []).map((row): TrustCheck => ({
-    checkId: row.check_id,
-    label: row.label,
-    window: row.window_label,
-    sourceName: row.source_name,
-    ours: row.ours,
-    source: row.source,
-    diffPct: row.diff_pct,
-    status: row.status as AuditStatus,
-    detail: row.detail,
-  }));
+  const checks = (rows.data ?? []).map(
+    (row): TrustCheck => ({
+      checkId: row.check_id,
+      label: row.label,
+      window: row.window_label,
+      sourceName: row.source_name,
+      ours: row.ours,
+      source: row.source,
+      diffPct: row.diff_pct,
+      status: row.status as AuditStatus,
+      detail: row.detail,
+    }),
+  );
   return { run: { runAt, checks }, checksError: null };
 }
 

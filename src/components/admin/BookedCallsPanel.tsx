@@ -2,6 +2,8 @@ import {
   adminPanelClass,
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
+import { UnverifiedMark } from "@/components/admin/TrustMarks";
+import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
 import type { BookedCallsReport, WeekRow } from "@/lib/services/booked-calls";
 
 /**
@@ -42,7 +44,13 @@ function Change({ week, previous }: { week: WeekRow; previous?: WeekRow }) {
   );
 }
 
-export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
+export function BookedCallsPanel({
+  report,
+  unverified,
+}: {
+  report: BookedCallsReport;
+  unverified?: readonly UnverifiedFlag[];
+}) {
   const weeks = report.weeks;
   const current = weeks.at(-1);
   const funnels = [
@@ -73,7 +81,10 @@ export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
           <thead className="text-ui-text-muted border-ui-line border-b text-xs">
             <tr>
               <th className={TH_LEFT}>Week</th>
-              <th className={TH}>Marketing booked</th>
+              <th className={TH}>
+                Marketing booked
+                <UnverifiedMark flag={flagFor(unverified, "calendly")} />
+              </th>
               <th className={TH}>vs prior week</th>
               <th className={TH}>Reactivation (partial)</th>
             </tr>
