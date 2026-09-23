@@ -395,7 +395,9 @@ export function YouTubeCohortTable({
                     <th className="py-2 pr-3 text-right font-semibold">
                       Won same month
                     </th>
-                    <th className="py-2 text-right font-semibold">Won later</th>
+                    <th className="py-2 text-right font-semibold">
+                      Won another month
+                    </th>
                   </>
                 ) : null}
               </tr>
@@ -421,7 +423,7 @@ export function YouTubeCohortTable({
                         {row.closedSameMonth}
                       </td>
                       <td className="text-ui-text-muted py-2.5 text-right tabular-nums">
-                        {row.closedLaterMonth}
+                        {row.closedOtherMonth}
                       </td>
                     </>
                   ) : null}
