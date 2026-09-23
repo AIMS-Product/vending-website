@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+
+// Through the root layout's "%s | Vendingpreneurs" template. Without it every
+// 404 tab read just "Vendingpreneurs", like the home page.
+export const metadata: Metadata = {
+  title: "Page not found",
+};
 
 // Every 404 on the site lands here: notFound() in a route, and the proxy's
 // real-404 rewrite to /_not-found. Set in the public system (DESIGN.md) so a

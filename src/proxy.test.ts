@@ -312,10 +312,12 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     );
   });
 
-  it("still renders normally when an unconfigured-prefix path has no redirect", async () => {
+  it("answers an unconfigured-prefix path with no redirect with a real 404", async () => {
+    // The builder catch-all only serves configured prefixes, so this path
+    // could only reach its notFound(), streamed as a 200 soft 404.
     const response = await proxy(request("/vp-check/live-page"));
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
     expect(response.headers.get("location")).toBeNull();
   });
 
@@ -329,19 +331,19 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
-  it("passes through unconfigured two-segment paths without auth gating or redirect lookups", async () => {
+  it("404s unconfigured two-segment paths without auth gating or builder lookups", async () => {
     const response = await proxy(request("/wp-admin/setup-config"));
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
     expect(response.headers.get("location")).toBeNull();
     expect(mocks.getBuilderRedirectBySourcePath).not.toHaveBeenCalled();
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
-  it("passes through reserved-segment paths like /authors without builder lookups", async () => {
+  it("404s reserved-segment paths like /authors without builder lookups", async () => {
     const response = await proxy(request("/authors/mike-hoffman"));
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(404);
     expect(response.headers.get("location")).toBeNull();
     expect(mocks.listRoutePrefixes).not.toHaveBeenCalled();
     expect(mocks.getBuilderRedirectBySourcePath).not.toHaveBeenCalled();
@@ -467,22 +469,34 @@ describe("proxy real 404s", () => {
     expect(response.headers.get("x-robots-tag")).toBe("noindex");
   });
 
-  it.each(["/case-studies/nope", "/process/nope", "/a/b/c", "/about/x/y"])(
-    "answers %s with a real 404",
-    async (path) => {
-      const response = await proxy(request(path));
-      expect(response.status).toBe(404);
-    },
-  );
+  it.each([
+    "/case-studies/nope",
+    "/process/nope",
+    "/a/b/c",
+    "/about/x/y",
+    // A real page plus a bogus segment used to stream a 200 soft 404.
+    "/about/x",
+    "/contact/anything",
+    "/demo/nope",
+  ])("answers %s with a real 404", async (path) => {
+    const response = await proxy(request(path));
+    expect(response.status).toBe(404);
+  });
 
-  it.each(["/case-studies/musa-sadi", "/process/find-locations"])(
-    "lets %s through to its route",
-    async (path) => {
-      const response = await proxy(request(path));
-      expect(response.status).toBe(200);
-      expect(response.headers.get("x-middleware-rewrite")).toBeNull();
-    },
-  );
+  it.each([
+    "/case-studies/musa-sadi",
+    "/process/find-locations",
+    "/demo/book-a-call",
+    "/qualify/some-session-token",
+    // A public file one folder deep matches the two-segment matcher too,
+    // and so does a two-segment API route.
+    "/brand/wordmark.png",
+    "/api/csp-report",
+  ])("lets %s through to its route", async (path) => {
+    const response = await proxy(request(path));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
 
   it("serves a Studio redirect for a retired story before 404ing it", async () => {
     mocks.lookupRedirectForPath.mockResolvedValue({
