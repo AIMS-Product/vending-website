@@ -264,6 +264,16 @@ export function judgeFeed(obs: FeedObservation, now: Date): FeedVerdict {
           : def.fills.missing,
     };
   }
+  // Only ever skipped (its config is not set): not connected, not red. A feed
+  // that once succeeded keeps its date and ages to red if it starts skipping.
+  if (!obs.lastSuccessAt && obs.status === "skipped") {
+    return {
+      ...base,
+      connected: false,
+      tone: "warn",
+      problem: obs.note ? obs.note.replace(/\.$/, "") : "not configured",
+    };
+  }
   if (!obs.lastSuccessAt) {
     return {
       ...base,

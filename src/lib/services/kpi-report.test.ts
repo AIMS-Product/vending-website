@@ -216,6 +216,35 @@ describe("buildKpiReport", () => {
     expect(yt.lastVerified).toBe("2026-09-11T09:00:00.000Z");
   });
 
+  it("names Search Console, not Metricool, behind Organic search impressions", () => {
+    const organic = buildKpiReport({
+      ...input,
+      facts: [
+        fact({
+          channel: "Organic search",
+          source: "google",
+          medium: "organic",
+          visits: 400,
+          leads: 10,
+        }),
+        fact({
+          channel: "Organic search",
+          source: "google-search-console",
+          medium: "organic",
+          impressions: 9000,
+          clicks: 300,
+        }),
+      ],
+      lastRun: { ...lastRun, "search-console": "2026-09-11T11:50:00.000Z" },
+    });
+    const row = organic.sections[0]!.rows.find((r) =>
+      r.key.startsWith("Organic search"),
+    );
+    expect(row?.sourceOfTruth).toContain("search-console");
+    expect(row?.sourceOfTruth).not.toContain("metricool-posts");
+    expect(row?.sourceOfTruth).not.toContain("bitly-clicks");
+  });
+
   it("hides visit-only rows and keeps webinar, DM and email out of section 1", () => {
     expect(funnels!.hidden).toBe(1);
     const channels = funnels!.rows.map((row) => row.label);
