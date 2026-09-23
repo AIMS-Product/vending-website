@@ -568,7 +568,7 @@ function ResourcePageBlockView({
     if (block.variant === "sidebar") {
       return (
         <div
-          className={`grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white p-6 shadow-[7px_7px_0_#55b8e8] ${previewLayoutClass(
+          className={`grid gap-6 ${previewLayoutClass(
             previewLayout,
             "grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] items-start",
             "lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:items-start",
@@ -609,11 +609,9 @@ function ResourcePageBlockView({
     }
 
     return (
-      <div
-        className={`grid gap-6 rounded-[10px] border-2 border-[#111111] bg-white shadow-[7px_7px_0_#55b8e8] ${
-          block.variant === "compact" ? "p-5" : "p-6"
-        }`}
-      >
+      // No card around the form: the form draws its own, and a second border
+      // around it read as a card inside a card (UI cohesion slice 10).
+      <div className="grid gap-6">
         {((isBlockFieldVisible(block, "heading") &&
           (block.props.heading || renderMode === "editor")) ||
           (isBlockFieldVisible(block, "body") &&
