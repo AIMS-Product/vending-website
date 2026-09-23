@@ -116,6 +116,29 @@
   --color-ui-idle-fill: var(--ui-idle-fill);
   --color-ui-idle-ink: var(--ui-idle-ink);
 
+  /* ── Public site system (DESIGN.md "Public site") ─────────────────────
+     Offset brutalist: ink borders, hard shadows, blue. Interactive things
+     carry an ink shadow, containers carry a sky shadow. Primitives in
+     src/components/ui/ (Button, Card, Section, Container, Field, Highlight)
+     are the only places these should be spelled out. */
+  --color-ink: #111111;
+  --color-sky: #55b8e8;
+  --color-tint: #eaf8ff;
+  --color-eyebrow: #066a99;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+
+  --shadow-btn: 5px 5px 0 #111111;
+  --shadow-btn-hover: 7px 7px 0 #111111;
+  --shadow-card: 8px 8px 0 #55b8e8;
+  --shadow-card-hover: 10px 10px 0 #55b8e8;
+
+  /* max-w-page / max-w-article / max-w-narrow */
+  --container-page: 1180px;
+  --container-article: 720px;
+  --container-narrow: 560px;
+
   /* Two radii, two shadows. More than that and nothing looks deliberate. */
   --radius-ui: 6px;
   --radius-ui-lg: 8px;
