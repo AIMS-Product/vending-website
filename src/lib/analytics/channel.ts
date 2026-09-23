@@ -267,6 +267,30 @@ export function channelForHost(host: string): string {
 }
 
 /**
+ * Whether a raw `utm_source` is our own dev/preview traffic reaching the GA4
+ * property, not a real visitor: `localhost` (with or without a port), the
+ * loopback IP, and a Vercel preview deployment's own `*.vercel.app` host.
+ *
+ * Checked ahead of `resolveChannel` so this traffic is dropped rather than
+ * relabelled: `localhost:3000` carries a colon, so it never matches the
+ * hostname pattern `resolveChannel` uses for a referrer and instead fell
+ * through to `titleCase`, opening its own "Localhost:3000" channel row. A
+ * `*.vercel.app` host already named in `HOST_CHANNEL` (a real production
+ * property we choose to label, e.g. `aimanagingservices.vercel.app`) is left
+ * alone — only an unlisted preview subdomain counts as internal.
+ */
+export function isInternalHost(source: string | null | undefined): boolean {
+  const raw = source?.trim().toLowerCase() ?? "";
+  if (!raw) return false;
+  const host = raw.split(":")[0] ?? "";
+  if (host === "localhost" || host === "127.0.0.1") return true;
+  if (!host.endsWith(".vercel.app")) return false;
+  return !HOST_CHANNEL.some(
+    ([suffix]) => host === suffix || host.endsWith(`.${suffix}`),
+  );
+}
+
+/**
  * Maps a raw `utm_source` onto its canonical channel.
  *
  * No tag at all means the visitor was already on our site, so it resolves to

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildChannelReport,
   buildGoingOut,
+  normaliseFacts,
   ofObservedPct,
   ofVisitsPct,
   summariseSyncRuns,
@@ -38,6 +39,42 @@ describe("sumObserved", () => {
   it("is null when nothing was observed and a number otherwise", () => {
     expect(sumObserved([null, undefined])).toBeNull();
     expect(sumObserved([null, 3, 0])).toBe(3);
+  });
+});
+
+describe("normaliseFacts", () => {
+  it("drops our own dev/preview traffic instead of relabelling it as a channel", () => {
+    const facts = [
+      fact({ channel: "Localhost:3000", source: "localhost:3000" }),
+      fact({
+        channel: "Vending-Website-Git-Preview.Vercel.App",
+        source: "vending-website-git-preview.vercel.app",
+      }),
+      fact({ channel: "Phcheck", source: "phcheck" }),
+      fact({ channel: "instagram", source: "instagram" }),
+    ];
+
+    const result = normaliseFacts(facts);
+
+    expect(result.map((f) => f.channel).sort()).toEqual(
+      ["Instagram", "Phcheck"].sort(),
+    );
+  });
+
+  it("keeps internal-host rows when includeInternal is set, same as the leads toggle", () => {
+    const facts = [fact({ channel: "x", source: "localhost:3000" })];
+
+    const result = normaliseFacts(facts, { includeInternal: true });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?.channel).toBe("Localhost:3000");
+  });
+
+  it("still re-derives the channel from source for rows that survive the filter", () => {
+    const result = normaliseFacts([
+      fact({ channel: "FaceBook", source: "facebook" }),
+    ]);
+    expect(result[0]?.channel).toBe("Meta");
   });
 });
 

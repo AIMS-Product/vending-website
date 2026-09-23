@@ -144,7 +144,9 @@ export async function getChannelsTab(
     ]);
 
   const connected = facts !== null;
-  const all = normaliseFacts(facts ?? []);
+  const all = normaliseFacts(facts ?? [], {
+    includeInternal: input.includeInternal ?? false,
+  });
   const current = all.filter((fact) => fact.day >= startDay);
   const prior = all.filter((fact) => fact.day < startDay);
 

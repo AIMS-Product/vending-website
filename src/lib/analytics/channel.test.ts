@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CHATBOT_CHANNEL,
+  isInternalHost,
   resolveChannel,
   resolveDestination,
   UNKNOWN_CHANNEL,
@@ -100,6 +101,42 @@ describe("resolveChannel", () => {
 
   it("flags a punctuation-only tag rather than counting it as Website", () => {
     expect(resolveChannel("_____").channel).toBe(UNKNOWN_CHANNEL);
+  });
+
+  it("titleCases an unmatched localhost referrer instead of excluding it here", () => {
+    // resolveChannel alone still turns this into its own row ("Localhost:3000");
+    // isInternalHost is what a caller filters on before this ever runs.
+    expect(resolveChannel("localhost:3000").channel).toBe("Localhost:3000");
+  });
+});
+
+describe("isInternalHost", () => {
+  it("flags localhost, with or without a port", () => {
+    expect(isInternalHost("localhost")).toBe(true);
+    expect(isInternalHost("localhost:3000")).toBe(true);
+    expect(isInternalHost("LOCALHOST:3000")).toBe(true);
+  });
+
+  it("flags the loopback IP", () => {
+    expect(isInternalHost("127.0.0.1")).toBe(true);
+    expect(isInternalHost("127.0.0.1:3000")).toBe(true);
+  });
+
+  it("flags an unlisted vercel.app preview host", () => {
+    expect(isInternalHost("vending-website-git-fix-abc123.vercel.app")).toBe(
+      true,
+    );
+  });
+
+  it("does not flag a vercel.app host we deliberately label Website", () => {
+    expect(isInternalHost("aimanagingservices.vercel.app")).toBe(false);
+  });
+
+  it("does not flag a real channel or blank", () => {
+    expect(isInternalHost("instagram")).toBe(false);
+    expect(isInternalHost("vendingpreneurs.com")).toBe(false);
+    expect(isInternalHost(null)).toBe(false);
+    expect(isInternalHost("")).toBe(false);
   });
 });
 
