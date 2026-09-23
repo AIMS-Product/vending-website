@@ -377,6 +377,24 @@ describe("shouldForceBookingCalendar on support and booked chats", () => {
     ).toBe(false);
   });
 
+  it("forces it again when a member later plainly asks to book", () => {
+    const member = [said("I'm an existing member, I want to upgrade")];
+    expect(shouldForceBookingCalendar("yes let's book", member)).toBe(true);
+    expect(shouldForceBookingCalendar("can I book a call", member)).toBe(true);
+    // A cost question alone is not a booking request: still no calendar.
+    expect(shouldForceBookingCalendar("how much is the upgrade", member)).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    "Can I get a refund if it doesn't work out? what does it cost",
+    "I'm already a member of your Facebook group, what does it cost",
+    "I have a meeting with a location manager, can I book a call first",
+  ])("forces it for a prospect: %j", (message) => {
+    expect(shouldForceBookingCalendar(message)).toBe(true);
+  });
+
   it("still forces it for a sales chat with history", () => {
     expect(
       shouldForceBookingCalendar("how much is it", [

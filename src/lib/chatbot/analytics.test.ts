@@ -650,6 +650,31 @@ describe("booking credit: who the chat can claim", () => {
     expect(analytics.outcomes.d30.total).toBe(3);
   });
 
+  it("always counts a chat that booked on its own calendar, even after a support question", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "refund-then-booked",
+            created_at: daysAgo(3),
+            message_count: 6,
+            captured_email: "r@example.com",
+            messages: said("I want a refund on my deposit"),
+            call_booked_at: daysAgo(3),
+            booked_event_uri: "https://api.calendly.com/scheduled_events/9",
+            attribution_source: "in_chat",
+          },
+        ],
+      }),
+    });
+
+    const d30 = analytics.funnels.d30;
+    expect(d30.booked).toBe(1);
+    expect(d30.bookedBy.inChat).toBe(1);
+    expect(d30.excluded).toEqual({ support: 0, bookedBeforeChat: 0 });
+  });
+
   it("credits a setter inferred from Close activity as a setter, marked inferred", async () => {
     const analytics = await getChatbotAnalytics({
       now: () => NOW,

@@ -22,7 +22,10 @@ import {
   resolveChatbotResources,
 } from "@/lib/chatbot/resources";
 import type { ChatbotToolDefinition } from "@/lib/chatbot/openai";
-import { triageConversation } from "@/lib/chatbot/triage";
+import {
+  hasExplicitBookingIntent,
+  triageConversation,
+} from "@/lib/chatbot/triage";
 import type { Database } from "@/types/database";
 
 /**
@@ -88,41 +91,13 @@ export type ChatbotToolOutcome = {
 };
 
 /**
- * Unambiguous "I want to book" phrasings.
- *
- * Deliberately narrow: every entry is a visitor explicitly asking to book,
- * see a calendar, or speak to a person. Vaguer interest ("how do I get
- * started") is left to the model, because forcing a calendar on someone who
- * is still browsing is worse than missing one.
- *
- * This exists because gpt-4o-mini reliably WRITES "I'll open the calendar for
- * you" instead of calling show_booking_calendar. The prompt asks it not to;
- * the prompt is not enough. On a match the route stops asking and requires
- * the call (see forceTool in openai.ts).
+ * Unambiguous "I want to book" phrasings live in triage.ts (a later booking
+ * request also turns a support chat back into sales). They exist because
+ * gpt-4o-mini reliably WRITES "I'll open the calendar for you" instead of
+ * calling show_booking_calendar; on a match the route requires the call (see
+ * forceTool in openai.ts).
  */
-const BOOKING_INTENT_PATTERNS: readonly RegExp[] = [
-  /\bbook(ing)?\s+(a|the|my)?\s*(call|time|slot|meeting|appointment|consult\w*)\b/i,
-  /\b(schedule|set\s*up|grab|pick|get)\s+(a|the|my)?\s*(call|time|slot|meeting|appointment)\b/i,
-  /\bcalendar\b/i,
-  /\b(talk|speak|chat|hop\s*on|jump\s*on)\s+(to|with|on)\s+(someone|somebody|a\s+(real\s+)?(person|human|rep|advisor))\b/i,
-  /\b(available|availability|open)\s+(times?|slots?)\b/i,
-  /\bwhen\s+can\s+(i|we)\s+(talk|speak|meet)\b/i,
-  // Missed in real chats, Aug 27-Sep 2: "I would like to take a call
-  // tomorrow", "I'm looking to enroll", "how to start". None got a calendar.
-  /\b(take|do)\s+(a|the)\s+call\b/i,
-  /\b(enroll|enrol|sign\s+(me\s+)?up)\b/i,
-  /\bhow\s+(do|can)\s+i\s+(start|get\s+started|begin|join)\b/i,
-  /^\s*how\s+to\s+(start|get\s+started|begin|join)\b/i,
-  /\b(first|next)\s+steps?\b/i,
-];
-
-/**
- * True when the visitor has plainly asked to book or to talk to a person.
- * Callers must also check the calendar has not already been shown.
- */
-export function hasExplicitBookingIntent(message: string): boolean {
-  return BOOKING_INTENT_PATTERNS.some((pattern) => pattern.test(message));
-}
+export { hasExplicitBookingIntent };
 
 /**
  * Cost questions, which are both the highest-intent moment in a chat and the

@@ -426,9 +426,11 @@ function exclusionReason(
   row: ConversationRow,
   bookedOn: ReadonlyMap<string, string | null>,
 ): ExcludedChat["reason"] | null {
+  // The chat's own calendar stamped this booking, so it came from the chat and
+  // always counts, whatever the visitor asked first.
+  if (row.call_booked_at) return null;
   if (triageConversation(row.messages) === "support") return "support";
-  // The chat's own calendar stamped this booking, so it came from the chat.
-  if (row.call_booked_at || !row.lead_submission_id) return null;
+  if (!row.lead_submission_id) return null;
   const booked = bookedOn.get(row.lead_submission_id)?.slice(0, 10);
   if (!booked) return null;
   const chatDay = PACIFIC_DATE.format(new Date(row.created_at));
