@@ -411,7 +411,7 @@ export function ChatbotConfigForm({ config }: { config: ChatbotConfig }) {
           </p>
         </div>
         <div
-          className="flex justify-center overflow-hidden bg-[#f3f4f6] py-4"
+          className="bg-ui-canvas flex justify-center overflow-hidden py-4"
           style={{ height: 540 }}
           // Preview only: the panel renders real Link/button elements (quick
           // actions, close) — swallow their default action so clicking never

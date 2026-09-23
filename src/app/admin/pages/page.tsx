@@ -364,7 +364,7 @@ function SeoPagesSearchForm({ state }: { state: SeoPagesListState }) {
       ) : null}
       <button
         type="submit"
-        className="focus-visible:ring-ui-accent/35 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:outline-none"
+        className="focus-visible:ring-ui-accent/35 border-ui-line-strong bg-ui-surface text-ui-text hover:bg-ui-canvas rounded-ui shadow-ui border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
       >
         Search
       </button>
@@ -779,7 +779,7 @@ function PageRow({
   return (
     <tr
       data-created-row={justCreated ? "true" : undefined}
-      className={`focus-within:bg-ui-canvas hover:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff] ${
+      className={`focus-within:bg-ui-canvas hover:bg-ui-canvas [&:has(details[open])]:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20 ${
         justCreated ? "bg-emerald-50/70" : ""
       }`}
     >
@@ -940,8 +940,8 @@ function PageActionsMenu({
   const isArchived = page.status === "archived";
   const summaryClass =
     variant === "card"
-      ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-ui-line bg-white text-ui-text-muted shadow-sm transition group-open:bg-[#eef5ff] group-open:text-ui-accent hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
-      : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-ui-text-muted transition group-open:bg-[#eef5ff] group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
+      ? "inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-md border border-ui-line bg-white text-ui-text-muted shadow-sm transition group-open:bg-ui-accent-soft group-open:text-ui-accent hover:bg-ui-canvas hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+      : "inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md text-ui-text-muted transition group-open:bg-ui-accent-soft group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-2 focus-visible:ring-ui-accent/35 focus-visible:outline-none [&::-webkit-details-marker]:hidden";
   const menuClass =
     "absolute top-full right-0 z-30 mt-2 w-52 overflow-hidden rounded-md border border-ui-line bg-white p-1 text-left shadow-lg";
 
@@ -970,7 +970,7 @@ function PageActionsMenu({
             View live page
           </Link>
         ) : null}
-        <div className="my-1 border-t border-slate-100" />
+        <div className="border-ui-line my-1 border-t" />
         <PageActionForm
           action={duplicateSeoPageFromList}
           pageId={page.id}
@@ -1002,7 +1002,7 @@ function PageActionsMenu({
         ) : null}
         {!isArchived ? (
           <>
-            <div className="my-1 border-t border-slate-100" />
+            <div className="border-ui-line my-1 border-t" />
             <PageActionForm
               action={archiveSeoPageFromList}
               pageId={page.id}

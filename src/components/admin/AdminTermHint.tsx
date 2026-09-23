@@ -55,7 +55,7 @@ export function AdminTermHint({ term, explanation }: AdminTermHintProps) {
         {term}
         <span
           aria-hidden="true"
-          className="bg-ui-line text-ui-text-subtle flex size-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold"
+          className="bg-ui-line text-ui-text-subtle flex size-4 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
         >
           ?
         </span>

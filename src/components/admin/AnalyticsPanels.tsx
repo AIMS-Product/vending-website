@@ -513,7 +513,7 @@ export function AnalyticsTrend({
                 title={`${row.bookings} bookings on ${row.date}`}
               />
             </div>
-            <span className="text-ui-text-subtle text-[10px] tabular-nums">
+            <span className="text-ui-text-subtle text-[11px] tabular-nums">
               {formatShortDate(row.date)}
             </span>
           </div>

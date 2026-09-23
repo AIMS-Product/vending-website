@@ -1337,7 +1337,7 @@ function AssistantIconButton({
     >
       {children}
       {badge ? (
-        <span className="bg-ui-accent ring-ui-surface absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white ring-2">
+        <span className="bg-ui-accent ring-ui-surface absolute -top-1 -right-1 inline-flex min-w-4 items-center justify-center rounded-full px-1 text-[11px] font-bold text-white ring-2">
           {badge}
         </span>
       ) : null}
@@ -1624,7 +1624,7 @@ function SeoAssistantReviewPanel({
               key={metric.label}
               className="rounded-ui-lg bg-ui-surface shadow-ui ring-ui-accent-soft p-2 text-center ring-1"
             >
-              <dt className="text-ui-text-subtle text-[10px] font-semibold">
+              <dt className="text-ui-text-subtle text-[11px] font-semibold">
                 {metric.label}
               </dt>
               <dd className="text-ui-text mt-1 text-sm font-semibold">

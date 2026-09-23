@@ -170,7 +170,7 @@ export function MediaLibraryManager({
   return (
     <>
       {selectedIds.length > 0 ? (
-        <div className="bg-ui-accent-soft flex flex-wrap items-center justify-between gap-3 border-b border-[#dceaff] px-5 py-3">
+        <div className="bg-ui-accent-soft border-ui-line flex flex-wrap items-center justify-between gap-3 border-b px-5 py-3">
           <p className="text-ui-text text-sm font-semibold">
             {selectedIds.length} selected
           </p>
@@ -310,7 +310,7 @@ function MediaAssetCard({
       className={`overflow-hidden rounded-md border bg-white transition hover:shadow-sm ${
         selected
           ? "border-ui-accent ring-ui-accent/15 ring-2"
-          : "border-ui-line hover:border-[#bdd3ff]"
+          : "border-ui-line hover:border-ui-line-strong"
       }`}
     >
       <div className="relative">
@@ -450,7 +450,9 @@ function MediaAssetTable({
               <tr
                 key={asset.id}
                 className={
-                  selectedIds.includes(asset.id) ? "bg-[#fbfdff]" : "bg-white"
+                  selectedIds.includes(asset.id)
+                    ? "bg-ui-accent-soft"
+                    : "bg-ui-surface"
                 }
               >
                 <td className="px-4 py-3 align-top">
@@ -472,7 +474,7 @@ function MediaAssetTable({
                       className="size-12 rounded-md object-cover"
                     />
                   ) : (
-                    <div className="bg-ui-line text-ui-text-muted grid size-12 place-items-center rounded-md text-[10px] font-semibold uppercase">
+                    <div className="bg-ui-line text-ui-text-muted grid size-12 place-items-center rounded-md text-[11px] font-semibold uppercase">
                       {asset.assetType}
                     </div>
                   )}
@@ -537,7 +539,7 @@ function AssetSummary({ asset }: { asset: MediaAssetListItem }) {
             {asset.alt_text || "No alt text"}
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700 uppercase">
+        <span className="bg-ui-line text-ui-text-muted shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase">
           {asset.assetType}
         </span>
       </div>
@@ -792,7 +794,7 @@ export function BulkUploadModal({ onClose }: { onClose: () => void }) {
       <div
         className={`rounded-lg border border-dashed p-4 text-center transition ${
           isDropActive
-            ? "border-ui-accent bg-[#f5fbff]"
+            ? "border-ui-accent bg-ui-accent-soft"
             : "border-ui-line bg-ui-canvas"
         }`}
         onDragEnter={(event) => handleDragState(event, true)}
@@ -992,7 +994,7 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
           <div
             className={`rounded-lg border border-dashed p-4 text-center transition ${
               isDropActive
-                ? "border-ui-accent bg-[#f5fbff]"
+                ? "border-ui-accent bg-ui-accent-soft"
                 : "border-ui-line bg-ui-canvas"
             }`}
             onDragEnter={(event) => handleDragState(event, true)}
@@ -1362,7 +1364,7 @@ function ModalShell({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      className="bg-ui-text/35 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}

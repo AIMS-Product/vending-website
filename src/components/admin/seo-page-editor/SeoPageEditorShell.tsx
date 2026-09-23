@@ -29,7 +29,7 @@ import {
 import { BlockPicker } from "@/components/admin/seo-page-editor/BlockPicker";
 import { TextInput } from "@/components/admin/seo-page-editor/EditorInputs";
 import { QualificationFormPicker } from "@/components/admin/seo-page-editor/QualificationFormOptions";
-import { footerColumns, primaryNav } from "@/lib/content/nav";
+import { footerColumns, headerCta, primaryNav } from "@/lib/content/nav";
 
 // N13 / issue I15: a single-step create panel. The old 3-step wizard forced
 // two "Continue" clicks plus a review screen for effectively one real choice
@@ -235,9 +235,9 @@ export function EditorPublicHeader() {
           href="/contact"
           tabIndex={-1}
           onClick={(event) => event.preventDefault()}
-          className="hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] bg-[#f47b3b] px-7 text-sm font-black text-[#111111] uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
+          className="bg-brand-700 hidden min-h-12 items-center rounded-[8px] border-2 border-[#111111] px-7 text-sm font-black text-white uppercase shadow-[5px_5px_0_#111111] lg:inline-flex"
         >
-          Step inside
+          {headerCta.label}
         </Link>
       </div>
     </header>
