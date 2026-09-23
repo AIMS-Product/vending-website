@@ -2,13 +2,18 @@ import { describe, expect, it } from "vitest";
 import { resolveChatbotResources, sharedResourceMessage } from "./resources";
 
 describe("chatbot resource catalog", () => {
-  it("links the roadmap and finance sheet to their delivered pages, not the gated forms", () => {
+  // Emailed links go only to an address the visitor gave, so they open the
+  // delivered page, marked ?via=chat so GA4 never counts them as a form
+  // conversion (ga4/client.ts excludes the marker).
+  it("emails the delivered pages, marked as chat links", () => {
     const [roadmap, finance] = resolveChatbotResources([
       "roadmap",
       "finance_templates",
     ]);
-    expect(roadmap?.url).toBe("/resources/roadmap-thank-you");
-    expect(finance?.url).toBe("/resources/finance-templates-thank-you");
+    expect(roadmap?.url).toBe("/resources/roadmap-thank-you?via=chat");
+    expect(finance?.url).toBe(
+      "/resources/finance-templates-thank-you?via=chat",
+    );
   });
 });
 
@@ -18,7 +23,11 @@ describe("sharedResourceMessage", () => {
   it("builds an in-chat card that is not counted as an email", () => {
     const message = sharedResourceMessage(
       "roadmap",
-      { label: "Free 90-day roadmap", via: "quick_action" },
+      {
+        label: "Free 90-day roadmap",
+        via: "quick_action",
+        emailCaptured: false,
+      },
       now,
     );
     expect(message).toMatchObject({
@@ -29,18 +38,32 @@ describe("sharedResourceMessage", () => {
         label: "Free 90-day roadmap",
         via: "quick_action",
         key: "roadmap",
-        url: "/resources/roadmap-thank-you",
       },
     });
     expect(message?.kind).not.toBe("resource_card");
     expect(message?.content).toContain("in the chat");
   });
 
+  it("keeps the roadmap gated until the chat has their email", () => {
+    const gated = sharedResourceMessage("roadmap", {
+      label: "x",
+      via: "quick_action",
+      emailCaptured: false,
+    });
+    const delivered = sharedResourceMessage("roadmap", {
+      label: "x",
+      via: "quick_action",
+      emailCaptured: true,
+    });
+    expect(gated?.data?.url).toBe("/resources/roadmap");
+    expect(delivered?.data?.url).toBe("/resources/roadmap-thank-you?via=chat");
+  });
+
   it("returns null for a key outside the catalog", () => {
     expect(
       sharedResourceMessage(
         "nope" as "roadmap",
-        { label: "x", via: "quick_action" },
+        { label: "x", via: "quick_action", emailCaptured: false },
         now,
       ),
     ).toBeNull();

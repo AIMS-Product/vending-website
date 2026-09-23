@@ -360,8 +360,9 @@ function JourneyCard({
           <h2 className={adminSectionTitleClass}>Conversation journey</h2>
           <p className="text-ui-text-muted mt-0.5 text-xs">
             Every sales chat started in this window, followed through to a
-            booked call. Member support chats, and people whose call was booked
-            before they chatted, are left out.
+            booked call. Member support chats, people whose call was booked
+            before they chatted, and button clicks with no message typed are
+            left out.
           </p>
         </div>
         <Link
@@ -729,7 +730,8 @@ function QuickActionsCard({
     <section className={adminCardClass} aria-label="Quick actions">
       <h2 className={adminSectionTitleClass}>Quick actions</h2>
       <p className="text-ui-text-muted mt-0.5 text-xs">
-        Chats where the buttons under the header kept the visitor in the chat.
+        Chats where the buttons under the header kept the visitor in the chat,
+        including clicks with no message typed (those are not in the funnel).
         Success stories is still a link and is counted in PostHog only.
       </p>
       <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">

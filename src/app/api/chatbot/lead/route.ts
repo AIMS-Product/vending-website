@@ -101,7 +101,7 @@ export async function POST(request: Request) {
     await persistConversationTurn(
       conversation,
       {
-        messages: toChatbotMessages(conversation.messages),
+        append: [],
         capturedName,
         capturedEmail: email,
         capturedPhone,

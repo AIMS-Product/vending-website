@@ -98,7 +98,7 @@ describe("quickActionTurn", () => {
     expect(result).toBeNull();
   });
 
-  it("shows the roadmap card in chat, labelled with the button the visitor pressed", async () => {
+  it("shows the roadmap card in chat, linking the form while no email is on file", async () => {
     const result = await quickActionTurn(
       {
         behavior: { type: "resource", key: "roadmap" },
@@ -115,9 +115,25 @@ describe("quickActionTurn", () => {
       data: {
         label: "Free 90-day roadmap",
         via: "quick_action",
-        url: "/resources/roadmap-thank-you",
+        url: "/resources/roadmap",
       },
     });
+  });
+
+  it("links the delivered roadmap page once the chat has their email, marked as a chat link", async () => {
+    const result = await quickActionTurn(
+      {
+        behavior: { type: "resource", key: "roadmap" },
+        label: "Free 90-day roadmap",
+        conversation: { ...conversation, captured_email: "dana@example.com" },
+        transcript: [],
+        embedDomain: null,
+      },
+      deps(),
+    );
+    expect(result?.message.data?.url).toBe(
+      "/resources/roadmap-thank-you?via=chat",
+    );
   });
 
   it("does not repeat the same card twice in a row", async () => {

@@ -21,7 +21,19 @@ export type ChatbotResource = {
   blurb: string;
   /** Always a relative path — absolutized against the site URL when emailed. */
   url: string;
+  /**
+   * The lead-magnet form, for a lead magnet whose `url` is the delivered page.
+   * Used in chat until the visitor has given an email (see sharedResourceUrl).
+   */
+  gatedUrl?: string;
 };
+
+/**
+ * Marks a link the chatbot handed out. The GA4 confirmation-page report
+ * excludes it (ga4/client.ts), so opening a delivered page from the chat is
+ * never counted as a form conversion.
+ */
+export const CHAT_LINK_MARKER = "via=chat";
 
 export const CHATBOT_RESOURCE_CATALOG: readonly ChatbotResource[] = [
   {
@@ -29,17 +41,20 @@ export const CHATBOT_RESOURCE_CATALOG: readonly ChatbotResource[] = [
     title: roadmapLandingPage.title,
     blurb:
       "The free 90-day plan: pick a machine, land the first location, launch and scale.",
-    // The delivered page, not the gated form. The visitor asked the chat for
-    // it, and an emailed link only ever goes to an address they typed, so a
-    // form that asks for their email again was a dead end.
-    url: roadmapThankYouPage.route_path,
+    // The delivered page for people who already gave us an email (the resource
+    // email only goes to such an address), so they are not asked again. Until
+    // Adam decides whether the roadmap may be ungated, a visitor who has not
+    // given an email gets the form (gatedUrl).
+    url: `${roadmapThankYouPage.route_path}?${CHAT_LINK_MARKER}`,
+    gatedUrl: roadmapLandingPage.route_path,
   },
   {
     key: "finance_templates",
     title: financeTemplatesLandingPage.title,
     blurb:
       "A self-calculating P&L, cash flow, and balance sheet workbook for a vending route.",
-    url: financeTemplatesThankYouPage.route_path,
+    url: `${financeTemplatesThankYouPage.route_path}?${CHAT_LINK_MARKER}`,
+    gatedUrl: financeTemplatesLandingPage.route_path,
   },
   {
     key: "case_studies",
@@ -104,14 +119,21 @@ function caseStudyResource(slug: string): ChatbotResource | null {
  * 90-day roadmap" quick action). A different kind from `resource_card` on
  * purpose: that kind means "emailed", and both the per-conversation email cap
  * and the engagement summary count it.
+ *
+ * `emailCaptured`: whether this conversation already has the visitor's email.
+ * Only then does the card open the delivered page; otherwise it opens the
+ * lead-magnet form, as the site's own links do.
  */
 export function sharedResourceMessage(
   key: InChatResourceKey,
-  options: { label: string; via: "quick_action" },
+  options: { label: string; via: "quick_action"; emailCaptured: boolean },
   now: Date = new Date(),
 ): ChatbotMessage | null {
   const resource = CHATBOT_RESOURCE_CATALOG.find((entry) => entry.key === key);
   if (!resource) return null;
+  const url = options.emailCaptured
+    ? resource.url
+    : (resource.gatedUrl ?? resource.url);
   return {
     role: "assistant",
     content: `Shared ${resource.title} in the chat.`,
@@ -123,7 +145,7 @@ export function sharedResourceMessage(
       key: resource.key,
       title: resource.title,
       blurb: resource.blurb,
-      url: resource.url,
+      url,
     },
   };
 }

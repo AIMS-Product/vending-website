@@ -76,7 +76,7 @@ describe("persistConversationTurn", () => {
 
     await persistConversationTurn(
       conversation,
-      { messages: [], capturedEmail: null, capturedPhone: null },
+      { append: [], capturedEmail: null, capturedPhone: null },
       { client: fake.client, now },
     );
 
@@ -90,7 +90,7 @@ describe("persistConversationTurn", () => {
 
     await persistConversationTurn(
       conversation,
-      { messages: [], capturedEmail: "jane@example.com" },
+      { append: [], capturedEmail: "jane@example.com" },
       { client: fake.client, now },
     );
 
@@ -103,7 +103,7 @@ describe("persistConversationTurn", () => {
 
     await persistConversationTurn(
       conversation,
-      { messages: [], capturedEmail: "jane@example.com" },
+      { append: [], capturedEmail: "jane@example.com" },
       { client: fake.client, now },
     );
 
@@ -117,7 +117,7 @@ describe("persistConversationTurn", () => {
     // force-set back to "active").
     await persistConversationTurn(
       makeConversation({ status: "active" }),
-      { messages: [] },
+      { append: [] },
       { client: fake.client, now },
     );
     expect(fake.updates[0]).not.toHaveProperty("status");
@@ -125,7 +125,7 @@ describe("persistConversationTurn", () => {
     // Already lead_captured: a later turn must not re-touch status.
     await persistConversationTurn(
       makeConversation({ status: "lead_captured" }),
-      { messages: [], capturedEmail: "jane@example.com" },
+      { append: [], capturedEmail: "jane@example.com" },
       { client: fake.client, now },
     );
     expect(fake.updates[1]).not.toHaveProperty("status");
@@ -136,7 +136,7 @@ describe("persistConversationTurn", () => {
     // lead_captured upgrade.
     await persistConversationTurn(
       makeConversation({ status: "abandoned" }),
-      { messages: [], capturedEmail: "jane@example.com" },
+      { append: [], capturedEmail: "jane@example.com" },
       { client: fake.client, now },
     );
     expect(fake.updates[2]).not.toHaveProperty("status");
@@ -156,7 +156,7 @@ describe("persistConversationTurn, entry page", () => {
 
     await persistConversationTurn(
       conversation,
-      { messages: [], pageUrl: "/pricing" },
+      { append: [], pageUrl: "/pricing" },
       { client: fake.client, now },
     );
 
@@ -169,10 +169,126 @@ describe("persistConversationTurn, entry page", () => {
 
     await persistConversationTurn(
       conversation,
-      { messages: [], pageUrl: "/pricing" },
+      { append: [], pageUrl: "/pricing" },
       { client: fake.client, now },
     );
 
     expect(fake.updates[0]).toMatchObject({ page_url: "/pricing" });
+  });
+});
+
+/**
+ * One chatbot_conversations row with real compare-and-set semantics:
+ * update().eq("id").eq("message_count", n) only lands when the stored count is
+ * still n. `beforeWrite` runs between a writer's read and its write, which is
+ * exactly where a second writer sneaks in.
+ */
+function tableClient(
+  row: { messages: unknown[]; message_count: number },
+  beforeWrite: () => Promise<void> = async () => {},
+) {
+  return {
+    from() {
+      return {
+        select() {
+          return {
+            eq: () => ({
+              single: async () => ({
+                data: {
+                  messages: [...row.messages],
+                  message_count: row.message_count,
+                },
+                error: null,
+              }),
+            }),
+          };
+        },
+        update(patch: Record<string, unknown>) {
+          const filters: Record<string, unknown> = {};
+          const chain = {
+            eq(column: string, value: unknown) {
+              filters[column] = value;
+              return chain;
+            },
+            async select() {
+              await beforeWrite();
+              if (
+                "message_count" in filters &&
+                filters.message_count !== row.message_count
+              ) {
+                return { data: [], error: null };
+              }
+              Object.assign(row, patch);
+              return { data: [{ id: "conv-1" }], error: null };
+            },
+            then(resolve: (value: { error: null }) => unknown) {
+              Object.assign(row, patch);
+              return Promise.resolve(resolve({ error: null }));
+            },
+          };
+          return chain;
+        },
+      };
+    },
+  } as unknown as PersistClient;
+}
+
+const msg = (content: string) => ({
+  role: "assistant" as const,
+  content,
+  ts: "2026-09-23T00:00:00.000Z",
+});
+
+describe("persistConversationTurn appends, it never rewrites", () => {
+  it("keeps a quick-action card that lands while a chat turn is saving, and the turn too", async () => {
+    const row = { messages: [msg("greeting")] as unknown[], message_count: 1 };
+    let interleaved = false;
+    // The chat turn reads the row, then the quick action appends its card
+    // before the turn writes. The old whole-array write deleted the card.
+    const chatClient = tableClient(row, async () => {
+      if (interleaved) return;
+      interleaved = true;
+      await persistConversationTurn(
+        makeConversation(),
+        { append: [msg("calendar card")] },
+        { client: tableClient(row), now },
+      );
+    });
+
+    await persistConversationTurn(
+      makeConversation(),
+      { append: [msg("visitor turn"), msg("reply")] },
+      { client: chatClient, now },
+    );
+
+    expect(
+      (row.messages as Array<{ content: string }>).map((m) => m.content),
+    ).toEqual(["greeting", "calendar card", "visitor turn", "reply"]);
+    expect(row.message_count).toBe(4);
+  });
+
+  it("gives up loudly rather than dropping a turn when it can never win", async () => {
+    const row = { messages: [] as unknown[], message_count: 0 };
+    const alwaysBusy = tableClient(row, async () => {
+      row.message_count += 1;
+    });
+    await expect(
+      persistConversationTurn(
+        makeConversation(),
+        { append: [msg("x")] },
+        { client: alwaysBusy, now },
+      ),
+    ).rejects.toThrow(/losing the race/);
+  });
+
+  it("leaves the transcript alone when there is nothing to append (capture form)", async () => {
+    const row = { messages: [msg("keep me")] as unknown[], message_count: 1 };
+    await persistConversationTurn(
+      makeConversation(),
+      { append: [], capturedEmail: "jane@example.com" },
+      { client: tableClient(row), now },
+    );
+    expect(row.messages).toHaveLength(1);
+    expect(row).toMatchObject({ captured_email: "jane@example.com" });
   });
 });

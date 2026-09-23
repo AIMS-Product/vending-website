@@ -386,3 +386,58 @@ describe("fetchChannelSessions", () => {
     expect(rows[0]?.sessions).toBe(5);
   });
 });
+
+describe("fetchThankYouSessions", () => {
+  // The chat and its resource email link the delivered lead-magnet pages with
+  // ?via=chat. Nobody filled a form to get there, so those visits must never
+  // count as a confirmation-page conversion.
+  it("counts confirmation pages but not chat links to them", async () => {
+    const { fetchImpl, calls } = buildFetch({
+      report: () => ({
+        status: 200,
+        body: { rows: [], totals: [{ metricValues: [{ value: "0" }] }] },
+      }),
+    });
+    const client = createGa4Client({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      propertyId: "123",
+      fetchImpl,
+    });
+    await client.fetchThankYouSessions({
+      startDate: "2026-09-01",
+      endDate: "2026-09-01",
+    });
+
+    type Filter = { fieldName: string; stringFilter: { value: string } };
+    const { dimensionFilter } = calls[1].body as {
+      dimensionFilter: {
+        andGroup: {
+          expressions: Array<{
+            filter?: Filter;
+            notExpression?: { filter: Filter };
+          }>;
+        };
+      };
+    };
+    const [page, notChat] = dimensionFilter.andGroup.expressions;
+    expect(page?.filter?.fieldName).toBe("pagePath");
+    const confirmation = new RegExp(page?.filter?.stringFilter.value ?? "");
+    expect(confirmation.test("/resources/roadmap-thank-you")).toBe(true);
+    expect(confirmation.test("/thank-you")).toBe(true);
+
+    expect(notChat?.notExpression?.filter.fieldName).toBe(
+      "pagePathPlusQueryString",
+    );
+    const chat = new RegExp(
+      `^(?:${notChat?.notExpression?.filter.stringFilter.value})$`,
+    );
+    expect(chat.test("/resources/roadmap-thank-you?via=chat")).toBe(true);
+    expect(
+      chat.test("/resources/roadmap-thank-you?utm_source=x&via=chat"),
+    ).toBe(true);
+    expect(chat.test("/resources/roadmap-thank-you")).toBe(false);
+    expect(chat.test("/resources/roadmap-thank-you?utm_source=chat")).toBe(
+      false,
+    );
+  });
+});

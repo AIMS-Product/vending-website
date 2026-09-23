@@ -114,13 +114,12 @@ export async function POST(request: Request) {
       return Response.json({ message: "Unavailable." }, { status: 503 });
     }
 
-    // ponytail: whole-array write, like every chat turn. The widget disables
-    // quick actions while a reply is streaming, which is the only overlap a
-    // real visitor can produce; a per-message append RPC would close it fully.
+    // An append, not a rewrite: a chat turn still saving in after() must not
+    // lose this card, nor this card lose the turn (persistConversationTurn).
     if (turn.append) {
       await persistConversationTurn(
         conversation,
-        { messages: [...transcript, turn.message], pageUrl: pageUrl ?? null },
+        { append: [turn.message], pageUrl: pageUrl ?? null },
         { client },
       );
     }

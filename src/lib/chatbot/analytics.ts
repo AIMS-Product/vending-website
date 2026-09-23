@@ -386,7 +386,22 @@ export async function getChatbotAnalytics(
       rows.map((row) => row.lead_submission_id),
     );
     const excluded: ExcludedChat[] = [];
-    const salesRows = rows.filter((row) => {
+    // A quick-action click with no visitor message creates a row but is not a
+    // conversation: it stays off every funnel denominator (and off the
+    // left-out caption), and is counted on the Quick actions card instead. A
+    // booking made from that calendar still counts, same rule as the triage:
+    // the chat's own calendar stamp always counts. So does a pre-chat-gate
+    // capture, which also has no visitor message yet.
+    const conversationRows = rows.filter(
+      (row) =>
+        userTurns(row.messages) > 0 ||
+        Boolean(row.call_booked_at) ||
+        isCaptured(row),
+    );
+    const quickActionRows = rows.filter(
+      (row) => triageConversation(row.messages) !== "support",
+    );
+    const salesRows = conversationRows.filter((row) => {
       const reason = exclusionReason(row, bookedOn);
       if (reason) excluded.push({ createdAt: row.created_at, reason });
       return reason === null;
@@ -397,14 +412,19 @@ export async function getChatbotAnalytics(
       client,
       bookedRows.map((row) => effectiveLeadId(row, bookedEventLinks)),
     );
-    return buildAnalytics(
-      salesRows,
+    return withQuickActions(
+      buildAnalytics(
+        salesRows,
+        now,
+        bookedLeadIds,
+        attributionSplitTrustworthy,
+        creditByLead,
+        bookedEventLinks,
+        excluded,
+      ),
+      quickActionRows,
       now,
       bookedLeadIds,
-      attributionSplitTrustworthy,
-      creditByLead,
-      bookedEventLinks,
-      excluded,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -959,17 +979,44 @@ function buildOutcomeWindow(
       if (isCaptured(row)) result.costQuestion.captured += 1;
       if (booked) result.costQuestion.booked += 1;
     }
-
-    if (hasQuickAction(row.messages, "calendar")) {
-      result.quickActions.calendar += 1;
-      if (booked) result.quickActions.bookedAfterCalendar += 1;
-    }
-    if (hasQuickAction(row.messages, "shared_resource")) {
-      result.quickActions.resource += 1;
-    }
   }
 
   return result;
+}
+
+/**
+ * Quick-action counts per window, over every non-support chat INCLUDING the
+ * ones with no visitor message (someone who only clicked "Book a call"), which
+ * the funnel leaves out. Returns a new analytics object.
+ */
+function withQuickActions(
+  analytics: ChatbotAnalytics,
+  rows: readonly ConversationRow[],
+  now: Date,
+  bookedLeadIds: ReadonlySet<string>,
+): ChatbotAnalytics {
+  const counts = (days: number) => {
+    const start = new Date(now.getTime() - days * DAY_MS);
+    const result = { calendar: 0, resource: 0, bookedAfterCalendar: 0 };
+    for (const row of rows) {
+      if (!inWindow(row.created_at, start, now)) continue;
+      if (hasQuickAction(row.messages, "calendar")) {
+        result.calendar += 1;
+        if (isBooked(row, bookedLeadIds)) result.bookedAfterCalendar += 1;
+      }
+      if (hasQuickAction(row.messages, "shared_resource")) result.resource += 1;
+    }
+    return result;
+  };
+  const { d7, d30, d90 } = analytics.outcomes;
+  return {
+    ...analytics,
+    outcomes: {
+      d7: { ...d7, quickActions: counts(7) },
+      d30: { ...d30, quickActions: counts(WINDOW_DAYS) },
+      d90: { ...d90, quickActions: counts(90) },
+    },
+  };
 }
 
 function hasQuickAction(messages: Json, kind: string): boolean {

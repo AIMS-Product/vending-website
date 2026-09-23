@@ -49,13 +49,19 @@ export async function quickActionTurn(
     return opened ? { message: opened.message, append: true } : null;
   }
 
-  const key = input.behavior.key;
-  if (last?.kind === "shared_resource" && last.data?.key === key) {
-    return { message: last, append: false };
-  }
-  const message = sharedResourceMessage(key, {
+  const message = sharedResourceMessage(input.behavior.key, {
     label: input.label,
     via: "quick_action",
+    emailCaptured: Boolean(input.conversation.captured_email),
   });
-  return message ? { message, append: true } : null;
+  if (!message) return null;
+  // Same card, same link, already the last thing on screen: nothing to add.
+  if (
+    last?.kind === "shared_resource" &&
+    last.data?.key === message.data?.key &&
+    last.data?.url === message.data?.url
+  ) {
+    return { message: last, append: false };
+  }
+  return { message, append: true };
 }
