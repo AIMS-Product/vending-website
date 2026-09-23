@@ -11,6 +11,7 @@ import {
   type DataTrust,
   type TrustCheck,
 } from "@/lib/services/data-trust";
+import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
 
 /** A count we stored or a source reported. A dash means not observed. */
 function Count({ value }: { value: number | null }) {
@@ -143,7 +144,10 @@ export function GlossaryPanel({
   glossaryError,
 }: Pick<DataTrust, "glossaryHtml" | "glossaryError">) {
   return (
-    <section className={`${adminPanelClass} p-4 sm:p-6`}>
+    <section
+      id={DEFINITIONS_ID}
+      className={`${adminPanelClass} scroll-mt-4 p-4 sm:p-6`}
+    >
       {glossaryHtml ? (
         <div
           className="admin-glossary"

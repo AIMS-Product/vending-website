@@ -69,6 +69,14 @@ import {
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
 import { AnalyticsGlossary } from "@/components/admin/AnalyticsGlossary";
+import { DataTrustBar } from "@/components/admin/DataTrustBar";
+import { UnverifiedMark } from "@/components/admin/TrustMarks";
+import {
+  flagFor,
+  type TrustBarModel,
+  type UnverifiedFlag,
+} from "@/lib/analytics/data-trust-bar";
+import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -105,6 +113,9 @@ export default async function AdminAnalyticsPage({
   // tab body streams in behind a skeleton (Adam, 2026-09-22): awaiting here
   // froze the page for the slowest query, up to five seconds, on every click.
   const data = loadTabData({ tab, range, includeInternal, params });
+  // Freshness, last night's checks and unverified numbers for this tab. Never
+  // rejects: a failed read comes back as a red bar.
+  const trust = getTrustBar(tab);
   // A new key per view makes the skeleton show on every tab or range change;
   // without it the old tab sat on screen until the new one finished.
   const viewKey = JSON.stringify(params);
@@ -164,11 +175,24 @@ export default async function AdminAnalyticsPage({
         includeInternal={includeInternal}
       />
 
+      <Suspense
+        fallback={
+          <div
+            aria-busy="true"
+            aria-label="Checking the data"
+            className={`${adminCardClass} bg-ui-canvas mb-5 h-28 animate-pulse`}
+          />
+        }
+      >
+        <TrustBarSlot trust={trust} />
+      </Suspense>
+
       <LeadDefinitionNote />
 
       <Suspense key={viewKey} fallback={<TabSkeleton />}>
         <TabBody
           data={data}
+          trust={trust}
           tab={tab}
           range={range}
           includeInternal={includeInternal}
@@ -308,8 +332,13 @@ async function InternalToggleWithCount({
   );
 }
 
+async function TrustBarSlot({ trust }: { trust: Promise<TrustBarModel> }) {
+  return <DataTrustBar model={await trust} />;
+}
+
 async function TabBody({
   data,
+  trust,
   tab,
   range,
   includeInternal,
@@ -317,12 +346,14 @@ async function TabBody({
   canEdit,
 }: {
   data: Promise<TabData>;
+  trust: Promise<TrustBarModel>;
   tab: AnalyticsTabKey;
   range: AdminAnalyticsRangeKey;
   includeInternal: boolean;
   params: SearchParams;
   canEdit: boolean;
 }) {
+  const { flags } = await trust;
   const {
     analytics,
     youtube,
@@ -346,10 +377,13 @@ async function TabBody({
         <CloseMonthlyPanel
           report={closeMonthly}
           shown={singleParam(params.months) ?? null}
+          unverified={flags}
         />
       ) : closeWeeks ? (
         <div className="space-y-5">
-          {closeMtd ? <CloseMtdFunnelPanel report={closeMtd} /> : null}
+          {closeMtd ? (
+            <CloseMtdFunnelPanel report={closeMtd} unverified={flags} />
+          ) : null}
           <CloseWeekTab
             report={closeWeeks}
             selected={singleParam(params.week) ?? null}
@@ -374,7 +408,7 @@ async function TabBody({
       ) : videoEngagement ? (
         <VideoEngagementTab report={videoEngagement} />
       ) : booked ? (
-        <BookedCallsPanel report={booked} />
+        <BookedCallsPanel report={booked} unverified={flags} />
       ) : map ? (
         <FunnelMapTab
           data={map}
@@ -398,7 +432,7 @@ async function TabBody({
           includeInternal={includeInternal}
         />
       ) : analytics ? (
-        <TabContent tab={tab} analytics={analytics} />
+        <TabContent tab={tab} analytics={analytics} flags={flags} />
       ) : null}
     </>
   );
@@ -423,14 +457,16 @@ function TabSkeleton() {
 function TabContent({
   tab,
   analytics,
+  flags,
 }: {
   tab: AnalyticsTabKey;
   analytics: AdminAnalytics;
+  flags: UnverifiedFlag[];
 }) {
   if (tab === "acquisition") return <AcquisitionTab analytics={analytics} />;
   if (tab === "pages") return <PagesTab analytics={analytics} />;
   if (tab === "quality") return <QualityTab analytics={analytics} />;
-  return <OverviewTab analytics={analytics} />;
+  return <OverviewTab analytics={analytics} flags={flags} />;
 }
 
 function YouTubeTab({
@@ -474,7 +510,13 @@ function YouTubeTab({
   );
 }
 
-function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
+function OverviewTab({
+  analytics,
+  flags,
+}: {
+  analytics: AdminAnalytics;
+  flags: UnverifiedFlag[];
+}) {
   const { metrics } = analytics;
   return (
     <>
@@ -506,6 +548,10 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
         connected={analytics.bookingsConnected}
         total={analytics.bookingsTotal}
         unattributed={analytics.bookingsUnattributed}
+        unverified={flagFor(flags, "calendly", {
+          from: analytics.range.startIso.slice(0, 10),
+          to: analytics.range.endIso.slice(0, 10),
+        })}
       />
 
       <div className="grid gap-5 xl:grid-cols-3">
@@ -651,10 +697,12 @@ function BookingContext({
   connected,
   total,
   unattributed,
+  unverified,
 }: {
   connected: boolean;
   total: number;
   unattributed: number;
+  unverified: UnverifiedFlag | undefined;
 }) {
   if (!connected) {
     return (
@@ -670,8 +718,9 @@ function BookingContext({
   return (
     <div className={`${adminCardClass} mb-5`}>
       <p className="text-ui-text-muted text-sm">
-        <span className="text-ui-text font-semibold">{total}</span> calls were
-        booked on Calendly in this range.{" "}
+        <span className="text-ui-text font-semibold">{total}</span>
+        <UnverifiedMark flag={unverified} /> calls were booked on Calendly in
+        this range.{" "}
         {unattributed > 0 ? (
           <>
             <span className="text-ui-text font-semibold">{unattributed}</span>{" "}

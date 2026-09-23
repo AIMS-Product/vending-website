@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { DataTrustBar } from "@/components/admin/DataTrustBar";
 import { GlossaryPanel, TrustChecks } from "@/components/admin/DataTrustPanels";
+import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { getDataTrust } from "@/lib/services/data-trust";
 import { requireReadAccess } from "@/lib/supabase/auth";
 
@@ -14,9 +16,10 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminDataPage() {
-  const [{ user, role }, trust] = await Promise.all([
+  const [{ user, role }, trust, bar] = await Promise.all([
     requireReadAccess(),
     getDataTrust(),
+    getTrustBar("data"),
   ]);
 
   return (
@@ -28,6 +31,7 @@ export default async function AdminDataPage() {
       userEmail={user.email}
       userRole={role}
     >
+      <DataTrustBar model={bar} />
       <TrustChecks run={trust.run} checksError={trust.checksError} />
       <GlossaryPanel
         glossaryHtml={trust.glossaryHtml}

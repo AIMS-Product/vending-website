@@ -1,5 +1,6 @@
 import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
 import { MATURE_AFTER_DAYS } from "@/lib/services/close-monthly-funnel";
+import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
 
 /**
  * The words every analytics tab shares, defined once on screen. Tooltips never
@@ -15,14 +16,19 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "People who signed up somewhere other than a form on our site: webinar registrations, off-site GHL forms (Instagram lead magnets, VSL) and ManyChat contacts. They are not counted as leads.",
   },
   {
-    term: "Booked",
+    term: "Site form fills vs total captured",
     meaning:
-      "A person who booked a first sales call. One person counts once, however many times they reschedule. The sales team's spreadsheet counts every meeting instead, so its totals run about 1.7x ours; both are right, they count different things.",
+      "Site form fills are leads (above). Total captured is site form fills plus registrations & contacts: everyone we acquired. The two differ by more than 10x (week of Sep 14: 109 site form fills, 1,308 total captured), so ask which one is meant before quoting a number of leads.",
   },
   {
-    term: "Skipped form",
+    term: "Booked call",
     meaning:
-      "Booked straight from a calendar link (Instagram bio, a DM, an email) without filling in a form on the site first. Counted as booked, never as a lead.",
+      "A person who booked a first sales call. One person counts once, however many times they reschedule. The sales team's spreadsheet counts every meeting instead, so its totals run about 1.7x ours; both are right, they count different things. On Channels, booked counts only calls a marketing channel can be credited for, roughly half the company total, because the sales team's own rebooking (Reactivation Scrapers) has no channel.",
+  },
+  {
+    term: "Skipped form (direct booking)",
+    meaning:
+      "Booked straight from a calendar link (Instagram bio, a DM, an email) without filling in a form on the site first. Counted as booked, never as a lead, and shown beside the count rather than folded into Book %. Calls booked from the webinar room's own button are not skipped-form: those people already registered, so they count in Book %.",
   },
   {
     term: "Showed",
@@ -32,12 +38,12 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Qualified",
     meaning:
-      "Means two things depending on the tab. On the Sales and Executive tabs, the rep marked the person Qualified = Yes in Close after the call. On Overview, Lead quality and YouTube, the lead finished the qualifying questions on our site.",
+      "Means two things depending on the tab. On the Sales and Executive tabs, the rep marked the person Qualified = Yes in Close after the call. On Overview, Lead quality and YouTube, the lead finished the qualifying questions on our site. A rep can mark Qualified without ticking the show, so qualified is not always a subset of showed and Qual % is out of booked, never out of showed.",
   },
   {
     term: "Closed-won (CW) and revenue",
     meaning:
-      "The person became a paying customer, and revenue is the deal value in Close. On Month over month a sale counts in the month the call was booked, not the month it closed.",
+      "The person's Close opportunity is marked won, and revenue is that deal's value in Close. On Month over month a sale counts in the month the call was booked. On Close view and Channels it counts in the month the deal was won, which is a different group of people from that month's booked calls, not a subset of them.",
   },
   {
     term: "Show %, Qual %, CW %",
@@ -62,7 +68,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
 
 export function AnalyticsGlossary() {
   return (
-    <details className="group mt-2">
+    <details id={DEFINITIONS_ID} className="group mt-2 scroll-mt-4">
       <summary className="text-ui-accent cursor-pointer text-xs font-medium underline-offset-2 hover:underline">
         What the numbers mean
       </summary>
