@@ -30,7 +30,7 @@ export const GHL_CONNECTORS = {
  * once for a backfill. Email stats cannot be backfilled: GHL only exposes
  * lifetime totals, so history starts the day after the first snapshot.
  */
-const FORM_WINDOW_DAYS = 3;
+export const FORM_WINDOW_DAYS = 3;
 
 export type GhlSyncResult = { endDate: string; connectors: SyncRunOutcome[] };
 

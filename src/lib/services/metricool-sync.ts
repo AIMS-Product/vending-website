@@ -34,14 +34,14 @@ export const METRICOOL_ADS_CONNECTOR = "metricool-ads";
  * Ad platforms restate the last day or two as late conversions and spend
  * settle, so every run rewrites a short trailing window. `days` widens it.
  */
-const ADS_WINDOW_DAYS = 3;
+export const ADS_WINDOW_DAYS = 3;
 const AD_NETWORKS: readonly AdNetwork[] = ["googleads", "facebookads"];
 
 /**
  * Post metrics are lifetime totals that keep growing after publication, so the
  * run re-reads a month of posts and upserts them in place. `days` widens it.
  */
-const WINDOW_DAYS = 30;
+export const WINDOW_DAYS = 30;
 
 /** Metricool network names → link-standard sources. Others pass through. */
 const NETWORK_SOURCE: Record<string, string> = { twitter: "x" };
