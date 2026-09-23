@@ -104,7 +104,7 @@ export const FEEDS = {
     source: { kind: "run", connector: "bitly-clicks" },
     fills: {
       table: "bitly_link_clicks",
-      missing: "no Bitly access token is set, so no click has been read",
+      missing: "no click has ever been stored",
     },
   },
   "metricool-posts": {
@@ -134,8 +134,7 @@ export const FEEDS = {
     source: { kind: "run", connector: "manychat-ingest" },
     fills: {
       table: "manychat_events",
-      missing:
-        "ManyChat has never sent an event; the flow's External Request steps are not switched on",
+      missing: "ManyChat has never sent an event",
     },
   },
 } as const satisfies Record<string, FeedDef>;
@@ -246,12 +245,17 @@ export function judgeFeed(obs: FeedObservation, now: Date): FeedVerdict {
       problem: `could not be read (${obs.error})`,
     };
   }
-  if (obs.connected === false && def.fills) {
+  // A failing run is a failure to show, not a feed nobody connected. A
+  // skipped run says itself why ("BITLY_ACCESS_TOKEN is not set.").
+  if (obs.connected === false && def.fills && obs.status !== "failed") {
     return {
       ...base,
       connected: false,
       tone: "warn",
-      problem: def.fills.missing,
+      problem:
+        obs.status === "skipped" && obs.note
+          ? `${def.fills.missing}: ${obs.note.replace(/\.$/, "")}`
+          : def.fills.missing,
     };
   }
   if (!obs.lastSuccessAt) {

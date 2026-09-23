@@ -119,4 +119,19 @@ describe("getTrustBar", () => {
       "last updated 13 days ago",
     );
   });
+
+  it("never calls a feed not connected because its table could not be read", async () => {
+    const client = {
+      from: (table: string) =>
+        table === "manychat_events"
+          ? query({ data: null, error: { message: "denied" } })
+          : query({ data: [], error: null }),
+    };
+    const bar = await getTrustBar("channels", {
+      client: client as never,
+      now: NOW,
+    });
+    expect(bar.notConnected.map((v) => v.feed)).not.toContain("manychat");
+    expect(bar.problems.map((v) => v.feed)).toContain("manychat");
+  });
 });

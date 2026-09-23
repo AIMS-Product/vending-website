@@ -210,6 +210,37 @@ describe("feed staleness", () => {
     expect(verdict.problem).toContain("never sent an event");
   });
 
+  it("names why from a skipped run, and keeps a failing run a failure", () => {
+    const skipped = judgeFeed(
+      {
+        feed: "bitly",
+        lastSuccessAt: null,
+        connected: false,
+        status: "skipped",
+        note: "BITLY_ACCESS_TOKEN is not set.",
+      },
+      NOW,
+    );
+    expect(skipped.connected).toBe(false);
+    expect(skipped.problem).toBe(
+      "no click has ever been stored: BITLY_ACCESS_TOKEN is not set",
+    );
+
+    // A token that is set but refused: the table stays empty, the run fails.
+    const failing = judgeFeed(
+      {
+        feed: "bitly",
+        lastSuccessAt: null,
+        connected: false,
+        status: "failed",
+        note: "Bitly 403",
+      },
+      NOW,
+    );
+    expect(failing.connected).toBe(true);
+    expect(failing.tone).toBe("bad");
+  });
+
   it("ignores connected: false on a feed with no table of its own", () => {
     const verdict = judgeFeed(
       { feed, lastSuccessAt: hoursAgo(80), connected: false },

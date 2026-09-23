@@ -80,7 +80,7 @@ describe("DataTrustBar", () => {
     });
     const withBitly = renderToStaticMarkup(<DataTrustBar model={model} />);
     expect(withBitly).toContain("Bitly clicks</span> is not");
-    expect(withBitly).toContain("no Bitly access token is set");
+    expect(withBitly).toContain("no click has ever been stored");
   });
 
   it("renders nothing next to a number whose check passed", () => {
