@@ -81,9 +81,10 @@ export function isFunnelChromePath(pathname: string): boolean {
  * screen, on top of the videos they were sent there to watch. The launcher
  * still renders, so a question before the call is one tap away.
  *
- * The legacy lead pages (`[legacyLeadPath]`) keep their chrome too, but they
- * are booking pages: the teaser opened over their Calendly month grid (UI
- * audit, 2026-09-22).
+ * The legacy lead pages (`[legacyLeadPath]`) are booking pages: the teaser
+ * opened over their Calendly month grid (UI audit, 2026-09-22). Header and
+ * Footer drop on them through their own isLegacyLeadPath gate, not through
+ * isFunnelChromePath, which also sets the analytics page group.
  */
 export function suppressesChatTeaser(pathname: string): boolean {
   return (
