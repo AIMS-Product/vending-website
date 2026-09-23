@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { applyMembers } from "@/lib/content/apply-page";
 import { preCallOperators } from "@/lib/content/pre-call-resources";
@@ -22,7 +23,22 @@ const TOP_STORIES = preCallOperators.items.filter(
 // would put four videos talking at someone mid-form, which is the distraction
 // the header and footer came off to avoid. It also keeps four player scripts
 // off the initial load.
-function StoryPlayer({ embedId, name }: { embedId: string; name: string }) {
+// The poster is the video's own Vidalytics thumbnail, saved locally as
+// public/apply/stories/<story id>.jpg, so the section shows the member's face
+// before anyone presses play (it was a flat navy box until 2026-09-22).
+export function storyPosterSrc(id: string) {
+  return `/apply/stories/${id}.jpg`;
+}
+
+function StoryPlayer({
+  embedId,
+  name,
+  poster,
+}: {
+  embedId: string;
+  name: string;
+  poster: string;
+}) {
   const [playing, setPlaying] = useState(false);
 
   if (playing) return <VidalyticsPlayer embedId={embedId} className="mt-4" />;
@@ -32,13 +48,25 @@ function StoryPlayer({ embedId, name }: { embedId: string; name: string }) {
       type="button"
       onClick={() => setPlaying(true)}
       aria-label={`Play ${name}'s story`}
-      className="group mt-4 flex aspect-video w-full items-center justify-center rounded-[12px] border-2 border-[#111111] bg-[#0b1b26] shadow-[8px_8px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[10px_10px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
+      className="group relative mt-4 block aspect-video w-full overflow-hidden rounded-[12px] border-2 border-[#111111] bg-[#0b1b26] shadow-[8px_8px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[10px_10px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none"
     >
-      <span className="flex flex-col items-center gap-3">
-        <span className="flex size-[68px] items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] shadow-[4px_4px_0_#111111] transition group-hover:-translate-y-0.5">
-          <PlayIcon className="size-6 translate-x-0.5 text-[#111111]" />
+      <Image
+        src={poster}
+        alt=""
+        fill
+        sizes="(min-width: 768px) 520px, 100vw"
+        className="object-cover"
+      />
+      <span
+        aria-hidden
+        className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/5 to-transparent"
+      />
+      {/* Play control sits bottom-left so it never covers the face. */}
+      <span className="absolute bottom-4 left-4 flex items-center gap-3">
+        <span className="flex size-12 items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] shadow-[3px_3px_0_#111111] transition group-hover:-translate-y-0.5">
+          <PlayIcon className="size-5 translate-x-0.5 text-[#111111]" />
         </span>
-        <span className="text-[13px] font-black tracking-[0.1em] text-white uppercase">
+        <span className="text-[13px] font-black tracking-[0.1em] text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.6)]">
           Watch {name.split(" ")[0]}&rsquo;s story
         </span>
       </span>
@@ -73,6 +101,7 @@ export function ApplyMembers() {
             <StoryPlayer
               embedId={(story as { embedId: string }).embedId}
               name={story.name}
+              poster={storyPosterSrc(story.id)}
             />
             <p className="mt-4 text-[15px] leading-[1.6] font-medium text-slate-600">
               {story.blurb}

@@ -1,6 +1,8 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { ApplyMembers } from "./ApplyMembers";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { ApplyMembers, storyPosterSrc } from "./ApplyMembers";
 import { preCallOperators } from "@/lib/content/pre-call-resources";
 import musaSadi from "../../../../data/case-studies/musa-sadi.json";
 
@@ -81,6 +83,19 @@ describe("ApplyMembers success stories", () => {
     expect(html).not.toContain("vidalytics_embed_");
     for (const story of TOP) {
       expect(html).not.toContain((story as { embedId: string }).embedId);
+    }
+  });
+
+  /*
+    The section's job is to show real people. A top-tier story added without a
+    saved poster would fall back to a broken image, so each one must ship with
+    its still in public/apply/stories/.
+  */
+  it("shows every member's face before play", () => {
+    for (const story of TOP) {
+      const src = storyPosterSrc(story.id);
+      expect(existsSync(join(process.cwd(), "public", src))).toBe(true);
+      expect(html).toContain(encodeURIComponent(src));
     }
   });
 
