@@ -1,19 +1,23 @@
+import { Container } from "@/components/ui/Container";
+
+// Same hero as /case-studies: text eyebrow, the index H1 scale (it was a
+// 128px "NEWS", the largest H1 on the site) and the page Container.
 export function NewsHero() {
   return (
-    <section className="relative isolate overflow-hidden border-b-2 border-[#111111] bg-[#f5fbff]">
-      <div className="mx-auto max-w-[1500px] px-5 pt-28 pb-16 lg:px-10 lg:pt-32 lg:pb-20">
-        <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+    <section className="border-ink relative isolate overflow-hidden border-b-2 bg-[#f5fbff] pt-28 pb-16 lg:pt-32 lg:pb-20">
+      <Container>
+        <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           Insights from the route
         </p>
-        <h1 className="mt-8 max-w-4xl text-[clamp(3.5rem,9vw,8rem)] leading-[0.9] font-black text-[#111111] uppercase">
+        <h1 className="text-ink mt-5 text-[clamp(2.25rem,4.6vw,4.25rem)] leading-[1.05] font-black uppercase">
           News
         </h1>
-        <p className="mt-7 max-w-2xl text-xl leading-8 font-semibold text-slate-700">
+        <p className="mt-6 max-w-2xl text-lg leading-relaxed font-semibold text-slate-700 lg:text-xl">
           Strategies on locations, machine selection, products, and the
           back-office work that makes a vending route compound. New posts drop
           here as we publish them.
         </p>
-      </div>
+      </Container>
     </section>
   );
 }

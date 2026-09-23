@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import { CaseStudyCard } from "@/components/sections/CaseStudyCard";
+import { ArticleShareRail } from "@/components/sections/ArticleShareRail";
 import type {
   CaseStudy,
   CaseStudyCard as CaseStudyCardData,
@@ -74,7 +75,12 @@ export function CaseStudyArticle({
     <>
       <div className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
         <div className="mx-auto grid max-w-[1500px] gap-12 min-[1832px]:max-w-[1760px] min-[1832px]:grid-cols-[360px_minmax(0,920px)_360px]! xl:grid-cols-[64px_minmax(0,920px)_360px] xl:gap-14">
-          <ShareRail title={caseStudy.title} url={articleUrl} />
+          <ArticleShareRail
+            title={caseStudy.title}
+            url={articleUrl}
+            label="Share this case study"
+            linkLabel="Open case study link"
+          />
 
           <article className="min-w-0">
             <div className="flex flex-wrap items-center gap-4">
@@ -288,59 +294,6 @@ function Byline({
         ))}
       </div>
     </div>
-  );
-}
-
-function ShareRail({ title, url }: { title: string; url: string }) {
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
-  const links = [
-    {
-      label: "Share on X",
-      text: "X",
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-    },
-    {
-      label: "Share on LinkedIn",
-      text: "in",
-      href: `https://www.linkedin.com/shareArticle?mini=true&url=${encodedUrl}&title=${encodedTitle}`,
-    },
-    {
-      label: "Share on Facebook",
-      text: "f",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    },
-    { label: "Open case study link", text: "link", href: url },
-  ];
-
-  return (
-    <aside
-      className="hidden xl:block xl:justify-self-end"
-      aria-label="Share this case study"
-    >
-      <div className="sticky top-32 flex flex-col items-center gap-5">
-        {links.slice(0, 3).map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            aria-label={link.label}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#066a99] bg-white text-base font-black text-[#066a99] shadow-[4px_4px_0_#55b8e8] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
-          >
-            {link.text}
-          </a>
-        ))}
-        <span className="my-2 h-px w-12 bg-[#55b8e8]" aria-hidden />
-        <a
-          href={links[3].href}
-          aria-label={links[3].label}
-          className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#066a99] bg-white text-base font-black text-[#066a99] shadow-[4px_4px_0_#55b8e8] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
-        >
-          {links[3].text}
-        </a>
-      </div>
-    </aside>
   );
 }
 

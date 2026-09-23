@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ArticleShareRail } from "@/components/sections/ArticleShareRail";
+import { Button } from "@/components/ui/Button";
 import type { NewsPost } from "@/lib/services/news";
 import { siteUrl } from "@/lib/site";
 
@@ -21,7 +23,12 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
   return (
     <div className="bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32">
       <div className="mx-auto grid max-w-[1500px] gap-12 xl:grid-cols-[64px_minmax(0,920px)_360px] xl:gap-14">
-        <ShareRail title={post.title} url={articleUrl} />
+        <ArticleShareRail
+          title={post.title}
+          url={articleUrl}
+          label="Share this article"
+          linkLabel="Open article link"
+        />
 
         <article className="min-w-0">
           <div className="flex flex-wrap items-center gap-4">
@@ -40,13 +47,13 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
             >
               News
             </Link>
-            <span className="rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
+            <span className="rounded-[8px] border-2 border-[#066a99] bg-[#066a99] px-4 py-2 text-xs font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
               {category}
             </span>
           </div>
 
           <header className="mt-10">
-            <h1 className="max-w-[900px] text-[clamp(2.75rem,6vw,5.4rem)] leading-[0.96] font-black break-words text-[#111111] uppercase">
+            <h1 className="max-w-[900px] text-[clamp(2.25rem,4.4vw,4rem)] leading-[1.02] font-black break-words text-[#111111] uppercase">
               {post.title}
             </h1>
             {post.excerpt && (
@@ -114,60 +121,6 @@ function Byline({
   );
 }
 
-function ShareRail({ title, url }: { title: string; url: string }) {
-  const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
-  const links = [
-    {
-      label: "Share on X",
-      text: "X",
-      href: `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`,
-    },
-    {
-      label: "Share on LinkedIn",
-      text: "in",
-      href: `https://www.linkedin.com/shareArticle?mini=true&url=${encodedUrl}&title=${encodedTitle}`,
-    },
-    {
-      label: "Share on Facebook",
-      text: "f",
-      href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-    },
-    {
-      label: "Open article link",
-      text: "link",
-      href: url,
-    },
-  ];
-
-  return (
-    <aside className="hidden xl:block" aria-label="Share this article">
-      <div className="sticky top-32 flex flex-col items-center gap-5">
-        {links.slice(0, 3).map((link) => (
-          <a
-            key={link.label}
-            href={link.href}
-            aria-label={link.label}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-white text-base font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
-          >
-            {link.text}
-          </a>
-        ))}
-        <span className="my-2 h-px w-12 bg-[#55b8e8]" aria-hidden />
-        <a
-          href={links[3].href}
-          aria-label={links[3].label}
-          className="flex size-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-white text-base font-black text-[#111111] shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 hover:bg-[#eaf8ff]"
-        >
-          {links[3].text}
-        </a>
-      </div>
-    </aside>
-  );
-}
-
 function ArticleSidebar({ headings }: { headings: string[] }) {
   const items = headings.length
     ? headings.slice(0, 6)
@@ -179,37 +132,40 @@ function ArticleSidebar({ headings }: { headings: string[] }) {
       ];
 
   return (
-    <aside className="hidden lg:block">
-      <div className="sticky top-32 space-y-10">
-        <section className="rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[7px_7px_0_#111111]">
-          <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
-            In this article
-          </p>
-          <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
-            {items.map((heading, index) => (
-              <li key={`${heading}-${index}`} className="flex gap-3">
-                <span>{index + 1}.</span>
-                <span>{heading}</span>
-              </li>
-            ))}
-          </ol>
-        </section>
+    // Same shell as CaseStudyArticle: the outline scrolls away with the top
+    // of the article and only the call to action stays in view. Sticking the
+    // whole ~950px stack cut the call to action off on a laptop screen.
+    <aside className="hidden lg:flex lg:flex-col lg:gap-10">
+      <section className="rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
+        <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
+          In this article
+        </p>
+        <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
+          {items.map((heading, index) => (
+            <li key={`${heading}-${index}`} className="flex gap-3">
+              <span>{index + 1}.</span>
+              <span>{heading}</span>
+            </li>
+          ))}
+        </ol>
+      </section>
 
-        <section className="rounded-[12px] border-2 border-[#111111] bg-[#111111] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
-          <h2 className="text-3xl leading-tight font-black uppercase">
-            Build your route today.
-          </h2>
-          <p className="mt-5 text-lg leading-7 font-semibold text-white">
-            Get the complete A-Z blueprint to passive income.
-          </p>
-          <Link
-            href="/contact"
-            className="bg-brand-700 mt-8 inline-flex min-h-14 w-full items-center justify-center rounded-[8px] px-6 text-sm font-black text-white uppercase transition hover:-translate-y-0.5"
-          >
-            Step inside
-          </Link>
-        </section>
-      </div>
+      <section className="sticky top-28 rounded-[12px] border-2 border-[#111111] bg-[#111111] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
+        <h2 className="text-3xl leading-tight font-black uppercase">
+          Build your route today.
+        </h2>
+        <p className="mt-5 text-lg leading-7 font-semibold text-white">
+          Get the complete A-Z blueprint to passive income.
+        </p>
+        <Button
+          href="/contact"
+          variant="onInk"
+          size="lg"
+          className="mt-8 w-full"
+        >
+          Step inside
+        </Button>
+      </section>
     </aside>
   );
 }

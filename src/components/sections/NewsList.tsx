@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { Container } from "@/components/ui/Container";
 import { ImageWithFallback } from "@/components/ui/ImageWithFallback";
 import type { NewsPost } from "@/lib/services/news";
 
@@ -24,14 +25,16 @@ export function NewsList({ posts }: NewsListProps) {
   }
 
   return (
-    <section className="bg-[#f5fbff] px-5 py-16 lg:px-10 lg:py-20">
-      <ul className="mx-auto grid max-w-[1500px] gap-8 sm:grid-cols-2 lg:grid-cols-3">
-        {posts.map((post) => (
-          <li key={post.id}>
-            <NewsCard post={post} />
-          </li>
-        ))}
-      </ul>
+    <section className="bg-[#f5fbff] py-16 lg:py-20">
+      <Container>
+        <ul className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post) => (
+            <li key={post.id}>
+              <NewsCard post={post} />
+            </li>
+          ))}
+        </ul>
+      </Container>
     </section>
   );
 }
