@@ -338,12 +338,21 @@ async function calendlyChecks(
     minStartTime: `${from}T00:00:00.000000Z`,
     maxStartTime: `${exclusiveEnd}T00:00:00.000000Z`,
   });
-  const ours = await countRows(client, "calendly_bookings", (query) =>
-    query
-      .eq("status", "booked")
-      .gte("event_start_at", `${from}T00:00:00Z`)
-      .lt("event_start_at", `${exclusiveEnd}T00:00:00Z`),
+  // Calendly counts scheduled events; we store one row per invitee. A group
+  // event (the onboarding call) is one call with several rows, so count the
+  // distinct events or every group call reads as extra bookings.
+  const invitees = await pageAll<{ scheduled_event_uri: string | null }>(
+    client,
+    "calendly_bookings",
+    "scheduled_event_uri",
+    (query) =>
+      query
+        .eq("status", "booked")
+        .gte("event_start_at", `${from}T00:00:00Z`)
+        .lt("event_start_at", `${exclusiveEnd}T00:00:00Z`),
+    "id",
   );
+  const ours = new Set(invitees.map((row) => row.scheduled_event_uri)).size;
 
   return [
     compare({
@@ -353,7 +362,7 @@ async function calendlyChecks(
       ours,
       source: events.length,
       tolerancePct: 2,
-      note: "Calls scheduled in the window that are still active.",
+      note: "Calls scheduled in the window that are still active. A group call counts once, however many people it has.",
     }),
   ];
 }
@@ -827,13 +836,14 @@ async function pageAll<T>(
   table: TableName,
   columns: string,
   apply: (query: PostgrestQuery) => PostgrestQuery,
+  orderBy = "day",
 ): Promise<T[]> {
   const rows: T[] = [];
   for (let from = 0; ; from += PAGE) {
     const query = apply(
       client.from(table).select(columns) as unknown as PostgrestQuery,
     )
-      .order("day")
+      .order(orderBy)
       .range(from, from + PAGE - 1);
     const { data, error } = (await (query as unknown as Promise<unknown>)) as {
       data: T[] | null;
