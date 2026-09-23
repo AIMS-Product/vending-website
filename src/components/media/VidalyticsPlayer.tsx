@@ -1,5 +1,6 @@
 import Script from "next/script";
 import { vidalyticsContainerId } from "@/lib/tracking/vidalytics-player";
+import { ClickToLoad } from "./ClickToLoad";
 import { VideoEngagement } from "./VideoEngagement";
 import { WhenNearViewport } from "./WhenNearViewport";
 
@@ -18,7 +19,9 @@ import { WhenNearViewport } from "./WhenNearViewport";
  *
  * Each snippet runs only when its player nears the viewport (WhenNearViewport).
  * Every player autoplays, and running all fifteen on arrival left the lower ones
- * black or stalled on phones and power-saving laptops.
+ * black or stalled on phones and power-saving laptops. `loadOn="click"` goes
+ * further: the snippet waits behind a play button (ClickToLoad), so a page of
+ * players autoplays one video, not one per screen.
  *
  * `fast.vidalytics.com` is already allowed in script-src / connect-src /
  * frame-src — see src/lib/content-security-policy.ts. There is no sitewide
@@ -31,11 +34,19 @@ const ACCOUNT_ID = "erwZUUrS";
 export function VidalyticsPlayer({
   embedId,
   className = "",
+  loadOn = "near",
 }: {
   embedId: string;
   className?: string;
+  /** "near": load as it nears the viewport. "click": behind a play button. */
+  loadOn?: "near" | "click";
 }) {
   const containerId = vidalyticsContainerId(embedId);
+  const snippet = (
+    <Script id={`vidalytics-${embedId}`} strategy="afterInteractive">
+      {embedSnippet(containerId, embedId)}
+    </Script>
+  );
 
   return (
     <div
@@ -44,9 +55,18 @@ export function VidalyticsPlayer({
       <div id={containerId} style={{ width: "100%", paddingTop: "56.25%" }} />
       {/* Counts quarters watched against this session. Renders nothing. */}
       <VideoEngagement embedId={embedId} />
-      <WhenNearViewport targetId={containerId}>
-        <Script id={`vidalytics-${embedId}`} strategy="afterInteractive">
-          {`(function (v, i, d, a, l, y, t, c, s) {
+      {loadOn === "click" ? (
+        <ClickToLoad label="Play video">{snippet}</ClickToLoad>
+      ) : (
+        <WhenNearViewport targetId={containerId}>{snippet}</WhenNearViewport>
+      )}
+    </div>
+  );
+}
+
+/** Vidalytics' per-video embed snippet, verbatim apart from the two ids. */
+function embedSnippet(containerId: string, embedId: string): string {
+  return `(function (v, i, d, a, l, y, t, c, s) {
     y='_'+d.toLowerCase();c=d+'L';if(!v[d]){v[d]={};}if(!v[c]){v[c]={};}if(!v[y]){v[y]={};}var vl='Loader',vli=v[y][vl],vsl=v[c][vl + 'Script'],vlf=v[c][vl + 'Loaded'],ve='Embed';
     if (!vsl){vsl=function(u,cb){
         if(t){cb();return;}s=i.createElement("script");s.type="text/javascript";s.async=1;s.src=u;
@@ -54,11 +74,7 @@ export function VidalyticsPlayer({
         i.getElementsByTagName("head")[0].appendChild(s);
     };}
     vsl(l+'loader.min.js',function(){if(!vli){var vlc=v[c][vl];vli=new vlc();}vli.loadScript(l+'player.min.js',function(){var vec=v[d][ve];t=new vec();t.run(a);});});
-})(window, document, 'Vidalytics', '${containerId}', 'https://fast.vidalytics.com/embeds/${ACCOUNT_ID}/${embedId}/');`}
-        </Script>
-      </WhenNearViewport>
-    </div>
-  );
+})(window, document, 'Vidalytics', '${containerId}', 'https://fast.vidalytics.com/embeds/${ACCOUNT_ID}/${embedId}/');`;
 }
 
 /**
