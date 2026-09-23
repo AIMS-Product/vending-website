@@ -122,6 +122,11 @@ export const FEEDS = {
     staleAfterHours: DAILY,
     source: { kind: "run", connector: "youtube-analytics" },
   },
+  "search-console": {
+    label: "Google Search Console",
+    staleAfterHours: DAILY,
+    source: { kind: "run", connector: "search-console" },
+  },
   webinar: {
     label: "Webinar registrations",
     // Pushed after each weekly webinar, not on a cron.
@@ -151,6 +156,7 @@ const SPINE: readonly FeedKey[] = [
   "metricool-posts",
   "metricool-ads",
   "youtube",
+  "search-console",
   "webinar",
   "manychat",
 ];
@@ -256,6 +262,16 @@ export function judgeFeed(obs: FeedObservation, now: Date): FeedVerdict {
         obs.status === "skipped" && obs.note
           ? `${def.fills.missing}: ${obs.note.replace(/\.$/, "")}`
           : def.fills.missing,
+    };
+  }
+  // Only ever skipped (its config is not set): not connected, not red. A feed
+  // that once succeeded keeps its date and ages to red if it starts skipping.
+  if (!obs.lastSuccessAt && obs.status === "skipped") {
+    return {
+      ...base,
+      connected: false,
+      tone: "warn",
+      problem: obs.note ? obs.note.replace(/\.$/, "") : "not configured",
     };
   }
   if (!obs.lastSuccessAt) {

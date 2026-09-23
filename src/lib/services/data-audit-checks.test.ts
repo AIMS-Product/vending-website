@@ -5,6 +5,7 @@ import type { Database } from "@/types/database";
 vi.mock("@/lib/config", () => ({ config: {} }));
 
 import { daysBetween, runDataAudit, settledWindow } from "./data-audit-checks";
+import { staleOnOwnDay } from "./data-audit-spine-orphans";
 
 const now = new Date("2026-09-19T12:30:00.000Z");
 
@@ -313,5 +314,372 @@ describe("day-holes", () => {
     expect(check).toMatchObject({ status: "fail" });
     expect(check.detail).toContain("YouTube views on 2026-09-10");
     expect(check.detail).not.toContain("2026-09-17");
+  });
+});
+
+describe("spine orphans beyond bookings", () => {
+  // `now` is 2026-09-19. Each sync ran cleanly this morning unless a test
+  // says otherwise; the audit judges a row against its own sync's run.
+  const ran = (
+    connector: string,
+    day = "2026-09-19",
+    error: string | null = null,
+  ) => ({
+    connector,
+    started_at: `${day}T11:10:00.000Z`,
+    error,
+  });
+  const cleanRuns = [
+    ran("metricool-ads"),
+    ran("ga4-visits"),
+    ran("leads"),
+    ran("ghl-forms"),
+    ran("metricool-posts"),
+    ran("youtube-analytics"),
+  ];
+  const row = (
+    key: Partial<Record<string, string>>,
+    day: string,
+    metrics: Record<string, number | null>,
+    synced: string,
+  ) => ({
+    day,
+    source: "website",
+    medium: "form",
+    campaign: "(not set)",
+    content: "(not set)",
+    destination: "unknown",
+    ...key,
+    ...metrics,
+    synced_at: `${synced}T11:10:00.000Z`,
+  });
+  const audit = async (
+    channel_daily: Array<Record<string, unknown>>,
+    channel_sync_runs: Array<Record<string, unknown>> = cleanRuns,
+  ) => {
+    const run = await runDataAudit({
+      now,
+      client: fakeClient({ channel_daily, channel_sync_runs }),
+      ga4: null,
+      close: null,
+      calendly: null,
+      metricool: null,
+      youtube: null,
+      ghl: null,
+    });
+    return (id: string) => run.results.find((result) => result.checkId === id)!;
+  };
+
+  const meta = (content: string) => ({
+    source: "meta_ads",
+    medium: "paid",
+    campaign: "120211",
+    content,
+  });
+
+  it("catches spend left under a campaign's old name", async () => {
+    const check = await audit([
+      row(
+        meta("Webinar Sep 22"),
+        "2026-09-17",
+        { spend: 698.43 },
+        "2026-09-19",
+      ),
+      row(meta("Webinar Sep 15"), "2026-09-17", { spend: 462 }, "2026-09-18"),
+    ]);
+    expect(check("spine-orphaned-spend")).toMatchObject({
+      status: "fail",
+      ours: 462,
+    });
+    expect(check("spine-orphaned-spend").detail).toContain("Webinar Sep 15");
+  });
+
+  it("does not flag the old name once clearRenamedAdRows has blanked it", async () => {
+    const check = await audit([
+      row(
+        meta("Webinar Sep 22"),
+        "2026-09-17",
+        { spend: 698.43 },
+        "2026-09-19",
+      ),
+      row(meta("Webinar Sep 15"), "2026-09-17", { spend: null }, "2026-09-19"),
+    ]);
+    expect(check("spine-orphaned-spend")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+  });
+
+  it("does not fail spend when one ad network came back empty on a clean run", async () => {
+    // This morning Metricool listed Google campaigns for 09-18 and no Meta
+    // ones. The Meta rows keep yesterday's stamp; nothing says they moved.
+    const check = await audit([
+      row(
+        { source: "google", medium: "cpc", campaign: "2380", content: "Brand" },
+        "2026-09-18",
+        { spend: 210, clicks: 90 },
+        "2026-09-19",
+      ),
+      row(
+        meta("Webinar Sep 22"),
+        "2026-09-18",
+        { spend: 698.43, clicks: 40 },
+        "2026-09-18",
+      ),
+      row(
+        meta("90 Days"),
+        "2026-09-18",
+        { spend: 120, clicks: 12 },
+        "2026-09-18",
+      ),
+    ]);
+    expect(check("spine-orphaned-spend")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+    expect(check("spine-orphaned-clicks")).toMatchObject({ status: "pass" });
+  });
+
+  it("skips the oldest day of a window, which a run may only partly re-read", async () => {
+    // GA4 re-reads 09-16..09-19 on 09-19; 09-16 is the day it cuts in half.
+    const check = await audit([
+      row({ source: "google" }, "2026-09-16", { visits: 120 }, "2026-09-19"),
+      row({ source: "(not set)" }, "2026-09-16", { visits: 40 }, "2026-09-18"),
+    ]);
+    expect(check("spine-orphaned-visits")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+    expect(check("spine-orphaned-visits").window).toBe(
+      "2026-09-17 to 2026-09-19",
+    );
+  });
+
+  it("ends the YouTube window yesterday, where its re-read ends", async () => {
+    const video = (content: string) => ({
+      source: "youtube",
+      medium: "organic",
+      content,
+    });
+    const check = await audit([
+      // Today: YouTube has not re-read it, so an old stamp means nothing.
+      row(video("a1"), "2026-09-19", { clicks: 5 }, "2026-09-19"),
+      row(video("b2"), "2026-09-19", { clicks: 3 }, "2026-09-17"),
+      // Yesterday: re-read this morning, so the old stamp was dropped.
+      row(video("a1"), "2026-09-18", { clicks: 6 }, "2026-09-19"),
+      row(video("b2"), "2026-09-18", { clicks: 2 }, "2026-09-17"),
+    ]);
+    expect(check("spine-orphaned-clicks")).toMatchObject({
+      status: "warn",
+      ours: 2,
+    });
+  });
+
+  it("says what to do, since a warn repeats in Slack every night", async () => {
+    const check = await audit([
+      row({ campaign: "spring" }, "2026-08-20", { leads: 2 }, "2026-09-19"),
+      row({ campaign: "sprnig" }, "2026-08-20", { leads: 1 }, "2026-09-02"),
+    ]);
+    expect(check("spine-orphaned-leads").detail).toContain(
+      "set leads to null on the stranded row",
+    );
+  });
+
+  it("catches visits GA4 moved to another key and passes rewritten ones", async () => {
+    const stale = await audit([
+      row({ source: "google" }, "2026-09-18", { visits: 120 }, "2026-09-19"),
+      row({ source: "(not set)" }, "2026-09-18", { visits: 40 }, "2026-09-18"),
+    ]);
+    expect(stale("spine-orphaned-visits")).toMatchObject({
+      status: "fail",
+      ours: 40,
+    });
+
+    const fresh = await audit([
+      row({ source: "google" }, "2026-09-18", { visits: 120 }, "2026-09-19"),
+      row({ source: "(not set)" }, "2026-09-18", { visits: 40 }, "2026-09-19"),
+    ]);
+    expect(fresh("spine-orphaned-visits")).toMatchObject({ status: "pass" });
+  });
+
+  it("leaves days older than the writer's own window alone", async () => {
+    // GA4 re-reads three days; 09-10 is history, not an orphan.
+    const check = await audit([
+      row({ source: "google" }, "2026-09-10", { visits: 120 }, "2026-09-12"),
+      row({ source: "(not set)" }, "2026-09-10", { visits: 40 }, "2026-09-10"),
+    ]);
+    expect(check("spine-orphaned-visits")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+  });
+
+  it("warns on a site lead left on a key the leads sync stopped writing", async () => {
+    const check = await audit([
+      row({ campaign: "spring" }, "2026-08-20", { leads: 2 }, "2026-09-19"),
+      row({ campaign: "sprnig" }, "2026-08-20", { leads: 1 }, "2026-09-02"),
+    ]);
+    expect(check("spine-orphaned-leads")).toMatchObject({
+      status: "warn",
+      ours: 1,
+    });
+  });
+
+  it("judges leads writers sharing the column by their own runs", async () => {
+    const check = await audit(
+      [
+        // Site leads, rewritten by this morning's leads run.
+        row({}, "2026-09-17", { leads: 3 }, "2026-09-19"),
+        // A GHL lead magnet, last written by the 09-17 run: every later
+        // ghl-forms run failed, so it has nothing newer to be judged by.
+        row(
+          {
+            source: "mike-ig",
+            medium: "lead-magnet",
+            content: "90-day-checklist",
+          },
+          "2026-09-17",
+          { leads: 5 },
+          "2026-09-17",
+        ),
+        // Webinar registrations, pushed a week ago and never re-sent.
+        row(
+          {
+            source: "meta_ads",
+            medium: "paid",
+            campaign: "sep8",
+            content: "warm",
+            destination: "webinar-register",
+          },
+          "2026-09-17",
+          { leads: 40 },
+          "2026-09-12",
+        ),
+        // A post rewritten this morning, so the day's clicks were rewritten.
+        row(
+          { source: "instagram", medium: "organic", content: "18042" },
+          "2026-09-17",
+          { clicks: 4 },
+          "2026-09-19",
+        ),
+        // ManyChat's one row a day, written when that day's event arrived.
+        row(
+          { source: "manychat", medium: "chat", campaign: "pearl" },
+          "2026-09-17",
+          { leads: 2, clicks: 1 },
+          "2026-09-17",
+        ),
+      ],
+      [
+        ...cleanRuns.filter((run) => run.connector !== "ghl-forms"),
+        ran("ghl-forms", "2026-09-17"),
+        ran(
+          "ghl-forms",
+          "2026-09-19",
+          "3 rows failed to write; see the server log.",
+        ),
+      ],
+    );
+    expect(check("spine-orphaned-leads")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+    expect(check("spine-orphaned-clicks")).toMatchObject({ status: "pass" });
+  });
+
+  it("does not blame the leads sync for a row another connector touched later", async () => {
+    // GA4 bumped the first row's stamp this morning; the leads sync last ran
+    // cleanly yesterday, so yesterday's stamp is as fresh as a lead row gets.
+    const check = await audit(
+      [
+        row(
+          { campaign: "spring" },
+          "2026-09-10",
+          { leads: 1, visits: 3 },
+          "2026-09-19",
+        ),
+        row({ campaign: "summer" }, "2026-09-10", { leads: 1 }, "2026-09-18"),
+      ],
+      [
+        ...cleanRuns.filter((run) => run.connector !== "leads"),
+        ran("leads", "2026-09-18"),
+        ran(
+          "leads",
+          "2026-09-19",
+          "2 rows failed to write; see the server log.",
+        ),
+      ],
+    );
+    expect(check("spine-orphaned-leads")).toMatchObject({
+      status: "pass",
+      ours: 0,
+    });
+  });
+
+  it("warns on post clicks under a key Metricool no longer writes", async () => {
+    // The same Instagram post, first stored under its graph id, now under its
+    // media id (AGENTS.md: the two endpoints disagree).
+    const check = await audit([
+      row(
+        { source: "mike-ig", medium: "organic", content: "18042" },
+        "2026-09-05",
+        { clicks: 9 },
+        "2026-09-19",
+      ),
+      row(
+        { source: "mike-ig", medium: "organic", content: "17901" },
+        "2026-09-05",
+        { clicks: 7 },
+        "2026-09-11",
+      ),
+    ]);
+    expect(check("spine-orphaned-clicks")).toMatchObject({
+      status: "warn",
+      ours: 7,
+    });
+  });
+
+  it("warns on a win left behind with its lead", async () => {
+    const check = await audit([
+      row({ campaign: "spring" }, "2026-07-01", { won: 1 }, "2026-09-19"),
+      row({ campaign: "sprnig" }, "2026-07-01", { won: 1 }, "2026-09-01"),
+    ]);
+    expect(check("spine-orphaned-won")).toMatchObject({
+      status: "warn",
+      ours: 1,
+    });
+  });
+
+  it("says a sync with no clean run was not checked instead of passing it", async () => {
+    const check = await audit(
+      [row(meta("Webinar Sep 15"), "2026-09-17", { spend: 462 }, "2026-09-10")],
+      [ran("metricool-ads", "2026-09-19", "skipped: not configured")],
+    );
+    expect(check("spine-orphaned-spend")).toMatchObject({ status: "skipped" });
+    expect(check("spine-orphaned-spend").detail).toContain("metricool-ads");
+  });
+});
+
+describe("staleOnOwnDay", () => {
+  const stamped = (day: string, synced: string) => ({
+    day,
+    synced_at: `${synced}T11:10:00.000Z`,
+  });
+
+  it("caps a family's newest stamp at its writer's last clean run", () => {
+    // Another connector bumped one row to 09-19; the writer last ran 09-18.
+    const rows = [
+      stamped("2026-09-10", "2026-09-19"),
+      stamped("2026-09-10", "2026-09-18"),
+    ];
+    expect(
+      staleOnOwnDay(
+        rows,
+        () => "leads",
+        () => "2026-09-18",
+      ),
+    ).toEqual([]);
+    // Without the cap the untouched row reads as stranded.
+    expect(staleOnOwnDay(rows, () => "leads")).toEqual([rows[1]]);
   });
 });

@@ -33,7 +33,7 @@ export const YOUTUBE_ANALYTICS_CONNECTOR = "youtube-analytics";
  * a single run that came back empty (2026-09-14) left Sep 10 with no views at
  * all, because no later run asked for that day again.
  */
-const WINDOW_DAYS = 7;
+export const WINDOW_DAYS = 7;
 
 export type YouTubeAnalyticsSyncResult = {
   endDate: string;

@@ -131,6 +131,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "metricool-posts",
     "metricool-ads",
     "youtube",
+    "search-console",
     "webinar",
     "manychat",
   ]);
@@ -239,6 +240,27 @@ describe("feed staleness", () => {
     );
     expect(failing.connected).toBe(true);
     expect(failing.tone).toBe("bad");
+  });
+
+  it("says not connected for a feed that has only ever been skipped", () => {
+    const verdict = judgeFeed(
+      {
+        feed: "ga4-visits",
+        lastSuccessAt: null,
+        status: "skipped",
+        note: "GA4 service account is not configured.",
+      },
+      NOW,
+    );
+    expect(verdict.connected).toBe(false);
+    expect(verdict.problem).toBe("GA4 service account is not configured");
+    // Once it has succeeded, a skip no longer hides its age.
+    const lapsed = judgeFeed(
+      { feed: "ga4-visits", lastSuccessAt: hoursAgo(80), status: "skipped" },
+      NOW,
+    );
+    expect(lapsed.connected).toBe(true);
+    expect(lapsed.tone).toBe("bad");
   });
 
   it("ignores connected: false on a feed with no table of its own", () => {

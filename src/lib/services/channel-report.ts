@@ -46,6 +46,7 @@ import {
   METRICOOL_ADS_CONNECTOR,
   METRICOOL_CONNECTOR,
 } from "@/lib/services/metricool-sync";
+import { SEARCH_CONSOLE_CONNECTOR } from "@/lib/services/search-console-sync";
 import { YOUTUBE_ANALYTICS_CONNECTOR } from "@/lib/services/youtube-analytics-sync";
 
 export type ReportClient = Pick<SupabaseClient<Database>, "from">;
@@ -67,6 +68,7 @@ export const EXPECTED_CONNECTORS: readonly string[] = [
   METRICOOL_CONNECTOR,
   METRICOOL_ADS_CONNECTOR,
   YOUTUBE_ANALYTICS_CONNECTOR,
+  SEARCH_CONSOLE_CONNECTOR,
   CLOSE_LEAD_FUNNEL_CONNECTOR,
 ];
 

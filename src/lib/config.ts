@@ -71,6 +71,12 @@ const envSchema = z.object({
   GA4_SERVICE_ACCOUNT_JSON: optionalTrimmedOptionalEnv,
   GA4_PROPERTY_ID: optionalTrimmedOptionalEnv,
   /**
+   * The Search Console property to read with the GA4 service account, e.g.
+   * `sc-domain:vendingpreneurs.com`. Absent (or no GA4 key) means the
+   * search-console connector records "skipped".
+   */
+  GSC_SITE_URL: optionalTrimmedOptionalEnv,
+  /**
    * GoHighLevel v2 private integration token (`pit-...`) and the sub-account
    * location id. Read-only use. Absent means the ghl-email / ghl-forms
    * connectors record "skipped" and the Channels tab shows Not connected.
@@ -231,6 +237,7 @@ const parsed = envSchema.safeParse({
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
+  GSC_SITE_URL: process.env.GSC_SITE_URL,
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,

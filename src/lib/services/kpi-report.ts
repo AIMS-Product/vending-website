@@ -207,6 +207,11 @@ const METRIC_CONNECTOR: Array<
   [["spend"], "metricool-ads"],
 ];
 
+/** Sources whose metrics a different connector writes than the default above. */
+const SOURCE_CONNECTOR: Record<string, string> = {
+  "google-search-console": "search-console",
+};
+
 export function buildKpiReport(input: KpiInput): KpiReport {
   return {
     sections: [
@@ -636,8 +641,11 @@ function provenance(
 ): { sourceOfTruth: string; lastVerified: string | null } {
   const connectors: string[] = [];
   for (const [keys, connector] of METRIC_CONNECTOR) {
-    if (facts.some((fact) => keys.some((key) => fact[key] != null)))
-      connectors.push(connector);
+    for (const fact of facts) {
+      if (!keys.some((key) => fact[key] != null)) continue;
+      const owner = SOURCE_CONNECTOR[fact.source] ?? connector;
+      if (!connectors.includes(owner)) connectors.push(owner);
+    }
   }
   if (connectors.length === 0)
     return { sourceOfTruth: "nothing observed", lastVerified: null };

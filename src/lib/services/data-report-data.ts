@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { SEARCH_CONSOLE_SOURCE } from "@/lib/analytics/channel";
 import { config } from "@/lib/config";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
@@ -185,24 +186,27 @@ async function sourceBlocks(
   from: string,
   to: string,
 ): Promise<ReportSourceBlock[]> {
-  const [webinar, email, chatbot, reach, bitly, manychat] = await Promise.all([
-    latestWebinar(client),
-    emailTotals(client, from, to),
-    chatbotTotals(client, from, to),
-    reachTotals(client, from, to),
-    countRows(client, "bitly_link_clicks", (query) =>
-      query.gte("day", from).lte("day", to),
-    ),
-    countRows(client, "manychat_events", (query) =>
-      query.gte("day", from).lte("day", to),
-    ),
-  ]);
+  const [webinar, email, chatbot, reach, search, bitly, manychat] =
+    await Promise.all([
+      latestWebinar(client),
+      emailTotals(client, from, to),
+      chatbotTotals(client, from, to),
+      reachTotals(client, from, to),
+      searchTotals(client, from, to),
+      countRows(client, "bitly_link_clicks", (query) =>
+        query.gte("day", from).lte("day", to),
+      ),
+      countRows(client, "manychat_events", (query) =>
+        query.gte("day", from).lte("day", to),
+      ),
+    ]);
 
   const blocks: ReportSourceBlock[] = [];
   if (webinar) blocks.push(webinar);
   if (email) blocks.push(email);
   if (chatbot) blocks.push(chatbot);
   if (reach) blocks.push(reach);
+  blocks.push(search);
   blocks.push({
     label: "Instagram DM (ManyChat)",
     values: [{ label: "Events", value: count(manychat) }],
@@ -332,6 +336,8 @@ async function reachTotals(
     .gte("day", from)
     .lte("day", to)
     .not("impressions", "is", null)
+    // Google search impressions are their own block, not social reach.
+    .neq("source", SEARCH_CONSOLE_SOURCE)
     .limit(1000);
   if (!data || data.length === 0) return null;
   const sum = (key: "impressions" | "clicks") =>
@@ -343,6 +349,45 @@ async function reachTotals(
       { label: "Clicks to site", value: count(sum("clicks")) },
     ],
     note: "impressions, not people: the same follower counts once per post",
+  };
+}
+
+/**
+ * Google web search as Search Console counts it: how often the site showed
+ * (Seen) and was clicked. Search Console finishes a day two to three days
+ * late, so a one-day report is usually a dash, and says why.
+ */
+async function searchTotals(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock> {
+  const { data } = await client
+    .from("channel_daily")
+    .select("impressions,clicks")
+    .eq("source", SEARCH_CONSOLE_SOURCE)
+    .gte("day", from)
+    .lte("day", to)
+    .limit(1000);
+  const label = "Google search (Search Console)";
+  if (!data || data.length === 0) {
+    return {
+      label,
+      values: [
+        { label: "Seen", value: "-" },
+        { label: "Clicked", value: "-" },
+      ],
+      note: "no figure for this window yet: Search Console reports two to three days late, and nothing is stored until it is connected",
+    };
+  }
+  const sum = (key: "impressions" | "clicks") =>
+    data.reduce((total, row) => total + (row[key] ?? 0), 0);
+  return {
+    label,
+    values: [
+      { label: "Seen", value: count(sum("impressions")) },
+      { label: "Clicked", value: count(sum("clicks")) },
+    ],
   };
 }
 

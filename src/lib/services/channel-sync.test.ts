@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
 
-import { syncChannelDaily } from "./channel-sync";
+import { syncChannelDaily, syncGa4Visits } from "./channel-sync";
 
 /**
  * A chainable, thenable PostgREST stand-in: every filter returns the builder
@@ -727,5 +727,83 @@ describe("syncChannelDaily", () => {
     expect(cleared[0]).toHaveProperty("visits", null);
     // thankyou_visits was not, so it must not appear in the clearing payload.
     expect(cleared[0]).not.toHaveProperty("thankyou_visits");
+  });
+});
+
+describe("clearing superseded GA4 keys past one page", () => {
+  /**
+   * Postgres returns rows that tie on the ORDER BY in whatever order suits
+   * each query, so two `.range()` pages over a sort with ties can overlap and
+   * skip rows. This fake sorts on the requested columns and breaks ties the
+   * other way round on every other page, as a real planner may.
+   */
+  function spine(rows: Array<Record<string, unknown>>) {
+    const upserts: Array<Record<string, unknown>> = [];
+    const keyOf = (row: Record<string, unknown>) =>
+      [
+        row.day,
+        row.source,
+        row.medium,
+        row.campaign,
+        row.content,
+        row.destination,
+      ].join("\u0000");
+    const from = () => {
+      const orders: string[] = [];
+      const builder: Record<string, unknown> = {};
+      for (const method of ["select", "gte", "lte", "not"]) {
+        builder[method] = () => builder;
+      }
+      builder.order = (column: string) => {
+        orders.push(column);
+        return builder;
+      };
+      builder.limit = () =>
+        Promise.resolve({ data: [], error: null }) as unknown;
+      builder.range = async (start: number, end: number) => {
+        const flip = (start / 1000) % 2 === 1 ? -1 : 1;
+        const sorted = [...rows].sort((a, b) => {
+          for (const column of orders) {
+            const order = String(a[column]).localeCompare(String(b[column]));
+            if (order !== 0) return order;
+          }
+          return keyOf(a).localeCompare(keyOf(b)) * flip;
+        });
+        return { data: sorted.slice(start, end + 1), error: null };
+      };
+      builder.upsert = async (batch: Array<Record<string, unknown>>) => {
+        upserts.push(...batch);
+        return { error: null };
+      };
+      return builder;
+    };
+    return {
+      client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
+      upserts,
+    };
+  }
+
+  it("blanks every stale key, not the ones one page happened to return", async () => {
+    // 1,200 keys sharing a day and a source: ordering on those two alone ties
+    // on every row, and the second page repeats 200 of the first.
+    const rows = Array.from({ length: 1200 }, (_, index) => ({
+      day: "2026-09-10",
+      source: "google",
+      medium: "cpc",
+      campaign: `c${String(index).padStart(4, "0")}`,
+      content: "(not set)",
+      destination: "unknown",
+      visits: 1,
+    }));
+    const { client, upserts } = spine(rows);
+
+    await syncGa4Visits(client, ga4([]), "2026-09-08", "2026-09-11", NOW);
+
+    const blanked = new Set(
+      upserts
+        .filter((row) => row.visits === null)
+        .map((row) => String(row.campaign)),
+    );
+    expect(blanked.size).toBe(1200);
   });
 });

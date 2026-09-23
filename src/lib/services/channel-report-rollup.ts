@@ -83,9 +83,10 @@ export function normaliseFacts(
 
 /**
  * Upstream of the site: what a platform reports about its own surface. Seen
- * is Metricool impressions, YouTube views and GHL sends; Clicked is Bitly and
- * the platforms' own click counts. Each covers a different set of channels,
- * so neither is a stage of the site funnel below.
+ * is Metricool impressions, YouTube views, GHL sends and Google search
+ * impressions (Search Console); Clicked is Bitly and the platforms' own click
+ * counts. Each covers a different set of channels, so neither is a stage of
+ * the site funnel below.
  */
 export const REACH_STAGES: ReadonlyArray<{ key: MetricKey; label: string }> = [
   { key: "impressions", label: "Seen" },
@@ -549,6 +550,7 @@ const CONNECTOR_LABELS: Record<string, string> = {
   "metricool-posts": "Metricool posts",
   "metricool-ads": "Metricool spend",
   "youtube-analytics": "YouTube Analytics",
+  "search-console": "Google Search Console",
   "webinar-ingest": "Webinar registrations",
   "manychat-ingest": "ManyChat",
   "close-lead-funnel": "Close outcomes",
