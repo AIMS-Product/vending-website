@@ -17,12 +17,15 @@ export type ChatbotMessageKind =
   | "text"
   | "calendar"
   | "resource_card"
+  /** A catalog resource shown in the chat, not emailed. See sharedResourceMessage. */
+  | "shared_resource"
   | "booking_confirmed";
 
 export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
   "text",
   "calendar",
   "resource_card",
+  "shared_resource",
   "booking_confirmed",
 ];
 

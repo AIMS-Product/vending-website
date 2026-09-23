@@ -8,6 +8,7 @@
 
 import Link from "next/link";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
+import { quickActionBehavior } from "@/lib/chatbot/quick-actions";
 
 export function PanelHeader({
   personaName,
@@ -65,25 +66,52 @@ export function PanelHeader({
   );
 }
 
-/** Config-driven button row under the header — see ChatbotConfig.quickActions. Renders nothing when unconfigured. */
+const QUICK_ACTION_CLASS =
+  "inline-flex items-center gap-1 rounded-[6px] border-2 border-[#111111] bg-white px-2 py-1 text-xs font-bold text-[#111111] hover:bg-[#f3f4f6] disabled:opacity-50";
+
+/**
+ * Config-driven button row under the header — see ChatbotConfig.quickActions.
+ * Renders nothing when unconfigured. Actions that resolve to in-chat behaviour
+ * (see quickActionBehavior) are buttons that stay in the chat; the rest are
+ * links. Every click is reported through `onAction`.
+ */
 export function QuickActionsBar({
   actions,
+  onAction,
+  disabled = false,
 }: {
   actions: ChatbotQuickAction[];
+  /** Omitted by the admin preview, where the buttons do nothing. */
+  onAction?: (action: ChatbotQuickAction) => void;
+  disabled?: boolean;
 }) {
   if (actions.length === 0) return null;
   return (
     <div className="flex flex-wrap gap-2 border-b-2 border-[#111111] bg-[#f8fafc] px-4 py-3">
-      {actions.map((action) => (
-        <Link
-          key={action.url + action.label}
-          href={action.url}
-          className="inline-flex items-center gap-1 rounded-[6px] border-2 border-[#111111] bg-white px-2 py-1 text-xs font-bold text-[#111111] hover:bg-[#f3f4f6]"
-        >
-          <ArrowRightIcon />
-          {action.label}
-        </Link>
-      ))}
+      {actions.map((action) =>
+        quickActionBehavior(action.url).type === "link" ? (
+          <Link
+            key={action.url + action.label}
+            href={action.url}
+            onClick={() => onAction?.(action)}
+            className={QUICK_ACTION_CLASS}
+          >
+            <ArrowRightIcon />
+            {action.label}
+          </Link>
+        ) : (
+          <button
+            key={action.url + action.label}
+            type="button"
+            onClick={() => onAction?.(action)}
+            disabled={disabled}
+            className={QUICK_ACTION_CLASS}
+          >
+            <ArrowRightIcon />
+            {action.label}
+          </button>
+        ),
+      )}
     </div>
   );
 }

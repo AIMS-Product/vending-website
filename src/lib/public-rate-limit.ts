@@ -34,6 +34,10 @@ const LIMITS = {
   // only, no fan-out, so it gets the same generous per-minute budget as a
   // chat turn rather than the stricter lead-write budgets.
   chatbot_history: { windowMs: 60 * 1000, max: 60 },
+  // Widget quick actions that open the calendar or a resource card in the
+  // chat (see chatbot/quick-action/route.ts). A click, not a model call, so a
+  // chat-turn-sized budget is plenty.
+  chatbot_quick_action: { windowMs: 60 * 1000, max: 20 },
   // The embed's booking confirmation ping. One per booking in practice.
   chatbot_booked: { windowMs: 60 * 1000, max: 10 },
   // The chatbot's send_resources_email tool — the only path in the app that

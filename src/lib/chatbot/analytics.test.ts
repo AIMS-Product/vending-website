@@ -558,6 +558,63 @@ describe("outcome rollup", () => {
     expect(analytics.outcomes.d30.calendarAbandoned).toBe(0);
   });
 
+  it("counts quick-action clicks that stayed in the chat, and the bookings they led to", async () => {
+    const quickCalendar = {
+      role: "assistant",
+      content: "Opened the booking calendar in the chat.",
+      ts: daysAgo(2),
+      kind: "calendar",
+      data: { url: "https://calendly.com/x", via: "quick_action" },
+    };
+    const quickRoadmap = {
+      role: "assistant",
+      content: "Shared The 90-Day Vending Route Roadmap in the chat.",
+      ts: daysAgo(2),
+      kind: "shared_resource",
+      data: { key: "roadmap", via: "quick_action" },
+    };
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "quick-booked",
+            created_at: daysAgo(2),
+            message_count: 1,
+            messages: [quickCalendar],
+            call_booked_at: daysAgo(2),
+          },
+          {
+            id: "quick-not-booked",
+            created_at: daysAgo(2),
+            message_count: 2,
+            messages: [quickRoadmap, quickCalendar],
+          },
+          {
+            // A calendar the model opened is not a quick action.
+            id: "model-calendar",
+            created_at: daysAgo(2),
+            message_count: 2,
+            messages: calendarTranscript("can I book a call"),
+          },
+          {
+            id: "old",
+            created_at: daysAgo(40),
+            message_count: 1,
+            messages: [quickCalendar],
+          },
+        ],
+      }) as never,
+    });
+
+    expect(analytics.outcomes.d30.quickActions).toEqual({
+      calendar: 2,
+      resource: 1,
+      bookedAfterCalendar: 1,
+    });
+    expect(analytics.outcomes.d90.quickActions.calendar).toBe(3);
+  });
+
   it("leaves a chat that is still moving out of the lost buckets", async () => {
     const analytics = await getChatbotAnalytics({
       now: () => NOW,

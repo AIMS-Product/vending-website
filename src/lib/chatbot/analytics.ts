@@ -163,6 +163,17 @@ export type ChatbotOutcomeWindow = {
     captured: number;
     booked: number;
   };
+  /**
+   * Widget quick-action clicks that stayed in the chat, counted per
+   * conversation from the stored transcript (`data.via = "quick_action"`).
+   * `bookedAfterCalendar` is the chats that opened the calendar that way and
+   * then booked. Clicks on plain link actions go to PostHog only.
+   */
+  quickActions: {
+    calendar: number;
+    resource: number;
+    bookedAfterCalendar: number;
+  };
 };
 
 export type ChatbotAnalytics = {
@@ -232,6 +243,7 @@ const emptyOutcomeWindow = (days: number): ChatbotOutcomeWindow => ({
   leftNoContact: 0,
   open: 0,
   costQuestion: { asked: 0, sawCalendar: 0, captured: 0, booked: 0 },
+  quickActions: { calendar: 0, resource: 0, bookedAfterCalendar: 0 },
 });
 
 export const EMPTY_CHATBOT_ANALYTICS: ChatbotAnalytics = {
@@ -947,9 +959,32 @@ function buildOutcomeWindow(
       if (isCaptured(row)) result.costQuestion.captured += 1;
       if (booked) result.costQuestion.booked += 1;
     }
+
+    if (hasQuickAction(row.messages, "calendar")) {
+      result.quickActions.calendar += 1;
+      if (booked) result.quickActions.bookedAfterCalendar += 1;
+    }
+    if (hasQuickAction(row.messages, "shared_resource")) {
+      result.quickActions.resource += 1;
+    }
   }
 
   return result;
+}
+
+function hasQuickAction(messages: Json, kind: string): boolean {
+  if (!Array.isArray(messages)) return false;
+  return messages.some((m) => {
+    if (!m || typeof m !== "object" || Array.isArray(m)) return false;
+    const data = m.data;
+    return (
+      m.kind === kind &&
+      !!data &&
+      typeof data === "object" &&
+      !Array.isArray(data) &&
+      data.via === "quick_action"
+    );
+  });
 }
 
 function isCaptured(row: ConversationRow): boolean {

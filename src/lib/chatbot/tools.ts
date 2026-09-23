@@ -404,6 +404,46 @@ export async function runChatbotTool(
 // show_booking_calendar
 // ---------------------------------------------------------------------------
 
+/**
+ * The in-chat calendar message, tagged with the conversation id. Shared by the
+ * model's show_booking_calendar tool and the widget's "Book a call" quick
+ * action, so both open the same calendar with the same attribution. Null when
+ * the booking URL is unusable.
+ */
+export async function openBookingCalendar(input: {
+  conversationId: string;
+  capturedName: string | null;
+  capturedEmail: string | null;
+  embedDomain: string | null;
+  timeZone?: string | null;
+  /** Marks where the open came from; `quick_action` is counted on the dashboard. */
+  via?: "quick_action";
+}) {
+  // Open whichever Lane 1 calendar actually has a slot, so the visitor never
+  // meets a wall of greyed-out days. Cached for 60s; fails soft to primary.
+  const timeZone = safeTimeZone(input.timeZone);
+  const { calendar, slots } = await resolveBookingCalendar({ timeZone });
+
+  const url = chatbotBookingUrl({
+    conversationId: input.conversationId,
+    name: input.capturedName,
+    email: input.capturedEmail,
+    embed: true,
+    embedDomain: input.embedDomain,
+    baseUrl: calendar.url,
+  });
+  if (!url) return null;
+
+  const message: ChatbotMessage = {
+    role: "assistant",
+    content: "Opened the booking calendar in the chat.",
+    ts: new Date().toISOString(),
+    kind: "calendar",
+    data: input.via ? { url, via: input.via } : { url },
+  };
+  return { message, slots, timeZone };
+}
+
 async function showBookingCalendar(
   context: ChatbotToolContext,
 ): Promise<ChatbotToolOutcome> {
@@ -411,26 +451,14 @@ async function showBookingCalendar(
     (message) => message.kind === "calendar",
   );
 
-  // Open whichever Lane 1 calendar actually has a slot, so the visitor never
-  // meets a wall of greyed-out days. Cached for 60s; fails soft to primary.
-  const timeZone = safeTimeZone(context.timeZone);
-  const { calendar, slots } = await resolveBookingCalendar({ timeZone });
-
-  const url = chatbotBookingUrl({
-    conversationId: context.conversationId,
-    name: context.capturedName,
-    email: context.capturedEmail,
-    embed: true,
-    embedDomain: context.embedDomain,
-    baseUrl: calendar.url,
-  });
-
-  if (!url) {
+  const opened = await openBookingCalendar(context);
+  if (!opened) {
     return {
       result:
         "The calendar isn't available right now. Point them at /book-now in your reply instead.",
     };
   }
+  const { message, slots, timeZone } = opened;
 
   if (alreadyShown) {
     return {
@@ -444,13 +472,7 @@ async function showBookingCalendar(
     // to call get_available_times and name a slot; across 12 calendar opens
     // (Aug 27-Sep 2) it named a real time zero times.
     result: `A live booking calendar is now open in the chat, right below your reply. Do not paste a booking link. In one or two short sentences, name one or two real times from the list below that fit what they told you ("Tuesday has 10:00 and 10:30 open, grab whichever suits"), so they are not left to hunt.\n${describeAvailability(slots, timeZone)}`,
-    message: {
-      role: "assistant",
-      content: "Opened the booking calendar in the chat.",
-      ts: new Date().toISOString(),
-      kind: "calendar",
-      data: { url },
-    },
+    message,
   };
 }
 

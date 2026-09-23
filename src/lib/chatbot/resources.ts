@@ -1,7 +1,11 @@
 import {
   financeTemplatesLandingPage,
+  financeTemplatesThankYouPage,
   roadmapLandingPage,
+  roadmapThankYouPage,
 } from "@/lib/content/lead-magnets";
+import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
+import type { InChatResourceKey } from "@/lib/chatbot/quick-actions";
 import { CASE_STUDY_SUMMARIES } from "@/lib/chatbot/site-knowledge";
 
 /**
@@ -25,14 +29,17 @@ export const CHATBOT_RESOURCE_CATALOG: readonly ChatbotResource[] = [
     title: roadmapLandingPage.title,
     blurb:
       "The free 90-day plan: pick a machine, land the first location, launch and scale.",
-    url: roadmapLandingPage.route_path,
+    // The delivered page, not the gated form. The visitor asked the chat for
+    // it, and an emailed link only ever goes to an address they typed, so a
+    // form that asks for their email again was a dead end.
+    url: roadmapThankYouPage.route_path,
   },
   {
     key: "finance_templates",
     title: financeTemplatesLandingPage.title,
     blurb:
       "A self-calculating P&L, cash flow, and balance sheet workbook for a vending route.",
-    url: financeTemplatesLandingPage.route_path,
+    url: financeTemplatesThankYouPage.route_path,
   },
   {
     key: "case_studies",
@@ -89,5 +96,34 @@ function caseStudyResource(slug: string): ChatbotResource | null {
     title: `${study.memberName}: ${study.headlineResult}`,
     blurb: `Was ${study.priorBackground} before starting a route.`,
     url: study.url,
+  };
+}
+
+/**
+ * A catalog resource shown IN the chat, no email needed (the widget's "Free
+ * 90-day roadmap" quick action). A different kind from `resource_card` on
+ * purpose: that kind means "emailed", and both the per-conversation email cap
+ * and the engagement summary count it.
+ */
+export function sharedResourceMessage(
+  key: InChatResourceKey,
+  options: { label: string; via: "quick_action" },
+  now: Date = new Date(),
+): ChatbotMessage | null {
+  const resource = CHATBOT_RESOURCE_CATALOG.find((entry) => entry.key === key);
+  if (!resource) return null;
+  return {
+    role: "assistant",
+    content: `Shared ${resource.title} in the chat.`,
+    ts: now.toISOString(),
+    kind: "shared_resource",
+    data: {
+      label: options.label,
+      via: options.via,
+      key: resource.key,
+      title: resource.title,
+      blurb: resource.blurb,
+      url: resource.url,
+    },
   };
 }

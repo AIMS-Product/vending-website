@@ -26,6 +26,7 @@ import {
   TeaserBubble,
 } from "@/components/chatbot/ChatLauncher";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
+import { quickActionBehavior } from "@/lib/chatbot/quick-actions";
 import { playReceiveSound, playSendSound } from "@/lib/chatbot/sounds";
 import { goToPreCallResources } from "@/lib/booking/post-booking-redirect";
 import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
@@ -760,6 +761,74 @@ export function ChatWidget() {
     [isWaiting, maybeOfferInlineCapture, armCalendarCapture],
   );
 
+  /**
+   * Quick actions that used to leave the chat now stay in it: "Book a call"
+   * opens the conversation-tagged calendar, "Free 90-day roadmap" shows the
+   * delivered roadmap as a card. Link actions still navigate (the Link does
+   * that); every click is reported either way. If the in-chat path fails the
+   * visitor goes where the old link went, so this is never worse than before.
+   */
+  const runQuickAction = useCallback(
+    async (action: ChatbotQuickAction) => {
+      const behavior = quickActionBehavior(action.url);
+      captureEvent("chat_quick_action", {
+        label: action.label,
+        action:
+          behavior.type === "resource"
+            ? `resource:${behavior.key}`
+            : behavior.type,
+      });
+      if (behavior.type === "link") return;
+
+      const sessionId = sessionIdRef.current;
+      // Behind the pre-chat gate the transcript is not on screen yet.
+      if (!sessionId || needsGate) {
+        window.location.assign(action.url);
+        return;
+      }
+      if (isWaiting) return;
+
+      setError(null);
+      setIsWaiting(true);
+      if (behavior.type === "calendar") setToolStatus("finding_times");
+      try {
+        const response = await fetch("/api/chatbot/quick-action", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            url: action.url,
+            pageUrl: window.location.pathname,
+            timeZone: browserTimeZone(),
+          }),
+        });
+        if (!response.ok) {
+          throw new Error(`quick action failed ${response.status}`);
+        }
+        const data = (await response.json()) as {
+          message?: ChatDisplayMessage;
+          appended?: boolean;
+        };
+        const message = data.message;
+        if (!message?.kind) throw new Error("quick action returned nothing");
+
+        playReceiveSound();
+        setMessages((prev) =>
+          data.appended || prev.at(-1)?.kind !== message.kind
+            ? [...prev, message]
+            : prev,
+        );
+        if (message.kind === "calendar") armCalendarCapture();
+      } catch {
+        window.location.assign(action.url);
+      } finally {
+        setIsWaiting(false);
+        setToolStatus(null);
+      }
+    },
+    [isWaiting, needsGate, armCalendarCapture],
+  );
+
   const submitCapture = useCallback(async (values: ChatCaptureValues) => {
     const sessionId = sessionIdRef.current;
     if (!sessionId) return false;
@@ -842,7 +911,11 @@ export function ChatWidget() {
             brandColor={brandColor}
             onClose={() => setOpen(false)}
           />
-          <QuickActionsBar actions={config.quickActions} />
+          <QuickActionsBar
+            actions={config.quickActions}
+            onAction={(action) => void runQuickAction(action)}
+            disabled={isWaiting}
+          />
 
           {needsGate ? (
             <ChatCaptureForm

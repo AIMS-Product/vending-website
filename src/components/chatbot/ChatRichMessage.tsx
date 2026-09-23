@@ -20,6 +20,8 @@ export function ChatRichMessage({
       return <CalendarCard message={message} brandColor={brandColor} />;
     case "resource_card":
       return <ResourceCard message={message} brandColor={brandColor} />;
+    case "shared_resource":
+      return <SharedResourceCard message={message} brandColor={brandColor} />;
     case "booking_confirmed":
       return <BookingConfirmedCard message={message} brandColor={brandColor} />;
     default:
@@ -102,6 +104,49 @@ function ResourceCard({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+/**
+ * A resource shown right here in the chat, no email involved. Every word on it
+ * is existing copy: the header is the quick action's own label, the body the
+ * catalog title and blurb the resource email already uses.
+ */
+function SharedResourceCard({
+  message,
+  brandColor,
+}: {
+  message: ChatDisplayMessage;
+  brandColor: string;
+}) {
+  const title = readString(message.data, "title");
+  const url = readString(message.data, "url");
+  // Relative only, same rule as ResourceCard: the catalog is site pages.
+  if (!title || !url?.startsWith("/")) {
+    return <FallbackLine content={message.content} />;
+  }
+  const label = readString(message.data, "label") ?? title;
+  const blurb = readString(message.data, "blurb");
+
+  return (
+    <div className={cardClass}>
+      <CardHeader brandColor={brandColor} icon={<FileIcon />} label={label} />
+      <div className="px-3 py-2.5">
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener"
+          className="text-[15px] font-black text-[#111111] underline"
+        >
+          {title}
+        </a>
+        {blurb ? (
+          <p className="mt-0.5 text-[13px] leading-snug text-[#4b5563]">
+            {blurb}
+          </p>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -190,6 +235,15 @@ function MailIcon() {
     <svg {...ICON_PROPS}>
       <rect x="2" y="4" width="20" height="16" rx="2" />
       <path d="m22 7-10 5L2 7" />
+    </svg>
+  );
+}
+
+function FileIcon() {
+  return (
+    <svg {...ICON_PROPS}>
+      <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z" />
+      <path d="M14 2v4a2 2 0 0 0 2 2h4" />
     </svg>
   );
 }

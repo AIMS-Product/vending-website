@@ -72,6 +72,7 @@ export function ChatbotOverview({
         <div className="grid gap-4 xl:col-span-4">
           <NeedsYouCard kpis={kpis} />
           <AskCard analytics={analytics} outcomes={outcomes} />
+          <QuickActionsCard counts={outcomes.quickActions} />
         </div>
         <div className="xl:col-span-12">
           <DropOffCard buckets={analytics.dropOff} />
@@ -712,6 +713,41 @@ function AskCard({
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ quick actions */
+
+function QuickActionsCard({
+  counts,
+}: {
+  counts: ChatbotOutcomeWindow["quickActions"];
+}) {
+  return (
+    <section className={adminCardClass} aria-label="Quick actions">
+      <h2 className={adminSectionTitleClass}>Quick actions</h2>
+      <p className="text-ui-text-muted mt-0.5 text-xs">
+        Chats where the buttons under the header kept the visitor in the chat.
+        Success stories is still a link and is counted in PostHog only.
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+        {[
+          ["Book a call", counts.calendar],
+          ["Then booked", counts.bookedAfterCalendar],
+          ["Roadmap card", counts.resource],
+        ].map(([label, value]) => (
+          <div
+            key={label}
+            className="bg-ui-accent-soft rounded-[4px] px-1 py-1.5"
+          >
+            <p className="text-ui-text text-sm font-semibold tabular-nums">
+              {value}
+            </p>
+            <p className="text-ui-text-subtle text-[0.6875rem]">{label}</p>
+          </div>
+        ))}
       </div>
     </section>
   );
