@@ -62,9 +62,9 @@ export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>Booked calls by week</h2>
         <p className="text-ui-text-subtle max-w-2xl text-xs">
-          First strategy calls booked, counted on the day Calendly says they
-          were booked. Weeks run Monday to Sunday; the last row is the week in
-          progress.
+          How many first strategy calls marketing booked each week, counted on
+          the day the booking was made in Calendly, not the day of the call.
+          Weeks run Monday to Sunday; the last line is the week in progress.
         </p>
       </div>
 
@@ -75,7 +75,7 @@ export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
               <th className={TH_LEFT}>Week</th>
               <th className={TH}>Marketing booked</th>
               <th className={TH}>vs prior week</th>
-              <th className={TH}>Reactivation seen</th>
+              <th className={TH}>Reactivation (partial)</th>
             </tr>
           </thead>
           <tbody className="divide-ui-line divide-y">
@@ -101,8 +101,7 @@ export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
         <div className="border-ui-line flex items-baseline justify-between gap-2 border-b px-4 py-3">
           <h3 className={adminSectionTitleClass}>By funnel</h3>
           <p className="text-ui-text-subtle text-xs">
-            Funnel comes from the Close mirror, matched on the invitee&apos;s
-            email.
+            The lead&apos;s funnel in Close, matched on the email used to book.
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -156,23 +155,24 @@ export function BookedCallsPanel({ report }: { report: BookedCallsReport }) {
 
       <div className="text-ui-text-muted border-ui-line space-y-1 border-t px-4 py-3 text-xs">
         <p>
-          Reactivation is not marketing&apos;s number and is not totalled here.
-          Most of that team books on calendars this site gets no Calendly
-          webhook from — 229 of their 257 bookings since 2026-08-24 never reach
-          our mirror — so the column shows only the few that do.
+          Reactivation (partial) is the sales reactivation team&apos;s bookings.
+          It is not marketing&apos;s number, so it is not added in. Most of that
+          team books on calendars that never report to this site (229 of their
+          257 bookings since 2026-08-24 never reached us), so the column shows
+          only the few that do.
         </p>
         {current && report.notInCloseYet > 0 ? (
           <p>
             {report.notInCloseYet} booking
             {report.notInCloseYet === 1 ? "" : "s"} this week has no Close lead
-            yet, so it has no funnel. It will land once Close syncs.
+            yet, so it has no funnel. It will appear once Close catches up.
           </p>
         ) : null}
         <p>
-          Cancellations are not shown. Calendly only reports a cancel through
-          its webhook and several August weeks have none on record, so a zero
+          Cancellations are not shown. Calendly only tells us about a cancel as
+          it happens, and several August weeks have none on record, so a zero
           would read as &ldquo;none&rdquo; when it means &ldquo;never
-          captured&rdquo;.
+          recorded&rdquo;.
         </p>
       </div>
     </section>

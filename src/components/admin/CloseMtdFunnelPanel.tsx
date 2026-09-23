@@ -54,12 +54,13 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
       <section className={adminPanelClass} aria-label="Month to date funnel">
         <div className="px-4 pt-4">
           <h2 className={adminSectionTitleClass}>
-            {monthLabel(funnel.from, funnel.to)}, from our Close mirror
+            {monthLabel(funnel.from, funnel.to)}, from our copy of Close
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            Every stage below is counted from our own hourly copy of Close, and
-            each one names the population it counted. Nothing here is taken from
-            another dashboard.
+            The month so far: how many first calls were booked, and how many of
+            those people showed, qualified and bought. Every number is counted
+            from our own hourly copy of Close, and each one says who it counted.
+            Nothing here is taken from another dashboard.
           </p>
         </div>
 
@@ -97,8 +98,8 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
             <p>
               {funnel.qualifiedWithoutShow} booked{" "}
               {funnel.qualifiedWithoutShow === 1 ? "call is" : "calls are"}{" "}
-              marked qualified with no show logged, so qualified is not a subset
-              of showed. Both rates are over booked for that reason.
+              marked qualified with no show logged, so Qualified can include
+              people not in Showed. That is why both rates are out of booked.
             </p>
           ) : null}
           {funnel.excluded > 0 ? (
@@ -121,9 +122,9 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
             Marketing, and the sales floor&apos;s own rebooking
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            {SCRAPER_FUNNEL} is the outbound and reactivation funnel. It is
-            split out so ad spend is never divided by calls the ads did not buy.
-            The marketing line is the one Kody&apos;s scorecard row
+            {SCRAPER_FUNNEL} is the sales floor calling and rebooking its own
+            list. It is split out so ad spend is never divided by calls the ads
+            did not buy. The marketing line is what Kody&apos;s scorecard row
             &ldquo;Marketing Meetings Booked&rdquo; counts.
           </p>
         </div>
@@ -132,7 +133,7 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
             <thead className="bg-ui-canvas text-ui-text-muted text-xs">
               <tr>
                 <th scope="col" className={TH_LEFT}>
-                  Population
+                  Who
                 </th>
                 <th scope="col" className={TH}>
                   Booked
@@ -193,6 +194,10 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
       <section className={adminPanelClass} aria-label="Month to date by funnel">
         <div className="px-4 pt-4">
           <h2 className={adminSectionTitleClass}>By Close funnel</h2>
+          <p className="text-ui-text-subtle mt-1 text-xs">
+            Show rate is showed out of booked. Showed and Qualified count only
+            calls a rep logged as Yes, so they are a minimum.
+          </p>
         </div>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[34rem] text-sm">
@@ -243,19 +248,20 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
       >
         <div className="space-y-2 px-4 py-4 text-xs">
           <h2 className={adminSectionTitleClass}>
-            Where this will disagree with the MTD funnel dashboard
+            Where this will disagree with the MTD (month-to-date) funnel
+            dashboard
           </h2>
           <p className="text-ui-text-subtle">
-            Both read Close and both count one booking per lead, which is why
-            they have tracked within about 2% on matched weeks. They are not the
-            same rule, and these are the reasons they part:
+            Both read Close and both count one booking per lead, so they have
+            stayed within about 2% of each other on the same weeks. They follow
+            different rules, and these are the differences:
           </p>
           <ul className="text-ui-text-subtle list-disc space-y-1 pl-5">
             <li>
               <strong>Meeting owners.</strong> That dashboard drops meetings
-              owned by four people, one of whom is an active VP setter. Our
-              mirror carries no meeting-owner field, so that filter cannot be
-              applied here at all. Those meetings are counted above.
+              owned by four people, one of whom is an active VP setter. Our copy
+              of Close has no meeting-owner field, so that filter cannot be
+              applied here. Those meetings are counted above.
             </li>
             <li>
               <strong>What a booking is.</strong> We read the lead&apos;s
@@ -263,20 +269,20 @@ export function CloseMtdFunnelPanel({ report }: { report: CloseMtdReport }) {
               Close meeting activities and filters them by title.
             </li>
             <li>
-              <strong>Its Leads column is not mirrored here on purpose.</strong>{" "}
-              It read 365 for a week with 809 webinar registrants. Acquisition
-              numbers belong on the other tabs.
+              <strong>Its Leads column is left out on purpose.</strong> It read
+              365 for a week with 809 webinar registrants. Acquisition numbers
+              belong on the other tabs.
             </li>
           </ul>
           {report.mirrorSyncedAt ? (
             <p className="text-ui-text-subtle">
-              First calls copied from Close at{" "}
+              First calls last copied from Close at{" "}
               {new Date(report.mirrorSyncedAt).toLocaleString("en-US", {
                 timeZone: "America/New_York",
                 dateStyle: "medium",
                 timeStyle: "short",
               })}{" "}
-              ET (refreshed hourly). Won deals are read from Close live.
+              ET (every hour). Won deals are read from Close directly.
             </p>
           ) : null}
         </div>

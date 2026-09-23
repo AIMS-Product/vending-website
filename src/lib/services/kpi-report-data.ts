@@ -196,7 +196,7 @@ async function fetchSetterBookings(
  * The Close mirror's show-up answers by email, the one place a logged show
  * exists. Null on a read error so the show columns read as a dash, not 0.
  */
-async function fetchShowIndex(
+export async function fetchShowIndex(
   client: ReportClient,
 ): Promise<Map<string, FunnelShowRow> | null> {
   const rows: FunnelShowRow[] = [];

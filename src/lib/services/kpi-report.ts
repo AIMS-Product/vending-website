@@ -278,7 +278,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won are credited to the day the lead arrived, so every rate is over one cohort. A row splits by CTA path (utm_term) once its links carry one; a row with no path is a channel whose links are not tagged yet. Thank-you visits count sessions that reached one of our own confirmation pages, so a channel that converts on a GHL form or straight into Calendly shows none. A call counts as shown only when a rep logged it as a show in Close (First Call Show Up = yes); a call nobody logged is not counted as shown, so show rate is a floor while logging is incomplete. Lane 2 below shows what share of due calls have a show answer in Close. Webinar, Instagram DM and email/SMS links have their own sections, so All channels here excludes their visits.",
+      "Booked, shown and won count on the day the person became a lead, so each rate follows the same group of people. A row splits by the button or link they clicked once its links are tagged with one; a row with no split is a channel whose links are not tagged yet. Thank-you visits count visits to one of our own confirmation pages, so a channel that signs people up on a GHL form or straight into Calendly shows none. A call counts as shown only when a rep logged it as a show in Close (First Call Show Up = yes); a call nobody logged is not counted, so show rate is a minimum while logging is incomplete. Lane 2 below shows what share of due calls have a show answer in Close. Webinar, Instagram DM and email/SMS links have their own sections, so All channels here leaves out their visits.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,
@@ -352,7 +352,7 @@ function buildWebinarSection(input: KpiInput): KpiSection {
     key: "webinar",
     title: "Webinar funnel",
     basis:
-      "One row per event. Booked = every call this cohort ever booked, which is the population Shown and Won are counted over, so every rate here is a real fraction; Booked night of is the same cohort's offer conversion on the night and is a subset, never the denominator. Shown counts booked leads only — a rep marking a lead shown with no booked date lands in Shown, no booking and is never added to Shown. A cohort still inside its booking window shows dashes for the rates that window decides rather than a rate computed from an unfinished cohort; the counts beside them are real, just not final. Registration page visits are not observed (the page is GHL-hosted).",
+      "One row per webinar. Booked is every call that webinar's registrants have ever booked, and Shown and Won are out of those calls, so every rate is a true share. Booked night of is how many of them booked on the night itself, part of Booked, never what the rates are out of. Shown counts only people who booked: someone a rep marked shown with no booked date goes in Shown, no booking instead. While a webinar is still inside its booking window, its rates show a dash instead of an unfinished number; the counts beside them are real, just not final. Registration page visits are not measured (the page is hosted on GHL).",
     columns: WEBINAR_COLUMNS,
     rows,
     hidden: 0,
@@ -612,7 +612,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
     key: "lane2",
     title: "Lane 2",
     basis:
-      "Setter rows count every Calendly booking by the date it was booked, not by lead cohort, and name whoever set it: the rep Calendly recorded as booking it, their own tagged link, then Close's setter field. Outcome known is the share of those bookings with an outcome recorded in Close — a booking with no lead behind it can have none, so this sits low and show rate, which counts the rest as shown, is that much more assumption. Instagram DM counts ManyChat stage events.",
+      "Setter rows count every Calendly booking on the day it was booked (not the day the person became a lead) and name whoever set it: the rep Calendly recorded as booking it, then their own tagged link, then the setter field in Close. Show logged in Close is the share of due calls with a show answer; a booking with no lead behind it can have none, so it sits low. Show rate counts only calls a rep logged as shown, so while that share is low, show rate is a minimum. Instagram DM counts ManyChat stage events.",
     columns: LANE2_COLUMNS,
     rows,
     hidden: 0,

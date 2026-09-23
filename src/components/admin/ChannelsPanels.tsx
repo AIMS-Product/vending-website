@@ -20,6 +20,7 @@ import type {
   GoingOutRow,
   SyncHealthRow,
 } from "@/lib/services/channel-report-rollup";
+import { connectorLabel } from "@/lib/services/channel-report-rollup";
 import type {
   ChannelsTabData,
   FixLinkRow,
@@ -35,7 +36,7 @@ import {
  * the health of every connector feeding them. Reads only what
  * `getChannelsTab` returns; every number here came from `channel_daily`.
  *
- * A null is rendered as "—" with "not observed" on hover. It is never a zero.
+ * A null is rendered as "—" with "No data" on hover. It is never a zero.
  */
 
 export function channelsHref(
@@ -64,10 +65,11 @@ export function ChannelsTab({
     return (
       <div className={adminCardClass}>
         <p className="text-ui-text-muted text-sm">
-          The channel spine is not connected yet. Apply the
+          Channel numbers are not set up in this environment yet. An engineer
+          needs to apply the
           <code className="mx-1">channel_daily</code>migration and run
           <code className="mx-1">/api/admin/channel-sync/run?days=400</code>
-          once to backfill.
+          once to load the history.
         </p>
       </div>
     );
@@ -101,6 +103,7 @@ export function ChannelsTab({
         rows={report.rows}
         tail={report.tail}
         logos={!data.channel}
+        legend
         rowHref={
           data.channel
             ? undefined
@@ -112,7 +115,7 @@ export function ChannelsTab({
         <CloseWinsPanel
           report={data.closeWins}
           columns={[{ key: "range", label: data.range.label }]}
-          caption="Every sale Close recorded in this range, by the day it was won. The Won column above only counts buyers who left a site lead or a webinar sheet row, so it runs lower; this is the complete count."
+          caption="Every sale Close recorded in this range, by the day it was won. The Won column above counts only buyers we can trace to a site lead or a webinar registration, so it runs lower; this is the full count."
         />
       </div>
 
@@ -166,7 +169,9 @@ function ChannelKpis({
     <AdminMetricPanel
       label={label}
       value={value == null ? "—" : formatValue(value, format)}
-      caption={value == null ? "not observed" : `vs prior ${days} days`}
+      caption={
+        value == null ? "no data for this range" : `vs prior ${days} days`
+      }
       delta={
         value == null ? undefined : <Delta current={value} prior={prior} />
       }
@@ -207,14 +212,14 @@ function FunnelStrip({
               stage.ofPreviousPct != null
                 ? `${stage.ofPreviousPct}% of ${stage.ofPreviousLabel?.toLowerCase()}`
                 : stage.value != null && stage.ofPreviousLabel
-                  ? "share not measurable"
+                  ? "no share: counted on different links"
                   : "on the site"
             }
             captionTitle={
               stage.ofPreviousPct == null &&
               stage.value != null &&
               stage.ofPreviousLabel
-                ? "No link key carried both stages, so there is no honest share."
+                ? "No link carried both stages, so there is no fair share to show."
                 : undefined
             }
           />
@@ -226,18 +231,19 @@ function FunnelStrip({
             upstream
             caption={
               stage.value == null
-                ? "no connector reports this yet"
+                ? "no platform reports this yet"
                 : `${stage.channels} of ${stage.totalChannels} channels report it`
             }
           />
         ))}
       </div>
       <p className="text-ui-text-subtle mt-3 text-xs">
-        Each share is measured only where both stages were observed for the same
-        link, so the two sides are one population. Deltas are against the prior{" "}
-        {days} days. Showed counts only calls a rep logged as a show in Close,
-        so it is a floor while logging is incomplete. Seen and Clicked are what
-        the platforms report about their own surface, upstream of the site.
+        Each percentage compares two stages on the same links only, so both
+        numbers cover the same traffic. The +/− chips compare with the {days}{" "}
+        days before. Showed counts only calls a rep marked as a show in Close,
+        so it is a minimum while logging is incomplete. Seen (views,
+        impressions, emails sent) and Clicked are what each platform reports
+        about its own posts, ads and emails, before anyone reaches our site.
       </p>
     </section>
   );
@@ -257,12 +263,12 @@ function StageCell({
   return (
     <div className="px-4 first:pl-0">
       <p className={adminEyebrowClass}>
-        {upstream ? `${stage.label} upstream` : stage.label}
+        {upstream ? `${stage.label} (on platform)` : stage.label}
       </p>
       {stage.value == null ? (
         <p
           className="text-ui-text-subtle mt-2 text-xl leading-none font-semibold"
-          title="No connector observed this stage in the range."
+          title="No data for this stage in this range."
         >
           &mdash;
         </p>
@@ -273,7 +279,7 @@ function StageCell({
         </p>
       )}
       <p className="text-ui-text-subtle mt-1.5 text-xs" title={captionTitle}>
-        {stage.value == null ? "not observed" : caption}
+        {stage.value == null ? "no data for this range" : caption}
       </p>
     </div>
   );
@@ -290,7 +296,7 @@ const COLUMNS: ReadonlyArray<{
   { key: "visits", label: "Visits", format: "number" },
   { key: "leads", label: "Leads", format: "number" },
   // Webinar registrations, off-site GHL forms, ManyChat: not site leads.
-  { key: "contacts", label: "Reg. & contacts", format: "number" },
+  { key: "contacts", label: "Registrations & contacts", format: "number" },
   { key: "booked", label: "Booked", format: "number" },
   { key: "showed", label: "Showed", format: "number" },
   { key: "won", label: "Won", format: "number" },
@@ -355,6 +361,7 @@ export function ChannelTable({
   tail = [],
   logos = false,
   rowHref,
+  legend = false,
 }: {
   title: string;
   rows: ChannelReportRow[];
@@ -363,19 +370,23 @@ export function ChannelTable({
   /** True when every row is a channel and so has a mark. Campaign rows do not. */
   logos?: boolean;
   rowHref?: (row: ChannelReportRow) => string;
+  /** Prints the column key under the table. Once per tab is enough. */
+  legend?: boolean;
 }) {
   return (
     <section className={adminCardClass} aria-label={title}>
       <h2 className={adminEyebrowClass}>{title}</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Sorted by leads, then bookings, then visits. Lead % is over every visit
-        in the range; Book % is measured only on links where both sides were
-        observed. Booked counts the channel that brought the person in, not who
-        set the call — Bookings answers that.
+        Sorted by leads, then calls booked, then visits. Booked credits the
+        channel that brought the person in, not the rep who set the call; the
+        Booked calls tab shows that. &ldquo;Skipped form&rdquo; next to a booked
+        count is how many of those people went straight to the calendar from a
+        link (bio, DM, email) without filling in a lead form first: they count
+        as booked, never as a lead.
       </p>
       {rows.length === 0 && tail.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
-          Nothing observed in this range.
+          No data in this range.
         </p>
       ) : (
         <div className="mt-3 overflow-x-auto">
@@ -421,7 +432,7 @@ export function ChannelTable({
                 {tail
                   .reduce((sum, row) => sum + (row.metrics.visits ?? 0), 0)
                   .toLocaleString()}{" "}
-                visits, no leads, bookings or spend observed)
+                visits, no leads, bookings or spend recorded)
               </summary>
               <table className="mt-2 w-full min-w-[52rem] text-[0.8125rem]">
                 <tbody className="divide-ui-line divide-y">
@@ -439,9 +450,50 @@ export function ChannelTable({
           ) : null}
         </div>
       )}
+      {legend ? <ChannelTableKey /> : null}
     </section>
   );
 }
+
+/** The column key, on screen: a `title` never shows on a phone. */
+function ChannelTableKey() {
+  return (
+    <dl className="text-ui-text-subtle mt-3 grid gap-x-6 gap-y-1 text-xs sm:grid-cols-2">
+      {CHANNEL_TABLE_KEY.map(([term, meaning]) => (
+        <div key={term}>
+          <dt className="text-ui-text-muted inline font-semibold">{term}: </dt>
+          <dd className="inline">{meaning}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+const CHANNEL_TABLE_KEY: ReadonlyArray<readonly [string, string]> = [
+  ["Seen", "views, impressions or emails sent, as the platform reports them."],
+  [
+    "Registrations & contacts",
+    "webinar registrations, off-site GHL forms and ManyChat contacts. Not counted as leads.",
+  ],
+  ["Lead %", "leads out of site visits."],
+  [
+    "Book %",
+    "calls booked out of leads plus registrations & contacts, on links that brought in a sign-up. Skipped-form bookings are left out.",
+  ],
+  [
+    "Cost / lead",
+    "spend divided by leads. “/ sign-up” means spend divided by leads plus registrations, used where most of the spend bought registrations.",
+  ],
+  [
+    "n/a",
+    "both numbers exist but were mostly counted on different links (leads taken off our site, or bookings with no form), so there is no fair rate.",
+  ],
+  [
+    "Total row",
+    "rates are left blank, because a rate over the totals is a different measure. Read the rates on each row.",
+  ],
+  ["—", "no data, which is different from zero."],
+];
 
 function ChannelRow({
   row,
@@ -483,9 +535,9 @@ function ChannelRow({
           {column.key === "booked" && row.directBooked ? (
             <span
               className="text-ui-text-subtle ml-1 text-xs"
-              title="Bookings from a Calendly link with no lead form behind them. Counted as booked, never as a lead."
+              title="Booked straight from a Calendly link (bio, DM, email) without filling in a lead form first. Counted as booked, never as a lead."
             >
-              ({row.directBooked} direct)
+              ({row.directBooked} skipped form)
             </span>
           ) : null}
         </td>
@@ -568,9 +620,9 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
           status={CHECK_TONE[report.status]}
           label={
             report.status === "ok"
-              ? "Spine matches its sources"
+              ? "Numbers match their sources"
               : report.status === "fail"
-                ? "Spine is off from a source"
+                ? "A number is off from its source"
                 : report.status === "warn"
                   ? "Gaps to look at"
                   : "Notes"
@@ -578,8 +630,8 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
         />
       </div>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        The numbers above, checked against the tables they were built from, then
-        every channel against what its connectors should report.
+        Checks the numbers on this tab against the original records they came
+        from, then checks that each channel is reporting everything it should.
       </p>
       <ul className="divide-ui-line mt-3 divide-y">
         {report.checks.map((check) => (
@@ -601,11 +653,11 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
         ))}
       </ul>
 
-      <h3 className={`${adminEyebrowClass} mt-5`}>Coverage by channel</h3>
+      <h3 className={`${adminEyebrowClass} mt-5`}>What each channel reports</h3>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Filled means a connector observed it in range. A hollow mark is a metric
-        the channel should report but nothing did; hover for the cause. A dash
-        is not expected for that channel.
+        A filled dot means we have data for it in this range. A hollow red dot
+        is something the channel should report but nothing came in; the reason
+        is listed under the table. A dash means that channel does not report it.
       </p>
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[36rem] text-[0.8125rem]">
@@ -641,10 +693,10 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
                       className="py-2 pr-3 text-center"
                       title={
                         cell.observed
-                          ? "Observed in range."
+                          ? "Data in this range."
                           : cell.expected
-                            ? (cell.cause ?? "Expected, not observed.")
-                            : "Not expected for this channel."
+                            ? (cell.cause ?? "Expected, but no data came in.")
+                            : "This channel does not report it."
                       }
                     >
                       {cell.observed ? (
@@ -662,7 +714,28 @@ export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
           </tbody>
         </table>
       </div>
+      <CoverageGaps report={report} />
     </section>
+  );
+}
+
+/** The cause behind each hollow dot, on screen rather than only on hover. */
+function CoverageGaps({ report }: { report: ConfidenceReport }) {
+  const gaps = report.coverage.flatMap((row) =>
+    COVERAGE_KEYS.filter(
+      ({ key }) => row.cells[key].expected && !row.cells[key].observed,
+    ).map(({ key, label }) => ({
+      id: `${row.channel}-${key}`,
+      text: `${row.channel}, ${label}: ${row.cells[key].cause ?? "Expected, but no data came in."}`,
+    })),
+  );
+  if (gaps.length === 0) return null;
+  return (
+    <ul className="text-ui-text-subtle mt-3 space-y-0.5 text-xs">
+      {gaps.map((gap) => (
+        <li key={gap.id}>{gap.text}</li>
+      ))}
+    </ul>
   );
 }
 
@@ -687,8 +760,9 @@ export function GoingOutTable({
         >
           /admin/links
         </AdminViewerLink>
-        , with Bitly clicks in the last {days} days. A link with no short link
-        has no click count to observe.
+        , with its Bitly clicks in the last {days} days. A link without a Bitly
+        short link has no click count. &ldquo;Sends to&rdquo; is where the link
+        takes people.
       </p>
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
@@ -776,12 +850,12 @@ export function FixLinksPanel({
     <section className={adminCardClass} aria-label="Fix these links">
       <h2 className={adminEyebrowClass}>Fix these links</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Posts from the last {days} days whose link is missing the standard.
-        Rebuild the link at /admin/links and edit the post.
+        Posts from the last {days} days whose link is missing the tracking tags
+        we require. Rebuild the link at /admin/links and edit the post.
       </p>
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
-          Every posted link in this range carries the standard.
+          Every posted link in this range has the required tracking tags.
         </p>
       ) : (
         <ul className="divide-ui-line mt-3 divide-y">
@@ -828,6 +902,7 @@ export function FixLinksPanel({
 
 const HEALTH_TONE: Record<SyncHealthRow["status"], string> = {
   ok: "active",
+  empty: "pending",
   skipped: "idle",
   failed: "failed",
   stale: "pending",
@@ -836,18 +911,20 @@ const HEALTH_TONE: Record<SyncHealthRow["status"], string> = {
 
 const HEALTH_LABEL: Record<SyncHealthRow["status"], string> = {
   ok: "Synced",
+  empty: "No new data",
   skipped: "Not connected",
   failed: "Failed",
-  stale: "Stale",
-  never: "Never run",
+  stale: "Out of date",
+  never: "Never ran",
 };
 
 export function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
   return (
     <section className={adminCardClass} aria-label="Connector health">
-      <h2 className={adminEyebrowClass}>Connectors</h2>
+      <h2 className={adminEyebrowClass}>Data feeds</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        A red row means the numbers above stopped updating for that source.
+        When each source last sent us data, and how many records it saved. A red
+        line means the numbers above stopped updating for that source.
       </p>
       <ul className="divide-ui-line mt-3 divide-y">
         {rows.map((row) => (
@@ -857,7 +934,7 @@ export function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
           >
             <span className="text-ui-text inline-flex min-w-[10rem] items-center gap-2 font-medium">
               <ChannelLogo label={row.connector} />
-              {row.connector}
+              {connectorLabel(row.connector)}
             </span>
             <AdminStatusBadge
               status={HEALTH_TONE[row.status]}
@@ -865,7 +942,7 @@ export function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
             />
             <span className="text-ui-text-muted">
               {row.finishedAt
-                ? `${relativeTime(row.finishedAt)} · ${row.rowsWritten.toLocaleString()} rows`
+                ? `${relativeTime(row.finishedAt)} · ${row.rowsWritten.toLocaleString()} records`
                 : ""}
             </span>
             {row.note ? (
@@ -889,7 +966,7 @@ function Cell({
 }) {
   if (value == null) {
     return (
-      <span className="text-ui-text-subtle" title="Not observed">
+      <span className="text-ui-text-subtle" title="No data">
         —
       </span>
     );

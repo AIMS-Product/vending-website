@@ -27,7 +27,8 @@ export function CloseWinsPanel({
       <h2 className={adminEyebrowClass}>Won in Close</h2>
       <p className="text-ui-text-subtle mt-1 text-xs">{caption}</p>
       <p className="text-ui-text-subtle mt-1 text-xs">
-        Source: {CLOSE_WINS_SOURCE} These are sales, not leads.
+        Source: {CLOSE_WINS_SOURCE} These are sales, not leads. Each cell is
+        deals won, then their revenue.
       </p>
       {report.ok ? (
         <>
@@ -90,7 +91,7 @@ function WinsTable({
         <thead>
           <tr className="text-ui-text-subtle border-ui-line border-b text-left text-xs">
             <th scope="col" className="py-2 pr-3 font-medium">
-              Channel
+              {people ? "Closer" : "Channel"}
             </th>
             {columns.map((column) => (
               <th
@@ -129,7 +130,7 @@ function WinsTable({
           ))}
           <tr className="font-medium">
             <th scope="row" className="py-2 pr-3 text-left text-xs">
-              All channels
+              {people ? "All closers" : "All channels"}
             </th>
             {shown.map((period, index) => (
               <WinsCell

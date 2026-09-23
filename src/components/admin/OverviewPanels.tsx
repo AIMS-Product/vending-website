@@ -488,7 +488,7 @@ export function NeedsAttention({
 }
 
 /** A connector in one of these states is not reporting; the page says so. */
-const BROKEN_FEED_STATUSES = new Set(["failed", "stale", "never"]);
+const BROKEN_FEED_STATUSES = new Set(["failed", "stale", "never", "empty"]);
 
 function buildAttentionItems(
   overview: AdminOverview,

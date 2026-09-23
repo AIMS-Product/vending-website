@@ -52,9 +52,11 @@ describe("buildConfidence", () => {
     );
     const byId = Object.fromEntries(report.checks.map((c) => [c.id, c]));
     expect(byId.leads).toMatchObject({ status: "ok" });
-    expect(byId.leads.detail).toContain("Spine 10 vs lead_submissions 10");
+    expect(byId.leads.detail).toContain(
+      "This tab shows 10; the lead records show 10",
+    );
     expect(byId.booked.detail).toContain(
-      "Spine 3 vs calendly_bookings (booked, linked or tagged) 4",
+      "This tab shows 3; Calendly bookings (not cancelled, linked to a lead or tagged) show 4",
     );
     expect(byId.webinar).toMatchObject({ status: "info" });
     expect(byId.placeholder).toMatchObject({ status: "ok" });
@@ -92,6 +94,22 @@ describe("buildConfidence", () => {
       expected: true,
       observed: false,
     });
-    expect(youtube?.cells.impressions.cause).toContain("youtube-analytics");
+    expect(youtube?.cells.impressions.cause).toContain("YouTube Analytics");
+  });
+});
+
+describe("skipped-form check", () => {
+  it("counts the same bookings the table calls skipped form", () => {
+    const report = buildConfidence(
+      [
+        fact({ booked: 2 }), // a bio link: nothing behind it
+        fact({ channel: "Webinar", contacts: 40, booked: 5 }), // registrants booked
+        fact({ channel: "Webinar", source: "internal-webinar", booked: 7 }), // in-room link
+      ],
+      [],
+      sources,
+    );
+    const check = report.checks.find((item) => item.id === "direct");
+    expect(check?.detail).toMatch(/^2 bookings/);
   });
 });

@@ -9,6 +9,8 @@ import {
   WEBSITE_CHANNEL,
 } from "@/lib/analytics/channel";
 import {
+  connectorLabel,
+  isSkippedFormBooking,
   sumObserved,
   type ChannelFact,
   type MetricKey,
@@ -44,7 +46,7 @@ export const COVERAGE_KEYS: ReadonlyArray<{ key: CoverageKey; label: string }> =
     { key: "clicks", label: "Clicked" },
     { key: "visits", label: "Visits" },
     { key: "leads", label: "Leads" },
-    { key: "contacts", label: "Reg. & contacts" },
+    { key: "contacts", label: "Registrations & contacts" },
     { key: "booked", label: "Booked" },
   ];
 
@@ -195,17 +197,20 @@ function causeFor(
     .map((connector) => unhealthy.get(connector))
     .filter((row): row is SyncHealthRow => Boolean(row));
   if (culprits.length === 0)
-    return "Its connector ran and reported nothing for this channel.";
+    return "Its data feed ran but sent nothing for this channel.";
   return culprits
-    .map((row) => `${row.connector}: ${STATUS_TEXT[row.status]}`)
+    .map(
+      (row) => `${connectorLabel(row.connector)}: ${STATUS_TEXT[row.status]}`,
+    )
     .join("; ");
 }
 
 const STATUS_TEXT: Record<SyncHealthRow["status"], string> = {
   ok: "synced",
+  empty: "running but sending no new data",
   skipped: "not connected",
   failed: "last run failed",
-  stale: "stale",
+  stale: "out of date",
   never: "never ran",
 };
 
@@ -231,11 +236,11 @@ function reconcile(
       id,
       label,
       status: "info",
-      detail: `${sourceName} could not be read, so nothing to compare.`,
+      detail: `${sourceName.charAt(0).toUpperCase()}${sourceName.slice(1)} could not be read, so there is nothing to compare.`,
     };
   }
   const gap = drift(spine, source);
-  const detail = `Spine ${fmt(spine)} vs ${sourceName} ${fmt(source)}${gap == null ? "" : ` (${gap}% apart)`}.`;
+  const detail = `This tab shows ${fmt(spine)}; ${sourceName} show ${fmt(source)}${gap == null ? "" : ` (${gap}% apart)`}.`;
   const status: CheckStatus =
     gap == null
       ? "fail"
@@ -268,19 +273,19 @@ function buildChecks(
   const checks: ConfidenceCheck[] = [
     reconcile(
       "leads",
-      "Site leads match lead_submissions",
+      "Site leads match the lead records",
       // Every channel: `leads` holds only site leads (lead-definition).
       sum(facts, "leads"),
       sources.leadSubmissions,
-      "lead_submissions",
+      "the lead records",
       2,
     ),
     reconcile(
       "webinar",
-      "Webinar registrations match webinar_events",
+      "Webinar registrations match the webinar records",
       sum(webinar, "contacts"),
       sources.webinarRegistrations,
-      "webinar_events registrations",
+      "the webinar registration records",
       2,
     ),
     reconcile(
@@ -288,7 +293,7 @@ function buildChecks(
       "Visits match GA4 sessions",
       sum(facts, "visits"),
       sources.ga4Sessions,
-      "ga4_page_views sessions",
+      "GA4 sessions",
       5,
     ),
     // Cohort basis differs (a lead's booking is credited to the lead's day),
@@ -296,10 +301,10 @@ function buildChecks(
     // that stopped writing bookings.
     reconcile(
       "booked",
-      "Bookings match Calendly (lead-linked or tagged)",
+      "Bookings match Calendly (linked to a lead or tagged)",
       sum(siteBooked, "booked"),
       sources.calendlyBookings,
-      "calendly_bookings (booked, linked or tagged)",
+      "Calendly bookings (not cancelled, linked to a lead or tagged)",
       10,
     ),
   ];
@@ -325,8 +330,8 @@ function buildChecks(
     detail:
       missing.length === 0
         ? "No expected metric is missing."
-        : `${missing.length} channels have gaps: ${missing
-            .map((row) => `${row.channel} (${row.gaps})`)
+        : `${missing.length} ${missing.length === 1 ? "channel has" : "channels have"} gaps: ${missing
+            .map((row) => `${row.channel} (${row.gaps} missing)`)
             .join(", ")}.`,
   });
 
@@ -352,18 +357,15 @@ function buildChecks(
         : `${fmt(unattributed)} of ${fmt(visits)} visits (${share}%) are Unknown or Referral.`,
   });
 
-  const direct = sum(
-    facts.filter((fact) => fact.leads == null),
-    "booked",
-  );
+  const direct = sum(facts.filter(isSkippedFormBooking), "booked");
   checks.push({
     id: "direct",
-    label: "Bookings with no lead form",
+    label: "Bookings that skipped the form",
     status: "info",
     detail:
       direct == null || direct === 0
         ? "None in range."
-        : `${fmt(direct)} bookings came from a Calendly link with no lead behind them; they count as booked but never as a lead, so Book % excludes them.`,
+        : `${fmt(direct)} bookings came straight from a Calendly link without a lead form. They count as booked but never as a lead, so Book % leaves them out.`,
   });
 
   const offSite = coverage

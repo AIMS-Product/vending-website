@@ -242,6 +242,78 @@ describe("buildChannelReport", () => {
 describe("summariseSyncRuns", () => {
   const now = new Date("2026-09-11T12:00:00.000Z");
 
+  const run = (started: string, rows: number, error: string | null = null) => ({
+    connector: "bitly-clicks",
+    started_at: started,
+    finished_at: started,
+    rows_written: rows,
+    error,
+  });
+
+  it("flags a connector that runs clean but has written nothing for two days", () => {
+    const [row] = summariseSyncRuns(
+      [
+        run("2026-09-11T11:00:00.000Z", 0),
+        run("2026-09-10T11:00:00.000Z", 0),
+        run("2026-09-09T13:00:00.000Z", 0),
+        run("2026-09-05T11:00:00.000Z", 42),
+      ],
+      ["bitly-clicks"],
+      now,
+    );
+    expect(row.status).toBe("empty");
+    expect(row.note).toBe(
+      "Runs without errors but has added nothing since 2026-09-05.",
+    );
+  });
+
+  it("keeps a connector healthy when any run in the last two days wrote rows", () => {
+    const [row] = summariseSyncRuns(
+      [run("2026-09-11T11:00:00.000Z", 0), run("2026-09-10T11:00:00.000Z", 3)],
+      ["bitly-clicks"],
+      now,
+    );
+    expect(row.status).toBe("ok");
+    expect(row.note).toBeNull();
+  });
+
+  it("leaves feeds that are quiet by nature alone", () => {
+    const quiet = (connector: string) => ({
+      ...run("2026-09-11T11:00:00.000Z", 0),
+      connector,
+    });
+    const rows = summariseSyncRuns(
+      [
+        quiet("metricool-ads"),
+        { ...quiet("metricool-ads"), started_at: "2026-09-10T11:00:00.000Z" },
+      ],
+      ["metricool-ads"],
+      now,
+    );
+    expect(rows[0].status).toBe("ok");
+  });
+
+  it("never judges a single empty run as broken", () => {
+    const [row] = summariseSyncRuns(
+      [run("2026-09-11T11:00:00.000Z", 0)],
+      ["bitly-clicks"],
+      now,
+    );
+    expect(row.status).toBe("ok");
+  });
+
+  it("says so when it has never written anything", () => {
+    const [row] = summariseSyncRuns(
+      [run("2026-09-11T11:00:00.000Z", 0), run("2026-09-10T11:00:00.000Z", 0)],
+      ["bitly-clicks"],
+      now,
+    );
+    expect(row.status).toBe("empty");
+    expect(row.note).toBe(
+      "Runs without errors but has not added anything in the last two days.",
+    );
+  });
+
   it("judges the latest run per connector and lists expected ones that never ran", () => {
     const rows = summariseSyncRuns(
       [

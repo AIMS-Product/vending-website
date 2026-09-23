@@ -11,7 +11,11 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
-import type { Pace, PaceStatus } from "@/lib/services/goal-pace";
+import {
+  ON_PACE_TOLERANCE_PCT,
+  type Pace,
+  type PaceStatus,
+} from "@/lib/services/goal-pace";
 import type { GoalReport, GoalRow } from "@/lib/services/goal-report";
 import {
   BASELINE_MONTH,
@@ -27,7 +31,7 @@ import {
  */
 
 const DASH = (
-  <span className="text-ui-text-subtle" title="Not observed">
+  <span className="text-ui-text-subtle" title="No data">
     —
   </span>
 );
@@ -140,8 +144,9 @@ export function GoalTable({ report }: { report: GoalReport }) {
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>Channels against target</h2>
         <p className="text-ui-text-subtle text-xs">
-          Pace is target × share of the period elapsed. Weeks run Friday to
-          Thursday. Lane 2 and Marketing Reactivation pace on workdays.
+          Whether each channel is on track for its booked-call target. Weeks run
+          Friday to Thursday. Lane 2 (sales reactivation) and Marketing
+          Reactivation count workdays only.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -178,6 +183,13 @@ export function GoalTable({ report }: { report: GoalReport }) {
           </tbody>
         </table>
       </div>
+      <p className="text-ui-text-subtle border-ui-line border-t px-4 py-3 text-xs">
+        By today: the target times the share of the period that has passed. On
+        pace means within {ON_PACE_TOLERANCE_PCT}% of that. Need per week:
+        booked calls a week needed from today to still hit the target.
+        Projected: where the period ends if the current rate holds. Outcome
+        logged: share of booked calls with a show or no-show logged in Close.
+      </p>
       <p className="text-ui-text-muted border-ui-line border-t px-4 py-3 text-xs">
         The total is the channels the plan sets a number for, so it counts the
         same calls the target does.{" "}
@@ -275,7 +287,7 @@ function Logged({
   const pct = Math.round((logged.known / logged.total) * 100);
   return (
     <span
-      title={`${logged.known} of ${logged.total} booked calls have a show-up answer in Close`}
+      title={`${logged.known} of ${logged.total} booked calls have a show or no-show logged in Close`}
     >
       {pct}%
     </span>
@@ -321,8 +333,8 @@ export function GoalBasis({ report }: { report: GoalReport }) {
           <dt className="text-ui-text font-medium">Freshness</dt>
           <dd>
             {report.updatedAt
-              ? `Mirrored from Close, last completed ${new Date(report.updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Refreshes hourly.`
-              : "The Close mirror has not completed a run yet."}
+              ? `Copied from Close, last updated ${new Date(report.updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Updates every hour.`
+              : "Our copy of Close has not finished its first update yet."}
           </dd>
         </div>
         <div>
@@ -330,15 +342,17 @@ export function GoalBasis({ report }: { report: GoalReport }) {
           <dd>
             {outcomePct == null
               ? "No booked calls in this period yet."
-              : `${outcomePct}% of this period's booked calls have a show-up answer in Close. A show rate over the rest is an assumption, so none is printed here.`}
+              : `${outcomePct}% of this period's booked calls have a show or no-show logged in Close. A show rate would be a guess about the rest, so none is shown here.`}
           </dd>
         </div>
         <div>
-          <dt className="text-ui-text font-medium">Lane 2 credit</dt>
+          <dt className="text-ui-text font-medium">
+            Lane 2 (sales reactivation) credit
+          </dt>
           <dd>
             {setterPct == null
               ? "No Lane 2 calls in this period yet."
-              : `${setterPct}% of Lane 2 calls name a setter in Close. Per-setter credit, including calls Calendly recorded a rep booking, lives on `}
+              : `${setterPct}% of Lane 2 calls name a setter in Close. Per-setter credit, including calls Calendly shows a rep booked, is on `}
             {setterPct == null ? null : (
               <Link
                 href="/admin/bookings"

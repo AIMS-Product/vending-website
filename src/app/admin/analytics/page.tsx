@@ -68,6 +68,7 @@ import {
 } from "@/lib/services/admin-analytics-range";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
+import { AnalyticsGlossary } from "@/components/admin/AnalyticsGlossary";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -486,17 +487,17 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
         <AnalyticsKpiCard
           label="Qualified"
           metric={metrics.qualified}
-          caption="completed the questions"
+          caption="leads who finished the qualifying questions"
         />
         <AnalyticsKpiCard
           label="Booked a call"
           metric={metrics.bookedFromLeads}
-          caption="bookings traced to a lead"
+          caption="leads from this range who booked a call"
         />
         <AnalyticsKpiCard
           label="Booking rate"
           metric={metrics.bookingRatePct}
-          caption="of leads who booked"
+          caption="share of these leads who booked a call"
           format="percent"
         />
       </AdminMetricStrip>
@@ -509,7 +510,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
 
       <div className="grid gap-5 xl:grid-cols-3">
         <AnalyticsBreakdown
-          title="Leads by page"
+          title="Leads by sign-up page"
           rows={analytics.leadsBySourcePath}
         />
         <AnalyticsBreakdown
@@ -523,7 +524,7 @@ function OverviewTab({ analytics }: { analytics: AdminAnalytics }) {
           emptyLabel={
             analytics.bookingsConnected
               ? "No bookings in this range."
-              : "Bookings not connected yet."
+              : "Calendly bookings are not coming in yet."
           }
         />
       </div>
@@ -539,6 +540,11 @@ function AcquisitionTab({ analytics }: { analytics: AdminAnalytics }) {
   const { acquisition } = analytics;
   return (
     <>
+      <p className="text-ui-text-subtle mb-3 text-xs">
+        Where this range&apos;s leads came from, read from the UTM tags on the
+        link each person clicked. &ldquo;booked&rdquo; next to a count is how
+        many of those leads booked a call.
+      </p>
       <div className="grid gap-5 xl:grid-cols-3">
         <AnalyticsBreakdown
           title="Channel"
@@ -595,7 +601,7 @@ function PagesTab({ analytics }: { analytics: AdminAnalytics }) {
         <AnalyticsBreakdown
           title="Referring site"
           rows={pages.byReferrer}
-          emptyLabel="No referrers recorded in this range."
+          emptyLabel="No referring sites recorded in this range."
         />
       </div>
     </>
@@ -606,9 +612,13 @@ function QualityTab({ analytics }: { analytics: AdminAnalytics }) {
   const { quality } = analytics;
   return (
     <>
+      <p className="text-ui-text-subtle mb-3 text-xs">
+        How this range&apos;s leads answered the qualifying questions, and
+        whether each lead reached Close.
+      </p>
       <div className="grid gap-5 xl:grid-cols-3">
         <AnalyticsBreakdown
-          title="Fit result shown"
+          title="Result shown after the questions"
           rows={quality.byFitResult}
         />
         <AnalyticsBreakdown
@@ -623,7 +633,10 @@ function QualityTab({ analytics }: { analytics: AdminAnalytics }) {
           rows={quality.byBusinessStage}
         />
         <AnalyticsBreakdown title="State / region" rows={quality.byState} />
-        <AnalyticsBreakdown title="Close CRM sync" rows={quality.syncHealth} />
+        <AnalyticsBreakdown
+          title="Sent to Close CRM"
+          rows={quality.syncHealth}
+        />
       </div>
     </>
   );
@@ -647,8 +660,8 @@ function BookingContext({
     return (
       <div className={`${adminCardClass} mb-5`}>
         <p className="text-ui-text-muted text-sm">
-          Booking tracking isn&apos;t connected yet — bookings will appear here
-          once the Calendly webhook is live.
+          Calendly bookings are not coming in yet. They will appear here once
+          Calendly is connected.
         </p>
       </div>
     );
@@ -658,7 +671,7 @@ function BookingContext({
     <div className={`${adminCardClass} mb-5`}>
       <p className="text-ui-text-muted text-sm">
         <span className="text-ui-text font-semibold">{total}</span> calls were
-        booked in this range.{" "}
+        booked on Calendly in this range.{" "}
         {unattributed > 0 ? (
           <>
             <span className="text-ui-text font-semibold">{unattributed}</span>{" "}
@@ -688,6 +701,7 @@ function LeadDefinitionNote() {
       <p className="text-ui-text-subtle mt-1 text-xs">
         {LEAD_DEFINITION.notLeads}
       </p>
+      <AnalyticsGlossary />
     </div>
   );
 }

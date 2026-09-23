@@ -31,13 +31,7 @@
 
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import { classifyEventType } from "@/lib/services/calendly-event-class";
-
-/** Close funnels owned by the reactivation team, not by marketing. */
-const REACTIVATION_FUNNELS = new Set([
-  "Reactivation Scrapers",
-  "Reactivation Email",
-  "Sales Reactivation",
-]);
+import { groupOf } from "@/lib/services/close-monthly-funnel";
 
 export type BookingRow = {
   inviteeEmail: string | null;
@@ -149,7 +143,9 @@ export function buildBookedCalls(input: {
 
     const email = booking.inviteeEmail?.trim().toLowerCase();
     const funnel = email ? funnelByEmail.get(email) : undefined;
-    if (funnel && REACTIVATION_FUNNELS.has(funnel)) {
+    // The sales floor's own list (the plan's Lane 2). "Reactivation Email" is
+    // marketing, as it is on the goals page and Month over month.
+    if (funnel && groupOf(funnel) === "outbound") {
       week.reactivationSeen += 1;
       continue;
     }

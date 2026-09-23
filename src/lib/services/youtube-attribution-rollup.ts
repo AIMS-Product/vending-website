@@ -12,6 +12,16 @@
  */
 
 import { resolveChannel } from "@/lib/analytics/channel";
+import {
+  classifyBookedCall,
+  type FunnelShowRow,
+} from "@/lib/services/funnel-monthly";
+
+/** The Close mirror's show-up answers by email, and the day they are judged on. */
+export type YouTubeShows = {
+  byEmail: Map<string, FunnelShowRow>;
+  today: string;
+};
 
 /** Channel label `resolveChannel` maps every YouTube tag onto. */
 export const YOUTUBE_CHANNEL = "YouTube";
@@ -198,6 +208,7 @@ export function buildYouTubeAttribution({
   visitsConnected,
   visitsSource = null,
   outcomesConnected,
+  shows = null,
 }: {
   leads: YouTubeLeadRow[];
   videos: YouTubeVideoRow[];
@@ -207,6 +218,8 @@ export function buildYouTubeAttribution({
   visitsConnected: boolean;
   visitsSource?: YouTubeVisitsSource | null;
   outcomesConnected: boolean;
+  /** Null when the Close mirror could not be read: Attended is then a dash. */
+  shows?: YouTubeShows | null;
 }): YouTubeAttributionRollup {
   const youtubeLeads = leads.filter(isYouTubeLead);
   const byCampaign = groupByCampaign(youtubeLeads);
@@ -228,6 +241,7 @@ export function buildYouTubeAttribution({
         clicks: clicksConnected ? (clicksByCampaign.get(campaign) ?? 0) : null,
         visits: visitsConnected ? (viewsByCampaign.get(campaign) ?? 0) : null,
         outcomesConnected,
+        shows,
       }),
     )
     .sort((a, b) => b.leads - a.leads || a.title.localeCompare(b.title));
@@ -238,7 +252,7 @@ export function buildYouTubeAttribution({
     leads: youtubeLeads.length,
     qualified: youtubeLeads.filter(isQualified).length,
     booked: youtubeLeads.filter(hasBooked).length,
-    attended: outcomesConnected ? countAttended(youtubeLeads) : null,
+    attended: countAttended(youtubeLeads, shows),
     closed: outcomesConnected ? youtubeLeads.filter(isClosedWon).length : null,
   };
 
@@ -270,6 +284,7 @@ function buildVideoRow({
   clicks,
   visits,
   outcomesConnected,
+  shows,
 }: {
   campaign: string;
   leads: YouTubeLeadRow[];
@@ -277,6 +292,7 @@ function buildVideoRow({
   clicks: number | null;
   visits: number | null;
   outcomesConnected: boolean;
+  shows: YouTubeShows | null;
 }): YouTubeVideoFunnelRow {
   const booked = leads.filter(hasBooked).length;
   const closed = outcomesConnected ? leads.filter(isClosedWon).length : null;
@@ -295,7 +311,7 @@ function buildVideoRow({
     leads: leads.length,
     qualified: leads.filter(isQualified).length,
     booked,
-    attended: outcomesConnected ? countAttended(leads) : null,
+    attended: countAttended(leads, shows),
     closed,
     clickToLeadPct: ratePct(leads.length, clicks),
     visitToLeadPct: ratePct(leads.length, visits),
@@ -328,7 +344,7 @@ function buildStages(totals: {
     {
       label: "Attended the call",
       count: totals.attended,
-      note: "booked minus no-show and cancelled, so a call with no outcome logged counts as attended",
+      note: "a rep logged the show in Close, so a call nobody logged is not counted",
     },
     { label: "Closed / won", count: totals.closed },
   ];
@@ -338,7 +354,14 @@ function buildStages(totals: {
     return {
       label: step.label,
       count: step.count,
-      ofPreviousPct: index === 0 ? null : ratePct(step.count, previous),
+      // No share when a step is larger than the one above it: Closed / won
+      // counts sales whose show nobody logged, so it can exceed Attended, and
+      // "150% continued" reads as a real rate.
+      ofPreviousPct:
+        index === 0 ||
+        (step.count != null && previous != null && step.count > previous)
+          ? null
+          : ratePct(step.count, previous),
       ...(step.note ? { note: step.note } : {}),
     };
   });
@@ -470,18 +493,20 @@ function bookedBeforeLead(lead: YouTubeLeadRow): boolean {
 }
 
 /**
- * Booked calls the Close label does not disown.
- *
- * Close has no "attended" field, so this is a subtraction, not an observation:
- * the labels that positively assert the call did not happen are removed and the
- * rest are treated as held. Named as a derivation everywhere it surfaces.
+ * Booked calls a rep logged as held in Close ("First Call Show Up" = yes), the
+ * rule every other tab uses through `classifyBookedCall`. It used to be booked
+ * minus no-show and cancelled, which counted every unlogged call as attended.
  */
-function countAttended(leads: YouTubeLeadRow[]): number {
+function countAttended(
+  leads: YouTubeLeadRow[],
+  shows: YouTubeShows | null,
+): number | null {
+  if (!shows) return null;
   return leads.filter(
     (lead) =>
       hasBooked(lead) &&
-      lead.call_outcome !== "no_show" &&
-      lead.call_outcome !== "canceled",
+      classifyBookedCall(lead.email, shows.byEmail, shows.today).state ===
+        "held",
   ).length;
 }
 

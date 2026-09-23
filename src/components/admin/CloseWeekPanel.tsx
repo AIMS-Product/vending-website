@@ -113,11 +113,12 @@ export function CloseWeekTab({
             Every first call in Close, by week
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            Weeks run Friday to Thursday, the same weeks as the SteelTrap
-            report. This counts everyone on the closers&apos; calendar,
-            including reactivation and webinar people who never filled a form on
-            our site, so it is larger than the site funnel on the other tabs.
-            Test and internal filtering does not apply here.
+            What each week put on the closers&apos; calendar, and what came of
+            it. Weeks run Friday to Thursday, the same weeks as the SteelTrap
+            report, and a first call counts in the week it is scheduled for.
+            This includes reactivation and webinar people who never filled a
+            form on our site, so it is larger than the site numbers on other
+            tabs. The test and internal-lead filter does not apply here.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -151,10 +152,10 @@ export function CloseWeekTab({
             {weekLabel(week)} by Close funnel
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            Showed and qualified count only what a rep logged as Yes; an
-            unlogged call is not counted as shown. Won and revenue are deals won
-            this week, whenever the call happened. &ldquo;No source&rdquo; means
-            Close has no funnel on the lead.
+            Showed and Qualified count only calls a rep logged as Yes, so they
+            are a minimum. Show rate is showed out of first calls. Won and
+            Revenue are deals won this week, whenever the call happened.
+            &ldquo;No source&rdquo; means the lead has no funnel in Close.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -197,16 +198,16 @@ export function CloseWeekTab({
               Close; counted as won, left out of revenue.
             </p>
           ) : null}
-          <p>Source: {CLOSE_VIEW_SOURCE}</p>
+          <p>Close fields used: {CLOSE_VIEW_SOURCE}</p>
           {report.mirrorSyncedAt ? (
             <p>
-              First calls copied from Close at{" "}
+              First calls last copied from Close at{" "}
               {new Date(report.mirrorSyncedAt).toLocaleString("en-US", {
                 timeZone: "America/New_York",
                 dateStyle: "medium",
                 timeStyle: "short",
               })}{" "}
-              ET (refreshed hourly). Won deals are read from Close live.
+              ET (every hour). Won deals are read from Close directly.
             </p>
           ) : null}
         </div>

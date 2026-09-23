@@ -329,11 +329,14 @@ function DeltaChip({
   if (metric.deltaPct === null) {
     // No comparison is offered when the prior window is empty (genuinely new)
     // or too small to divide by. Saying "new" for a base of three would be a
-    // different lie than "+17,533%", not an improvement.
+    // different lie than "+17,533%", not an improvement. The small prior is
+    // printed instead ("was 4"), so a phone reader sees it without the tooltip.
     return (
       <span title={priorLabel}>
         <AdminDeltaChip tone={metric.prior === 0 ? "up" : "neutral"}>
-          {metric.prior === 0 ? "new" : "no baseline"}
+          {metric.prior === 0
+            ? "new"
+            : `was ${formatNumber(metric.prior)}${suffix}`}
         </AdminDeltaChip>
       </span>
     );
@@ -482,6 +485,14 @@ export function AnalyticsTrend({
   return (
     <section className={adminCardClass} aria-label="Daily trend">
       <h2 className={adminEyebrowClass}>Leads and bookings per day</h2>
+      {rows.length > 0 ? (
+        <p className="text-ui-text-subtle mt-2 text-xs">
+          {formatShortDate(rows[0].date)} to{" "}
+          {formatShortDate(rows[rows.length - 1].date)}. The green bar is that
+          day&apos;s leads who went on to book a call, shown on the day they
+          became a lead.
+        </p>
+      ) : null}
       <div className="mt-3 flex items-end gap-1.5 overflow-x-auto pb-1">
         {rows.map((row) => (
           <div
@@ -512,7 +523,7 @@ export function AnalyticsTrend({
           naming which column is which. */}
       <div className="text-ui-text-muted mt-3 flex items-center gap-4 text-xs">
         <LegendDot fill="bg-ui-accent" label="Leads" />
-        <LegendDot fill="bg-ui-ok" label="Bookings from leads" />
+        <LegendDot fill="bg-ui-ok" label="Of those, booked a call" />
       </div>
     </section>
   );
@@ -690,12 +701,13 @@ export function AnalyticsFunnel({
     <section className={adminCardClass} aria-label="Conversion funnel">
       <h2 className={adminEyebrowClass}>From question to booked call</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        {context.contactsCaptured} contacts captured ·{" "}
+        {context.contactsCaptured} leads in this range.{" "}
         <span className="text-ui-text-muted font-medium">
-          {context.offeredQuestions} were offered the questions
-        </span>{" "}
-        · {context.neverOfferedQuestions} came from booking or contact pages
-        that never show them. Only the offered group is measured below.
+          {context.offeredQuestions} were shown the qualifying questions
+        </span>
+        ; {context.neverOfferedQuestions} signed up on a booking or contact page
+        that does not ask them. The steps below count only those{" "}
+        {context.offeredQuestions}.
       </p>
       <ol className="mt-3 space-y-2.5">
         {steps.map((step, index) => (
@@ -738,6 +750,11 @@ export function AnalyticsCampaignTable({
   return (
     <section className={adminCardClass} aria-label="Campaign performance">
       <h2 className={adminEyebrowClass}>Campaign performance</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        Campaigns with the most leads in this range. Qualified means the lead
+        finished the qualifying questions. Booking rate is the share of the
+        campaign&apos;s leads who booked a call.
+      </p>
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
           No campaigns in this range.
@@ -756,7 +773,7 @@ export function AnalyticsCampaignTable({
                   Qualified
                 </th>
                 <th className="py-2 pr-3 text-right font-semibold">Booked</th>
-                <th className="py-2 text-right font-semibold">Rate</th>
+                <th className="py-2 text-right font-semibold">Booking rate</th>
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
