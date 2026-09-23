@@ -46,6 +46,12 @@ function fakeClient(options: {
   >;
   /** Calendly event uri -> the lead that booking is linked to, as recordCalendlyBooking wrote it. */
   bookingLeads?: Record<string, string>;
+  /** lead id -> Close "First Sales Call Booked Date" (a DATE), as the reconciler mirrors it. */
+  bookedOn?: Record<string, string>;
+  /** lead id -> setter inferred from Close activity (setter_touch_name). */
+  touchSetters?: Record<string, string>;
+  /** lead_submissions columns to report as not existing yet. */
+  missingLeadColumns?: string[];
 }) {
   const rows = options.rows ?? [];
   const bookedLeadIds = new Set(options.bookedLeadIds ?? []);
@@ -53,8 +59,15 @@ function fakeClient(options: {
   const setters = options.setters ?? {};
   const closeLeads = options.closeLeads ?? {};
   const bookingLeads = options.bookingLeads ?? {};
+  const bookedOn = options.bookedOn ?? {};
+  const touchSetters = options.touchSetters ?? {};
+  const missingLeadColumns = options.missingLeadColumns ?? [];
   const creditIds = [
-    ...new Set([...Object.keys(setters), ...Object.keys(closeLeads)]),
+    ...new Set([
+      ...Object.keys(setters),
+      ...Object.keys(closeLeads),
+      ...Object.keys(touchSetters),
+    ]),
   ];
 
   function conversationsQuery(fields: string) {
@@ -78,20 +91,36 @@ function fakeClient(options: {
   }
 
   function leadSubmissionsQuery(fields: string) {
-    const result = fields.includes("booked_by_setter")
+    const missing = missingLeadColumns.find((column) =>
+      fields.includes(column),
+    );
+    const result = missing
       ? {
-          data: creditIds.map((id) => ({
-            id,
-            booked_by_setter: setters[id] ?? null,
-            entry_resource_tag: closeLeads[id]?.resourceTag ?? null,
-            close_lead_created_at: closeLeads[id]?.createdAt ?? null,
-          })),
-          error: null,
+          data: null,
+          error: {
+            message: `column lead_submissions.${missing} does not exist`,
+          },
         }
-      : {
-          data: Array.from(bookedLeadIds).map((id) => ({ id })),
-          error: null,
-        };
+      : fields.includes("booked_by_setter")
+        ? {
+            data: creditIds.map((id) => ({
+              id,
+              booked_by_setter: setters[id] ?? null,
+              entry_resource_tag: closeLeads[id]?.resourceTag ?? null,
+              close_lead_created_at: closeLeads[id]?.createdAt ?? null,
+              ...(fields.includes("setter_touch_name")
+                ? { setter_touch_name: touchSetters[id] ?? null }
+                : {}),
+            })),
+            error: null,
+          }
+        : {
+            data: Array.from(bookedLeadIds).map((id) => ({
+              id,
+              call_booked_at: bookedOn[id] ?? null,
+            })),
+            error: null,
+          };
     const builder = {
       in: () => builder,
       not: () => builder,
@@ -270,6 +299,7 @@ describe("getChatbotAnalytics funnels", () => {
     expect(d30.bookedBy).toEqual({
       inChat: 1,
       setter: 2,
+      setterInferred: 0,
       unknown: 1,
       setters: [
         { label: "Connor George", count: 1 },
@@ -550,5 +580,159 @@ describe("outcome rollup", () => {
     });
 
     expect(analytics.outcomes.d7).toMatchObject({ open: 1, leftNoContact: 0 });
+  });
+});
+
+describe("booking credit: who the chat can claim", () => {
+  const said = (content: string) => [{ role: "user", content, ts: daysAgo(5) }];
+
+  it("leaves out calls booked before the chat, and support chats, from the funnel", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            // Already on the calendar on Aug 10, chatted on Aug 19 to cancel.
+            id: "pre-chat",
+            created_at: daysAgo(5),
+            message_count: 3,
+            captured_email: "pre@example.com",
+            lead_submission_id: "lead-pre",
+            messages: said("hi, I need to cancel my call"),
+          },
+          {
+            // Booked the same day as the chat: order unknown, so it keeps
+            // its credit rather than lose a real one.
+            id: "same-day",
+            created_at: daysAgo(5),
+            message_count: 6,
+            captured_email: "same@example.com",
+            lead_submission_id: "lead-same",
+            messages: said("how does the program work"),
+          },
+          {
+            id: "after",
+            created_at: daysAgo(5),
+            message_count: 6,
+            captured_email: "after@example.com",
+            lead_submission_id: "lead-after",
+            messages: said("do I need experience"),
+          },
+          {
+            id: "support",
+            created_at: daysAgo(5),
+            message_count: 4,
+            captured_email: "member@example.com",
+            messages: said("I'm an existing member and can't log in"),
+          },
+          {
+            id: "browsing",
+            created_at: daysAgo(5),
+            message_count: 1,
+            messages: said("what is vending"),
+          },
+        ],
+        bookedLeadIds: ["lead-pre", "lead-same", "lead-after"],
+        bookedOn: {
+          "lead-pre": "2026-08-10",
+          "lead-same": "2026-08-19",
+          "lead-after": "2026-08-21",
+        },
+      }),
+    });
+
+    const d30 = analytics.funnels.d30;
+    expect(d30.conversations).toBe(3);
+    expect(d30.booked).toBe(2);
+    expect(d30.excluded).toEqual({ support: 1, bookedBeforeChat: 1 });
+    expect(analytics.callsBooked30d.value).toBe(2);
+    expect(analytics.conversations30d.value).toBe(3);
+    expect(analytics.outcomes.d30.total).toBe(3);
+  });
+
+  it("always counts a chat that booked on its own calendar, even after a support question", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "refund-then-booked",
+            created_at: daysAgo(3),
+            message_count: 6,
+            captured_email: "r@example.com",
+            messages: said("I want a refund on my deposit"),
+            call_booked_at: daysAgo(3),
+            booked_event_uri: "https://api.calendly.com/scheduled_events/9",
+            attribution_source: "in_chat",
+          },
+        ],
+      }),
+    });
+
+    const d30 = analytics.funnels.d30;
+    expect(d30.booked).toBe(1);
+    expect(d30.bookedBy.inChat).toBe(1);
+    expect(d30.excluded).toEqual({ support: 0, bookedBeforeChat: 0 });
+  });
+
+  it("credits a setter inferred from Close activity as a setter, marked inferred", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "stated",
+            created_at: daysAgo(4),
+            message_count: 6,
+            captured_email: "a@example.com",
+            lead_submission_id: "lead-a",
+          },
+          {
+            id: "inferred",
+            created_at: daysAgo(4),
+            message_count: 6,
+            captured_email: "b@example.com",
+            lead_submission_id: "lead-b",
+          },
+          {
+            id: "nobody",
+            created_at: daysAgo(4),
+            message_count: 6,
+            captured_email: "c@example.com",
+            lead_submission_id: "lead-c",
+          },
+        ],
+        bookedLeadIds: ["lead-a", "lead-b", "lead-c"],
+        setters: { "lead-a": "Connor George" },
+        touchSetters: { "lead-b": "Pearl Sathekge" },
+      }),
+    });
+
+    const bookedBy = analytics.funnels.d30.bookedBy;
+    expect(bookedBy.setter).toBe(2);
+    expect(bookedBy.setterInferred).toBe(1);
+    expect(bookedBy.unknown).toBe(1);
+  });
+
+  it("keeps stated setter credit when the inferred-setter column is not there yet", async () => {
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "stated",
+            created_at: daysAgo(4),
+            message_count: 6,
+            captured_email: "a@example.com",
+            lead_submission_id: "lead-a",
+          },
+        ],
+        bookedLeadIds: ["lead-a"],
+        setters: { "lead-a": "Connor George" },
+        missingLeadColumns: ["setter_touch_name"],
+      }),
+    });
+
+    expect(analytics.funnels.d30.bookedBy.setter).toBe(1);
   });
 });

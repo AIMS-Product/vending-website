@@ -40,10 +40,10 @@ export function ChatbotInsightsOverview({
           caption="per conversation"
         />
         <AdminMetricPanel
-          label="Follow-up tasks"
+          label="Sales follow-ups"
           value={kpis.followUpTasksReadyCount}
           tone={kpis.followUpTasksReadyCount ? "amber" : "slate"}
-          caption={`${kpis.followUpTasksDueTodayCount} due today`}
+          caption={`${kpis.followUpTasksDueTodayCount} due today · ${kpis.handoffsOpenCount} hand-off${kpis.handoffsOpenCount === 1 ? "" : "s"} open`}
         />
         <AdminMetricPanel
           label="Needs prompt tuning"

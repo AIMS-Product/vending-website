@@ -40,6 +40,7 @@ const EMPTY_KPIS: ChatbotInsightsKpis = {
   needsPromptTuningCount: 0,
   followUpTasksReadyCount: 0,
   followUpTasksDueTodayCount: 0,
+  handoffsOpenCount: 0,
   insightsCount: 0,
   knowledgeFixesCount: 0,
   siteRecsCount: 0,

@@ -2,6 +2,7 @@ import "server-only";
 
 import { revalidateTag } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { HANDOFF_DEDUPE_PREFIX } from "@/lib/chatbot/close-handoff";
 import { CHATBOT_CONFIG_CACHE_TAG } from "@/lib/chatbot/config";
 import { ChatbotAdminError } from "@/lib/services/chatbot-admin";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -30,8 +31,11 @@ export type ChatbotInsightsKpis = {
   captureRate: number;
   avgMessages: number;
   needsPromptTuningCount: number;
+  /** Open sales follow-up drafts. Hand-offs are counted in handoffsOpenCount. */
   followUpTasksReadyCount: number;
   followUpTasksDueTodayCount: number;
+  /** Open flag_for_team hand-offs (callback, support, accessibility, other). */
+  handoffsOpenCount: number;
   insightsCount: number;
   knowledgeFixesCount: number;
   siteRecsCount: number;
@@ -74,6 +78,7 @@ export async function getChatbotInsightsKpis(
     countUnansweredQuestions(client, start),
     fetchLastLearningRun(client),
   ]);
+  const followUps = summarizeOpenFollowUps(followUpTasksReady, endOfToday);
 
   return {
     conversations: conversationStats.count,
@@ -84,10 +89,9 @@ export async function getChatbotInsightsKpis(
       ? conversationStats.totalMessages / conversationStats.count
       : 0,
     needsPromptTuningCount,
-    followUpTasksReadyCount: followUpTasksReady.length,
-    followUpTasksDueTodayCount: followUpTasksReady.filter(
-      (t) => t.due_at !== null && t.due_at <= endOfToday,
-    ).length,
+    followUpTasksReadyCount: followUps.ready,
+    followUpTasksDueTodayCount: followUps.dueToday,
+    handoffsOpenCount: followUps.handoffs,
     insightsCount,
     knowledgeFixesCount,
     siteRecsCount,
@@ -138,10 +142,40 @@ async function countFlags(
   return count ?? 0;
 }
 
+/**
+ * The flag_for_team reason ("callback", "support", ...) when this row is a
+ * hand-off, null when it is a learning-engine sales draft. Both live in
+ * chatbot_follow_up_tasks; the dedupe key is what tells them apart, and it
+ * does so for every row ever written, with no backfill.
+ */
+export function handoffReasonOf(dedupeKey: string): string | null {
+  if (!dedupeKey.startsWith(HANDOFF_DEDUPE_PREFIX)) return null;
+  const reason = dedupeKey.split(":").at(-1)?.trim();
+  return reason || "other";
+}
+
+/**
+ * "Due today" means sales follow-ups only. A cancellation request and a
+ * callback were counted in the same number as sales drafts.
+ */
+export function summarizeOpenFollowUps(
+  rows: ReadonlyArray<{ dedupe_key: string; due_at: string | null }>,
+  endOfToday: string,
+): { ready: number; dueToday: number; handoffs: number } {
+  const drafts = rows.filter((row) => handoffReasonOf(row.dedupe_key) === null);
+  return {
+    ready: drafts.length,
+    dueToday: drafts.filter(
+      (row) => row.due_at !== null && row.due_at <= endOfToday,
+    ).length,
+    handoffs: rows.length - drafts.length,
+  };
+}
+
 async function fetchOpenFollowUpTasks(client: Client, start: string) {
   const { data, error } = await client
     .from("chatbot_follow_up_tasks")
-    .select("id, due_at")
+    .select("id, due_at, dedupe_key")
     .eq("status", "open")
     .gte("created_at", start);
   if (error) throw new ChatbotAdminError("Could not load follow-up tasks.");
@@ -226,6 +260,10 @@ async function conversationLabels(
 
 export type AdminFollowUpTask = {
   id: string;
+  /** A learning-engine sales draft, or a flag_for_team hand-off. */
+  kind: "draft" | "handoff";
+  /** The hand-off reason; null on a draft. */
+  handoffReason: string | null;
   conversationId: string | null;
   conversationLabel: string;
   taskType: string;
@@ -247,7 +285,7 @@ export async function listOpenFollowUpTasks(
   const { data, error } = await client
     .from("chatbot_follow_up_tasks")
     .select(
-      "id, conversation_id, task_type, priority, draft_subject, draft_body, due_at, reason_summary, created_at",
+      "id, conversation_id, task_type, priority, draft_subject, draft_body, due_at, reason_summary, dedupe_key, created_at",
     )
     .eq("status", "open")
     .gte("created_at", start)
@@ -265,6 +303,8 @@ export async function listOpenFollowUpTasks(
 
   return rows.map((row) => ({
     id: row.id,
+    kind: handoffReasonOf(row.dedupe_key) === null ? "draft" : "handoff",
+    handoffReason: handoffReasonOf(row.dedupe_key),
     conversationId: row.conversation_id,
     conversationLabel: row.conversation_id
       ? (labels.get(row.conversation_id) ?? "Anonymous visitor")

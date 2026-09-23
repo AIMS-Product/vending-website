@@ -42,6 +42,7 @@ const EMPTY_KPIS: ChatbotInsightsKpis = {
   needsPromptTuningCount: 0,
   followUpTasksReadyCount: 0,
   followUpTasksDueTodayCount: 0,
+  handoffsOpenCount: 0,
   insightsCount: 0,
   knowledgeFixesCount: 0,
   siteRecsCount: 0,
@@ -122,7 +123,8 @@ export default async function AdminChatbotInsightsPage({
       <div className="grid gap-5">
         <ChatbotInsightsOverview range={range} ranges={RANGES} kpis={kpis} />
         <ChatbotInsightsLists
-          followUpTasks={followUpTasks}
+          followUpTasks={followUpTasks.filter((task) => task.kind === "draft")}
+          handoffs={followUpTasks.filter((task) => task.kind === "handoff")}
           learningCases={learningCases}
           knowledgeSuggestions={knowledgeSuggestions}
           siteRecommendations={siteRecommendations}

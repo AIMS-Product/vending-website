@@ -13,6 +13,7 @@ import {
   calendarWasShown,
   deriveConversationOutcome,
 } from "@/lib/chatbot/outcomes";
+import { triageConversation } from "@/lib/chatbot/triage";
 import type { Database, Json, Tables } from "@/types/database";
 
 type ChatbotAnalyticsClient = Pick<SupabaseClient<Database>, "from">;
@@ -98,6 +99,12 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
     /** A setter called/texted and booked them after the chat. */
     setter: number;
     /**
+     * Of `setter`, how many name a setter Close did not state but the
+     * reconciler inferred from the last call/SMS before the booking
+     * (`setter_touch_name`). A guess, shown as one.
+     */
+    setterInferred: number;
+    /**
      * Booked outside the chat with no setter recorded in Close. Never folded
      * into `inChat` -- that was the bug this split exists to fix.
      */
@@ -116,6 +123,12 @@ export type ChatbotFunnelWindow = ChatbotFunnelStageCounts & {
     /** `byFirstTouch.earlier` broken down by that earlier source. */
     earlierSources: ChatbotRankedRow[];
   };
+  /**
+   * Chats in this window left out of every count above because they were never
+   * a sales opportunity: existing-member support (triage.ts), and people whose
+   * call was already booked before they chatted.
+   */
+  excluded: { support: number; bookedBeforeChat: number };
 };
 
 /** Booked calls by who got them onto the calendar. */
@@ -268,8 +281,10 @@ function emptyFunnelWindow(days: number): ChatbotFunnelWindow {
     capturedRateOfEngagedPct: 0,
     bookedRateOfCapturedPct: 0,
     overallBookedRatePct: 0,
+    excluded: { support: 0, bookedBeforeChat: 0 },
     bookedBy: {
       ...emptyLastTouch(),
+      setterInferred: 0,
       setters: [],
       byFirstTouch: {
         chatbot: emptyLastTouch(),
@@ -354,23 +369,30 @@ export async function getChatbotAnalytics(
       fetchStart,
     );
 
-    const { ids: bookedLeadIds } = await fetchBookedLeadIds(
+    const { ids: bookedLeadIds, bookedOn } = await fetchBookedLeadIds(
       client,
       rows.map((row) => row.lead_submission_id),
     );
-    const bookedRows = rows.filter((row) => isBooked(row, bookedLeadIds));
+    const excluded: ExcludedChat[] = [];
+    const salesRows = rows.filter((row) => {
+      const reason = exclusionReason(row, bookedOn);
+      if (reason) excluded.push({ createdAt: row.created_at, reason });
+      return reason === null;
+    });
+    const bookedRows = salesRows.filter((row) => isBooked(row, bookedLeadIds));
     const bookedEventLinks = await fetchBookedEventLinks(client, bookedRows);
     const creditByLead = await fetchLeadCredit(
       client,
       bookedRows.map((row) => effectiveLeadId(row, bookedEventLinks)),
     );
     return buildAnalytics(
-      rows,
+      salesRows,
       now,
       bookedLeadIds,
       attributionSplitTrustworthy,
       creditByLead,
       bookedEventLinks,
+      excluded,
     );
   } catch (error) {
     console.warn("chatbot analytics load failed, returning empty rollup", {
@@ -378,6 +400,41 @@ export async function getChatbotAnalytics(
     });
     return EMPTY_CHATBOT_ANALYTICS;
   }
+}
+
+type ExcludedChat = {
+  createdAt: string;
+  reason: keyof ChatbotFunnelWindow["excluded"];
+};
+
+const PACIFIC_DATE = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "America/Los_Angeles",
+});
+
+/**
+ * Why a chat is not a sales opportunity, or null when it is.
+ *
+ * `bookedBeforeChat`: the lead's Close "First Sales Call Booked Date" is a
+ * DATE, so the test is day-grained and deliberately one-sided. The chat's day
+ * is taken in Pacific time, the latest US zone, so a booking made after the
+ * chat can never read as earlier. A booking made earlier on the SAME day as
+ * the chat still counts as after it.
+ * ponytail: same-day pre-chat bookings stay credited; exact order needs the
+ * booking's timestamp from calendly_bookings.
+ */
+function exclusionReason(
+  row: ConversationRow,
+  bookedOn: ReadonlyMap<string, string | null>,
+): ExcludedChat["reason"] | null {
+  // The chat's own calendar stamped this booking, so it came from the chat and
+  // always counts, whatever the visitor asked first.
+  if (row.call_booked_at) return null;
+  if (triageConversation(row.messages) === "support") return "support";
+  if (!row.lead_submission_id) return null;
+  const booked = bookedOn.get(row.lead_submission_id)?.slice(0, 10);
+  if (!booked) return null;
+  const chatDay = PACIFIC_DATE.format(new Date(row.created_at));
+  return booked < chatDay ? "bookedBeforeChat" : null;
 }
 
 /**
@@ -461,11 +518,19 @@ async function fetchConversationRows(
 export async function fetchBookedLeadIds(
   client: ChatbotAnalyticsClient,
   candidateLeadIds: readonly (string | null | undefined)[],
-): Promise<{ ids: ReadonlySet<string>; complete: boolean }> {
+): Promise<{
+  ids: ReadonlySet<string>;
+  /** Lead id -> Close's booked DATE (YYYY-MM-DD), for pre-chat checks. */
+  bookedOn: ReadonlyMap<string, string | null>;
+  complete: boolean;
+}> {
   const leadIds = Array.from(
     new Set(candidateLeadIds.filter((id): id is string => Boolean(id))),
   );
-  if (leadIds.length === 0) return { ids: new Set(), complete: true };
+  const bookedOn = new Map<string, string | null>();
+  if (leadIds.length === 0) {
+    return { ids: new Set(), bookedOn, complete: true };
+  }
 
   // Chunked because these ids ride in the query string: a full page of
   // conversations is up to 500 UUIDs, roughly 20KB, past what proxies in front
@@ -475,7 +540,7 @@ export async function fetchBookedLeadIds(
     const chunk = leadIds.slice(start, start + LEAD_LOOKUP_CHUNK);
     const { data, error } = await client
       .from("lead_submissions")
-      .select("id")
+      .select("id, call_booked_at")
       .in("id", chunk)
       .not("call_booked_at", "is", null);
     if (error) {
@@ -488,21 +553,32 @@ export async function fetchBookedLeadIds(
       // Partial results would understate bookings and overstate the leak, so
       // the caller is told the answer is incomplete rather than handed a set
       // that looks authoritative.
-      return { ids, complete: false };
+      return { ids, bookedOn, complete: false };
     }
-    for (const row of data ?? []) ids.add(row.id);
+    for (const row of data ?? []) {
+      ids.add(row.id);
+      bookedOn.set(row.id, row.call_booked_at ?? null);
+    }
   }
-  return { ids, complete: true };
+  return { ids, bookedOn, complete: true };
 }
 
 const LEAD_LOOKUP_CHUNK = 100;
 
 /** What the booking reconciler mirrored from Close for one lead. */
 export type LeadCredit = {
+  /** Close "Reactivation - Setter Name": a human stated it. */
   setter: string | null;
+  /** setter_touch_name: inferred from the last Close call/SMS before booking. */
+  touchSetter: string | null;
   resourceTag: string | null;
   closeCreatedAt: string | null;
 };
+
+/** The setter credited with a booking: stated first, inferred second. */
+export function creditedSetter(lead: LeadCredit | undefined): string | null {
+  return lead?.setter ?? lead?.touchSetter ?? null;
+}
 
 /**
  * Close's credit fields per booked lead, as mirrored by the booking
@@ -521,25 +597,62 @@ export async function fetchLeadCredit(
   );
   const credit = new Map<string, LeadCredit>();
   for (let start = 0; start < leadIds.length; start += LEAD_LOOKUP_CHUNK) {
-    const { data, error } = await client
-      .from("lead_submissions")
-      .select("id, booked_by_setter, entry_resource_tag, close_lead_created_at")
-      .in("id", leadIds.slice(start, start + LEAD_LOOKUP_CHUNK));
+    const { rows, error } = await readCreditChunk(
+      client,
+      leadIds.slice(start, start + LEAD_LOOKUP_CHUNK),
+    );
     if (error) {
-      console.warn("chatbot analytics: lead credit lookup failed", {
-        error: error.message,
-      });
+      console.warn("chatbot analytics: lead credit lookup failed", { error });
       return credit;
     }
-    for (const row of data ?? []) {
+    for (const row of rows) {
       credit.set(row.id, {
         setter: row.booked_by_setter?.trim() || null,
+        touchSetter: row.setter_touch_name?.trim() || null,
         resourceTag: row.entry_resource_tag,
         closeCreatedAt: row.close_lead_created_at,
       });
     }
   }
   return credit;
+}
+
+type CreditRow = {
+  id: string;
+  booked_by_setter: string | null;
+  setter_touch_name?: string | null;
+  entry_resource_tag: string | null;
+  close_lead_created_at: string | null;
+};
+
+/**
+ * setter_touch_name ships in its own hand-applied migration. Without it, read
+ * the stated setter alone rather than lose every credit on the page.
+ */
+async function readCreditChunk(
+  client: ChatbotAnalyticsClient,
+  chunk: string[],
+): Promise<{ rows: CreditRow[]; error: string | null }> {
+  const full = await client
+    .from("lead_submissions")
+    .select(
+      "id, booked_by_setter, setter_touch_name, entry_resource_tag, close_lead_created_at",
+    )
+    .in("id", chunk);
+  // Cast: the generated types predate 20260912130000_setter_touch.sql.
+  if (!full.error) {
+    return { rows: (full.data ?? []) as unknown as CreditRow[], error: null };
+  }
+  if (!full.error.message.includes("setter_touch_name")) {
+    return { rows: [], error: full.error.message };
+  }
+  const stated = await client
+    .from("lead_submissions")
+    .select("id, booked_by_setter, entry_resource_tag, close_lead_created_at")
+    .in("id", chunk);
+  return stated.error
+    ? { rows: [], error: stated.error.message }
+    : { rows: stated.data ?? [], error: null };
 }
 
 /**
@@ -644,6 +757,7 @@ function buildAnalytics(
   attributionSplitTrustworthy = false,
   creditByLead: ReadonlyMap<string, LeadCredit> = new Map(),
   bookedEventLinks: ReadonlyMap<string, BookedEventLink> = new Map(),
+  excluded: readonly ExcludedChat[] = [],
 ): ChatbotAnalytics {
   const start = new Date(now.getTime() - WINDOW_DAYS * DAY_MS);
   const priorStart = new Date(start.getTime() - WINDOW_DAYS * DAY_MS);
@@ -701,6 +815,7 @@ function buildAnalytics(
         bookedLeadIds,
         creditByLead,
         bookedEventLinks,
+        excluded,
       ),
       d30: buildFunnelWindow(
         30,
@@ -709,6 +824,7 @@ function buildAnalytics(
         bookedLeadIds,
         creditByLead,
         bookedEventLinks,
+        excluded,
       ),
       d90: buildFunnelWindow(
         90,
@@ -717,6 +833,7 @@ function buildAnalytics(
         bookedLeadIds,
         creditByLead,
         bookedEventLinks,
+        excluded,
       ),
     },
     attributionSplitTrustworthy,
@@ -905,14 +1022,16 @@ function buildBookedBy(
   };
   const bySetter = new Map<string, number>();
   const bySource = new Map<string, number>();
+  let setterInferred = 0;
   for (const row of rows) {
     if (!isBooked(row, bookedLeadIds)) continue;
     const leadId = effectiveLeadId(row, bookedEventLinks);
     const lead = leadId ? creditByLead.get(leadId) : undefined;
     const credit = resolveBookingCredit({
       attributionSource: attributionSourceOf(row),
-      bookedBySetter: lead?.setter ?? null,
+      bookedBySetter: creditedSetter(lead),
     });
+    if (credit.kind === "setter" && !lead?.setter) setterInferred += 1;
     const first = resolveFirstTouch({
       conversationCreatedAt: row.created_at,
       leadLinked: Boolean(leadId),
@@ -932,6 +1051,7 @@ function buildBookedBy(
   }
   return {
     ...counts,
+    setterInferred,
     setters: rankTop(bySetter, TOP_N),
     byFirstTouch,
     earlierSources: rankTop(bySource, TOP_N),
@@ -945,6 +1065,7 @@ function buildFunnelWindow(
   bookedLeadIds: ReadonlySet<string>,
   creditByLead: ReadonlyMap<string, LeadCredit>,
   bookedEventLinks: ReadonlyMap<string, BookedEventLink>,
+  excluded: readonly ExcludedChat[],
 ): ChatbotFunnelWindow {
   const start = new Date(now.getTime() - days * DAY_MS);
   const windowRows = rows.filter((row) => inWindow(row.created_at, start, now));
@@ -968,7 +1089,22 @@ function buildFunnelWindow(
       creditByLead,
       bookedEventLinks,
     ),
+    excluded: {
+      support: countExcluded(excluded, "support", start, now),
+      bookedBeforeChat: countExcluded(excluded, "bookedBeforeChat", start, now),
+    },
   };
+}
+
+function countExcluded(
+  excluded: readonly ExcludedChat[],
+  reason: ExcludedChat["reason"],
+  start: Date,
+  end: Date,
+): number {
+  return excluded.filter(
+    (chat) => chat.reason === reason && inWindow(chat.createdAt, start, end),
+  ).length;
 }
 
 /**

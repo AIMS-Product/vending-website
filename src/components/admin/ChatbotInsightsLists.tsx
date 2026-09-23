@@ -40,14 +40,23 @@ const CASE_TYPE_LABELS: Record<string, string> = {
   bot_fallback_pattern: "Bot punted an answer",
 };
 
+const HANDOFF_REASON_LABELS: Record<string, string> = {
+  callback: "Callback",
+  support: "Member support",
+  accessibility: "No phone call",
+  other: "Hand-off",
+};
+
 export function ChatbotInsightsLists({
   followUpTasks,
+  handoffs,
   learningCases,
   knowledgeSuggestions,
   siteRecommendations,
   unansweredQuestions,
 }: {
   followUpTasks: AdminFollowUpTask[];
+  handoffs: AdminFollowUpTask[];
   learningCases: AdminLearningCase[];
   knowledgeSuggestions: AdminKnowledgeSuggestion[];
   siteRecommendations: AdminSiteRecommendation[];
@@ -56,6 +65,7 @@ export function ChatbotInsightsLists({
   return (
     <div className="grid gap-5 xl:grid-cols-2">
       <UnansweredQuestionsPanel questions={unansweredQuestions} />
+      <HandoffsPanel handoffs={handoffs} />
       <FollowUpTasksPanel tasks={followUpTasks} />
       <ObjectionsPanel cases={learningCases} />
       <KnowledgeFixesPanel suggestions={knowledgeSuggestions} />
@@ -102,13 +112,66 @@ function UnansweredQuestionsPanel({
   );
 }
 
+/**
+ * People the bot promised a human to: a callback, member support, someone who
+ * cannot take a phone call. Kept apart from the sales drafts so a cancellation
+ * request is never read as a lead to chase.
+ */
+function HandoffsPanel({ handoffs }: { handoffs: AdminFollowUpTask[] }) {
+  return (
+    <section className={adminCardClass}>
+      <h2 className={adminSectionTitleClass}>Hand-offs</h2>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        The bot told these people a teammate would reach out. Not sales
+        follow-ups: support requests go to support, callbacks to the setter.
+      </p>
+      {handoffs.length ? (
+        <div className="mt-3 grid gap-3">
+          {handoffs.map((task) => (
+            <div key={task.id} className="border-ui-line rounded-md border p-3">
+              <p className="text-ui-text text-sm font-medium">
+                {HANDOFF_REASON_LABELS[task.handoffReason ?? "other"] ??
+                  HANDOFF_REASON_LABELS.other}
+                {" — "}
+                {task.conversationId ? (
+                  <Link
+                    href={`/admin/chatbot/conversations/${task.conversationId}`}
+                    className={adminLinkClass}
+                  >
+                    {task.conversationLabel}
+                  </Link>
+                ) : (
+                  task.conversationLabel
+                )}
+              </p>
+              <p className="text-ui-text-muted mt-1 text-xs">
+                {task.reasonSummary.replace(/^\[\w+\]\s*/, "")}
+              </p>
+              <ChatbotInsightItemActions
+                id={task.id}
+                primaryLabel="Mark handled"
+                primaryAction={markFollowUpTaskSentAction}
+                dismissAction={dismissFollowUpTaskAction}
+              />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState label="No open hand-offs in this window." />
+      )}
+    </section>
+  );
+}
+
 function FollowUpTasksPanel({ tasks }: { tasks: AdminFollowUpTask[] }) {
   return (
     <section className={adminCardClass}>
-      <h2 className={adminSectionTitleClass}>Follow-up tasks</h2>
+      <h2 className={adminSectionTitleClass}>Sales follow-ups</h2>
       <p className="text-ui-text-subtle mt-1 text-xs">
-        Templated drafts — review before sending, nothing goes out
-        automatically.
+        Templated drafts for people who left details and have not booked —
+        review before sending, nothing goes out automatically. The next learning
+        pass closes a draft once the person books, and any draft older than 7
+        days.
       </p>
       {tasks.length ? (
         <div className="mt-3 grid gap-3">

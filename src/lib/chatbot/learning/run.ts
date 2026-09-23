@@ -1,6 +1,8 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { fetchBookedLeadIds } from "@/lib/chatbot/analytics";
+import { HANDOFF_DEDUPE_PREFIX } from "@/lib/chatbot/close-handoff";
 import { toChatbotMessages } from "@/lib/chatbot/conversation-store";
 import { prospectProfileSchema } from "@/lib/chatbot/extract-prospect-profile";
 import {
@@ -29,11 +31,16 @@ export type LearningRunResult = {
   recordsWritten: number;
   cases: number;
   followUpTasks: number;
+  /** Open drafts closed this pass: no longer wanted, or older than DRAFT_TTL_DAYS. */
+  followUpTasksDismissed: number;
   knowledgeSuggestions: number;
   insights: number;
   siteRecommendations: number;
   error?: string;
 };
+
+/** A follow-up nobody sent within a week is stale; the queue drops it. */
+export const DRAFT_TTL_DAYS = 7;
 
 export type RunLearningPassOptions = {
   dryRun?: boolean;
@@ -63,6 +70,7 @@ export async function runChatbotLearningPass(
     const result = runLearningEngine(conversations, { now });
 
     let recordsWritten: number;
+    let followUpTasksDismissed = 0;
     if (dryRun) {
       recordsWritten =
         result.cases.length +
@@ -72,6 +80,11 @@ export async function runChatbotLearningPass(
         result.siteRecommendations.length;
     } else {
       recordsWritten = await writeLearningOutputs(client, result);
+      followUpTasksDismissed = await dismissStaleDrafts(client, {
+        scannedIds: new Set(conversations.map((c) => c.id)),
+        wantedKeys: new Set(result.followUpTasks.map((t) => t.dedupeKey)),
+        now,
+      });
     }
 
     if (runId) {
@@ -92,6 +105,7 @@ export async function runChatbotLearningPass(
       recordsWritten,
       cases: result.cases.length,
       followUpTasks: result.followUpTasks.length,
+      followUpTasksDismissed,
       knowledgeSuggestions: result.knowledgeSuggestions.length,
       insights: result.insights.length,
       siteRecommendations: result.siteRecommendations.length,
@@ -115,6 +129,7 @@ export async function runChatbotLearningPass(
       recordsWritten: 0,
       cases: 0,
       followUpTasks: 0,
+      followUpTasksDismissed: 0,
       knowledgeSuggestions: 0,
       insights: 0,
       siteRecommendations: 0,
@@ -163,7 +178,7 @@ async function loadRecentConversations(
   const { data, error } = await client
     .from("chatbot_conversations")
     .select(
-      "id, status, created_at, last_message_at, messages, captured_name, captured_email, captured_phone, prospect_profile",
+      "id, status, created_at, last_message_at, messages, captured_name, captured_email, captured_phone, prospect_profile, call_booked_at, lead_submission_id, handed_off_at",
     )
     .order("last_message_at", { ascending: false })
     .limit(CONVERSATION_TAKE);
@@ -174,6 +189,15 @@ async function loadRecentConversations(
     client,
     rows.map((r) => r.id),
   );
+  const bookedLeads = await fetchBookedLeadIds(
+    client,
+    rows.map((r) => r.lead_submission_id),
+  );
+  // A partial answer would draft "still exploring?" to people on a rep's
+  // calendar, which is the bug this read exists to prevent. Fail the run.
+  if (!bookedLeads.complete) {
+    throw new Error("Could not read which leads have a booked call.");
+  }
 
   return rows.map((row) => ({
     id: row.id,
@@ -186,6 +210,11 @@ async function loadRecentConversations(
     capturedPhone: row.captured_phone,
     prospectProfile: parseProspectProfile(row.prospect_profile),
     flags: flagsByConversation.get(row.id) ?? [],
+    booked: Boolean(
+      row.call_booked_at ||
+      (row.lead_submission_id && bookedLeads.ids.has(row.lead_submission_id)),
+    ),
+    handedOff: Boolean(row.handed_off_at),
   }));
 }
 
@@ -316,12 +345,59 @@ async function upsertFollowUpTasks(
           caseIdByDedupeKey.get(item.sourceCaseDedupeKey) ?? null,
         draft_subject: item.draftSubject,
         draft_body: item.draftBody,
-        due_at: item.dueAt,
+        // due_at is not refreshed: it was re-stamped to "now" on every daily
+        // pass, so every draft read "due today" forever.
         reason_summary: item.reasonSummary,
       })
       .eq("dedupe_key", item.dedupeKey);
     if (error) throw new Error(error.message);
   }
+}
+
+const DISMISS_CHUNK = 100;
+
+/**
+ * Closes open sales drafts the queue should no longer hold: one this pass no
+ * longer produces for a conversation it scanned (the person booked, turned out
+ * to be support, or was handed off), and any older than DRAFT_TTL_DAYS.
+ * Hand-offs (flag_for_team rows) are never touched; they have their own queue
+ * and are closed by the Close push or a person.
+ */
+async function dismissStaleDrafts(
+  client: Client,
+  input: {
+    scannedIds: ReadonlySet<string>;
+    wantedKeys: ReadonlySet<string>;
+    now: Date;
+  },
+): Promise<number> {
+  const { data, error } = await client
+    .from("chatbot_follow_up_tasks")
+    .select("id, dedupe_key, conversation_id, created_at")
+    .eq("status", "open");
+  if (error) throw new Error(error.message);
+
+  const cutoff = input.now.getTime() - DRAFT_TTL_DAYS * 24 * 3_600_000;
+  const ids = (data ?? [])
+    .filter((row) => !row.dedupe_key.startsWith(HANDOFF_DEDUPE_PREFIX))
+    .filter(
+      (row) =>
+        Date.parse(row.created_at) < cutoff ||
+        (row.conversation_id !== null &&
+          input.scannedIds.has(row.conversation_id) &&
+          !input.wantedKeys.has(row.dedupe_key)),
+    )
+    .map((row) => row.id);
+
+  for (let start = 0; start < ids.length; start += DISMISS_CHUNK) {
+    const { error: updateError } = await client
+      .from("chatbot_follow_up_tasks")
+      .update({ status: "dismissed" })
+      .in("id", ids.slice(start, start + DISMISS_CHUNK))
+      .eq("status", "open");
+    if (updateError) throw new Error(updateError.message);
+  }
+  return ids.length;
 }
 
 async function upsertKnowledgeSuggestions(
