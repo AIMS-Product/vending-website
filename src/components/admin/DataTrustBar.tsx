@@ -88,6 +88,17 @@ export function DataTrustBar({ model }: { model: TrustBarModel }) {
               ))}
             </ul>
           ) : null}
+          {model.notConnected.length > 0 ? (
+            <ul className="text-ui-text mt-1.5 space-y-0.5 text-xs">
+              {model.notConnected.map((feed) => (
+                <li key={feed.feed}>
+                  <span className="font-semibold">{feed.label}</span> is not
+                  connected: {feed.problem}. Its numbers read as no data, and it
+                  is left out of the date above.
+                </li>
+              ))}
+            </ul>
+          ) : null}
         </div>
 
         <div>

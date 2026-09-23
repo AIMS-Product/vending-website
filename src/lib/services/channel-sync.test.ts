@@ -266,7 +266,8 @@ describe("syncChannelDaily", () => {
     const orphan = upserts.find((row) => row.clicks === 2);
     expect(orphan).toMatchObject({ source: "(not set)", channel: "Website" });
     const bitlyRun = runs.find((run) => run.connector === "bitly-clicks");
-    expect(bitlyRun?.error).toBe("1 click rows had no UTMs on their long URL.");
+    // An unmapped click is still a click, not a failed run.
+    expect(bitlyRun?.error).toBeNull();
     expect(bitlyRun?.rows_written).toBe(2);
   });
 
@@ -289,6 +290,23 @@ describe("syncChannelDaily", () => {
       campaign: "how-much-vending",
       destination: "unknown",
       clicks: 3,
+    });
+  });
+
+  it("records Bitly as not connected, not as a clean empty run, when there is no token and no clicks", async () => {
+    const { client, runs } = buildClient({ clicks: [] });
+
+    await syncChannelDaily({
+      client,
+      ga4Client: null,
+      bitlyClient: null,
+      now: NOW,
+    });
+
+    const bitlyRun = runs.find((run) => run.connector === "bitly-clicks");
+    expect(bitlyRun).toMatchObject({
+      rows_written: 0,
+      error: "skipped: BITLY_ACCESS_TOKEN is not set.",
     });
   });
 

@@ -130,9 +130,9 @@ async function syncEmail(client: SyncClient, ghl: GhlClient | null, now: Date) {
     error:
       result.failed > 0
         ? `${result.failed} channel_daily rows failed to write; see the server log.`
-        : rows.length === 0
-          ? "First snapshot stored; day-over-day rows start tomorrow."
-          : null,
+        : // A first snapshot has no prior to subtract, so no rows yet. Not
+          // an error; text here would mark the run failed.
+          null,
   };
 }
 

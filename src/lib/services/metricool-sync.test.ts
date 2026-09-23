@@ -271,7 +271,7 @@ describe("syncMetricool", () => {
     ]);
   });
 
-  it("stores posts, writes the spine and reports non-compliant links", async () => {
+  it("stores posts, writes the spine, and an untagged link does not fail the run", async () => {
     const { client, upserts } = buildClient();
     const metricool: MetricoolClient = {
       fetchPosts: async () => [tagged, untagged, noLink, ytVideo],
@@ -287,8 +287,13 @@ describe("syncMetricool", () => {
     expect(result.connector).toMatchObject({
       connector: "metricool-posts",
       rowsWritten: 7,
-      error: "1 posts link somewhere without the standard UTMs.",
+      // The untagged post is flagged on its row for "Fix these links"; the
+      // run itself succeeded.
+      error: null,
     });
+    expect(upserts.metricool_posts).toContainEqual(
+      expect.objectContaining({ link_compliant: false }),
+    );
     // The YouTube video is stored but its Seen is youtube-analytics' to write.
     expect(upserts.metricool_posts).toHaveLength(4);
     expect(

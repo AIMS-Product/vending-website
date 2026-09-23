@@ -35,6 +35,12 @@ export type FeedDef = {
   /** Amber past this; red past twice this. Matches how often it updates. */
   staleAfterHours: number;
   source: FeedSource;
+  /**
+   * A table only this feed fills. While it has no row at all the feed has
+   * never delivered anything, and the bar says "not connected" and what is
+   * missing, instead of dating the source from a test run or a clean empty one.
+   */
+  fills?: { table: "bitly_link_clicks" | "manychat_events"; missing: string };
 };
 
 const DAILY = 36;
@@ -96,6 +102,10 @@ export const FEEDS = {
     label: "Bitly clicks",
     staleAfterHours: HOURLY,
     source: { kind: "run", connector: "bitly-clicks" },
+    fills: {
+      table: "bitly_link_clicks",
+      missing: "no Bitly access token is set, so no click has been read",
+    },
   },
   "metricool-posts": {
     label: "Social posts (Metricool)",
@@ -122,6 +132,11 @@ export const FEEDS = {
     label: "ManyChat contacts",
     staleAfterHours: 48,
     source: { kind: "run", connector: "manychat-ingest" },
+    fills: {
+      table: "manychat_events",
+      missing:
+        "ManyChat has never sent an event; the flow's External Request steps are not switched on",
+    },
   },
 } as const satisfies Record<string, FeedDef>;
 
@@ -199,6 +214,8 @@ export type FeedObservation = {
   note?: string | null;
   /** The read itself failed. */
   error?: string | null;
+  /** False when the feed's `fills` table has no row at all. */
+  connected?: boolean;
 };
 
 export type FeedVerdict = {
@@ -208,6 +225,8 @@ export type FeedVerdict = {
   tone: TrustTone;
   /** Plain words, null when healthy. */
   problem: string | null;
+  /** False: never delivered data. Listed apart, not dated, not "out of date". */
+  connected: boolean;
 };
 
 const HOUR_MS = 3_600_000;
@@ -218,12 +237,21 @@ export function judgeFeed(obs: FeedObservation, now: Date): FeedVerdict {
     feed: obs.feed,
     label: def.label,
     lastSuccessAt: obs.lastSuccessAt,
+    connected: true,
   };
   if (obs.error) {
     return {
       ...base,
       tone: "bad",
       problem: `could not be read (${obs.error})`,
+    };
+  }
+  if (obs.connected === false && def.fills) {
+    return {
+      ...base,
+      connected: false,
+      tone: "warn",
+      problem: def.fills.missing,
     };
   }
   if (!obs.lastSuccessAt) {
@@ -584,9 +612,12 @@ export type TrustBarModel = {
   /** Oldest last update among this tab's feeds; null when any never updated. */
   asOf: string | null;
   freshnessTone: TrustTone;
-  /** Feeds that are not healthy, worst first. */
+  /** Connected feeds that are not healthy, worst first. */
   problems: FeedVerdict[];
+  /** Connected feeds this tab reads; `asOf` is the oldest of them. */
   feedCount: number;
+  /** Feeds that have never delivered data. Not in `asOf`, `problems` or the tone. */
+  notConnected: FeedVerdict[];
   audit: AuditVerdict;
   flags: UnverifiedFlag[];
 };
@@ -610,10 +641,12 @@ export function buildTrustBar(input: {
       verdicts.push(judgeFeed({ feed, lastSuccessAt: null }, input.now));
     }
   }
-  const problems = verdicts
+  const notConnected = verdicts.filter((verdict) => !verdict.connected);
+  const connected = verdicts.filter((verdict) => verdict.connected);
+  const problems = connected
     .filter((verdict) => verdict.tone !== "ok")
     .sort((a, b) => TONE_RANK[a.tone] - TONE_RANK[b.tone]);
-  const times = verdicts.map((verdict) => verdict.lastSuccessAt);
+  const times = connected.map((verdict) => verdict.lastSuccessAt);
   const asOf = times.includes(null)
     ? null
     : ((times as string[]).sort().at(0) ?? null);
@@ -622,7 +655,8 @@ export function buildTrustBar(input: {
     asOf,
     freshnessTone: problems[0]?.tone ?? "ok",
     problems,
-    feedCount: verdicts.length,
+    feedCount: connected.length,
+    notConnected,
     audit: judgeAudit(input.run, input.now, input.auditError ?? null),
     flags: unverifiedFlags(
       input.scope,

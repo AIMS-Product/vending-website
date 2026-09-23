@@ -200,6 +200,57 @@ describe("feed staleness", () => {
     expect(unread.problem).toContain("timeout");
   });
 
+  it("says not connected, instead of a date, when the feed's table is empty", () => {
+    // ManyChat's only run on record was our own test; no event ever arrived.
+    const verdict = judgeFeed(
+      { feed: "manychat", lastSuccessAt: hoursAgo(300), connected: false },
+      NOW,
+    );
+    expect(verdict.connected).toBe(false);
+    expect(verdict.problem).toContain("never sent an event");
+  });
+
+  it("ignores connected: false on a feed with no table of its own", () => {
+    const verdict = judgeFeed(
+      { feed, lastSuccessAt: hoursAgo(80), connected: false },
+      NOW,
+    );
+    expect(verdict.connected).toBe(true);
+    expect(verdict.tone).toBe("bad");
+  });
+
+  it("keeps a not-connected feed out of the tab's date and tone", () => {
+    const bar = buildTrustBar({
+      scope: "journeys",
+      feeds: TAB_FEEDS.journeys.map((f) =>
+        f === "bitly"
+          ? { feed: f, lastSuccessAt: hoursAgo(8), connected: false }
+          : { feed: f, lastSuccessAt: hoursAgo(1) },
+      ),
+      run: null,
+      now: NOW,
+    });
+    expect(bar.freshnessTone).toBe("ok");
+    expect(bar.asOf).toBe(hoursAgo(1));
+    expect(bar.problems).toEqual([]);
+    expect(bar.feedCount).toBe(TAB_FEEDS.journeys.length - 1);
+    expect(bar.notConnected.map((v) => v.feed)).toEqual(["bitly"]);
+  });
+
+  it("still dates a feed as stale once its table has data", () => {
+    const bar = buildTrustBar({
+      scope: "journeys",
+      feeds: TAB_FEEDS.journeys.map((f) => ({
+        feed: f,
+        lastSuccessAt: f === "bitly" ? hoursAgo(8) : hoursAgo(1),
+      })),
+      run: null,
+      now: NOW,
+    });
+    expect(bar.notConnected).toEqual([]);
+    expect(bar.problems.map((v) => v.feed)).toEqual(["bitly"]);
+  });
+
   it("is amber when a fresh feed runs but adds nothing", () => {
     const verdict = judgeFeed(
       { feed: "bitly", lastSuccessAt: hoursAgo(1), status: "empty" },

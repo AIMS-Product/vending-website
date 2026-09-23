@@ -5,6 +5,7 @@ import {
   buildTrustBar,
   FEEDS,
   TAB_FEEDS,
+  type FeedDef,
   type FeedKey,
   type FeedObservation,
   type TrustBarModel,
@@ -80,11 +81,36 @@ async function observeFeeds(
   const tableFeeds = feeds.filter(
     (feed) => FEEDS[feed].source.kind === "table",
   );
-  const [runObs, tableObs] = await Promise.all([
+  const [runObs, tableObs, emptyFeeds] = await Promise.all([
     runFeeds.length > 0 ? observeRuns(client, runFeeds, now) : [],
     Promise.all(tableFeeds.map((feed) => observeTable(client, feed, now))),
+    neverFilled(client, feeds),
   ]);
-  return [...runObs, ...tableObs];
+  return [...runObs, ...tableObs].map((obs) =>
+    emptyFeeds.has(obs.feed) ? { ...obs, connected: false } : obs,
+  );
+}
+
+/**
+ * Feeds whose own table has no row at all. A failed read proves nothing, so
+ * it leaves the feed judged on its runs as before.
+ */
+async function neverFilled(
+  client: Client,
+  feeds: readonly FeedKey[],
+): Promise<Set<FeedKey>> {
+  const checks = await Promise.all(
+    feeds.map(async (feed) => {
+      const { fills }: FeedDef = FEEDS[feed];
+      if (!fills) return null;
+      const { data, error } = await client
+        .from(fills.table)
+        .select("day")
+        .limit(1);
+      return !error && (data ?? []).length === 0 ? feed : null;
+    }),
+  );
+  return new Set(checks.filter((feed): feed is FeedKey => feed !== null));
 }
 
 async function observeRuns(
