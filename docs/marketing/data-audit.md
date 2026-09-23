@@ -31,7 +31,7 @@ in about one, YouTube in three — so the windows end before that).
 | Funnels & Executive visits | `ga4_page_views.sessions`              | Google Analytics sessions                         | 2%        |
 | First calls booked         | `close_lead_funnel`                    | Close, counted by Close itself                    | 1%        |
 | Close mirror is current    | last crawl time                        | —                                                 | 3 hours   |
-| Calls on the calendar      | `calendly_bookings`                    | Calendly scheduled events                         | 2%        |
+| Calls on the calendar      | `calendly_bookings`, distinct events   | Calendly scheduled events                         | 2%        |
 | Ad spend                   | `channel_daily.spend`                  | Metricool, per campaign per day                   | 1%        |
 | Off-site form fills        | `channel_daily.leads` on the form keys | GoHighLevel submissions                           | 1%        |
 | YouTube views              | `youtube_video_daily.views`            | YouTube, or Metricool when OAuth is not connected | 2%        |

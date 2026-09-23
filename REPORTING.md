@@ -356,6 +356,16 @@ allowed in a report when it appears here as **settled**, or is quoted with its c
 | Qualified without a logged show    | Close vs itself                     | **Settled 2026-09-21.** 16 of 444 booked calls; qualified is not a subset of showed                                        | §4; both rates are over booked and the 16 are disclosed on screen                |
 | GHL form-fill volume               | Nobody reports it end to end        | **No owner**                                                                                                               | Build it or say it does not exist                                                |
 | `instagram/simon/{{user_id}}`      | —                                   | **Broken link template** shipped live; booking real, attribution is not                                                    | Fix the link, do not backfill                                                    |
+| Audit `calendly-bookings` gap      | Our invitee rows vs Calendly events | **Settled 2026-09-22.** The check counted people, Calendly counts calls; 237 vs 232 becomes 231 vs 232                     | Below; the check now counts distinct `scheduled_event_uri`                       |
+
+**`calendly-bookings`, 2026-09-15 → 09-21.** `calendly_bookings` holds one row per **invitee**;
+Calendly's `/scheduled_events` returns one row per **call**. The onboarding call is a group event,
+so three onboarding calls (2, 5 and 2 active invitees; the 5 is 7 invited, 2 canceled) were 9 rows
+for 3 calls: +6. Distinct events were 231 against Calendly's 232, a net −1 inside tolerance that
+was not named (no Calendly token outside production). The prior window (09-14 → 09-20, 235 vs 227)
+is the same thing exactly: 4 group calls, 12 rows, 227 distinct events. No booking was missing,
+duplicated or left un-canceled. On-screen booking figures do not change: they count people, and
+onboarding is already excluded from sales metrics (`calendly-event-class.ts`).
 
 Rules this register enforces:
 

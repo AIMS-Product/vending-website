@@ -240,6 +240,47 @@ describe("runDataAudit", () => {
   });
 });
 
+describe("calendly-bookings", () => {
+  // Calendly lists scheduled events; we store one row per invitee. The
+  // onboarding call is a group event, so on 2026-09-22 three of them (2, 5 and
+  // 2 invitees) put us 6 above Calendly on a week where no booking differed.
+  it("compares calls, not the people invited to them", async () => {
+    const onboarding = "https://api.calendly.com/scheduled_events/group";
+    const run = await runDataAudit({
+      now,
+      client: fakeClient({
+        calendly_bookings: [
+          { scheduled_event_uri: onboarding },
+          { scheduled_event_uri: onboarding },
+          { scheduled_event_uri: onboarding },
+          {
+            scheduled_event_uri:
+              "https://api.calendly.com/scheduled_events/one",
+          },
+        ],
+      }),
+      ga4: null,
+      close: null,
+      metricool: null,
+      youtube: null,
+      ghl: null,
+      calendly: {
+        getCurrentOrganizationUri: async () => "org",
+        listScheduledEvents: async () => [
+          { uri: onboarding, status: "active" },
+          {
+            uri: "https://api.calendly.com/scheduled_events/one",
+            status: "active",
+          },
+        ],
+      } as never,
+    });
+    expect(
+      run.results.find((result) => result.checkId === "calendly-bookings"),
+    ).toMatchObject({ status: "pass", ours: 2, source: 2 });
+  });
+});
+
 describe("day-holes", () => {
   const holesRun = (youtube_video_daily: Array<Record<string, unknown>>) =>
     runDataAudit({
