@@ -9,7 +9,8 @@
  *
  * Re-runnable. Matching is by `utm_campaign`. Click-sync bookkeeping
  * (`clicks_synced_at`) is never touched, so a re-import does not send the Bitly
- * sync back to the start of its queue.
+ * sync back to the start of its queue, and a row whose link was discovered
+ * after the last import keeps it — see `splitByBitlyLink`.
  *
  *   node scripts/import-youtube-registry.mjs            # dry-run
  *   node scripts/import-youtube-registry.mjs --write
@@ -56,23 +57,96 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const client = createSupabaseClient();
+  const { linked, unlinked } = splitByBitlyLink(rows);
   let imported = 0;
 
-  for (let index = 0; index < rows.length; index += UPSERT_CHUNK) {
-    const chunk = rows.slice(index, index + UPSERT_CHUNK);
-    const { error } = await client
-      .from("youtube_videos")
-      .upsert(chunk, { onConflict: "utm_campaign" });
+  const groups = [
+    { label: "with-bitly", rows: linked },
+    { label: "without-bitly", rows: unlinked },
+  ];
 
-    if (error) {
-      console.error(`upsert failed at row ${index}: ${error.message}`);
-      return 1;
+  for (const { label, rows: group } of groups) {
+    for (let index = 0; index < group.length; index += UPSERT_CHUNK) {
+      const chunk = group.slice(index, index + UPSERT_CHUNK);
+      const { error } = await client
+        .from("youtube_videos")
+        .upsert(chunk, { onConflict: "utm_campaign" });
+
+      if (error) {
+        console.error(
+          upsertFailureMessage({
+            label,
+            chunk,
+            offset: index,
+            groupSize: group.length,
+            reason: error.message,
+          }),
+        );
+        return 1;
+      }
+      imported += chunk.length;
     }
-    imported += chunk.length;
   }
 
-  console.log(`imported ${imported} rows into youtube_videos.`);
+  console.log(
+    `imported ${imported} rows into youtube_videos (${unlinked.length} left their Bitly columns alone).`,
+  );
   return 0;
+}
+
+/**
+ * Says which upsert failed in terms somebody can act on.
+ *
+ * Not a row index: the two groups each restart at 0, so a failure in the second
+ * reported "row 0" for what is registry row 604 — and the groups are not
+ * contiguous in the registry anyway, so no offset into one points at a line of
+ * the source file. The group and the campaigns at the chunk's edges do.
+ *
+ * Exported for the test.
+ */
+export function upsertFailureMessage({
+  label,
+  chunk,
+  offset,
+  groupSize,
+  reason,
+}) {
+  const first = chunk[0]?.utm_campaign ?? "?";
+  const last = chunk[chunk.length - 1]?.utm_campaign ?? "?";
+  return `upsert failed on the ${label} group, ${chunk.length} of ${groupSize} rows starting at its offset ${offset} (${first} … ${last}): ${reason}`;
+}
+
+/**
+ * Splits the registry into rows that carry a Bitly link and rows that do not.
+ *
+ * The rows with `bitly_id: null` must not send that null: `map-missing-links`
+ * fills them in by discovery, and an upsert carrying an explicit null resets
+ * them — after which `claimBatch` never claims a null-id row again and those
+ * links silently stop syncing. The 604 rows that DO carry a link still seed it,
+ * so a first import is unaffected.
+ *
+ * Two payloads rather than one with the columns dropped per row: PostgREST
+ * requires every object in a bulk upsert to carry the same keys.
+ *
+ * Returns new objects; the caller's rows are never mutated.
+ */
+export function splitByBitlyLink(rows) {
+  const linked = [];
+  const unlinked = [];
+
+  for (const row of rows) {
+    if (row.bitly_id) {
+      linked.push(row);
+      continue;
+    }
+    // A copy, then drop the two columns: the caller's row is left as it was.
+    const withoutLink = { ...row };
+    delete withoutLink.bitly_id;
+    delete withoutLink.bitly_url;
+    unlinked.push(withoutLink);
+  }
+
+  return { linked, unlinked };
 }
 
 async function readRegistry() {
