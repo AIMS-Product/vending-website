@@ -134,6 +134,8 @@ export async function getYouTubeAttribution(
       clicks: clicks.rows,
       pageViews: pageViews.rows,
       clicksConnected: clicks.connected,
+      clicksWindowStart: clicks.windowStart,
+      clicksFailed: clicks.failed,
       visitsConnected: pageViews.connected,
       visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
@@ -253,7 +255,64 @@ async function fetchVideos(
   });
 }
 
+/**
+ * Clicks for the range, or unmeasured when the range outruns the sync.
+ *
+ * `bitly-click-sync` re-reads a trailing 30 days per link, so on a 90-day or
+ * 1-year range a summed total is about one month of clicks sitting above the
+ * whole range's visits. Before the range reaches back past the first synced
+ * day, the stage is unmeasured. An empty table is unmeasured too: nothing has
+ * synced, so "0 clicks" would be a number nobody counted.
+ *
+ * `failed` tells a broken read from an empty table, so the page never tells
+ * someone to connect Bitly when it is connected and the read timed out.
+ */
 async function fetchClicks(
+  client: YouTubeAttributionClient,
+  sinceIso: string,
+): Promise<
+  Fetched<BitlyClickRow> & { windowStart: string | null; failed: boolean }
+> {
+  const probe = await earliestClickDay(client);
+  const unmeasured = { rows: [], connected: false };
+  if (probe.failed) return { ...unmeasured, windowStart: null, failed: true };
+  if (probe.day === null) {
+    return { ...unmeasured, windowStart: null, failed: false };
+  }
+  if (sinceIso.slice(0, 10) < probe.day) {
+    return { ...unmeasured, windowStart: probe.day, failed: false };
+  }
+  const read = await fetchClicksInWindow(client, sinceIso);
+  return { ...read, windowStart: probe.day, failed: !read.connected };
+}
+
+/**
+ * The first day the Bitly sync ever wrote. One row, served by
+ * `bitly_link_clicks_day_idx` (the primary key leads with bitly_id and cannot).
+ */
+async function earliestClickDay(
+  client: YouTubeAttributionClient,
+): Promise<{ day: string | null; failed: boolean }> {
+  try {
+    const { data, error } = await client
+      .from("bitly_link_clicks")
+      .select("day")
+      .order("day", { ascending: true })
+      .limit(1);
+    if (error) {
+      return { day: null, failed: noteReadError("bitly_link_clicks", error) };
+    }
+    const day = (data as Array<{ day?: unknown }> | null)?.[0]?.day;
+    return {
+      day: typeof day === "string" ? day.slice(0, 10) : null,
+      failed: false,
+    };
+  } catch (error) {
+    return { day: null, failed: noteReadError("bitly_link_clicks", error) };
+  }
+}
+
+async function fetchClicksInWindow(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<BitlyClickRow>> {

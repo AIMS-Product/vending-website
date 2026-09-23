@@ -95,9 +95,12 @@ function buildClient(
 
 const NOW = new Date("2026-09-10T12:00:00.000Z");
 
+/** A click synced long before any range here starts, so clicks are read. */
+const SYNCED_CLICK = { utm_campaign: "zach", day: "2026-01-01", clicks: 1 };
+
 describe("getYouTubeAttribution reads", () => {
   it("reads the visit's channel and only scans rows that carry a campaign", async () => {
-    const { calls } = await run({});
+    const { calls } = await run({ bitly_link_clicks: [SYNCED_CLICK] });
 
     const select = calls.lead_page_views.find((c) => c.method === "select");
     expect(select?.args[0]).toContain("utm_source");
@@ -114,7 +117,7 @@ describe("getYouTubeAttribution reads", () => {
   });
 
   it("pages every read that can outgrow PostgREST's 1,000-row response cap", async () => {
-    const { calls } = await run({});
+    const { calls } = await run({ bitly_link_clicks: [SYNCED_CLICK] });
 
     for (const table of [
       "ga4_page_views",
@@ -266,6 +269,53 @@ describe("getYouTubeAttribution reads", () => {
 
     expect(result.coverage.visitsConnected).toBe(false);
     expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  it("reads clicks as unmeasured, not 0, when nothing has ever synced", async () => {
+    const { result } = await run({ bitly_link_clicks: [] });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksWindowStart).toBeNull();
+    expect(result.coverage.clicksFailed).toBe(false);
+  });
+
+  it("leaves clicks unmeasured when the range starts before the first synced day", async () => {
+    // The default 30-day range starts 2026-08-11; the sync only reached 09-05.
+    const { result } = await run({
+      bitly_link_clicks: [
+        { utm_campaign: "zach", day: "2026-09-05", clicks: 40 },
+      ],
+    });
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksWindowStart).toBe("2026-09-05");
+  });
+
+  it("sums clicks once the synced window covers the range", async () => {
+    const { result, calls } = await run({
+      bitly_link_clicks: [
+        { utm_campaign: "zach", day: "2026-07-01", clicks: 3 },
+        { utm_campaign: "zach", day: "2026-09-05", clicks: 40 },
+      ],
+    });
+
+    // The fake ignores the date filter, so both rows arrive; the real read
+    // bounds them with gte("day").
+    expect(result.totals.clicks).toBe(43);
+    expect(calls.bitly_link_clicks).toContainEqual({
+      method: "gte",
+      args: ["day", "2026-08-11"],
+    });
+  });
+
+  it("says a broken clicks read broke, rather than asking for a Bitly token", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, ["bitly_link_clicks"]);
+
+    expect(result.totals.clicks).toBeNull();
+    expect(result.coverage.clicksFailed).toBe(true);
     error.mockRestore();
   });
 

@@ -436,6 +436,23 @@ export function YouTubeCohortTable({
 }
 
 /**
+ * Why Link clicks shows a dash, in the reader's terms. A broken read and an
+ * empty table both leave it blank, and only one of them needs setting up.
+ */
+function clicksGap(
+  coverage: YouTubeCoverage,
+  range: YouTubeAttribution["range"],
+): string {
+  if (coverage.clicksFailed) {
+    return "Link clicks could not be read just now. Nothing needs setting up; reload in a minute.";
+  }
+  if (coverage.clicksWindowStart) {
+    return `Link clicks only go back to ${coverage.clicksWindowStart}, so they are not shown for the ${range.label.toLowerCase()}.`;
+  }
+  return "Link clicks appear once Bitly is connected.";
+}
+
+/**
  * States plainly which stages are live and which are waiting on a switch, so a
  * dash in the table is never read as a zero.
  */
@@ -447,9 +464,7 @@ export function YouTubeCoverageNote({
   range: YouTubeAttribution["range"];
 }) {
   const gaps: string[] = [];
-  if (!coverage.clicksConnected) {
-    gaps.push("Link clicks appear once Bitly is connected.");
-  }
+  if (!coverage.clicksConnected) gaps.push(clicksGap(coverage, range));
   if (!coverage.visitsConnected) {
     gaps.push(
       "Landing page visits are not recorded yet: a database update is still to be applied.",
