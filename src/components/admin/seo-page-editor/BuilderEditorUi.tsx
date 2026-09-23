@@ -142,7 +142,7 @@ export function MovePositionMenu({
           {itemCount > 1 ? (
             <>
               <div className="border-ui-line my-1 border-t" />
-              <p className="text-ui-text-subtle px-2 py-1 text-[10px] font-semibold tracking-wide uppercase">
+              <p className="text-ui-text-subtle px-2 py-1 text-[11px] font-semibold tracking-wide uppercase">
                 {positionHeading}
               </p>
               {Array.from({ length: itemCount }, (_, index) => (
@@ -283,7 +283,7 @@ export function BlockToolbar({
         </BuilderTooltip>
         {structure ? (
           <BuilderTooltip label={structure.label} detail={structure.detail}>
-            <span className="bg-ui-canvas text-ui-text-subtle rounded-ui ring-ui-line/70 shrink-0 px-2 py-1 text-[10px] font-bold tracking-wider uppercase ring-1 ring-inset">
+            <span className="bg-ui-canvas text-ui-text-subtle rounded-ui ring-ui-line/70 shrink-0 px-2 py-1 text-[11px] font-bold tracking-wider uppercase ring-1 ring-inset">
               {structure.label}
             </span>
           </BuilderTooltip>

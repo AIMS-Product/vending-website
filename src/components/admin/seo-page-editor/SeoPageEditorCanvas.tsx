@@ -336,7 +336,7 @@ function SortableColumnEditor({
               label={`Column ${columnIndex + 1}`}
               detail={`Content column ${columnIndex + 1} in this page section`}
             >
-              <span className="text-ui-text-subtle px-2 text-[10px] font-bold tracking-wider uppercase">
+              <span className="text-ui-text-subtle px-2 text-[11px] font-bold tracking-wider uppercase">
                 Column {columnIndex + 1}
               </span>
             </BuilderTooltip>

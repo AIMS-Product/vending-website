@@ -272,7 +272,7 @@ function MessageBubble({
           <span className="text-ui-text-subtle italic">(empty)</span>
         )}
       </div>
-      <span className="text-ui-text-subtle mt-1 text-[10px] tabular-nums">
+      <span className="text-ui-text-subtle mt-1 text-[11px] tabular-nums">
         {isVisitor ? "Visitor" : "Assistant"}
         {message.ts ? ` · ${formatDateTime(message.ts)}` : ""}
       </span>

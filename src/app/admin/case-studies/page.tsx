@@ -227,7 +227,7 @@ export default async function AdminCaseStudiesPage({
             ) : null}
             <button
               type="submit"
-              className="focus-visible:ring-ui-accent/35 rounded-md bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-slate-800 focus-visible:ring-2 focus-visible:outline-none"
+              className="focus-visible:ring-ui-accent/35 border-ui-line-strong bg-ui-surface text-ui-text hover:bg-ui-canvas rounded-ui shadow-ui border px-3 py-1.5 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
             >
               Apply
             </button>
@@ -371,7 +371,7 @@ export default async function AdminCaseStudiesPage({
               {caseStudyCounts.published} live case studies
             </span>
             <span className="inline-flex items-center gap-2">
-              <span className="size-2 rounded-full bg-slate-300" />
+              <span className="bg-ui-idle size-2 rounded-full" />
               {caseStudyCounts.archived} archived
             </span>
           </div>
@@ -419,7 +419,7 @@ function CaseStudyRow({
   returnTo: string;
 }) {
   return (
-    <tr className="hover:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20 [&:has(details[open])]:bg-[#f8fbff]">
+    <tr className="hover:bg-ui-canvas [&:has(details[open])]:bg-ui-canvas align-middle transition [&:has(details[open])]:relative [&:has(details[open])]:z-20">
       <td
         className={`px-7 py-4 ${
           isFirst ? "border-ui-accent border-l-4" : "border-l-4 border-white"
@@ -487,7 +487,7 @@ function CaseStudyActionsMenu({
   return (
     <details className="group relative inline-block shrink-0 text-left">
       <summary
-        className="text-ui-text-muted group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-ui-accent/35 inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md transition group-open:bg-[#eef5ff] focus-visible:ring-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
+        className="text-ui-text-muted group-open:text-ui-accent hover:bg-ui-line hover:text-ui-text focus-visible:ring-ui-accent/35 group-open:bg-ui-accent-soft inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-md transition focus-visible:ring-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden"
         aria-label={`Open actions for ${caseStudy.title}`}
       >
         <AdminIcon icon="more" />
@@ -501,7 +501,7 @@ function CaseStudyActionsMenu({
         </Link>
         {!isArchived ? (
           <>
-            <div className="my-1 border-t border-slate-100" />
+            <div className="border-ui-line my-1 border-t" />
             <form action={archiveCaseStudyFromList}>
               <input type="hidden" name="id" value={caseStudy.id} />
               <input type="hidden" name="returnTo" value={returnTo} />

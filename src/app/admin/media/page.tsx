@@ -201,13 +201,13 @@ export default async function AdminMediaPage({
           </div>
 
           <nav
-            className="mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-b border-slate-100 pb-3 text-sm"
+            className="border-ui-line mt-4 flex flex-wrap items-center gap-x-1 gap-y-2 border-b pb-3 text-sm"
             aria-label="Media status filters"
           >
             {mediaStatusFilters.map((item, index) => (
               <span key={item.value} className="inline-flex items-center">
                 {index > 0 ? (
-                  <span className="mx-2 text-slate-300" aria-hidden="true">
+                  <span className="text-ui-line-strong mx-2" aria-hidden="true">
                     ·
                   </span>
                 ) : null}
@@ -236,7 +236,7 @@ export default async function AdminMediaPage({
                 </Link>
               </span>
             ))}
-            <span className="mx-2 text-slate-300" aria-hidden="true">
+            <span className="text-ui-line-strong mx-2" aria-hidden="true">
               ·
             </span>
             <Link
@@ -281,8 +281,8 @@ export default async function AdminMediaPage({
                   }
                   className={`focus-visible:ring-ui-accent/35 rounded-full px-2.5 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none ${
                     typeFilter === filter.value
-                      ? "bg-slate-900 text-white"
-                      : "bg-ui-line text-ui-text-muted hover:text-ui-text hover:bg-slate-200"
+                      ? "bg-ui-accent-soft text-ui-accent"
+                      : "bg-ui-line text-ui-text-muted hover:text-ui-text hover:bg-ui-line-strong"
                   }`}
                 >
                   {filter.label}
@@ -291,7 +291,7 @@ export default async function AdminMediaPage({
             </div>
 
             <details className="group relative">
-              <summary className="bg-ui-line text-ui-text-muted hover:text-ui-text focus-visible:ring-ui-accent/35 flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition hover:bg-slate-200 focus-visible:ring-2 focus-visible:outline-none">
+              <summary className="bg-ui-line text-ui-text-muted hover:text-ui-text focus-visible:ring-ui-accent/35 hover:bg-ui-line-strong flex cursor-pointer list-none items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none">
                 Purpose: {activePurpose?.label ?? "All"}
                 <SortChevron />
               </summary>
@@ -366,7 +366,7 @@ export default async function AdminMediaPage({
                     <Link
                       key={chip.key}
                       href={chip.href}
-                      className="text-ui-accent focus-visible:ring-ui-accent/35 inline-flex items-center gap-1 rounded-full bg-[#eef4ff] px-2.5 py-1 text-xs font-semibold transition hover:bg-[#dceaff] focus-visible:ring-2 focus-visible:outline-none"
+                      className="text-ui-accent focus-visible:ring-ui-accent/35 bg-ui-accent-soft hover:bg-ui-line inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold transition focus-visible:ring-2 focus-visible:outline-none"
                     >
                       {chip.label}
                       <span aria-hidden="true">×</span>
@@ -390,7 +390,7 @@ export default async function AdminMediaPage({
 
           {allTags.length > 0 ? (
             <nav
-              className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-100 pt-3"
+              className="border-ui-line mt-3 flex flex-wrap gap-1.5 border-t pt-3"
               aria-label="Filter by tag"
             >
               <span className="text-ui-text-subtle mr-1 self-center text-xs font-semibold tracking-wide uppercase">
@@ -406,7 +406,7 @@ export default async function AdminMediaPage({
                   aria-current={tagFilter === tag ? "page" : undefined}
                   className={`focus-visible:ring-ui-accent/35 rounded-full px-2.5 py-1 text-xs font-medium transition focus-visible:ring-2 focus-visible:outline-none ${
                     tagFilter === tag
-                      ? "bg-slate-900 text-white"
+                      ? "bg-ui-accent-soft text-ui-accent"
                       : "text-ui-text-subtle hover:bg-ui-line hover:text-ui-text"
                   }`}
                 >
