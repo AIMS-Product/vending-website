@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   CHATBOT_CHANNEL,
   isInternalHost,
+  REFERRAL_CHANNEL,
   resolveChannel,
   resolveDestination,
   UNKNOWN_CHANNEL,
@@ -122,7 +123,10 @@ describe("isInternalHost", () => {
     expect(isInternalHost("127.0.0.1:3000")).toBe(true);
   });
 
-  it("flags an unlisted vercel.app preview host", () => {
+  it("flags this project's own preview hosts", () => {
+    expect(
+      isInternalHost("vending-website-4f8a1b2-aimanagingservices.vercel.app"),
+    ).toBe(true);
     expect(isInternalHost("vending-website-git-fix-abc123.vercel.app")).toBe(
       true,
     );
@@ -130,6 +134,15 @@ describe("isInternalHost", () => {
 
   it("does not flag a vercel.app host we deliberately label Website", () => {
     expect(isInternalHost("aimanagingservices.vercel.app")).toBe(false);
+  });
+
+  it("does not flag another team's real vercel.app property", () => {
+    // A real sales tool that links real prospects to the site; only this
+    // project's own preview hosts count as internal, not every vercel.app.
+    expect(isInternalHost("objection-library.vercel.app")).toBe(false);
+    expect(resolveChannel("objection-library.vercel.app").channel).toBe(
+      REFERRAL_CHANNEL,
+    );
   });
 
   it("does not flag a real channel or blank", () => {

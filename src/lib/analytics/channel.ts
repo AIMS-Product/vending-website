@@ -267,27 +267,31 @@ export function channelForHost(host: string): string {
 }
 
 /**
+ * A preview deployment of this project: `vending-website-<hash>-<team>.vercel.app`.
+ * Deliberately project-scoped, not `*.vercel.app` in general — other real
+ * properties live on vercel.app too (e.g. `objection-library.vercel.app`, a
+ * sales tool that links real prospects to this site; see
+ * `src/lib/case-studies/index-filters.ts`), and those must keep resolving to
+ * Referral, not get dropped as internal traffic.
+ */
+const OWN_PREVIEW_HOST = /^vending-website-[a-z0-9-]*\.vercel\.app$/;
+
+/**
  * Whether a raw `utm_source` is our own dev/preview traffic reaching the GA4
  * property, not a real visitor: `localhost` (with or without a port), the
- * loopback IP, and a Vercel preview deployment's own `*.vercel.app` host.
+ * loopback IP, and this project's own Vercel preview deployments.
  *
  * Checked ahead of `resolveChannel` so this traffic is dropped rather than
  * relabelled: `localhost:3000` carries a colon, so it never matches the
  * hostname pattern `resolveChannel` uses for a referrer and instead fell
- * through to `titleCase`, opening its own "Localhost:3000" channel row. A
- * `*.vercel.app` host already named in `HOST_CHANNEL` (a real production
- * property we choose to label, e.g. `aimanagingservices.vercel.app`) is left
- * alone — only an unlisted preview subdomain counts as internal.
+ * through to `titleCase`, opening its own "Localhost:3000" channel row.
  */
 export function isInternalHost(source: string | null | undefined): boolean {
   const raw = source?.trim().toLowerCase() ?? "";
   if (!raw) return false;
   const host = raw.split(":")[0] ?? "";
   if (host === "localhost" || host === "127.0.0.1") return true;
-  if (!host.endsWith(".vercel.app")) return false;
-  return !HOST_CHANNEL.some(
-    ([suffix]) => host === suffix || host.endsWith(`.${suffix}`),
-  );
+  return OWN_PREVIEW_HOST.test(host);
 }
 
 /**

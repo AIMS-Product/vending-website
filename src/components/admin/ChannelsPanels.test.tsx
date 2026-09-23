@@ -70,7 +70,7 @@ describe("ChannelKpis", () => {
     const html = renderToStaticMarkup(
       <ChannelKpis report={report()} days={30} />,
     );
-    expect(html).toContain("xl:grid-cols-5");
+    expect(html).toContain("lg:grid-cols-5");
     expect(html).not.toContain("xl:grid-cols-4");
   });
 });
