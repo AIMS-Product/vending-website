@@ -93,8 +93,9 @@ describe("booking funnel routes", () => {
     expect(suppressesChatTeaser("/pre-call-resources")).toBe(true);
     expect(isFunnelChromePath("/pre-call-resources")).toBe(false);
     expect(suppressesChatTeaser("/contact")).toBe(true);
-    // Legacy lead pages keep their chrome but are booking pages (UI audit,
-    // 2026-09-22): the teaser opened over their Calendly grid.
+    // Legacy lead pages are booking pages (UI audit, 2026-09-22): the teaser
+    // opened over their Calendly grid. They drop the header and footer via
+    // their own gate, not isFunnelChromePath (see below).
     expect(suppressesChatTeaser("/booking-ig")).toBe(true);
     expect(isFunnelChromePath("/booking-ig")).toBe(false);
     expect(suppressesChatTeaser("/")).toBe(false);
@@ -109,6 +110,9 @@ describe("booking funnel routes", () => {
       "utf8",
     );
     expect(source).toContain("isFunnelChromePath(pathname)");
+    // Legacy lead pages are paid-traffic booking pages too (UI cohesion 9a),
+    // gated separately so their analytics page group stays legacy_lead.
+    expect(source).toContain("isLegacyLeadPath(pathname)");
     expect(source).toContain("return null");
   });
 

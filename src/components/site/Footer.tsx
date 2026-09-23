@@ -6,6 +6,7 @@ import { SocialLinks } from "./SocialLinks";
 import { Wordmark } from "./Wordmark";
 import { footerColumns, type NavItem } from "@/lib/content/nav";
 import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
+import { isLegacyLeadPath } from "@/lib/content/legacy-routes";
 import { cn } from "@/lib/utils";
 
 export function Footer() {
@@ -16,6 +17,10 @@ export function Footer() {
   // 2026-09-17): every link in the site footer is a way off a page whose only
   // job is the form, or the calendar that follows it.
   if (isFunnelChromePath(pathname)) return null;
+  // Legacy lead pages are paid-traffic booking pages too (UI cohesion 9a).
+  // Kept out of isFunnelChromePath on purpose: that also sets the analytics
+  // page group, and these stay "legacy_lead" there.
+  if (isLegacyLeadPath(pathname)) return null;
 
   return (
     <footer className="border-t-2 border-[#111111] bg-[#f5fbff] px-5 py-14 lg:px-10">

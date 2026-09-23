@@ -5,6 +5,9 @@ import {
   PublicLeadForm,
   type PublicLeadFormAction,
 } from "@/components/forms/PublicLeadForm";
+import { LegalFooter } from "@/components/site/LegalFooter";
+import { ApplyHero } from "@/components/sections/apply/ApplyHero";
+import { HeroFormPanel } from "@/components/sections/apply/HeroFormPanel";
 import type {
   LegacyLeadRoute,
   LegacyLeadVariant,
@@ -193,40 +196,38 @@ export function LegacyLeadPageContent({
 
   return (
     <>
-      <section className="relative isolate overflow-hidden bg-[#f5fbff] px-5 pt-28 pb-20 lg:px-10 lg:pt-32 lg:pb-24">
-        <div className="mx-auto grid max-w-[1250px] gap-12 lg:grid-cols-[minmax(0,0.92fr)_minmax(500px,0.9fr)] lg:items-start">
-          <div className="max-w-2xl">
-            <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
-              Vendingpreneurs
-            </p>
-            <h1 className="mt-8 max-w-[760px] text-[clamp(2.2rem,3.8vw,4.1rem)] leading-[0.98] font-black break-words text-[#111111] uppercase">
-              {route.pageTitle}
-            </h1>
-            <p className="mt-7 max-w-xl text-xl leading-8 font-semibold text-slate-700">
-              {route.description}
-            </p>
-          </div>
-
-          {route.embed ? (
-            <CalendlyEmbed
-              attribution={attribution}
-              title={`${route.metadataTitle} — scheduler`}
-              url={route.embed.url}
-            />
-          ) : (
-            <PublicLeadForm
-              action={action}
-              attribution={attribution}
-              idempotencyKey={idempotencyKey}
-              intent="apply"
-              submitLabel="Submit application"
-            />
-          )}
-        </div>
-      </section>
+      {/* The hero is the booking funnels' own (UI cohesion 9a, 2026-09-22):
+          Anton headline with the money phrase highlighted, the form or
+          calendar beside it. These are paid-traffic pages, so like /contact
+          they carry no site header or full footer; a legal-links strip (Terms,
+          Privacy, Spam Policy, verbatim from the site footer) closes the page. */}
+      <ApplyHero
+        copy={{ eyebrow: "Vendingpreneurs", headline: route.pageTitle }}
+        body={route.description}
+        wideAside
+        aside={
+          <HeroFormPanel>
+            {route.embed ? (
+              <CalendlyEmbed
+                attribution={attribution}
+                title={`${route.metadataTitle} — scheduler`}
+                url={route.embed.url}
+              />
+            ) : (
+              <PublicLeadForm
+                action={action}
+                attribution={attribution}
+                idempotencyKey={idempotencyKey}
+                intent="apply"
+                submitLabel="Submit application"
+              />
+            )}
+          </HeroFormPanel>
+        }
+      />
 
       <section className="border-y-2 border-[#111111] bg-white px-5 py-16 lg:px-10">
-        <div className="mx-auto grid max-w-[1250px] gap-5 md:grid-cols-2">
+        <div className="mx-auto grid max-w-[1100px] gap-5 md:grid-cols-2">
           {sections.map((section) => (
             <article
               className="rounded-[10px] border-2 border-[#111111] bg-[#f5fbff] p-6 shadow-[6px_6px_0_#55b8e8]"
@@ -255,6 +256,8 @@ export function LegacyLeadPageContent({
           ))}
         </div>
       </section>
+
+      <LegalFooter />
     </>
   );
 }
