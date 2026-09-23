@@ -32,10 +32,14 @@ export function HeroBlock({
   previewLayout = false,
 }: HeroBlockProps) {
   const HeadingTag = isPrimaryHero ? "h1" : "h2";
+  // The page's H1 sits at the site's display scale (UI cohesion slice 10):
+  // at 36px it read as a section heading next to 48-128px H1s everywhere else.
   const heroHeadingClass = previewLayoutClass(
     previewLayout,
     "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase",
-    "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl",
+    isPrimaryHero
+      ? "mt-4 text-[2.2rem] leading-[1.05] font-black text-[#111111] uppercase md:text-[2.9rem] lg:text-[3.6rem]"
+      : "mt-4 text-3xl leading-tight font-black text-[#111111] uppercase md:text-4xl",
   );
   const heroSectionClass = previewLayoutClass(previewLayout, "py-4", "py-8");
 
