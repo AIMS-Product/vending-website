@@ -35,11 +35,14 @@ export function VidalyticsPlayer({
   embedId,
   className = "",
   loadOn = "near",
+  title,
 }: {
   embedId: string;
   className?: string;
   /** "near": load as it nears the viewport. "click": behind a play button. */
   loadOn?: "near" | "click";
+  /** The video's existing on-page title; names the click-to-load button. */
+  title?: string;
 }) {
   const containerId = vidalyticsContainerId(embedId);
   const snippet = (
@@ -56,7 +59,9 @@ export function VidalyticsPlayer({
       {/* Counts quarters watched against this session. Renders nothing. */}
       <VideoEngagement embedId={embedId} />
       {loadOn === "click" ? (
-        <ClickToLoad label="Play video">{snippet}</ClickToLoad>
+        <ClickToLoad label={title ? `Play video: ${title}` : "Play video"}>
+          {snippet}
+        </ClickToLoad>
       ) : (
         <WhenNearViewport targetId={containerId}>{snippet}</WhenNearViewport>
       )}
