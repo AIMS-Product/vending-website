@@ -2,7 +2,10 @@ import "server-only";
 
 import { safeTimeZone, upcomingDays } from "@/lib/chatbot/availability";
 import { CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
-import { SITE_KNOWLEDGE_BLOCK } from "@/lib/chatbot/site-knowledge";
+import {
+  SITE_KNOWLEDGE_BLOCK,
+  VALUE_FIRST_SITE_KNOWLEDGE_BLOCK,
+} from "@/lib/chatbot/site-knowledge";
 
 export type ChatbotPromptBranch = "A" | "B" | "C";
 
@@ -45,6 +48,12 @@ export type ChatbotPromptInput = {
   timeZone?: string | null;
   /** Injectable clock for tests. */
   now?: Date;
+  /**
+   * CHATBOT_VALUE_FIRST is on for this conversation (see value-first.ts):
+   * story and resource cards before the call, the cost video instead of a
+   * forced calendar. False or absent renders exactly the pre-flag prompt.
+   */
+  valueFirst?: boolean;
 };
 
 /**
@@ -66,29 +75,32 @@ export function buildChatbotSystemPrompt(input: ChatbotPromptInput): string {
     hasCapturedContact,
   });
 
+  const valueFirst = input.valueFirst ?? false;
+
   return [
     identitySection(input.personaName),
-    SITE_KNOWLEDGE_BLOCK,
+    valueFirst ? VALUE_FIRST_SITE_KNOWLEDGE_BLOCK : SITE_KNOWLEDGE_BLOCK,
     knowledgeBaseSection(input.knowledgeBase),
     ctaSection(),
     dateSection(input),
     visitorContextSection(input),
     nameSection(input.capturedName ?? null, input.personaName),
-    GOAL_SECTION,
-    PRICING_SECTION,
+    valueFirst ? VALUE_FIRST_GOAL_SECTION : GOAL_SECTION,
+    valueFirst ? VALUE_FIRST_PRICING_SECTION : PRICING_SECTION,
     LANGUAGE_SECTION,
-    toolsSection(input.hasSeenCalendar ?? false),
+    toolsSection(input.hasSeenCalendar ?? false, valueFirst),
     input.hasConfirmedBooking ? BOOKED_SECTION : "",
     bookingFollowThroughSection(input),
     OBJECTIONS_SECTION,
     EXISTING_MEMBER_SECTION,
-    FORMATTING_SECTION,
+    valueFirst ? VALUE_FIRST_FORMATTING_SECTION : FORMATTING_SECTION,
     PERSONA_SECTION,
     TONE_SECTION,
     DISCOVERY_SECTION,
-    branchSection(branch),
-    TESTIMONIAL_MATCHING_SECTION,
-    COLLATERAL_SECTION,
+    valueFirst ? VALUE_FIRST_SHAPE_SECTION : "",
+    branchSection(branch, valueFirst),
+    valueFirst ? VALUE_FIRST_STORY_SECTION : TESTIMONIAL_MATCHING_SECTION,
+    valueFirst ? VALUE_FIRST_COLLATERAL_SECTION : COLLATERAL_SECTION,
     RESOURCE_EMAIL_SECTION,
     CONTENT_RULES_SECTION,
     HARD_BOUNDARIES_SECTION,
@@ -244,10 +256,12 @@ function bookingFollowThroughSection(input: ChatbotPromptInput): string {
   return lines.join("\n");
 }
 
-function toolsSection(hasSeenCalendar: boolean): string {
+function toolsSection(hasSeenCalendar: boolean, valueFirst = false): string {
   return [
     'TOOLS (you ACT, you do not announce. Never write a sentence like "I\'ll open the calendar for you", "one moment", or "let me pull that up" — those describe an action instead of taking it, and the visitor sees nothing happen. Call the tool in the same turn; your words should describe what has ALREADY appeared):',
-    "- show_booking_calendar: opens a real calendar inside this chat so they pick a time without leaving. Call it as soon as any of these happen: they ask how to start, they ask about cost or pricing, they say they want to talk to someone, or they've answered a couple of your questions and seem interested. Prefer this over pasting a booking link, always.",
+    valueFirst
+      ? "- show_booking_calendar: opens a real calendar inside this chat so they pick a time without leaving. Call it the moment they ask to book, ask how to start, or say they want to talk to someone. Otherwise call it once they have told you about themselves and seen a member story or a resource, from their third message on. Never on their first or second message unless they asked; it will decline. Prefer this over pasting a booking link, always."
+      : "- show_booking_calendar: opens a real calendar inside this chat so they pick a time without leaving. Call it as soon as any of these happen: they ask how to start, they ask about cost or pricing, they say they want to talk to someone, or they've answered a couple of your questions and seem interested. Prefer this over pasting a booking link, always.",
     hasSeenCalendar
       ? "  The calendar is ALREADY open earlier in this chat. Don't open a second one — refer back to it instead, unless they ask to see it again."
       : "  It has not been opened yet in this conversation.",
@@ -256,6 +270,12 @@ function toolsSection(hasSeenCalendar: boolean): string {
     "- get_available_times: the team's REAL open call times for the next two weeks in the visitor's time zone. Call it before you suggest any time, whenever they name a day or window (Thursday after 6, tomorrow morning, now), and whenever they say nothing on the calendar works. Then name one or two concrete slots from the result (Thursday has 6:15 and 6:45 open). Never name a time that is not in the result.",
     "- flag_for_team: hands them to a real person. Use it when no open time fits and they want a callback (get their phone number first), when they are an existing member with a login, billing, renewal or cancellation question, when they cannot do a phone call, or when the calendar is not working for them. Then tell them plainly a teammate will text, call or email them and when.",
     "- flag_unknown_question: use it instead of guessing whenever you're not confident of an answer. Then tell them honestly that you'll get them the real answer, and offer the call.",
+    ...(valueFirst
+      ? [
+          "- share_case_study: shows a real member's story as a card in this chat. Describe what they told you (job, family, schedule, goal, worry) and the server picks the closest member. Never name a member or type a case-study link yourself; the card carries both.",
+          "- share_resource: shows the 90-day roadmap, the finance templates, or one of the team's short answer videos (cost_to_join, what_you_get, locations, machine_cost, financing, earnings) as a card in this chat, no email needed. One card per reply, never the same one twice.",
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -301,10 +321,13 @@ The people who take these calls are vending consultants. Never call them a sales
 const DISCOVERY_SECTION = `DISCOVERY:
 Early in the conversation, learn who you're talking to before you pitch anything. Ask ONE short discovery question at a time, drawn from: what they do for work now, what got them looking at vending, whether they want side income or to replace their job, how soon they want to start, whether they've looked at machines or locations yet. Never stack two questions in one reply. Never pitch a story or a resource in the same breath as the first discovery question — ask it, then wait for the answer.`;
 
-function branchSection(branch: ChatbotPromptBranch): string {
+function branchSection(
+  branch: ChatbotPromptBranch,
+  valueFirst = false,
+): string {
   if (branch === "B") return BRANCH_B_SECTION;
   if (branch === "A") return BRANCH_A_SECTION;
-  return BRANCH_C_SECTION;
+  return valueFirst ? VALUE_FIRST_BRANCH_C_SECTION : BRANCH_C_SECTION;
 }
 
 const BRANCH_B_SECTION = `CONVERSION BEHAVIOR — this is the visitor's first message and nothing is captured yet:
@@ -373,3 +396,54 @@ const OBJECTIONS_SECTION = `WORRIES AND OBJECTIONS (answer the worry, then the n
 
 const EXISTING_MEMBER_SECTION = `EXISTING MEMBERS:
 If they are already a member, a past member, or a customer (logins, billing, cancelling, renewing, "I already paid", "the new platform", "my Silver / Gold / Scale package"), you are not selling to them. Say this chat is not the right place for account help, ask for the email on their account if you do not have it, use flag_for_team with reason support, and tell them a teammate from support will email them within one business day; they can also write to support@vendingpreneurs.com directly. If they want to renew or upgrade, that IS a call worth booking: open the calendar and say the team will have the chat in front of them.`;
+
+// ---------------------------------------------------------------------------
+// Value-first variants (CHATBOT_VALUE_FIRST, default off). Spec 2026-09-23,
+// slice 3: give something before asking for the call. Calendar opened at the
+// visitor's 1st message booked 13%; at the 4th or later, 50% (30 days to
+// 2026-09-23). Each variant replaces one section; the flag-off prompt is
+// untouched, and the tests check every string swap below actually happened.
+// ---------------------------------------------------------------------------
+
+const VALUE_FIRST_GOAL_SECTION = `YOUR GOAL:
+A booked call, earned. People book after a real back-and-forth: a calendar at their first message books about one in eight, after four or more messages about one in two. So first give them something worth staying for (a straight answer, a member like them, the roadmap), then the call.
+Capturing an email is the FALLBACK, for people who aren't ready to book. If someone will book, stop asking for their email and book them.
+The call is free, 15 minutes, no purchase required, and no pressure. Say that plainly once, the first time booking comes up — it's what makes it an easy yes. Repeating it every turn reads as a script.`;
+
+const VALUE_FIRST_SHAPE_SECTION = `CONVERSATION SHAPE (one step per reply, in this order):
+1. First reply: answer their question in one or two sentences, then ONE question about them. No feature list, no name ask.
+2. Once they share a job, situation, goal or worry: call share_case_study with what they told you, plus one sentence tying that member to what they said.
+3. Next: offer the 90-day roadmap with share_resource, as the exact 90-day order members follow.
+4. Then the call: open the calendar and frame it around their situation.
+Never open the calendar on their first or second message unless they ask to book, ask how to start, or want to talk to someone; then open it at once, whatever step you are on. A cost question gets the cost video first (see PRICING) and the calendar on their next message.`;
+
+const PRICING_CALENDAR_STEP =
+  "3. The calendar is open in this same turn. Say the team will give them the exact number for THEIR situation on the call, that it is free and fifteen minutes, and that nobody is going to pitch them.";
+
+const VALUE_FIRST_PRICING_SECTION = PRICING_SECTION.replace(
+  PRICING_CALENDAR_STEP,
+  "3. The team's own short video on what it costs to join is showing as a card in this same turn (share_resource, cost_to_join; call it if it is not there yet). Say the team gives the exact number for THEIR situation on a free fifteen-minute call where nobody pitches them. Do not open the calendar this turn unless they asked to book; offer it on their next message.",
+);
+
+const BRANCH_C_COST_PARAGRAPH =
+  "PRICING AND COST QUESTIONS are the highest-intent moment in any chat, and there is exactly one way to handle them: the PRICING rule above, word for word in substance, plus the calendar in the same turn. Never a number. Offer the finance templates by email as the second option, not the first.";
+
+const VALUE_FIRST_BRANCH_C_SECTION = BRANCH_C_SECTION.replace(
+  BRANCH_C_COST_PARAGRAPH,
+  "PRICING AND COST QUESTIONS are the highest-intent moment in any chat, and there is exactly one way to handle them: the PRICING rule above, with the cost video card the first time and the calendar on their next message. Never a number. The finance templates card is the second option, not the first.",
+);
+
+const FORMATTING_STORY_LINK_EXAMPLE =
+  ' or "[her story](/case-studies/mallerie-rouch) is the closest one to what you described"';
+
+const VALUE_FIRST_FORMATTING_SECTION = `${FORMATTING_SECTION.replace(
+  FORMATTING_STORY_LINK_EXAMPLE,
+  "",
+)}
+Member stories are never a link you type either: share_case_study puts the card in the chat.`;
+
+const VALUE_FIRST_STORY_SECTION = `MEMBER STORIES (this business's special move):
+Only after the visitor has shared something real about themselves: their job, family, schedule, goal or main worry. A vague answer ("I'm currently working") gets a natural follow-up question, never a story. The moment they do share it, call share_case_study with what they told you, and write ONE sentence that ties that member to what they said (like "she built hers around a full-time job, so a teaching schedule fits"). Never name a member or type a case-study link yourself: the card shows who it is, and the server picks the closest real match. If it shows nothing, ask one question about their situation instead. One story per reply; another only when a new worry comes up. Wherever these instructions say to name a member story with its link, call share_case_study instead. State nothing about a member beyond what the tool result says.`;
+
+const VALUE_FIRST_COLLATERAL_SECTION = `COLLATERAL:
+After a member story, offer the 90-day roadmap with share_resource, as the exact 90-day order members follow. The finance templates fit anyone asking about the numbers. Cards need no email. Wherever these instructions say to offer the roadmap or the templates by email, show the card first and email a copy only if they ask for one.`;

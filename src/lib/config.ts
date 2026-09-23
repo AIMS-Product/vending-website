@@ -127,6 +127,12 @@ const envSchema = z.object({
    * silencing this alert does not also silence the real lead notifications.
    */
   NO_BOOK_ALERT_ENABLED: optionalTrimmedOptionalEnv,
+  /**
+   * Chatbot "give value before the call" behaviour (member story and resource
+   * cards, cost video instead of a forced calendar). OFF unless "on" (every
+   * chat) or "split" (half, by conversation id). See chatbot/value-first.ts.
+   */
+  CHATBOT_VALUE_FIRST: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_VP_SESSION_ID_FIELD_ID: optionalTrimmedOptionalEnv,
@@ -244,6 +250,7 @@ const parsed = envSchema.safeParse({
   CLOSE_WARM_REPLY_ACTIVITY_ENABLED:
     process.env.CLOSE_WARM_REPLY_ACTIVITY_ENABLED,
   NO_BOOK_ALERT_ENABLED: process.env.NO_BOOK_ALERT_ENABLED,
+  CHATBOT_VALUE_FIRST: process.env.CHATBOT_VALUE_FIRST,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
     process.env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,

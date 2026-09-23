@@ -171,14 +171,18 @@ describe("the visitor's name", () => {
 
   it("caps reply length and bans the stock phrases from the transcripts", () => {
     const prompt = buildChatbotSystemPrompt(base);
-    expect(prompt).toContain("under 45 words per reply, under 35 in your first reply");
+    expect(prompt).toContain(
+      "under 45 words per reply, under 35 in your first reply",
+    );
     expect(prompt).toContain('never use them: "Who do I have the pleasure"');
     expect(prompt).not.toContain('("funny enough,');
   });
 
   it("forbids promising a human follow-up or a held slot without a hand-off", () => {
     const prompt = buildChatbotSystemPrompt(base);
-    expect(prompt).toContain("unless you called flag_for_team in this same turn");
+    expect(prompt).toContain(
+      "unless you called flag_for_team in this same turn",
+    );
     expect(prompt).toContain("never offer to hold one");
     expect(prompt).toContain('"I already booked / I have a call on Tuesday."');
     expect(prompt).toContain("never say pricing is private");
@@ -260,5 +264,46 @@ describe("the prompt never shows the model a booking link", () => {
   // this a sales call". Those all belong.
   it("does not call this conversation a sales chat", () => {
     expect(buildChatbotSystemPrompt(base)).not.toMatch(/sales chat/i);
+  });
+});
+
+describe("value-first prompt (CHATBOT_VALUE_FIRST)", () => {
+  const now = new Date("2026-09-23T15:00:00Z");
+
+  it("is byte-for-byte today's prompt when the flag is off", () => {
+    expect(buildChatbotSystemPrompt({ ...base, now, valueFirst: false })).toBe(
+      buildChatbotSystemPrompt({ ...base, now }),
+    );
+    const off = buildChatbotSystemPrompt({ ...base, now });
+    expect(off).not.toContain("share_case_study");
+    expect(off).not.toContain("share_resource");
+  });
+
+  it("offers the story and resource cards when on", () => {
+    const on = buildChatbotSystemPrompt({ ...base, now, valueFirst: true });
+    expect(on).toContain("- share_case_study:");
+    expect(on).toContain("- share_resource:");
+    expect(on).toContain("CONVERSATION SHAPE");
+    expect(on).toContain("MEMBER STORIES");
+  });
+
+  it("drops every calendar-on-a-cost-question instruction when on", () => {
+    const on = buildChatbotSystemPrompt({ ...base, now, valueFirst: true });
+    // Each of these is a string swap; if a base section is ever reworded the
+    // swap silently stops matching, and this is what catches it.
+    expect(on).not.toContain("plans-and-financing line plus the calendar.");
+    expect(on).not.toContain("3. The calendar is open in this same turn.");
+    expect(on).not.toContain("plus the calendar in the same turn");
+    expect(on).not.toContain("[her story](/case-studies/mallerie-rouch)");
+    expect(on).not.toContain("they ask about cost or pricing, they say");
+    expect(on).toContain("cost_to_join");
+  });
+
+  it("never teaches a price, on or off", () => {
+    for (const valueFirst of [false, true]) {
+      expect(
+        findPriceLeak(buildChatbotSystemPrompt({ ...base, now, valueFirst })),
+      ).toBeNull();
+    }
   });
 });

@@ -22,7 +22,7 @@ import {
   type ChatbotMessage,
 } from "@/lib/chatbot/conversation-store";
 import { loadChatbotConfig } from "@/lib/chatbot/config";
-import { publicConfig } from "@/lib/config";
+import { config as envConfig, publicConfig } from "@/lib/config";
 import { extractLead } from "@/lib/chatbot/extract-lead";
 import { prospectProfileSchema } from "@/lib/chatbot/extract-prospect-profile";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
@@ -33,10 +33,15 @@ import {
   type PriceLeak,
 } from "@/lib/chatbot/price-guard";
 import {
-  shouldForceBookingCalendar,
+  chatbotToolDefinitions,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
+import {
+  chooseForcedTool,
+  isValueFirstConversation,
+  shouldHoldCalendar,
+} from "@/lib/chatbot/value-first";
 import {
   checkPublicRateLimit,
   requestIp,
@@ -190,7 +195,13 @@ export async function POST(request: Request) {
   };
 
   const userTurnCount = historyForModel.filter((m) => m.role === "user").length;
+  // Off unless CHATBOT_VALUE_FIRST says otherwise; see value-first.ts.
+  const valueFirst = isValueFirstConversation(
+    conversation.id,
+    envConfig.CHATBOT_VALUE_FIRST,
+  );
   const promptInput: ChatbotPromptInput = {
+    valueFirst,
     personaName: config.personaName,
     knowledgeBase: config.knowledgeBase,
     userTurnCount,
@@ -245,6 +256,13 @@ export async function POST(request: Request) {
     config,
     client,
     timeZone: timeZone ?? null,
+    valueFirst,
+    holdCalendar: shouldHoldCalendar({
+      valueFirst,
+      visitorMessages: historyForModel
+        .filter((m) => m.role === "user")
+        .map((m) => m.content),
+    }),
   };
 
   // Synchronous by construction: every failure mode (OpenAI down, a tool
@@ -255,11 +273,15 @@ export async function POST(request: Request) {
   // open the calendar for you!" and then not opening it. When the visitor has
   // asked plainly and no calendar is open yet, require the call instead of
   // requesting it.
-  const forceTool =
-    !promptInput.hasSeenCalendar &&
-    shouldForceBookingCalendar(message, priorMessages)
-      ? "show_booking_calendar"
-      : undefined;
+  // Never for a support or already-booked chat (triage.ts, whole chat).
+  // Value-first (flagged) keeps that for an explicit booking ask and answers a
+  // first cost question with the cost video instead.
+  const forceTool = chooseForcedTool({
+    valueFirst,
+    hasSeenCalendar: promptInput.hasSeenCalendar ?? false,
+    priorMessages,
+    message,
+  });
 
   const stream = createTurnStream({
     config,
@@ -268,6 +290,7 @@ export async function POST(request: Request) {
     captured,
     toolContext,
     forceTool,
+    tools: chatbotToolDefinitions(valueFirst),
   });
 
   after(async () => {

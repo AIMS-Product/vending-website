@@ -68,6 +68,7 @@ const CASE_STUDY_FILES: unknown[] = [
 const caseStudyFileSchema = z.object({
   slug: z.string().min(1),
   member_name: z.string().min(1),
+  video_id: z.string().nullable().optional(),
   member_role: z.string().nullable().optional(),
   prior_occupation: z.string().nullable().optional(),
   monthly_revenue_usd: z.number().nullable().optional(),
@@ -85,6 +86,8 @@ export type CaseStudySummary = {
   headlineResult: string;
   tags: readonly string[];
   url: string;
+  /** YouTube id of the member's video, for the in-chat story card thumbnail. */
+  videoId: string | null;
 };
 
 /**
@@ -110,6 +113,7 @@ function loadCaseStudySummaries(): CaseStudySummary[] {
       headlineResult: headlineResult(data),
       tags: data.tags,
       url: `/case-studies/${data.slug}`,
+      videoId: data.video_id ?? null,
     });
   }
   return summaries;
@@ -212,3 +216,16 @@ export const SITE_KNOWLEDGE_BLOCK = [
   "",
   `SITE PAGES: ${buildRouteMap()}`,
 ].join("\n");
+
+const COST_ANSWER_LINE =
+  "The only correct answer to any cost question is the plans-and-financing line plus the calendar.";
+
+/**
+ * The same block with the value-first cost answer (CHATBOT_VALUE_FIRST): the
+ * team's cost video now, the calendar on the next message. Only this one
+ * sentence differs; the test checks the swap happened.
+ */
+export const VALUE_FIRST_SITE_KNOWLEDGE_BLOCK = SITE_KNOWLEDGE_BLOCK.replace(
+  COST_ANSWER_LINE,
+  "The only correct answer to any cost question is the plans-and-financing line plus the team's own short video on what it costs to join (share_resource, cost_to_join); the calendar comes on their next message, or at once if they ask to book.",
+);

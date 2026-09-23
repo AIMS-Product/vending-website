@@ -4,6 +4,7 @@ import {
   roadmapLandingPage,
   roadmapThankYouPage,
 } from "@/lib/content/lead-magnets";
+import { preCallResources } from "@/lib/content/pre-call-resources";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import type { InChatResourceKey } from "@/lib/chatbot/quick-actions";
 import { CASE_STUDY_SUMMARIES } from "@/lib/chatbot/site-knowledge";
@@ -125,11 +126,17 @@ function caseStudyResource(slug: string): ChatbotResource | null {
  * lead-magnet form, as the site's own links do.
  */
 export function sharedResourceMessage(
-  key: InChatResourceKey,
-  options: { label: string; via: "quick_action"; emailCaptured: boolean },
+  key: InChatResourceKey | PreCallVideoKey,
+  options: {
+    label: string;
+    via: "quick_action" | "model";
+    emailCaptured: boolean;
+  },
   now: Date = new Date(),
 ): ChatbotMessage | null {
-  const resource = CHATBOT_RESOURCE_CATALOG.find((entry) => entry.key === key);
+  const resource =
+    CHATBOT_RESOURCE_CATALOG.find((entry) => entry.key === key) ??
+    PRE_CALL_VIDEOS.find((entry) => entry.key === key);
   if (!resource) return null;
   const url = options.emailCaptured
     ? resource.url
@@ -149,3 +156,41 @@ export function sharedResourceMessage(
     },
   };
 }
+
+/**
+ * The team's own short answers on /pre-call-resources, one per common
+ * question, shareable in chat by the share_resource tool. The card carries the
+ * video's own title and links to it on that page; no blurb, so no new copy.
+ *
+ * `cost_to_join` is the team's answer to the question that opens 15% of chats.
+ * Adam watches it and confirms it states no price before CHATBOT_VALUE_FIRST
+ * is turned on (the price rule: no number in chat, text or email).
+ */
+const PRE_CALL_VIDEO_KEYS: Record<string, string> = {
+  "cost-to-join": "cost_to_join",
+  "what-you-get": "what_you_get",
+  "securing-locations": "locations",
+  "machine-cost": "machine_cost",
+  financing: "financing",
+  "what-youll-earn": "earnings",
+};
+
+export const PRE_CALL_VIDEO_KEY_LIST = [
+  "cost_to_join",
+  "what_you_get",
+  "locations",
+  "machine_cost",
+  "financing",
+  "earnings",
+] as const;
+export type PreCallVideoKey = (typeof PRE_CALL_VIDEO_KEY_LIST)[number];
+
+export const PRE_CALL_VIDEOS: readonly ChatbotResource[] =
+  preCallResources.items
+    .filter((item) => PRE_CALL_VIDEO_KEYS[item.id])
+    .map((item) => ({
+      key: PRE_CALL_VIDEO_KEYS[item.id] as string,
+      title: item.question,
+      blurb: "",
+      url: `/pre-call-resources#${item.id}`,
+    }));

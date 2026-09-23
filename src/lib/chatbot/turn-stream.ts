@@ -5,6 +5,7 @@ import {
   streamChatbotReply,
   type ChatbotChatMessage,
   type ChatbotToolCall,
+  type ChatbotToolDefinition,
 } from "@/lib/chatbot/openai";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import {
@@ -67,8 +68,12 @@ export type TurnStreamInput = {
   sink: { messages: ChatbotMessage[]; priceLeak?: PriceLeak };
   captured: { name: string | null; email: string | null; phone: string | null };
   toolContext: ChatbotToolContext;
-  /** Requires this tool on the first call — see hasExplicitBookingIntent. */
+  /** Requires this tool on the first call — see chooseForcedTool. */
   forceTool?: string;
+  /** Tools offered on the first call. Defaults to the base set. */
+  tools?: readonly ChatbotToolDefinition[];
+  /** Tool runner. Injected only by the replay eval, which stubs side effects. */
+  runTool?: typeof runChatbotTool;
 };
 
 /**
@@ -111,7 +116,10 @@ export function createTurnStream(
           const upstream = await streamChatbotReply({
             model: input.config.model,
             messages: input.modelMessages,
-            tools: call === 0 ? [...CHATBOT_TOOL_DEFINITIONS] : undefined,
+            tools:
+              call === 0
+                ? [...(input.tools ?? CHATBOT_TOOL_DEFINITIONS)]
+                : undefined,
             forceTool: call === 0 ? input.forceTool : undefined,
             // The follow-up call is a short confirmation sentence, and both
             // calls plus the tool round have to fit inside the route's
@@ -142,8 +150,13 @@ export function createTurnStream(
           const callsCalendar = toolCalls.some(
             (c) => c.function.name === "show_booking_calendar",
           );
+          // Never while the calendar is held (value-first, too early): the
+          // rewrite would announce a calendar the tool then declines to show.
           const guard =
-            !calendarShown && !callsCalendar && needsCalendarGuard(text);
+            !calendarShown &&
+            !callsCalendar &&
+            !input.toolContext.holdCalendar &&
+            needsCalendarGuard(text);
 
           let finalText = stripChatbotFormatting(
             guard ? rewriteForOpenCalendar(text) : text,
@@ -282,7 +295,7 @@ async function runToolRound(
       emit({ t: "status", v: "finding_times" });
     }
 
-    const outcome = await runChatbotTool(
+    const outcome = await (input.runTool ?? runChatbotTool)(
       toolCall.function.name,
       toolCall.function.arguments,
       input.toolContext,

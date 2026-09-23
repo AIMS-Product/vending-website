@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { resolveChatbotResources, sharedResourceMessage } from "./resources";
+import {
+  PRE_CALL_VIDEO_KEY_LIST,
+  PRE_CALL_VIDEOS,
+  resolveChatbotResources,
+  sharedResourceMessage,
+} from "./resources";
 
 describe("chatbot resource catalog", () => {
   // Emailed links go only to an address the visitor gave, so they open the
@@ -57,6 +62,26 @@ describe("sharedResourceMessage", () => {
     });
     expect(gated?.data?.url).toBe("/resources/roadmap");
     expect(delivered?.data?.url).toBe("/resources/roadmap-thank-you?via=chat");
+  });
+
+  it("shares a pre-call video by key, linking to it on the page", () => {
+    const message = sharedResourceMessage(
+      "cost_to_join",
+      { label: "Video answer", via: "model", emailCaptured: false },
+      now,
+    );
+    expect(message?.data).toMatchObject({
+      key: "cost_to_join",
+      title: "What Does It Actually Cost to Join Vendingpreneurs?",
+      url: "/pre-call-resources#cost-to-join",
+      via: "model",
+    });
+  });
+
+  it("has every pre-call video key", () => {
+    expect(PRE_CALL_VIDEOS.map((v) => v.key).sort()).toEqual(
+      [...PRE_CALL_VIDEO_KEY_LIST].sort(),
+    );
   });
 
   it("returns null for a key outside the catalog", () => {
