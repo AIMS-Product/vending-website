@@ -5,7 +5,6 @@ import { loadChatbotConfig } from "@/lib/chatbot/config";
 import {
   loadOrCreateConversation,
   persistConversationTurn,
-  toChatbotMessages,
 } from "@/lib/chatbot/conversation-store";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import {
