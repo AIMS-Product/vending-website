@@ -243,7 +243,8 @@ function FunnelStrip({
         days before. Showed counts only calls a rep marked as a show in Close,
         so it is a minimum while logging is incomplete. Seen (views,
         impressions, emails sent) and Clicked are what each platform reports
-        about its own posts, ads and emails, before anyone reaches our site.
+        about its own posts, ads and emails, and Google Search Console about
+        search results, before anyone reaches our site.
       </p>
     </section>
   );
@@ -470,7 +471,10 @@ function ChannelTableKey() {
 }
 
 const CHANNEL_TABLE_KEY: ReadonlyArray<readonly [string, string]> = [
-  ["Seen", "views, impressions or emails sent, as the platform reports them."],
+  [
+    "Seen",
+    "views, impressions or emails sent, as the platform reports them. Organic search is Google's own count from Search Console.",
+  ],
   [
     "Registrations & contacts",
     "webinar registrations, off-site GHL forms and ManyChat contacts. Not counted as leads.",
