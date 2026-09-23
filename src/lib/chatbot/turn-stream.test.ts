@@ -2,6 +2,12 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 const streamChatbotReply = vi.hoisted(() => vi.fn());
 const runChatbotTool = vi.hoisted(() => vi.fn());
+const resolveBookingCalendar = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/chatbot/availability", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./availability")>()),
+  resolveBookingCalendar,
+}));
 
 vi.mock("@/lib/chatbot/openai", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./openai")>()),
@@ -15,6 +21,7 @@ vi.mock("@/lib/chatbot/tools", async (importOriginal) => ({
 const { createTurnStream } = await import("./turn-stream");
 import type { ChatbotMessage } from "./conversation-store";
 import type { ChatbotToolContext } from "./tools";
+import type { PriceLeak } from "./price-guard";
 
 /**
  * Builds an OpenAI-shaped SSE response. `chunkSize` deliberately slices the
@@ -79,7 +86,9 @@ async function readFrames(stream: ReadableStream<Uint8Array>) {
 }
 
 function makeInput(overrides: Record<string, unknown> = {}) {
-  const sink: { messages: ChatbotMessage[] } = { messages: [] };
+  const sink: { messages: ChatbotMessage[]; priceLeak?: PriceLeak } = {
+    messages: [],
+  };
   const captured = { name: null, email: null, phone: null } as {
     name: string | null;
     email: string | null;
@@ -105,6 +114,7 @@ function makeInput(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
   streamChatbotReply.mockReset();
   runChatbotTool.mockReset();
+  resolveBookingCalendar.mockReset();
 });
 
 afterEach(() => {
@@ -112,7 +122,9 @@ afterEach(() => {
 });
 
 describe("createTurnStream", () => {
-  it("streams a plain reply and records it once", async () => {
+  // Changed 2026-09-11 on purpose: replies are held until checked, so the
+  // visitor never sees raw model text, only the final checked reply.
+  it("sends a plain reply whole, once checked, and records it once", async () => {
     streamChatbotReply.mockResolvedValueOnce(
       sseResponse([textEvent("Hey "), textEvent("there.")]),
     );
@@ -120,10 +132,7 @@ describe("createTurnStream", () => {
 
     const frames = await readFrames(createTurnStream(input));
 
-    expect(frames.filter((f) => f.t === "text").map((f) => f.v)).toEqual([
-      "Hey ",
-      "there.",
-    ]);
+    expect(frames.filter((f) => f.t === "text")).toEqual([]);
     expect(frames.at(-1)).toEqual({ t: "flush", v: "Hey there." });
     expect(sink.messages).toHaveLength(1);
     expect(sink.messages[0].content).toBe("Hey there.");
@@ -252,5 +261,64 @@ describe("createTurnStream", () => {
 
     expect(sink.messages).toHaveLength(1);
     expect(sink.messages[0].content).toBe("Half a thou");
+  });
+
+  it("never looks up the calendar for a reply with no dates or times", async () => {
+    streamChatbotReply.mockResolvedValueOnce(
+      sseResponse([textEvent("What do you do for work now?")]),
+    );
+    const { input } = makeInput();
+
+    await readFrames(createTurnStream(input));
+
+    expect(resolveBookingCalendar).not.toHaveBeenCalled();
+  });
+
+  it("replaces a stated price before the visitor sees it, and records it", async () => {
+    streamChatbotReply.mockResolvedValueOnce(
+      sseResponse([textEvent("Most members spend about $5,000 to get started.")]),
+    );
+    const { input, sink } = makeInput();
+
+    const frames = await readFrames(createTurnStream(input));
+
+    const shown = frames.at(-1)?.v as string;
+    expect(shown).not.toContain("$");
+    expect(shown).toContain("on the free call");
+    expect(sink.messages[0].content).toBe(shown);
+    expect(sink.priceLeak?.amount).toBe("$5,000");
+  });
+
+  // Conversation 68ead512: "Monday the 15th is full" while Tue Sep 15 had
+  // open slots. The visitor must only ever see the checked version.
+  it("corrects a false 'fully booked' against the real calendar", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-09-11T12:50:00Z"));
+    try {
+      resolveBookingCalendar.mockResolvedValue({
+        calendar: { label: "test", url: "https://calendly.com/x", eventTypeUri: "x" },
+        slots: ["2026-09-15T13:00:00Z", "2026-09-15T20:30:00Z"],
+      });
+      streamChatbotReply.mockResolvedValueOnce(
+        sseResponse([textEvent("Monday the 15th is fully booked.")]),
+      );
+      const { input, sink } = makeInput({
+        toolContext: {
+          conversationId: "conv-1",
+          transcript: [],
+          timeZone: "America/New_York",
+        } as unknown as ChatbotToolContext,
+      });
+
+      const frames = await readFrames(createTurnStream(input));
+
+      const corrected =
+        "Tuesday, Sep 15 has 9:00 am or 4:30 pm open. Would one of those work?";
+      expect(frames.filter((f) => f.t === "text")).toEqual([]);
+      expect(frames.at(-1)).toEqual({ t: "flush", v: corrected });
+      expect(sink.messages[0].content).toBe(corrected);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

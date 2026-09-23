@@ -87,6 +87,21 @@ describe("calendar guard", () => {
     ).toBe(true);
   });
 
+  // Aug 27-Sep 11: Mia described a calendar that was never opened.
+  it("catches a claim that the calendar is already on screen", () => {
+    expect(
+      needsCalendarGuard("Pick any time on the calendar that just popped up."),
+    ).toBe(true);
+    expect(needsCalendarGuard("The calendar will open here for you.")).toBe(true);
+    expect(needsCalendarGuard("The calendar is open right below.")).toBe(true);
+    expect(needsCalendarGuard("I've opened the calendar here.")).toBe(true);
+  });
+
+  it("keeps a calendar claim once the guard has opened the calendar", () => {
+    const text = "The calendar is right here, grab Tuesday at 10.";
+    expect(rewriteForOpenCalendar(text)).toBe(text);
+  });
+
   it("leaves ordinary replies and other links alone", () => {
     expect(
       needsCalendarGuard(

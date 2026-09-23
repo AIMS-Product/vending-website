@@ -289,10 +289,22 @@ describe("shouldForceBookingCalendar", () => {
   });
 
   it.each([
+    // Real first messages from Aug 27-Sep 2 that got no calendar.
+    "How much money is needed to get started?",
+    "how much money do I need to start",
+  ])("forces the calendar on money someone needs: %j", (message) => {
+    expect(hasCostIntent(message)).toBe(true);
+  });
+
+  it.each([
     "book a call",
     "can I talk to someone",
     "when can we talk",
     "show me the calendar",
+    "I would like to take a call tomorrow",
+    "I'm looking to enroll in a course",
+    "how to start",
+    "how do I get started",
   ])("still forces it on plain booking intent: %j", (message) => {
     expect(shouldForceBookingCalendar(message)).toBe(true);
   });
@@ -321,6 +333,8 @@ describe("shouldForceBookingCalendar", () => {
     "how much can a single machine bring in",
     "how much revenue should I expect",
     "how much time per week does a route take",
+    // "need" alone is not a money question.
+    "how much time do I need each week",
   ])("leaves a non-cost question alone: %j", (message) => {
     expect(shouldForceBookingCalendar(message)).toBe(false);
   });

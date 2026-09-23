@@ -15,6 +15,15 @@ import {
 } from "@/lib/chatbot/humanize";
 import { stripChatbotFormatting } from "@/lib/chatbot/strip-formatting";
 import {
+  resolveBookingCalendar,
+  safeTimeZone,
+} from "@/lib/chatbot/availability";
+import {
+  checkAvailabilityClaims,
+  mentionsAvailability,
+} from "@/lib/chatbot/availability-guard";
+import { findPriceLeak, type PriceLeak } from "@/lib/chatbot/price-guard";
+import {
   CHATBOT_TOOL_DEFINITIONS,
   runChatbotTool,
   type ChatbotToolContext,
@@ -54,7 +63,8 @@ const SECOND_CALL_TIMEOUT_MS = 20_000;
 export type TurnStreamInput = {
   config: { model: string };
   modelMessages: ChatbotChatMessage[];
-  sink: { messages: ChatbotMessage[] };
+  /** `priceLeak` records a price the turn blocked, so the route can still flag it. */
+  sink: { messages: ChatbotMessage[]; priceLeak?: PriceLeak };
   captured: { name: string | null; email: string | null; phone: string | null };
   toolContext: ChatbotToolContext;
   /** Requires this tool on the first call — see hasExplicitBookingIntent. */
@@ -113,9 +123,14 @@ export function createTurnStream(
             throw new ChatbotOpenAiError("OpenAI returned no reply body.");
           }
 
+          // Held, not streamed (2026-09-11): every reply is checked for a
+          // price and for false availability before the visitor sees it.
+          // Replies are capped at ~45 words and the widget's typing
+          // indicator covers the wait; streaming raw text made both checks
+          // observe-only, since a wrong sentence was already on screen.
           const { text, toolCalls } = await pumpCompletion(
             upstream.body,
-            (delta) => emit({ t: "text", v: delta }),
+            () => {},
           );
 
           // The model wrote about a calendar instead of opening one (a link,
@@ -141,6 +156,7 @@ export function createTurnStream(
               ...input.sink.messages.map((m) => m.content),
             ]),
           });
+          finalText = await guardReply(finalText, input);
           if (finalText) {
             // The flush carries the final text: the visitor watched the raw
             // stream, and this is what replaces it (and what is stored).
@@ -217,6 +233,39 @@ export function createTurnStream(
       }
     },
   });
+}
+
+/** Carries no figure, so it can never itself read as a price. */
+const SAFE_PRICE_LINE =
+  "Fair question. There isn't one price because there isn't one plan, and a vending consultant works out the exact number for your situation on the free call.";
+
+/**
+ * The last word on a reply before the visitor sees it. A stated price is
+ * replaced outright (price is only ever given on the call). Availability
+ * claims are checked against the real calendar, so a wrong day, an invented
+ * time, or a false "fully booked" never reaches the visitor. Skipped once a
+ * booking is confirmed: the booked slot is no longer open by design.
+ */
+async function guardReply(
+  text: string,
+  input: TurnStreamInput,
+): Promise<string> {
+  const leak = findPriceLeak(text);
+  if (leak) {
+    input.sink.priceLeak ??= leak;
+    return SAFE_PRICE_LINE;
+  }
+
+  const booked = input.toolContext.transcript.some(
+    (m) => m.kind === "booking_confirmed",
+  );
+  if (booked || !mentionsAvailability(text)) return text;
+
+  // resolveBookingCalendar never throws and is cached for 60s, so this is
+  // usually the same lookup the model's own tool call just made.
+  const timeZone = safeTimeZone(input.toolContext.timeZone);
+  const { slots } = await resolveBookingCalendar({ timeZone });
+  return checkAvailabilityClaims(text, { slots, timeZone, now: new Date() });
 }
 
 async function runToolRound(

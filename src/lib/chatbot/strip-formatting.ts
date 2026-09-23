@@ -45,7 +45,9 @@ export function stripChatbotFormatting(text: string): string {
   output = output.replace(/^\s*[-*•]\s+/gm, "");
   output = output.replace(/^\s*\d+\.\s+/gm, "");
 
-  // Em dash / en dash -> comma, so the sentence still reads naturally.
+  // A dash between numbers is a range: "2–4 machines" once went out as
+  // "2, 4 machines". Anything else: em dash / en dash -> comma.
+  output = output.replace(/(\d)\s*[—–]\s*(?=\d)/g, "$1 to ");
   output = output.replace(/\s*[—–]\s*/g, ", ");
 
   // Collapse whitespace left behind by the removals above.

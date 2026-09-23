@@ -74,9 +74,22 @@ const HAS_BOOK_NOW_LINK = /\[[^\]\n]+\]\(\/book-now[^)\s]*\)/;
 const CALENDAR_PROMISE =
   /\b(?:i'?ll|i\s+will|let\s+me|going\s+to|gonna|i\s+can)\s+(?:open|pull\s+up|bring\s+up|get)\s+(?:the|a|that)\s+calendar\b|\bone\s+moment\b|\bjust\s+a\s+moment\b|\bcan'?t\s+(?:show|open|send)\s+(?:you\s+)?(?:the\s+)?(?:\w+\s+)?(?:calendar|calendly)\b/i;
 
+/**
+ * Prose that says the calendar is ALREADY on screen. Only checked when no
+ * calendar has been shown ("the calendar that just popped up", "the calendar
+ * will open here": 10 chats, Aug 27-Sep 11). Detection only: once the guard
+ * opens the calendar the sentence is true, so the rewrite keeps it.
+ */
+const CALENDAR_CLAIM =
+  /\bcalendar(?:'s|\s+is)\s+(?:open|up|right\s+here)\b|\bcalendar\s+(?:that\s+)?(?:just\s+)?popped\s+up\b|\bcalendar\s+(?:will|should)\s+(?:open|pop\s+up|appear)\b|\b(?:i'?ve|i\s+have)\s+(?:opened|pulled\s+up)\s+the\s+calendar\b/i;
+
 /** True when the reply should have opened the calendar and did not. */
 export function needsCalendarGuard(text: string): boolean {
-  return HAS_BOOK_NOW_LINK.test(text) || CALENDAR_PROMISE.test(text);
+  return (
+    HAS_BOOK_NOW_LINK.test(text) ||
+    CALENDAR_PROMISE.test(text) ||
+    CALENDAR_CLAIM.test(text)
+  );
 }
 
 /**

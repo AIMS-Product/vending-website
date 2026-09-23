@@ -7,12 +7,10 @@
  * PRICING rule in the system prompt. This is layer 3: it reads what the model
  * actually said and tells us when the first two failed.
  *
- * It never blocks or edits a reply. A model that has already streamed a wrong
- * number to a visitor cannot be un-streamed, and holding the stream to run a
- * check would make every reply slower for every visitor to catch a case that
- * should now be rare. So this only ever observes: it logs and flags the
- * conversation for review, which is what turns a silent recurrence into
- * something the team sees on /admin/chatbot/conversations.
+ * Since 2026-09-11 replies are held until checked (replies are short, so the
+ * wait is a second or two), and turn-stream.ts replaces a reply that states
+ * a price before the visitor sees it. The chat route still flags the
+ * conversation for review, because a blocked price means the prompt failed.
  *
  * Client-safe on purpose (no server-only import) so it can be unit tested
  * and reused from either side later.
