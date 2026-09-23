@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Container } from "@/components/ui/Container";
 import { solutions, solutionsIndex } from "@/lib/content/solutions";
 
 export const metadata: Metadata = {
@@ -10,8 +11,8 @@ export const metadata: Metadata = {
 
 export default function SolutionsIndexPage() {
   return (
-    <section className="bg-white px-5 py-20 lg:px-10 lg:py-28">
-      <div className="mx-auto max-w-[1500px]">
+    <section className="bg-white py-20 lg:py-28">
+      <Container>
         <p className="text-brand-700 text-xs font-black tracking-[0.14em] uppercase">
           {solutionsIndex.eyebrow}
         </p>
@@ -22,7 +23,9 @@ export default function SolutionsIndexPage() {
           {solutionsIndex.intro}
         </p>
 
-        <ul className="mt-14 grid gap-8 lg:grid-cols-3">
+        {/* Eight cards: two across from md, so no row ends on an empty slot
+            (three across left one) and a tablet is not one card per row. */}
+        <ul className="mt-14 grid gap-8 md:grid-cols-2">
           {solutions.map((solution) => (
             <li key={solution.slug}>
               <Link
@@ -42,7 +45,7 @@ export default function SolutionsIndexPage() {
             </li>
           ))}
         </ul>
-      </div>
+      </Container>
     </section>
   );
 }
