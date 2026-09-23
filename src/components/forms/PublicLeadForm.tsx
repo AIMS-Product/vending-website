@@ -542,18 +542,22 @@ export function PublicLeadForm({
           values={submittedValues}
         />
         {showPhoneField && (
-          <TextField
-            name="phone"
-            errorKey="phone"
-            label={
-              isQualification && !phoneRequired ? "Phone (optional)" : "Phone"
-            }
-            type="tel"
-            autoComplete="tel"
-            required={(isQualification && phoneRequired) || simpleContact}
-            errors={errors}
-            values={submittedValues}
-          />
+          // On the three-field booking form Phone would otherwise sit alone at
+          // half width under Name + Email; it takes the whole row instead.
+          <div className={cn(simpleContact && "sm:col-span-2")}>
+            <TextField
+              name="phone"
+              errorKey="phone"
+              label={
+                isQualification && !phoneRequired ? "Phone (optional)" : "Phone"
+              }
+              type="tel"
+              autoComplete="tel"
+              required={(isQualification && phoneRequired) || simpleContact}
+              errors={errors}
+              values={submittedValues}
+            />
+          </div>
         )}
         {showInlineQualificationFields && (
           <>
@@ -682,6 +686,7 @@ export function PublicLeadForm({
         state={activeState}
         muted={hasSummary}
         dataGtm={`lead-form-submit-${intent}-step-1`}
+        wide={simpleContact}
       />
 
       <PrivacyAssurance intent={intent} />
@@ -1004,15 +1009,24 @@ function SubmitRow({
   state,
   muted,
   dataGtm,
+  wide = false,
 }: {
   pending: boolean;
   submitLabel: string;
   state: PublicLeadActionState;
   muted: boolean;
   dataGtm: string;
+  // The short booking form's submit is the card's only action: full width at
+  // the 56px hero size, so the card reads as one finished unit.
+  wide?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cn(
+        "flex flex-col gap-4",
+        !wide && "sm:flex-row sm:items-center sm:justify-between",
+      )}
+    >
       <button
         type="submit"
         disabled={pending}
@@ -1020,6 +1034,7 @@ function SubmitRow({
         className={cn(
           "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-7 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-70",
           "bg-brand-700 text-white",
+          wide && "min-h-14 w-full text-base",
         )}
       >
         {pending ? "Submitting..." : submitLabel}
