@@ -51,12 +51,16 @@ function builder(rows: unknown[], error: unknown) {
   return { target, calls };
 }
 
-function buildClient(rows: Record<string, unknown[]>, failing: string[]) {
+function buildClient(
+  rows: Record<string, unknown[]>,
+  failing: string[],
+  errors: Record<string, unknown> = {},
+) {
   const calls: Record<string, Call[]> = {};
   const from = vi.fn((table: string) => {
     const b = builder(
       rows[table] ?? [],
-      failing.includes(table) ? { message: "boom" } : null,
+      errors[table] ?? (failing.includes(table) ? { message: "boom" } : null),
     );
     calls[table] = b.calls;
     return b.target as never;
@@ -197,7 +201,39 @@ describe("getYouTubeAttribution reads", () => {
     expect(result.coverage.visitsSource).toBeNull();
   });
 
-  async function run(rows: Record<string, unknown[]>, failing: string[] = []) {
+  it("logs a read that timed out instead of calling it not connected", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], {
+      ga4_page_views: { code: "57014", message: "statement timeout" },
+    });
+
+    // Still unmeasured, never zero...
+    expect(result.totals.visits).toBeNull();
+    // ...but a timeout is an outage, and it is said out loud.
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining("ga4_page_views read failed (57014)"),
+    );
+    error.mockRestore();
+  });
+
+  it("stays quiet about a table that is simply not there yet", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const { result } = await run({}, [], {
+      ga4_page_views: { code: "42P01", message: "relation does not exist" },
+    });
+
+    expect(result.coverage.visitsConnected).toBe(false);
+    expect(error).not.toHaveBeenCalled();
+    error.mockRestore();
+  });
+
+  async function run(
+    rows: Record<string, unknown[]>,
+    failing: string[] = [],
+    errors: Record<string, unknown> = {},
+  ) {
     const { client, calls } = buildClient(
       {
         lead_submissions: [],
@@ -208,6 +244,7 @@ describe("getYouTubeAttribution reads", () => {
         ...rows,
       },
       failing,
+      errors,
     );
     const result = await getYouTubeAttribution({ client, now: NOW });
     return { result, calls };

@@ -189,15 +189,48 @@ async function selectLeads(
         .order("created_at", { ascending: true })
         .order("id", { ascending: true })
         .range(from, from + pageSize - 1);
-      if (error) return null;
+      if (error) {
+        noteReadError("lead_submissions", error);
+        return null;
+      }
       const batch = (data ?? []) as unknown as YouTubeLeadRow[];
       rows.push(...batch);
       if (batch.length < pageSize) break;
     }
     return rows;
-  } catch {
+  } catch (error) {
+    noteReadError("lead_submissions", error);
     return null;
   }
+}
+
+/**
+ * The only codes that mean "this table or column is not there yet": undefined
+ * table, undefined column, and PostgREST's two schema-cache misses. Anything
+ * else is a fault, not a switch left off.
+ */
+const NOT_CONNECTED_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
+
+/**
+ * Logs a read that failed for any reason but a missing table.
+ *
+ * The stage still reads as unmeasured (null, never zero), but a statement
+ * timeout is not "the migration has not been applied", and swallowing it is how
+ * an outage reads on the page as an integration nobody switched on. Code and
+ * message only: these rows carry lead PII.
+ *
+ * Returns true when it was a real failure.
+ */
+function noteReadError(table: string, error: unknown): boolean {
+  const { code, message } = (error ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+  };
+  if (typeof code === "string" && NOT_CONNECTED_CODES.has(code)) return false;
+  console.error(
+    `[youtube-attribution] ${table} read failed (${String(code ?? "no code")}): ${String(message ?? error)}`,
+  );
+  return true;
 }
 
 type Fetched<T> = { rows: T[]; connected: boolean };
@@ -205,13 +238,16 @@ type Fetched<T> = { rows: T[]; connected: boolean };
 async function fetchVideos(
   client: YouTubeAttributionClient,
 ): Promise<Fetched<YouTubeVideoRow>> {
-  return degradable(async () => {
+  return degradable("youtube_videos", async () => {
     const { data, error } = await client
       .from("youtube_videos")
       .select(
         "utm_campaign,title,video_url,published_at,bitly_id,in_description",
       );
-    if (error) return null;
+    if (error) {
+      noteReadError("youtube_videos", error);
+      return null;
+    }
     return (data ?? []) as unknown as YouTubeVideoRow[];
   });
 }
@@ -220,7 +256,7 @@ async function fetchClicks(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<BitlyClickRow>> {
-  return degradable(() =>
+  return degradable("bitly_link_clicks", () =>
     readAllRows<BitlyClickRow>(
       "bitly_link_clicks",
       MAX_CLICK_ROWS,
@@ -273,7 +309,7 @@ async function fetchGa4PageViews(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
-  return degradable(async () => {
+  return degradable("ga4_page_views", async () => {
     const rows = await readAllRows<Ga4VisitRow>(
       "ga4_page_views",
       MAX_PAGE_VIEW_ROWS,
@@ -308,7 +344,7 @@ async function fetchPageViews(
   client: YouTubeAttributionClient,
   sinceIso: string,
 ): Promise<Fetched<PageViewRow>> {
-  return degradable(() =>
+  return degradable("lead_page_views", () =>
     readAllRows<PageViewRow>(
       "lead_page_views",
       MAX_PAGE_VIEW_ROWS,
@@ -351,7 +387,10 @@ async function readAllRows<T>(
       rows.length,
       rows.length + PAGE_ROWS - 1,
     );
-    if (error) return null;
+    if (error) {
+      noteReadError(table, error);
+      return null;
+    }
     const batch = (data ?? []) as T[];
     rows.push(...batch);
     if (batch.length < PAGE_ROWS) return rows;
@@ -374,19 +413,22 @@ function capped<T>(rows: T[], limit: number, table: string): T[] | null {
 /**
  * Runs a read that is allowed to be missing.
  *
- * `connected: false` means the table or its data is not there yet — most often
- * Postgres 42P01 before this slice's migration is applied. The rollup turns
- * that into "not measured", which is the honest reading; an empty array with
+ * `connected: false` means the stage could not be measured — most often
+ * Postgres 42P01 before this slice's migration is applied, but a timeout lands
+ * here too (logged by `noteReadError`, never silent). The rollup turns that
+ * into "not measured", which is the honest reading; an empty array with
  * `connected: true` would mean "measured, and it was zero".
  */
 async function degradable<T>(
+  table: string,
   read: () => Promise<T[] | null>,
 ): Promise<Fetched<T>> {
   try {
     const rows = await read();
     if (rows === null) return { rows: [], connected: false };
     return { rows, connected: true };
-  } catch {
+  } catch (error) {
+    noteReadError(table, error);
     return { rows: [], connected: false };
   }
 }
