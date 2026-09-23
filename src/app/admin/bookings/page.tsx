@@ -18,8 +18,10 @@ import {
 } from "@/lib/services/pre-call-briefing";
 import {
   loadEngagementBySession,
-  loadSessionIdsByLead,
+  loadLeadFacts,
+  resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
+import { loadSessionsByInvitee } from "@/lib/services/calendly-booking-sessions";
 import {
   creditConflict,
   SETTER_NAMES,
@@ -79,19 +81,29 @@ export default async function AdminBookingsPage({
     : report.rows;
   const summary = chatOnly ? summarizeCallCredits(rows) : report.summary;
 
-  // What each upcoming call has watched. Two hops because the session id is
-  // the join: booking -> its lead row -> the session that lead was captured
-  // under -> that session's video rows.
-  const sessionByLead = await loadSessionIdsByLead(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  // What each upcoming call has watched. The session id is the join: booking
+  // -> its lead row's session, or the browser that booked it on-site -> that
+  // session's video rows. Same resolver as the Pre-call video tab.
+  const [leadFacts, sessionByInvitee] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
+    loadSessionsByInvitee(
+      report.rows.flatMap((row) => (row.inviteeUri ? [row.inviteeUri] : [])),
+    ),
+  ]);
+  const sessionByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    sessionByInvitee,
   );
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByLead,
+    sessionByBooking,
     engagementBySession: await loadEngagementBySession([
-      ...sessionByLead.values(),
+      ...sessionByBooking.values(),
     ]),
   });
 

@@ -380,6 +380,11 @@ export type CallCreditRow = {
   chat: ChatTouch | null;
   /** The lead row this booking belongs to, when one matched. */
   leadSubmissionId: string | null;
+  /**
+   * Calendly's id for this invitee. Optional because only the booking ledger
+   * reads it; it is the join to the browser that made the booking.
+   */
+  inviteeUri?: string | null;
   /** Close's setter name on that lead, kept for reporting that needs it raw. */
   closeSetter: string | null;
 };

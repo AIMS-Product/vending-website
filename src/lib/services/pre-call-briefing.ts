@@ -37,13 +37,20 @@ export type BriefingRow = {
  */
 export function buildPreCallBriefing({
   rows,
-  sessionByLead,
+  sessionByLead = new Map(),
+  sessionByBooking,
   engagementBySession,
   now = new Date(),
   horizonDays = 14,
 }: {
   rows: CallCreditRow[];
-  sessionByLead: Map<string, string>;
+  sessionByLead?: Map<string, string>;
+  /**
+   * Session per booking id, from resolveBookingSessions. When given it is the
+   * answer: it already includes every lead-row session and adds bookings
+   * linked in the on-site calendar.
+   */
+  sessionByBooking?: Map<string, string>;
   engagementBySession: Map<string, PreCallEngagement>;
   now?: Date;
   horizonDays?: number;
@@ -58,9 +65,11 @@ export function buildPreCallBriefing({
       return Number.isFinite(startsAt) && startsAt >= from && startsAt <= until;
     })
     .map((row) => {
-      const session = row.leadSubmissionId
-        ? sessionByLead.get(row.leadSubmissionId)
-        : undefined;
+      const session = sessionByBooking
+        ? sessionByBooking.get(row.id)
+        : row.leadSubmissionId
+          ? sessionByLead.get(row.leadSubmissionId)
+          : undefined;
       return {
         id: row.id,
         name: row.inviteeName?.trim() || row.inviteeEmail || "Unknown",

@@ -1287,6 +1287,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      calendly_booking_sessions: {
+        Row: {
+          invitee_uri: string;
+          linked_at: string;
+          vp_session_id: string;
+        };
+        Insert: {
+          invitee_uri: string;
+          linked_at?: string;
+          vp_session_id: string;
+        };
+        Update: {
+          invitee_uri?: string;
+          linked_at?: string;
+          vp_session_id?: string;
+        };
+        Relationships: [];
+      };
       lead_video_views: {
         Row: {
           duration_seconds: number | null;

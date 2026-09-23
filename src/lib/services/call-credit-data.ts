@@ -48,6 +48,7 @@ const CALL_CREDIT_FIELDS = [
   "utm_medium",
   "utm_content",
   "lead_submission_id",
+  "invitee_uri",
   "booked_at:raw_payload->payload->>created_at",
   "scheduled_by:raw_payload->payload->>invitee_scheduled_by",
   "hosts:raw_payload->payload->scheduled_event->event_memberships",
@@ -66,6 +67,7 @@ type RawRow = {
   utm_medium: string | null;
   utm_content: string | null;
   lead_submission_id: string | null;
+  invitee_uri: string | null;
   lead: {
     booked_by_setter: string | null;
     setter_touch_name?: string | null;
@@ -227,6 +229,7 @@ export async function buildCallCreditReport(
         directory,
       ),
       leadSubmissionId: row.lead_submission_id,
+      inviteeUri: row.invitee_uri,
       closeSetter: closeSetterFor(row),
       chat: resolveChatTouch(
         {

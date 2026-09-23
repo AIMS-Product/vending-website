@@ -56,6 +56,18 @@ const bookings = [
     canceled: false,
     leadSubmissionId: "lead-4",
   },
+  // A webinar attendee: booked on /start, never filled a site form, so no
+  // lead row. The booking link is the only route to their browser.
+  {
+    id: "b-webinar",
+    inviteeName: "Wes Binar",
+    inviteeEmail: "wes@x.com",
+    startAt: "2026-09-26T15:00:00Z",
+    bookedAt: "2026-09-21T22:30:00Z",
+    canceled: false,
+    leadSubmissionId: null,
+    inviteeUri: "https://api.calendly.com/scheduled_events/ev-5/invitees/inv-5",
+  },
 ];
 
 const views = [
@@ -80,7 +92,39 @@ const views = [
     duration_seconds: 120,
     last_seen_at: "2026-09-21T22:40:00Z",
   },
+  {
+    vp_session_id: "vp-5",
+    embed_id: second.embedId,
+    max_percent: 25,
+    duration_seconds: 60,
+    last_seen_at: "2026-09-21T22:45:00Z",
+  },
 ];
+
+// Close's mirror. Sam's first call was the 25th, so it matches his booking;
+// Dana's first call was an earlier one in August, so this booking is not it.
+const mirror = new Map([
+  [
+    "sam@x.com",
+    [
+      {
+        email: "sam@x.com",
+        first_sales_call_booked_date: "2026-09-25",
+        first_call_show_up: "yes",
+      },
+    ],
+  ],
+  [
+    "dana@x.com",
+    [
+      {
+        email: "dana@x.com",
+        first_sales_call_booked_date: "2026-08-02",
+        first_call_show_up: "no",
+      },
+    ],
+  ],
+]);
 
 vi.mock("@/lib/services/call-credit-data", () => ({
   buildCallCreditReport: async () => ({
@@ -90,7 +134,22 @@ vi.mock("@/lib/services/call-credit-data", () => ({
     since: "",
   }),
 }));
-vi.mock("@/lib/services/pre-call-engagement", () => ({
+vi.mock("@/lib/services/calendly-booking-sessions", () => ({
+  loadSessionsByInvitee: async () =>
+    new Map([
+      ["https://api.calendly.com/scheduled_events/ev-5/invitees/inv-5", "vp-5"],
+    ]),
+}));
+vi.mock("@/lib/services/video-engagement-outcomes", async (importActual) => ({
+  ...(await importActual<
+    typeof import("@/lib/services/video-engagement-outcomes")
+  >()),
+  loadFirstCallMirror: async () => mirror,
+}));
+vi.mock("@/lib/services/pre-call-engagement", async (importActual) => ({
+  ...(await importActual<
+    typeof import("@/lib/services/pre-call-engagement")
+  >()),
   loadLeadFacts: async () =>
     new Map([
       ["lead-1", { sessionId: "vp-1", closeLeadId: null }],
@@ -125,8 +184,8 @@ describe("getVideoEngagementReport", () => {
   it("separates engaged, cold, can't-tell and not-yet-tracked", async () => {
     const report = await getVideoEngagementReport({ now: NOW });
 
-    expect(report.bookedCount).toBe(5);
-    expect(report.watcherCount).toBe(2);
+    expect(report.bookedCount).toBe(6);
+    expect(report.watcherCount).toBe(3);
     expect(report.coldCount).toBe(1);
     // Booked with no session: silence, not a zero.
     expect(report.unknownCount).toBe(1);
@@ -195,7 +254,7 @@ describe("getVideoEngagementReport", () => {
     expect(michelle?.predatesTracking).toBe(false);
     expect(michelle?.videosStarted).toBe(1);
     expect(michelle?.upcoming).toBe(true);
-    expect(report.watcherCount).toBe(2);
+    expect(report.watcherCount).toBe(3);
   });
 
   it("reports furthest point as time, not as time spent", async () => {
@@ -219,10 +278,51 @@ describe("getVideoEngagementReport", () => {
     const top = report.videos.find((v) => v.embedId === hero.embedId);
 
     expect(top?.started).toBe(2);
+    expect(
+      report.videos.find((v) => v.embedId === second.embedId)?.started,
+    ).toBe(2);
     expect(top?.reached100).toBe(1);
     expect(
       report.videos.find((v) => v.embedId === second.embedId)?.reached75,
     ).toBe(0);
     expect(report.videos).toHaveLength(preCallVideos.length);
+  });
+
+  it("names a webinar booker with no lead row through the booking link", async () => {
+    // The defect this closes: 10 of the 18 browsers watching on 2026-09-23
+    // came from the webinar booking page with no site lead row, and every one
+    // read "No session" while the same browser had just booked.
+    const report = await getVideoEngagementReport({ now: NOW });
+    const wes = report.people.find((p) => p.name === "Wes Binar");
+
+    expect(wes?.hasSession).toBe(true);
+    expect(wes?.videosStarted).toBe(1);
+  });
+
+  it("counts tracked people as exactly opened + watched nothing + can't tell", async () => {
+    const report = await getVideoEngagementReport({ now: NOW });
+    expect(report.trackedCount).toBe(
+      report.watcherCount + report.coldCount + report.unknownCount,
+    );
+    expect(report.trackedCount).toBe(report.people.length);
+  });
+
+  it("reads Close's show answer only onto the booking that is the first call", async () => {
+    // The defect this guards: Close's show field is about the FIRST sales
+    // call. Dana's first call was in August; reading its "no" onto this
+    // booking would report a no-show for a call nobody logged.
+    const report = await getVideoEngagementReport({
+      now: new Date("2026-09-28T12:00:00Z"),
+    });
+    const sam = report.people.find((p) => p.name === "Sam Rivera");
+    const dana = report.people.find((p) => p.name === "Dana Cole");
+
+    expect(sam?.firstCall).toBe("held");
+    expect(dana?.firstCall).toBe("notFirstCall");
+    expect(report.showUp).toEqual({
+      connected: true,
+      watched: { held: 1, noShow: 0 },
+      watchedNothing: { held: 0, noShow: 0 },
+    });
   });
 });

@@ -99,6 +99,33 @@ describe("buildPreCallBriefing", () => {
   });
 });
 
+describe("buildPreCallBriefing with sessions resolved per booking", () => {
+  it("attaches engagement to a booking that has no lead row", () => {
+    // A webinar attendee booked on /start: no lead row, but the booking itself
+    // was linked to the browser that made it.
+    const [row] = buildPreCallBriefing({
+      rows: [call({ id: "webinar", leadSubmissionId: null })],
+      sessionByBooking: new Map([["webinar", "vp-9"]]),
+      engagementBySession: new Map([["vp-9", watched]]),
+      now: NOW,
+    });
+
+    expect(row.unknownSession).toBe(false);
+    expect(row.engagement.watchedCount).toBe(3);
+  });
+
+  it("treats a booking missing from the map as no session", () => {
+    const [row] = buildPreCallBriefing({
+      rows: [call({ id: "a" })],
+      sessionByBooking: new Map(),
+      engagementBySession: new Map([["vp-1", watched]]),
+      now: NOW,
+    });
+
+    expect(row.unknownSession).toBe(true);
+  });
+});
+
 describe("coldBookings", () => {
   it("is the outreach list: watched nothing, and we would know if they had", () => {
     const briefing = buildPreCallBriefing({

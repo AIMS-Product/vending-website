@@ -29,6 +29,11 @@ export const ATTRIBUTION_EVENT_TYPES = [
   // pre-call resources page is the reason it exists: a booker is sent there
   // and nothing recorded whether they watched anything.
   "video_progress",
+  // Fired once when a visitor books in an on-site Calendly embed, carrying the
+  // invitee URI. Ties that booking to this browser, so the pre-call videos it
+  // then watches are attributable even when the booker never filled a site
+  // form (webinar attendees booking on /start). See calendly-booking-sessions.
+  "booking_linked",
 ] as const;
 
 export type AttributionEventType = (typeof ATTRIBUTION_EVENT_TYPES)[number];

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { __testing } from "./CalendlyBookingRedirect";
 
-const { isEventScheduled, DESTINATION } = __testing;
+const { isEventScheduled, inviteeUriOf, DESTINATION } = __testing;
 
 function message(origin: string, data: unknown): MessageEvent {
   return { origin, data } as MessageEvent;
@@ -62,5 +62,35 @@ describe("CalendlyBookingRedirect origin guard", () => {
 
   it("sends bookers to the pre-call resources page", () => {
     expect(DESTINATION).toBe("/pre-call-resources");
+  });
+});
+
+describe("CalendlyBookingRedirect invitee id", () => {
+  const uri = "https://api.calendly.com/scheduled_events/ev-1/invitees/inv-1";
+
+  it("reads the invitee URI Calendly sends with a confirmed booking", () => {
+    expect(
+      inviteeUriOf(
+        message("https://calendly.com", {
+          event: "calendly.event_scheduled",
+          payload: { event: { uri: "x" }, invitee: { uri } },
+        }),
+      ),
+    ).toBe(uri);
+  });
+
+  it("returns null rather than throwing on odd payloads", () => {
+    for (const data of [
+      { event: "calendly.event_scheduled" },
+      { event: "calendly.event_scheduled", payload: null },
+      { event: "calendly.event_scheduled", payload: { invitee: 42 } },
+      { event: "calendly.event_scheduled", payload: { invitee: { uri: 7 } } },
+      {
+        event: "calendly.event_scheduled",
+        payload: { invitee: { uri: "x".repeat(301) } },
+      },
+    ]) {
+      expect(inviteeUriOf(message("https://calendly.com", data))).toBeNull();
+    }
   });
 });

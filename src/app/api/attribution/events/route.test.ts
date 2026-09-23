@@ -4,6 +4,7 @@ import { POST } from "./route";
 const mocks = vi.hoisted(() => ({
   checkPublicRateLimit: vi.fn(),
   recordPopupEvent: vi.fn(),
+  recordBookingSession: vi.fn(),
   config: {
     MONEY_PAGE_INGEST_URL: "https://money-page.test/api/ingest/vendingpreneurs",
     MONEY_PAGE_SECRET: "shared-secret",
@@ -19,6 +20,10 @@ vi.mock("@/lib/config", () => ({
 
 vi.mock("@/lib/services/popups", () => ({
   recordPopupEvent: mocks.recordPopupEvent,
+}));
+
+vi.mock("@/lib/services/calendly-booking-sessions", () => ({
+  recordBookingSession: mocks.recordBookingSession,
 }));
 
 vi.mock("@/lib/public-rate-limit", async () => {
@@ -49,6 +54,7 @@ describe("attribution event route", () => {
     vi.restoreAllMocks();
     mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.recordPopupEvent.mockReset();
+    mocks.recordBookingSession.mockReset();
     mocks.recordPopupEvent.mockResolvedValue(true);
     mocks.config.MONEY_PAGE_INGEST_URL =
       "https://money-page.test/api/ingest/vendingpreneurs";
@@ -128,6 +134,51 @@ describe("attribution event route", () => {
     await POST(eventRequest());
 
     expect(mocks.recordPopupEvent).not.toHaveBeenCalled();
+  });
+
+  it("links a booking to the cookie's session and keeps it off the money page", async () => {
+    // The invitee URI is a Calendly id the money page has no use for, so the
+    // event is recorded locally and never forwarded.
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const inviteeUri =
+      "https://api.calendly.com/scheduled_events/ev-1/invitees/inv-1";
+
+    const response = await POST(
+      eventRequest({
+        body: {
+          ...payload,
+          event_type: "booking_linked",
+          external_id: "vending-website:booking_linked:vp-session-1:123",
+          properties: { invitee_uri: inviteeUri },
+        },
+      }),
+    );
+
+    expect(response.status).toBe(202);
+    expect(mocks.recordBookingSession).toHaveBeenCalledWith({
+      vpSessionId: "vp-session-1",
+      inviteeUri,
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("never links a booking from a request whose cookie does not match", async () => {
+    const response = await POST(
+      eventRequest({
+        cookie: "vp_sid=someone-else",
+        body: {
+          ...payload,
+          event_type: "booking_linked",
+          properties: {
+            invitee_uri:
+              "https://api.calendly.com/scheduled_events/ev-1/invitees/inv-1",
+          },
+        },
+      }),
+    );
+
+    expect(response.status).toBe(401);
+    expect(mocks.recordBookingSession).not.toHaveBeenCalled();
   });
 
   it("rejects unknown event types", async () => {

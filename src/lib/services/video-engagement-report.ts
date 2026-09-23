@@ -4,7 +4,18 @@ import { preCallVideos } from "@/lib/content/pre-call-resources";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { chunk, ID_BATCH } from "@/lib/batch";
 import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
-import { loadLeadFacts } from "@/lib/services/pre-call-engagement";
+import {
+  loadLeadFacts,
+  resolveBookingSessions,
+} from "@/lib/services/pre-call-engagement";
+import { loadSessionsByInvitee } from "@/lib/services/calendly-booking-sessions";
+import {
+  compareShowUp,
+  firstCallOutcome,
+  loadFirstCallMirror,
+  type FirstCallOutcome,
+  type ShowUpComparison,
+} from "@/lib/services/video-engagement-outcomes";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -77,6 +88,8 @@ export type VideoWatcherRow = {
    * renders both as the same blank and a rep phones someone who did watch.
    */
   hasSession: boolean;
+  /** Close's answer for this call, when this booking is their first call. */
+  firstCall: FirstCallOutcome;
 };
 
 export type VideoBreakdownRow = {
@@ -97,6 +110,12 @@ export type VideoBreakdownRow = {
 export type VideoEngagementReport = {
   /** Booked prospects in the window, engaged or not. */
   bookedCount: number;
+  /**
+   * The people this page can answer for: booked since tracking began, plus
+   * anyone who booked earlier and has opened a video since. Exactly
+   * watcherCount + coldCount + unknownCount.
+   */
+  trackedCount: number;
   /** Of those, how many opened at least one video. */
   watcherCount: number;
   /** Booked, matched, tracked, and watched nothing — the outreach list. */
@@ -108,6 +127,8 @@ export type VideoEngagementReport = {
   /** Booked but with no session id, so we genuinely cannot say. */
   unknownCount: number;
   totalVideos: number;
+  /** Did watchers turn up more than non-watchers? First calls only. */
+  showUp: ShowUpComparison;
   people: VideoWatcherRow[];
   videos: VideoBreakdownRow[];
   /** False when the table is missing, so the tab can say so plainly. */
@@ -133,19 +154,21 @@ export async function getVideoEngagementReport({
     trackingStartedAt(),
   ]);
   const trackedFrom = trackingStart ? Date.parse(trackingStart) : null;
-  const leadFacts = await loadLeadFacts(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  const [leadFacts, sessionByInvitee] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
+    loadSessionsByInvitee(
+      report.rows.flatMap((row) => (row.inviteeUri ? [row.inviteeUri] : [])),
+    ),
+  ]);
+  const sessionByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    sessionByInvitee,
   );
-
-  const sessionByBooking = new Map<string, string>();
-  for (const row of report.rows) {
-    const session = row.leadSubmissionId
-      ? leadFacts.get(row.leadSubmissionId)?.sessionId
-      : null;
-    if (session) sessionByBooking.set(row.id, session);
-  }
 
   const { rows: viewRows, connected } = await loadViewRows([
     ...new Set(sessionByBooking.values()),
@@ -165,7 +188,7 @@ export async function getVideoEngagementReport({
       const views = session ? (bySession.get(session) ?? []) : [];
       return buildWatcherRow(row, views, now, trackedFrom, Boolean(session));
     })
-    .filter((row): row is VideoWatcherRow => row !== null);
+    .filter((row): row is Omit<VideoWatcherRow, "firstCall"> => row !== null);
 
   // Listed rows are the ones this page can answer for. A booking made before
   // tracking began, with nothing recorded against it, is not a quiet prospect
@@ -177,12 +200,29 @@ export async function getVideoEngagementReport({
   // those people are still opening the page today. Excluding them by booking
   // date — as clamping the query window did — deletes the most useful row on
   // the page, for the prospect whose call is soonest.
-  const people = everyone
-    .filter((row) => !row.predatesTracking)
+  const listed = everyone.filter((row) => !row.predatesTracking);
+
+  // Outcomes only for the listed rows: a few hundred emails, not the window.
+  const mirror = await loadFirstCallMirror(
+    listed.flatMap((row) => (row.email ? [row.email] : [])),
+  );
+  const today = now.toISOString().slice(0, 10);
+  const people = listed
+    .map((row) => ({
+      ...row,
+      firstCall: mirror
+        ? firstCallOutcome(
+            { inviteeEmail: row.email, startAt: row.startAt },
+            mirror.get(row.email?.trim().toLowerCase() ?? "") ?? [],
+            today,
+          )
+        : ("unavailable" as const),
+    }))
     .sort(byEngagementThenSoonest);
 
   return {
     bookedCount: report.rows.length,
+    trackedCount: people.length,
     watcherCount: people.filter((p) => p.videosStarted > 0).length,
     // Cold means "we were watching and they did nothing". Anyone who booked
     // before tracking existed is excluded: putting them on a call list would
@@ -196,6 +236,7 @@ export async function getVideoEngagementReport({
     trackingStartedAt: trackingStart,
     unknownCount: people.filter((row) => !row.hasSession).length,
     totalVideos: preCallVideos.length,
+    showUp: compareShowUp(people, mirror !== null),
     people,
     videos: buildVideoBreakdown(viewRows),
     connected,
@@ -215,7 +256,7 @@ function buildWatcherRow(
   now: Date,
   trackedFrom: number | null,
   hasSession: boolean,
-): VideoWatcherRow | null {
+): Omit<VideoWatcherRow, "firstCall"> | null {
   const startsAt = row.startAt ? Date.parse(row.startAt) : Number.NaN;
 
   const deepest = views

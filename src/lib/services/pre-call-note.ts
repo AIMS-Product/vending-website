@@ -10,7 +10,9 @@ import {
 import {
   loadEngagementBySession,
   loadLeadFacts,
+  resolveBookingSessions,
 } from "@/lib/services/pre-call-engagement";
+import { loadSessionsByInvitee } from "@/lib/services/calendly-booking-sessions";
 
 /**
  * Puts what a prospect watched on their Close lead, shortly before the call.
@@ -101,23 +103,27 @@ export async function sweepPreCallNotes({
   // months ago in every realistic case; 90 days of booking history is the
   // window that holds them all without reading the whole table.
   const report = await buildCallCreditReport({ days: 90 });
-  const leadFacts = await loadLeadFacts(
-    report.rows.flatMap((row) =>
-      row.leadSubmissionId ? [row.leadSubmissionId] : [],
+  const [leadFacts, sessionByInvitee] = await Promise.all([
+    loadLeadFacts(
+      report.rows.flatMap((row) =>
+        row.leadSubmissionId ? [row.leadSubmissionId] : [],
+      ),
     ),
-  );
-
-  const sessionByLead = new Map(
-    [...leadFacts].flatMap(([leadId, { sessionId }]) =>
-      sessionId ? ([[leadId, sessionId]] as [string, string][]) : [],
+    loadSessionsByInvitee(
+      report.rows.flatMap((row) => (row.inviteeUri ? [row.inviteeUri] : [])),
     ),
+  ]);
+  const sessionByBooking = resolveBookingSessions(
+    report.rows,
+    leadFacts,
+    sessionByInvitee,
   );
 
   const briefing = buildPreCallBriefing({
     rows: report.rows,
-    sessionByLead,
+    sessionByBooking,
     engagementBySession: await loadEngagementBySession([
-      ...sessionByLead.values(),
+      ...sessionByBooking.values(),
     ]),
     now,
     // Fractional days: the window is "about to happen", not "this fortnight".

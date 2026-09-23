@@ -213,14 +213,36 @@ export async function loadLeadFacts(
   return facts;
 }
 
-/** Session ids only, for callers that do not touch Close. */
-export async function loadSessionIdsByLead(
-  leadIds: string[],
-): Promise<Map<string, string>> {
-  const facts = await loadLeadFacts(leadIds);
-  return new Map(
-    [...facts].flatMap(([leadId, { sessionId }]) =>
-      sessionId ? ([[leadId, sessionId]] as [string, string][]) : [],
-    ),
-  );
+/**
+ * The browser session behind each booking, by booking id.
+ *
+ * Two routes, in this order:
+ *  1. The lead row's session — the browser that filled a site form. Checked
+ *     first so everyone matched before the booking link existed keeps exactly
+ *     the session they had.
+ *  2. The booking's own link (calendly_booking_sessions) — the browser that
+ *     booked in an on-site calendar. This is the only route for webinar
+ *     attendees, who book on /start without ever filling a site form.
+ *
+ * Pure so the precedence is testable; callers load both maps.
+ */
+export function resolveBookingSessions(
+  rows: {
+    id: string;
+    leadSubmissionId: string | null;
+    inviteeUri?: string | null;
+  }[],
+  leadFacts: Map<string, LeadFacts>,
+  sessionByInvitee: Map<string, string>,
+): Map<string, string> {
+  const sessionByBooking = new Map<string, string>();
+  for (const row of rows) {
+    const session =
+      (row.leadSubmissionId
+        ? leadFacts.get(row.leadSubmissionId)?.sessionId
+        : null) ??
+      (row.inviteeUri ? sessionByInvitee.get(row.inviteeUri) : null);
+    if (session) sessionByBooking.set(row.id, session);
+  }
+  return sessionByBooking;
 }

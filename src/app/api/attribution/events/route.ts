@@ -6,6 +6,7 @@ import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import { channelFromAttributionSignals } from "@/lib/paid-attribution";
 import { recordTaggedPageView } from "@/lib/services/lead-page-views";
 import { recordVideoView } from "@/lib/services/lead-video-views";
+import { recordBookingSession } from "@/lib/services/calendly-booking-sessions";
 import { recordPopupEvent } from "@/lib/services/popups";
 
 const attributionEventSchema = z.object({
@@ -78,6 +79,19 @@ export async function POST(request: Request) {
         stringProperty(payload.properties, "duration_seconds"),
       ),
     });
+  }
+
+  // Which browser made a booking, so the pre-call videos it goes on to watch
+  // can be named even when the booker never filled a site form. Local only:
+  // the money page has no use for a Calendly invitee id, so it is not
+  // forwarded. The session comes from the cookie-checked payload above, never
+  // from a property.
+  if (payload.event_type === "booking_linked") {
+    await recordBookingSession({
+      vpSessionId: payload.vp_session_id,
+      inviteeUri: stringProperty(payload.properties, "invitee_uri"),
+    });
+    return attributionResponse(false);
   }
 
   const destination = moneyPageDestination();
