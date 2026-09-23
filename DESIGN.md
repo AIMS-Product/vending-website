@@ -6,38 +6,89 @@ Two surfaces, two jobs. Don't mix them.
 | -------- | ------------------------------------------------- | ------------------------------------------------------ |
 | Job      | Design **is** the product. Convert visitors.      | Design **serves** the product. Get out of the way.     |
 | Language | Offset brutalist: ink borders, hard shadows, blue | Quiet tool: white surfaces, hairlines, one blue accent |
-| Tokens   | `--brand-*`, `#111111`, `#2a8fcc`, `#55b8e8`      | `--ui-*`                                               |
+| Tokens   | `--brand-*`, `ink`, `sky`, `tint`, `eyebrow`      | `--ui-*`                                               |
 
 The public language does not belong in the admin. It was tried, and a table of
 hard-shadowed pills at fourteen rows reads as noise. The admin's only job is to
 let someone scan state and act.
 
-## Public site accent rules (Kody, 2026-08-24)
+## Public site accent rules (2026-09-22)
 
-Three colours, three jobs. Don't reuse one for another:
+Orange is gone. On 2026-09-22 `/contact` dropped its orange accent and the
+header CTA moved to blue (the `accent` prop was removed from `ApplyCtaButton`,
+`ApplyHero`, `ApplyQuiz`, `PublicLeadForm` and `ApplyLandingPage`). The
+2026-08-24 orange rules are retired. `#f47b3b` is not a public colour any more;
+the few places it survives are bugs to remove as they are touched.
 
-- **Orange `#f47b3b`** — the top nav CTA, and the `/contact` conversion
-  surfaces only (the hero primary CTA and the lead form's submit + post-submit
-  booking CTA). Also error/warning. Everything else that used to be orange is
-  now brand blue. This is what keeps the two highest-intent conversion points
-  legible against a page that is otherwise blue.
-- **Button blue `--brand-700` / `#1f72a5`** — every blue-filled button
-  (`<button>`/`<a>` styled as a CTA) outside the two orange surfaces above.
-  White text. `--brand-600` (`#2a8fcc`) only clears 3.56:1 with white — below
-  WCAG AA's 4.5:1 — so filled buttons use the darker `--brand-700` step of the
-  existing brand scale instead (5.24:1, already registered as `bg-brand-700` /
-  `text-brand-700` via the `@theme` block). Don't invent a new hex for this;
-  `--brand-700` was already in the token scale, just unused.
+- **Button blue `--brand-700` / `#1f72a5`** — every filled CTA, white text.
+  `--brand-600` (`#2a8fcc`) only clears 3.56:1 with white, below WCAG AA;
+  `--brand-700` clears 5.24:1.
 - **Accent blue `--brand-600` / `#2a8fcc`** — every non-button use: borders,
-  focus rings, highlights, icon badges, chips, backgrounds. These pair
-  `#2a8fcc` with dark `#111111` ink or icons, not white text, so the 3.56:1
-  ratio never applies to them.
+  highlights, icon badges, chips, backgrounds. Paired with ink or icons, never
+  white body text.
+- **Sky `#55b8e8`** (`sky`) — card shadows and focus rings.
+- **Eyebrow `#066a99`** (`text-eyebrow`) — eyebrow text. The only one.
+- **Ink `#111111`** (`ink`) — borders, headings, button shadows, dark bands.
+- Red `#c2410c` is the required-field asterisk; red-600 is errors.
 
-Components rendered on `/contact` and elsewhere (`ApplyCtaButton`,
-`ApplyHero`, `ApplyQuiz`, `PublicLeadForm`, `ApplyLandingPage`) take an
-`accent?: "blue" | "orange"` prop defaulting to `"blue"`; only
-`src/app/contact/page.tsx` passes `"orange"`. `/book-now`, `/booking-youtube`,
-and `/booking-meta` render the same components and stay blue.
+## Public site system
+
+One design language for every public page, taken from the booking funnel
+(`src/components/sections/apply/*`), the newest and most deliberate code. If a
+page looks like a different site, it is using something outside this list.
+Tokens live in `src/app/globals.css` `@theme`; primitives in
+`src/components/ui/`.
+
+### Tokens
+
+| Token                                     | Value                 | Utility                                     |
+| ----------------------------------------- | --------------------- | ------------------------------------------- |
+| `--color-ink`                             | `#111111`             | `text-ink` `border-ink` `bg-ink`            |
+| `--color-sky`                             | `#55b8e8`             | `ring-sky`                                  |
+| `--color-tint`                            | `#eaf8ff`             | `bg-tint` (tint cards)                      |
+| `--color-eyebrow`                         | `#066a99`             | `text-eyebrow`                              |
+| `--radius-control` / `--radius-card`      | 8px / 12px            | `rounded-control` `rounded-card`            |
+| `--shadow-btn` / `-hover`                 | 5px / 7px ink offset  | `shadow-btn`                                |
+| `--shadow-card` / `-hover`                | 8px / 10px sky offset | `shadow-card`                               |
+| `--container-page` / `article` / `narrow` | 1180 / 720 / 560px    | `max-w-page` `max-w-article` `max-w-narrow` |
+
+Two radii, two shadow families. **Interactive = ink shadow, container = sky
+shadow.** No other offset shadows, no other radii.
+
+### Primitives
+
+- `ui/Button` — `variant` primary (brand-700) / ghost (white) / onInk (white on
+  a dark band, sky shadow); `size` md 48px (nav, cards) / lg 56px (hero, form
+  submit, sticky bar). Never hand-roll a CTA class string.
+- `ui/Card` — `variant` default (white, sky shadow) / tint / ink (at most one
+  per page) / flat (border only: FAQ rows, rows inside a card). Never nest a
+  bordered card inside another.
+- `ui/Section` — `tone` white / tint / ink, `size` default (96px desktop,
+  64px phone) / tight (64 / 48). Owns vertical rhythm; sections don't set
+  their own `py-*`.
+- `ui/Container` — `width` page / article / narrow, gutter 20px phone, 40px
+  from `lg`. One left edge per page.
+- `ui/Field` — `fieldClass` (52px, 8px radius, 2px ink border, 16px text so
+  iOS never zooms, sky focus ring) and `FieldLabel` (14px above the field, red
+  asterisk when required, "(optional)" otherwise). Inputs and selects share it.
+- `ui/Highlight` — the money-phrase block (brand-600 fill, white text, 0.08em
+  ink shadow). Inline-block, so it never paints over the line above.
+
+### Type
+
+Display H1 and section H2 are uppercase. Anton is the funnel and home
+headline face; whether it becomes the site-wide face is an open decision
+(slice 19), so don't spread it further until that lands. Body is Inter; 12px
+is the floor for any text. Eyebrows: 12px, weight 800–900, `0.14em`
+tracking, `text-eyebrow`, text only — a pill only when it carries state
+("Step 02", "Good potential").
+
+### Chrome
+
+Paid-traffic booking pages (`isFunnelChromePath`) carry no site header or
+footer; they end in the dark `ApplyDisclaimer` band. Marketing pages use the
+site header and footer. Income-claim wording is Kody's and is never
+reworded in a design change.
 
 ## Admin tokens
 

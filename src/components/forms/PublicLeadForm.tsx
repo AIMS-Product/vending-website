@@ -64,6 +64,7 @@ import {
   THANK_YOU_STATE_LINKS,
 } from "@/lib/qualification/thank-you-links";
 import { cn } from "@/lib/utils";
+import { fieldClass, fieldErrorClass, FieldLabel } from "@/components/ui/Field";
 
 type PublicLeadFormProps = {
   action: PublicLeadFormAction;
@@ -138,9 +139,6 @@ type FieldProps = {
   // failed submit so the user does not lose what they typed.
   values?: Record<string, string>;
 };
-
-const inputClass =
-  "min-h-12 w-full rounded-[8px] border-2 border-[#111111] bg-white px-4 py-3 text-base font-semibold text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-[#2d9fd6] focus:ring-2 focus:ring-[#55b8e8]";
 
 // fallow-ignore-next-line complexity
 export function PublicLeadForm({
@@ -1336,32 +1334,6 @@ function HiddenAttribution({
   );
 }
 
-function FieldLabel({
-  id,
-  label,
-  required,
-}: {
-  id: string;
-  label: string;
-  required?: boolean;
-}) {
-  return (
-    <label htmlFor={id} className="text-sm font-medium text-slate-700">
-      {label}
-      {required ? (
-        <>
-          <span className="ml-0.5 text-[#c2410c]" aria-hidden>
-            *
-          </span>
-          <span className="sr-only"> (required)</span>
-        </>
-      ) : (
-        <span className="ml-1 font-normal text-slate-600"> (optional)</span>
-      )}
-    </label>
-  );
-}
-
 function TextField({
   name,
   errorKey,
@@ -1377,7 +1349,9 @@ function TextField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <FieldLabel id={id} label={label} required={required} />
+      <FieldLabel htmlFor={id} required={required}>
+        {label}
+      </FieldLabel>
       <input
         id={id}
         name={name}
@@ -1389,7 +1363,7 @@ function TextField({
         defaultValue={values?.[name] ?? ""}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(inputClass, error && "border-red-300 focus:ring-red-200")}
+        className={cn(fieldClass, error && fieldErrorClass)}
       />
       <FieldError id={`${id}-error`} error={error} />
     </div>
@@ -1397,7 +1371,8 @@ function TextField({
 }
 
 type SelectFieldOption =
-  string | { readonly value: string; readonly label: string };
+  | string
+  | { readonly value: string; readonly label: string };
 
 function SelectField({
   name,
@@ -1412,7 +1387,9 @@ function SelectField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <FieldLabel id={id} label={label} required={required} />
+      <FieldLabel htmlFor={id} required={required}>
+        {label}
+      </FieldLabel>
       <select
         id={id}
         name={name}
@@ -1420,7 +1397,7 @@ function SelectField({
         required={required}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(inputClass, error && "border-red-300 focus:ring-red-200")}
+        className={cn(fieldClass, error && fieldErrorClass)}
         defaultValue={values?.[name] ?? ""}
       >
         <option value="" disabled>
@@ -1499,7 +1476,9 @@ function TextareaField({
   const id = `lead-${name}`;
   return (
     <div className="space-y-2">
-      <FieldLabel id={id} label={label} required={required} />
+      <FieldLabel htmlFor={id} required={required}>
+        {label}
+      </FieldLabel>
       <textarea
         id={id}
         name={name}
@@ -1509,7 +1488,7 @@ function TextareaField({
         defaultValue={values?.[name] ?? ""}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(inputClass, "resize-y")}
+        className={cn(fieldClass, "resize-y")}
       />
       <FieldError id={`${id}-error`} error={error} />
     </div>
