@@ -44,6 +44,33 @@ Plus the shapes past bugs left behind, checked against nothing but themselves:
 
 - **No campaign day counted twice.** A renamed ad campaign used to leave its
   old row behind with its spend intact (Sep 15 2026: $462 counted twice).
+- **Nothing counted on a row its sync dropped.** The spine is upsert-only, so
+  a row whose key a sync stopped writing keeps its last value and is summed
+  forever. One check per metric, each row judged by the sync that owns it,
+  inside that sync's own re-read window as of its latest clean run: a row
+  stamped an older day than the newest row the same sync wrote on the same
+  day was not rewritten. Days older than the window are history, not
+  orphans, and are not read.
+
+  | Check                     | Sync (window re-read each run)                                                        | On a hit |
+  | ------------------------- | ------------------------------------------------------------------------------------- | -------- |
+  | `spine-orphaned-bookings` | every booking writer together, last 90 days                                           | fail     |
+  | `spine-orphaned-spend`    | metricool-ads (3 days)                                                                | fail     |
+  | `spine-orphaned-visits`   | ga4-visits (3 days)                                                                   | fail     |
+  | `spine-orphaned-leads`    | ghl-forms on its form-route keys (3 days); leads on every other key (120 days)        | warn     |
+  | `spine-orphaned-clicks`   | metricool-ads (3 days), youtube-analytics (7 days to yesterday), metricool-posts (30) | warn     |
+  | `spine-orphaned-won`      | leads (120 days)                                                                      | warn     |
+
+  Spend and visits fail because a clear already runs every night for them
+  (renamed ad campaigns, GA4's superseded keys), so a hit means that clear
+  broke. Nothing blanks a dropped lead, click or win yet, so those warn: a hit
+  is a row to repair by hand. Not checked, on purpose: webinar-ingest (the
+  sender picks which days it re-sends, and the run does not record it),
+  manychat-ingest (one fixed key a day, rewritten only when that day has an
+  event), ghl-email (writes each day once and never re-reads it) and
+  bitly-clicks (has never written a row). The oldest day of each window is
+  skipped, because a report cut at a day boundary may re-read it only in part.
+
 - **No day is missing.** A failed fetch leaves a hole that is invisible in a
   monthly total (YouTube had no Sep 10 until it was found this way). Visits
   are checked to two days back, YouTube to three: ending YouTube at two failed

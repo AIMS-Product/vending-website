@@ -327,9 +327,13 @@ directions per cohort.
 - **A stale spine row is invisible.** `channel_daily` is append-and-update; nothing deletes. A row
   whose key the sync stopped generating keeps its last value and is summed forever. Before trusting
   any historical spine figure, check `synced_at` against the latest run for that day. For bookings
-  this is now checked nightly by `spine-orphaned-bookings` in `data-audit-checks.ts`, which renders
-  on `/admin/data`. **Spend, visits, clicks, leads and won have no such check** — the same defect
-  in any of those is still silent.
+  this is checked nightly by `spine-orphaned-bookings` in `data-audit-checks.ts`, and since
+  2026-09-23 spend, visits, leads, clicks and won are too (`spine-orphaned-<metric>`,
+  `data-audit-spine-orphans.ts`), each row judged by the sync that owns it inside that sync's own
+  re-read window. All render on `/admin/data`. **Still silent:** any day older than the owning
+  sync's window (3 days for spend and visits, 120 for leads and won, 30 for post clicks), and rows
+  from webinar-ingest, manychat-ingest, ghl-email and Bitly, which the checks leave out on purpose
+  (`docs/marketing/data-audit.md`).
 - **`vitest.config.ts` pre-sets placeholder Supabase env vars** (`localhost:54321`). A diagnostic
   that loads `.env.local` with `??=` silently reads nothing and returns null — assign with `=`.
 - Webinar-night spikes in `booked` are **real** (the night-of CTA bursts). A spike on a day with no

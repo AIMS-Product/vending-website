@@ -1,6 +1,5 @@
 import "server-only";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
 import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
 import { createCloseClient } from "@/lib/close/client";
@@ -32,10 +31,17 @@ import {
   type AuditResult,
   type AuditSummary,
 } from "@/lib/services/data-audit";
+import {
+  pageAll,
+  type AuditClient as Client,
+  type PostgrestQuery,
+  type TableName,
+} from "@/lib/services/data-audit-query";
+import {
+  orphanedMetricChecks,
+  staleOnOwnDay,
+} from "@/lib/services/data-audit-spine-orphans";
 import { createAdminClient } from "@/lib/supabase/admin";
-import type { Database } from "@/types/database";
-
-type Client = Pick<SupabaseClient<Database>, "from">;
 
 /**
  * Windows. GA4 keeps moving sessions between keys for about two days and the
@@ -123,6 +129,7 @@ export async function runDataAudit(
     )),
     ...(await safe("webinar", () => webinarFreshnessCheck(client, now))),
     ...(await safe("spine", () => spineChecks(client, now))),
+    ...(await safe("spine-orphans", () => orphanedMetricChecks(client, now))),
     ...(await safe("leads", () => leadsInCloseCheck(client, now))),
     ...(await safe("connectors", () => connectorHealthCheck(client, now))),
   ];
@@ -651,20 +658,15 @@ async function orphanedBookingsCheck(
     (query) => query.gte("day", from).lte("day", to).gt("booked", "0"),
   );
 
-  const newestByDay = new Map<string, string>();
   const daysByLink = new Map<string, Set<string>>();
   for (const row of rows) {
-    const stamp = row.synced_at.slice(0, 10);
-    if (stamp > (newestByDay.get(row.day) ?? ""))
-      newestByDay.set(row.day, stamp);
     const link = bookingLinkId(row);
     daysByLink.set(link, (daysByLink.get(link) ?? new Set()).add(row.day));
   }
 
-  const orphans = rows.filter(
-    (row) =>
-      row.synced_at.slice(0, 10) < (newestByDay.get(row.day) ?? "") &&
-      (daysByLink.get(bookingLinkId(row))?.size ?? 0) > 1,
+  // One family: every booking writer's rows are compared with each other.
+  const orphans = staleOnOwnDay(rows, () => "booked").filter(
+    (row) => (daysByLink.get(bookingLinkId(row))?.size ?? 0) > 1,
   );
   const bookings = orphans.reduce(
     (sum, row) => sum + Number(row.booked ?? 0),
@@ -829,35 +831,6 @@ async function connectorHealthCheck(
 
 /* ---------------------------------------------------------------- helpers */
 
-const PAGE = 1000;
-
-async function pageAll<T>(
-  client: Client,
-  table: TableName,
-  columns: string,
-  apply: (query: PostgrestQuery) => PostgrestQuery,
-  orderBy = "day",
-): Promise<T[]> {
-  const rows: T[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const query = apply(
-      client.from(table).select(columns) as unknown as PostgrestQuery,
-    )
-      .order(orderBy)
-      .range(from, from + PAGE - 1);
-    const { data, error } = (await (query as unknown as Promise<unknown>)) as {
-      data: T[] | null;
-      error: { message: string } | null;
-    };
-    if (error) throw new Error(`${table} read failed: ${error.message}`);
-    const batch = data ?? [];
-    rows.push(...batch);
-    // PostgREST caps a read silently; stop only on a short page.
-    if (batch.length < PAGE) break;
-  }
-  return rows;
-}
-
 /** Null when no row carried the column: not observed is not zero. */
 async function sumColumn(
   client: Client,
@@ -892,21 +865,6 @@ async function countRows(
   if (error) throw new Error(`${table} count failed: ${error.message}`);
   return count ?? null;
 }
-
-type TableName = keyof Database["public"]["Tables"];
-
-type PostgrestQuery = {
-  gte(column: string, value: string): PostgrestQuery;
-  gt(column: string, value: string): PostgrestQuery;
-  lte(column: string, value: string): PostgrestQuery;
-  lt(column: string, value: string): PostgrestQuery;
-  eq(column: string, value: string): PostgrestQuery;
-  is(column: string, value: null): PostgrestQuery;
-  not(column: string, operator: string, value: null): PostgrestQuery;
-  in(column: string, values: readonly string[]): PostgrestQuery;
-  order(column: string, options?: { ascending: boolean }): PostgrestQuery;
-  range(from: number, to: number): PostgrestQuery;
-};
 
 /** The window a source has settled, ending `lagDays` before today. */
 export function settledWindow(now: Date, lagDays: number, days = WINDOW_DAYS) {

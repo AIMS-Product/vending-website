@@ -50,7 +50,7 @@ type SyncClient = Pick<SupabaseClient<Database>, "from">;
  * Close reconciles, so leads re-read 120 days. `days` overrides all three for
  * a one-time backfill.
  */
-const WINDOW_DAYS = { ga4: 3, bitly: 30, leads: 120 } as const;
+export const WINDOW_DAYS = { ga4: 3, bitly: 30, leads: 120 } as const;
 
 /** Supabase pages at 1000 rows; anything longer must be walked explicitly. */
 const PAGE_SIZE = 1000;
