@@ -5,7 +5,7 @@ import {
   PublicLeadForm,
   type PublicLeadFormAction,
 } from "@/components/forms/PublicLeadForm";
-import { ApplyDisclaimer } from "@/components/sections/apply/ApplyDisclaimer";
+import { LegalFooter } from "@/components/site/LegalFooter";
 import { ApplyHero } from "@/components/sections/apply/ApplyHero";
 import { HeroFormPanel } from "@/components/sections/apply/HeroFormPanel";
 import type {
@@ -199,8 +199,8 @@ export function LegacyLeadPageContent({
       {/* The hero is the booking funnels' own (UI cohesion 9a, 2026-09-22):
           Anton headline with the money phrase highlighted, the form or
           calendar beside it. These are paid-traffic pages, so like /contact
-          they carry no site header or footer; the disclaimer band closes the
-          page instead. */}
+          they carry no site header or full footer; a legal-links strip (Terms,
+          Privacy, Spam Policy, verbatim from the site footer) closes the page. */}
       <ApplyHero
         copy={{ eyebrow: "Vendingpreneurs", headline: route.pageTitle }}
         body={route.description}
@@ -257,7 +257,7 @@ export function LegacyLeadPageContent({
         </div>
       </section>
 
-      <ApplyDisclaimer />
+      <LegalFooter />
     </>
   );
 }
