@@ -74,7 +74,12 @@ export async function GET(request: Request) {
 
   try {
     const result = await syncBitlyClicks(options);
-    return NextResponse.json({ ok: true, ...result });
+    // Same rule as the GA4 runner: a run that reports green while links fail is
+    // how bitly_link_clicks could sit at zero rows with nobody noticing. Each
+    // write is an upsert keyed by (bitly_id, day), so the next run retries the
+    // failed links rather than doubling the ones that worked.
+    const ok = result.failed === 0;
+    return NextResponse.json({ ok, ...result }, { status: ok ? 200 : 500 });
   } catch (error) {
     console.error("bitly sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",

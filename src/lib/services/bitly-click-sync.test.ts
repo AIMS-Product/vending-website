@@ -214,6 +214,53 @@ describe("syncBitlyClicks", () => {
     expect(recorded.videoUpdates.map((row) => row.campaign)).toEqual(["good"]);
   });
 
+  it("counts a malformed id apart from failures, and moves it off the queue front", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client, recorded } = buildClient({
+      claimable: [
+        { utm_campaign: "broken", bitly_id: "../users" },
+        { utm_campaign: "good", bitly_id: "bit.ly/good" },
+      ],
+    });
+    const bitlyClient = buildBitlyClient({
+      clicks: { "bit.ly/good": [{ date: "2026-09-09", clicks: 4 }] },
+    });
+
+    const result = await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    // No retry fixes it, so it must not be what turns the cron red.
+    expect(result).toMatchObject({ failed: 0, invalid: 1, updated: 1 });
+    expect(bitlyClient.dailyClicks).not.toHaveBeenCalledWith(
+      "../users",
+      expect.anything(),
+    );
+    expect(recorded.videoUpdates.map((row) => row.campaign).sort()).toEqual([
+      "broken",
+      "good",
+    ]);
+    expect(warn).toHaveBeenCalledWith(
+      "bitly click sync: stored bitlink id is unusable",
+      expect.objectContaining({ campaign: "broken" }),
+    );
+    warn.mockRestore();
+  });
+
+  it("logs a link that failed instead of swallowing it", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const { client } = buildClient({
+      claimable: [{ utm_campaign: "bad", bitly_id: "bit.ly/bad" }],
+    });
+    const bitlyClient = buildBitlyClient({ failOn: ["bit.ly/bad"] });
+
+    await syncBitlyClicks({ client, bitlyClient, now: NOW });
+
+    expect(warn).toHaveBeenCalledWith(
+      "bitly click sync: link failed, will retry next run",
+      { campaign: "bad", error: "bitly unreachable" },
+    );
+    warn.mockRestore();
+  });
+
   it("does not stamp a link whose click write failed", async () => {
     const { client, recorded } = buildClient({
       claimable: [{ utm_campaign: "a", bitly_id: "bit.ly/a" }],
