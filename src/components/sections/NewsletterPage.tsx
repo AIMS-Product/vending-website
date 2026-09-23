@@ -95,7 +95,7 @@ export async function NewsletterPage({
             {newsletterPageContent.expertsHeading}
           </h2>
           <div className="mt-12 grid gap-8 md:grid-cols-2">
-            {newsletterPageContent.experts.map((expert, index) => (
+            {newsletterPageContent.experts.map((expert) => (
               <article
                 key={expert.name}
                 className="border-ink rounded-card shadow-card bg-tint grid gap-6 border-2 p-7 sm:grid-cols-[8rem_1fr]"
