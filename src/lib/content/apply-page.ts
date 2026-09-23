@@ -88,15 +88,14 @@ export const applyTools = {
   ],
 } as const;
 
-// Pre-rendered member review cards (delivered by Kody as finished graphics in
-// the site's card style). Rendered as a 3-rows-of-2 image grid, capped with the
-// wide Madison "splitter" banner. Alt text transcribes each card's quote so the
-// testimonial is available to screen readers (the copy lives only in the image).
-// More cards get appended over time. Card art is 2019x838; the splitter 4330x620.
+// Member reviews, rendered as HTML cards. They were finished PNGs from Kody
+// until 2026-09-22, and at phone width the baked-in text shrank to ~7px. The
+// quotes are verbatim from those graphics; the headshots were cropped out of
+// them into public/apply/reviews/headshots/. Every card is a five-star review.
 export type ReviewCard = {
   readonly name: string;
-  readonly image: string;
-  readonly alt: string;
+  readonly headshot: string;
+  readonly quote: string;
 };
 
 export const applyTestimonials = {
@@ -105,40 +104,50 @@ export const applyTestimonials = {
   cards: [
     {
       name: "Brett Tracy",
-      image: "/apply/reviews/brett-tracy.png",
-      alt: "Five-star review from Brett Tracy: “Vendingpreneurs has been great! It helped speed up my knowledge by years in a short amount of time.”",
+      headshot: "/apply/reviews/headshots/brett-tracy.png",
+      quote:
+        "Vendingpreneurs has been great! It helped speed up my knowledge by years in a short amount of time.",
     },
     {
       name: "DJ Fuchs",
-      image: "/apply/reviews/dj-fuchs.png",
-      alt: "Five-star review from DJ Fuchs: “You will exponentially increase your chances of succeeding and shorten the learning curve with Vendingpreneurs.”",
+      headshot: "/apply/reviews/headshots/dj-fuchs.png",
+      quote:
+        "You will exponentially increase your chances of succeeding and shorten the learning curve with Vendingpreneurs.",
     },
     {
       name: "George Hoover",
-      image: "/apply/reviews/george-hoover.png",
-      alt: "Five-star review from George Hoover: “I have learned so much about this business since joining. Everyone in this community has been extremely helpful. I'm looking forward to contributing more to the group!”",
+      headshot: "/apply/reviews/headshots/george-hoover.png",
+      quote:
+        "I have learned so much about this business since joining. Everyone in this community has been extremely helpful. I'm looking forward to contributing more to the group!",
     },
     {
       name: "Joe Natoli",
-      image: "/apply/reviews/joe-natoli.png",
-      alt: "Five-star review from Joe Natoli: “The best thing about Vendingpreneurs is the community itself. Mike and the team have taken me from zero experience to landing 10 locations in less than a year. Would highly recommend!”",
+      headshot: "/apply/reviews/headshots/joe-natoli.png",
+      quote:
+        "The best thing about Vendingpreneurs is the community itself. Mike and the team have taken me from zero experience to landing 10 locations in less than a year. Would highly recommend!",
     },
     {
       name: "Kyle Sharp",
-      image: "/apply/reviews/kyle-sharp.png",
-      alt: "Five-star review from Kyle Sharp: “Mike's program helped us go from zero knowledge about the vending industry to having 10 locations in 6 months. It's proven and works!”",
+      headshot: "/apply/reviews/headshots/kyle-sharp.png",
+      quote:
+        "Mike's program helped us go from zero knowledge about the vending industry to having 10 locations in 6 months. It's proven and works!",
     },
     {
       name: "Kelsey Corcoran",
-      image: "/apply/reviews/kelsey-corcoran.png",
-      alt: "Five-star review from Kelsey Corcoran: “I've only been a part of the community for less than 3 months and have gained much more than I expected! So glad to have found Mike & this community & would recommend this to everyone.”",
+      headshot: "/apply/reviews/headshots/kelsey-corcoran.png",
+      quote:
+        "I've only been a part of the community for less than 3 months and have gained much more than I expected! So glad to have found Mike & this community & would recommend this to everyone.",
     },
   ] satisfies ReviewCard[],
-  splitter: {
+  // The wide member-spotlight card under the grid. The figure is Kody's
+  // wording from the original graphic; the separator is presentation only.
+  spotlight: {
     name: "Madison Graves",
-    image: "/apply/reviews/madison-graves.png",
-    alt: "Member spotlight — Madison Graves, $28K/month across 16 machines: “The fastest way to learn is by learning from people who are in it, who are doing it, who have already been successful. The value of the community and the people you meet along the way is alone worth getting into the program.”",
-  } satisfies ReviewCard,
+    headshot: "/apply/reviews/headshots/madison-graves.png",
+    stat: "$28K/Month · 16 machines",
+    quote:
+      "The fastest way to learn is by learning from people who are in it, who are doing it, who have already been successful. The value of the community and the people you meet along the way is alone worth getting into the program.",
+  },
 } as const;
 
 export const applyRoadmap = {
