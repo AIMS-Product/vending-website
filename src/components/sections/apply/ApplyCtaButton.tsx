@@ -1,9 +1,10 @@
 import { APPLY_QUIZ_ANCHOR } from "@/lib/content/apply-page";
-import { cn } from "@/lib/utils";
+import { buttonClass } from "@/components/ui/Button";
 
 // Every "I'm Ready to Build My Route" CTA on the page is a same-page anchor to
 // the quiz section. A plain <a href="#..."> gives native (CSS smooth) scrolling
-// without any client JS; the styling mirrors the site's Button primitive.
+// without any client JS. The shell is the site's Button (buttonClass), so the
+// funnel CTAs sit on the same 48 / 56px sizes as every other button.
 
 type Size = "md" | "lg";
 
@@ -19,14 +20,7 @@ export function ApplyCtaButton({
   return (
     <a
       href={`#${APPLY_QUIZ_ANCHOR}`}
-      className={cn(
-        "group inline-flex items-center justify-center gap-3 rounded-[8px] border-2 border-[#111111] font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 hover:shadow-[7px_7px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2 focus-visible:outline-none active:translate-y-0 active:shadow-[3px_3px_0_#111111]",
-        "bg-brand-700 text-white",
-        size === "lg"
-          ? "min-h-13 px-7 py-3.5 text-sm"
-          : "min-h-11 px-6 py-3 text-sm",
-        className,
-      )}
+      className={buttonClass({ size, className })}
     >
       <span>{children}</span>
       <span

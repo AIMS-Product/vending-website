@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { buttonClass } from "@/components/ui/Button";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import {
   appendLeadAttributionToHref,
@@ -193,14 +194,12 @@ export function editorFallback(
   return "";
 }
 
+// Page-builder CTAs are the site's Button: primary, or ghost for "secondary".
 export function resourceCtaClass(variant: PageBlock["variant"]) {
-  const base =
-    "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] px-5 py-3 text-sm font-black uppercase shadow-[5px_5px_0_#111111] transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:ring-offset-2";
-  if (variant === "secondary") {
-    return `${base} bg-white text-[#111111] hover:bg-[#eaf8ff]`;
-  }
   if (variant === "text") {
     return "text-sm font-black uppercase text-[#066a99] hover:text-[#111111]";
   }
-  return `${base} bg-brand-700 text-white`;
+  return buttonClass({
+    variant: variant === "secondary" ? "ghost" : "primary",
+  });
 }

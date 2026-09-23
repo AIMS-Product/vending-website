@@ -8,6 +8,7 @@ import {
   type Ref,
 } from "react";
 import Link from "next/link";
+import { buttonClass } from "@/components/ui/Button";
 import { usePathname } from "next/navigation";
 import {
   POPUPS,
@@ -321,10 +322,10 @@ export function PopupCard({
   );
 }
 
-const PRIMARY_CTA_CLASSES =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-[8px] border-2 border-[#111111] bg-brand-700 px-6 text-sm font-black text-white uppercase shadow-[4px_4px_0_#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none";
-const SECONDARY_CTA_CLASSES =
-  "inline-flex min-h-12 items-center justify-center rounded-[8px] border-2 border-[#111111] bg-white px-6 text-sm font-black text-[#111111] uppercase focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none";
+// The site's Button (buttonClass): an editor-set accentColor still overrides
+// the primary fill through `style`.
+const PRIMARY_CTA_CLASSES = buttonClass({ className: "gap-2" });
+const SECONDARY_CTA_CLASSES = buttonClass({ variant: "ghost" });
 
 function CtaLink({
   cta,

@@ -27,6 +27,42 @@ type ButtonProps = CommonProps & {
   onClick?: () => void;
 };
 
+const BASE =
+  "group inline-flex items-center justify-center gap-3 rounded-control border-2 border-ink text-sm font-black uppercase shadow-btn transition hover:-translate-y-0.5 hover:shadow-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
+
+const SIZES: Record<Size, string> = {
+  md: "min-h-12 px-6 py-3",
+  lg: "min-h-14 px-7 py-3.5",
+};
+
+// Primary is filled with brand-700 (darker step of the existing brand
+// scale) rather than the accent brand-600 (#2a8fcc): white text on #2a8fcc
+// is only 3.56:1, below WCAG AA. brand-700 clears 5.24:1.
+const STYLES: Record<Variant, string> = {
+  primary: "bg-brand-700 text-white",
+  ghost: "bg-white text-ink hover:bg-tint",
+  onInk:
+    "border-white bg-white text-ink shadow-[5px_5px_0_#55b8e8] hover:bg-tint hover:shadow-[7px_7px_0_#55b8e8] active:shadow-[3px_3px_0_#55b8e8]",
+};
+
+/**
+ * The button classes on their own, for the few CTAs that cannot be a
+ * <Button>: a submit button carrying data-gtm and disabled state, a plain
+ * same-page anchor, a class string a page-builder block hands around. Never
+ * hand-roll a CTA class string; call this.
+ */
+export function buttonClass({
+  variant = "primary",
+  size = "md",
+  className,
+}: {
+  variant?: Variant;
+  size?: Size;
+  className?: string;
+} = {}) {
+  return cn(BASE, SIZES[size], STYLES[variant], className);
+}
+
 export function Button(props: LinkProps | ButtonProps) {
   const {
     variant = "primary",
@@ -36,24 +72,6 @@ export function Button(props: LinkProps | ButtonProps) {
     showArrow = false,
   } = props;
 
-  const base =
-    "group inline-flex items-center justify-center gap-3 rounded-control border-2 border-ink text-sm font-black uppercase shadow-btn transition hover:-translate-y-0.5 hover:shadow-btn-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky focus-visible:ring-offset-2 active:translate-y-0 active:shadow-[3px_3px_0_#111111]";
-
-  const sizes: Record<Size, string> = {
-    md: "min-h-12 px-6 py-3",
-    lg: "min-h-14 px-7 py-3.5",
-  };
-
-  // Primary is filled with brand-700 (darker step of the existing brand
-  // scale) rather than the accent brand-600 (#2a8fcc): white text on #2a8fcc
-  // is only 3.56:1, below WCAG AA. brand-700 clears 5.24:1.
-  const styles: Record<Variant, string> = {
-    primary: "bg-brand-700 text-white",
-    ghost: "bg-white text-ink hover:bg-tint",
-    onInk:
-      "border-white bg-white text-ink shadow-[5px_5px_0_#55b8e8] hover:bg-tint hover:shadow-[7px_7px_0_#55b8e8] active:shadow-[3px_3px_0_#55b8e8]",
-  };
-
   const inner = (
     <>
       <span>{children}</span>
@@ -61,7 +79,7 @@ export function Button(props: LinkProps | ButtonProps) {
     </>
   );
 
-  const classes = cn(base, sizes[size], styles[variant], className);
+  const classes = buttonClass({ variant, size, className });
 
   if ("href" in props && props.href) {
     return (

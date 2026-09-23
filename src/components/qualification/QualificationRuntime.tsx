@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { buttonClass } from "@/components/ui/Button";
 import type { QualificationAnswerActionState } from "@/app/qualify/[sessionToken]/actions";
 import type { QualificationQuestionSnapshot } from "@/lib/qualification/forms";
 import { filterVpOperatorPathQuestions } from "@/lib/qualification/vp-fields";
@@ -275,7 +276,11 @@ function RuntimeControls({
         type="button"
         onClick={onBack}
         disabled={!canGoBack || pending}
-        className="min-h-12 rounded-[8px] border-2 border-[#111111] bg-white px-5 text-sm font-black text-slate-950 shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+        className={buttonClass({
+          variant: "ghost",
+          className:
+            "disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none",
+        })}
       >
         Back
       </button>
@@ -285,7 +290,10 @@ function RuntimeControls({
       <button
         type="submit"
         disabled={pending}
-        className="bg-brand-700 min-h-12 rounded-[8px] border-2 border-[#111111] px-6 text-sm font-black text-white shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70"
+        className={buttonClass({
+          className:
+            "disabled:translate-y-0 disabled:cursor-wait disabled:opacity-70",
+        })}
       >
         {pending ? "Saving..." : isLast ? "Complete" : "Continue"}
       </button>
@@ -507,7 +515,7 @@ function CompletionPanel({ redirectPath }: { redirectPath: string }) {
         </p>
         <Link
           href={redirectPath}
-          className="bg-brand-700 mt-8 inline-flex min-h-12 w-fit items-center rounded-[8px] border-2 border-[#111111] px-6 text-sm font-black text-white shadow-[4px_4px_0_#111111] transition hover:-translate-y-0.5"
+          className={buttonClass({ className: "mt-8 w-fit" })}
         >
           Continue to next step
         </Link>
