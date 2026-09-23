@@ -81,7 +81,12 @@ function PreCallResources() {
               <h3 className="mx-auto max-w-[28ch] text-center text-[clamp(1.4rem,2.4vw,1.9rem)] leading-[1.15] font-black text-balance text-[#111111]">
                 {item.question}
               </h3>
-              <VidalyticsPlayer embedId={item.embedId} className="mt-7" />
+              <VidalyticsPlayer
+                embedId={item.embedId}
+                loadOn="click"
+                title={item.question}
+                className="mt-7"
+              />
               <p className="mx-auto mt-6 max-w-[64ch] text-center text-[17px] leading-relaxed font-semibold text-slate-700">
                 {item.answer}
               </p>
@@ -171,7 +176,12 @@ function OperatorCard({
         {operator.stats.join(" \u00b7 ")}
       </p>
       {embedId ? (
-        <VidalyticsPlayer embedId={embedId} className="mt-5" />
+        <VidalyticsPlayer
+          embedId={embedId}
+          loadOn="click"
+          title={operator.name}
+          className="mt-5"
+        />
       ) : (
         quote && (
           <blockquote className="mt-5 rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[8px_8px_0_#111111]">
