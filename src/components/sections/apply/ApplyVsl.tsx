@@ -70,12 +70,12 @@ export function ApplyVsl({
               priority
             />
             <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/30" />
-            <span className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-              <span className="flex size-[82px] items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] shadow-[4px_4px_0_#111111] transition group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0_#111111]">
-                <PlayIcon className="size-7 translate-x-0.5 text-[#111111]" />
-              </span>
-              <span className="text-sm font-black tracking-[0.1em] text-white uppercase [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">
-                {vsl.watchLabel}
+            {/* The YouTube poster carries its own lower-third text ("Book a
+                call now"), so a printed label under the play button collided
+                with it. The label stays as the button's accessible name. */}
+            <span className="absolute inset-0 flex items-center justify-center">
+              <span className="flex size-[64px] items-center justify-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] shadow-[4px_4px_0_#111111] transition group-hover:-translate-y-0.5 group-hover:shadow-[6px_6px_0_#111111] sm:size-[82px]">
+                <PlayIcon className="size-6 translate-x-0.5 text-[#111111] sm:size-7" />
               </span>
             </span>
             <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-black/35 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-white uppercase">
