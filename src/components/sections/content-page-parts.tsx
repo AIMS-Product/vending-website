@@ -55,16 +55,18 @@ export function StatStrip({
   accent?: string;
 }) {
   return (
-    <dl className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    // Two-up from the smallest width: one tile per row ran four tiles down a
+    // phone screen (UI audit, 2026-09-22).
+    <dl className="mt-10 grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="reveal-item ease-out-quart rounded-[12px] border-2 border-[#111111] bg-white p-6 transition-shadow duration-500"
+          className="reveal-item ease-out-quart rounded-[12px] border-2 border-[#111111] bg-white p-4 transition-shadow duration-500 sm:p-6"
           style={{ boxShadow: `6px 6px 0 ${accent ?? "#55b8e8"}` }}
         >
           <dt className="sr-only">{stat.label}</dt>
           <dd>
-            <span className="block text-3xl leading-none font-black text-[#111111] tabular-nums">
+            <span className="block text-2xl leading-none font-black text-[#111111] tabular-nums sm:text-3xl">
               {stat.value}
             </span>
             <span className="mt-3 block text-sm leading-6 font-semibold text-slate-600">

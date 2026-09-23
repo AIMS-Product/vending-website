@@ -103,7 +103,10 @@ export function ContentJourney({
         </h2>
 
         <Rail
-          steps={steps.slice(0, paired)}
+          items={features.slice(0, paired).map((feature) => ({
+            name: feature.eyebrow,
+            detail: feature.title,
+          }))}
           active={active}
           tabs={tabs}
           accent={accent}
@@ -148,12 +151,15 @@ export function ContentJourney({
  * as a bar rather than as a colour, for anyone who cannot separate the blues.
  */
 function Rail({
-  steps,
+  items,
   active,
   tabs,
   accent,
 }: {
-  steps: ReadonlyArray<PageStep>;
+  // Named after the blocks they point at (UI cohesion slice 13). They used to
+  // carry the step labels ("Days 0-30"), which on /solutions/coaching named
+  // blocks titled "How it runs" and "What it covers".
+  items: ReadonlyArray<{ name: string; detail: string }>;
   active: number;
   tabs: React.RefObject<Array<HTMLAnchorElement | null>>;
   accent: string;
@@ -165,13 +171,19 @@ function Rail({
         className="rounded-[12px] border-2 border-[#111111] bg-white/95 p-2 shadow-[6px_6px_0_#111111] backdrop-blur-md"
       >
         <ol className="scrollbar-none flex gap-2 overflow-x-auto">
-          {steps.map((step, index) => {
+          {items.map((item, index) => {
             const isActive = index === active;
             return (
-              // Natural width on a phone so a chip is never clipped mid-word
-              // (the row scrolls instead, and the active chip is walked into
-              // view); equal thirds once there is room for all three.
-              <li key={step.label} className="shrink-0 lg:min-w-0 lg:flex-1">
+              // A phone shows only the block being read, with "Step 2 of 3",
+              // so no chip is ever clipped at the edge of a scrolling row (UI
+              // audit, 2026-09-22). All three sit side by side from lg.
+              <li
+                key={item.name}
+                className={cn(
+                  "w-full lg:w-auto lg:min-w-0 lg:flex-1",
+                  !isActive && "hidden lg:block",
+                )}
+              >
                 <a
                   href={`#step-${index + 1}`}
                   ref={(node) => {
@@ -197,7 +209,10 @@ function Rail({
                   </span>
                   <span className="min-w-0">
                     <span className="block truncate text-[0.8125rem] leading-tight font-black uppercase">
-                      {stepName(step.label)}
+                      {item.name}
+                    </span>
+                    <span className="mt-0.5 block text-xs leading-tight font-semibold text-[#111111]/70 lg:hidden">
+                      Step {index + 1} of {items.length}
                     </span>
                     <span
                       className={cn(
@@ -205,7 +220,7 @@ function Rail({
                         isActive ? "text-[#111111]/70" : "text-slate-500",
                       )}
                     >
-                      {step.title}
+                      {item.detail}
                     </span>
                   </span>
                 </a>
@@ -221,7 +236,7 @@ function Rail({
           <div
             className="ease-out-quart h-full rounded-full transition-all duration-700"
             style={{
-              width: `${((active + 1) / Math.max(steps.length, 1)) * 100}%`,
+              width: `${((active + 1) / Math.max(items.length, 1)) * 100}%`,
               background: accent,
             }}
           />
@@ -229,14 +244,6 @@ function Rail({
       </nav>
     </div>
   );
-}
-
-/**
- * A step label carries its own number for the old strip ("01 · Find"). The
- * rail draws the number itself, so strip it off rather than printing it twice.
- */
-function stepName(label: string): string {
-  return label.replace(/^\s*\d+\s*[·.\-–—]\s*/, "");
 }
 
 function FeatureBlock({
@@ -282,29 +289,35 @@ function FeatureBlock({
       >
         {feature.title}
       </h2>
-      <p
+      {/* With no visual, the copy used to stop at ~720px inside a 1,360px
+          band (UI audit, 2026-09-22). The checklist now takes the right
+          column as a card, so the block reads as two columns, not a gap. */}
+      <div
         className={cn(
-          "mt-5 text-lg leading-8 font-semibold text-slate-700",
-          !media && "max-w-3xl",
+          "mt-5",
+          !media &&
+            "grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,460px)] lg:items-start lg:gap-14",
         )}
       >
-        {feature.body}
-      </p>
-      {/* At full width a single column of checks leaves half the row empty,
-          so the points run two-up from the large breakpoint. */}
-      <ul
-        className={cn(
-          "mt-7 gap-x-10 gap-y-4",
-          media ? "space-y-4" : "grid sm:grid-cols-2",
-        )}
-      >
-        {feature.points.map((point) => (
-          <li key={point} className="reveal-item flex gap-4">
-            <CheckIcon accent={accent} />
-            <span className="font-semibold text-slate-700">{point}</span>
-          </li>
-        ))}
-      </ul>
+        <p className="text-lg leading-8 font-semibold text-slate-700">
+          {feature.body}
+        </p>
+        <ul
+          className={cn(
+            "space-y-4",
+            media
+              ? "mt-7"
+              : "rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[8px_8px_0_#55b8e8]",
+          )}
+        >
+          {feature.points.map((point) => (
+            <li key={point} className="reveal-item flex gap-4">
+              <CheckIcon accent={accent} />
+              <span className="font-semibold text-slate-700">{point}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
       {feature.stats && feature.stats.length > 0 && (
         <StatStrip stats={feature.stats} accent={accent} />
       )}
