@@ -126,6 +126,8 @@ function makeBooking(overrides: Partial<FakeRow> = {}): FakeRow {
   return {
     id: "booking_1",
     created_at: "2026-07-15T12:00:00.000Z",
+    // Calendly's booked-at, as the `booked_at:raw_payload->...` alias returns it.
+    booked_at: "2026-07-15T12:00:00.000Z",
     status: "booked",
     scheduled_event_name: "Discovery call",
     invitee_email: null,
@@ -192,6 +194,47 @@ describe("getAdminAnalytics", () => {
     expect(analytics.bookingsByCalendar).toContainEqual(
       expect.objectContaining({ label: "Consultation Call", count: 4 }),
     );
+  });
+
+  /**
+   * `created_at` is when we saved the row. A backfill saves months of bookings
+   * on one day, and the Overview used to count them all on that day.
+   */
+  it("dates bookings by Calendly's booked-at, never by when the row was saved", async () => {
+    const client = buildClient({
+      lead_submissions: { rows: [] },
+      calendly_bookings: {
+        rows: [
+          // Booked in range, saved in range.
+          makeBooking({ id: "b1", invitee_email: "a@aol.com" }),
+          // Booked in range, saved later by a backfill.
+          makeBooking({
+            id: "b2",
+            invitee_email: "b@aol.com",
+            created_at: "2026-07-19T12:00:00.000Z",
+            booked_at: "2026-07-14T09:00:00.000Z",
+          }),
+          // Saved in range by a backfill, but booked in March.
+          makeBooking({
+            id: "b3",
+            invitee_email: "c@aol.com",
+            created_at: "2026-07-18T12:00:00.000Z",
+            booked_at: "2026-03-02T09:00:00.000Z",
+          }),
+          // No booked-at at all: cannot be dated, so not counted.
+          makeBooking({ id: "b4", invitee_email: "d@aol.com", booked_at: null }),
+        ],
+      },
+    });
+
+    const analytics = await getAdminAnalytics({
+      client,
+      now: NOW,
+      range: "7d",
+    });
+
+    expect(analytics.bookingsTotal).toBe(2);
+    expect(analytics.bookingsUnattributed).toBe(2);
   });
 
   it("counts one person who submitted twice as one lead, and skips newsletter signups", async () => {
