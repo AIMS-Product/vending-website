@@ -25,6 +25,22 @@ function pct(value: number | null): string {
   return value === null ? "—" : `${value}%`;
 }
 
+/**
+ * Why a step shows no rate. There are three reasons and only one of them is
+ * missing data: a step above of 0, or a step larger than the one above it
+ * (Closed / won counts sales whose show nobody logged).
+ */
+function noRateReason(
+  stage: YouTubeStage,
+  previous: YouTubeStage | undefined,
+): string {
+  if (stage.count === null || previous?.count == null) {
+    return "No rate: one of these two steps has no data yet.";
+  }
+  if (previous.count === 0) return "No rate: the step above is 0.";
+  return "No rate: this step counts more than the step above.";
+}
+
 /** The six-stage funnel, with the gaps left visibly empty. */
 export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
   const top = stages.find((stage) => stage.count !== null)?.count ?? 0;
@@ -59,7 +75,7 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
             {index > 0 ? (
               <p className="text-ui-text-subtle text-xs">
                 {stage.ofPreviousPct === null
-                  ? "No rate: one of these two steps has no data yet."
+                  ? noRateReason(stage, stages[index - 1])
                   : `${stage.ofPreviousPct}% continued from the step above`}
               </p>
             ) : null}
@@ -519,8 +535,8 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.bookedBeforeLead}
             </span>{" "}
-            booked before they filled in the form (Close already had them), so
-            they are left out of the days-to-sale figures.
+            booked a call before their first visit here (Close already had
+            them), so they are returning leads, not new ones.
           </>
         ) : null}
       </p>

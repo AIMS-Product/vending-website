@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { YouTubeCoverageNote } from "./YouTubeAttributionPanels";
+import {
+  YouTubeCoverageNote,
+  YouTubeStageFunnel,
+} from "./YouTubeAttributionPanels";
 import type { YouTubeAttribution } from "@/lib/services/youtube-attribution";
 import type { YouTubeCoverage } from "@/lib/services/youtube-attribution-rollup";
 
@@ -52,5 +55,45 @@ describe("YouTubeCoverageNote, link clicks", () => {
 
     expect(html).toContain("could not be read just now");
     expect(html).not.toContain("once Bitly is connected");
+  });
+});
+
+describe("YouTubeCoverageNote, returning leads", () => {
+  /**
+   * Days to sale drop wins dated before the first touch, which is not this
+   * count: this one is built from the booking date.
+   */
+  it("does not claim returning leads are left out of days to sale", () => {
+    const html = note({ bookedBeforeLead: 3 });
+
+    expect(html).toContain("returning leads");
+    expect(html).not.toContain("left out of the days-to-sale");
+  });
+});
+
+describe("YouTubeStageFunnel captions", () => {
+  const stage = (label: string, count: number | null) => ({
+    label,
+    count,
+    ofPreviousPct: null,
+  });
+
+  it("says why a step has no rate", () => {
+    const html = renderToStaticMarkup(
+      <YouTubeStageFunnel
+        stages={[
+          stage("Link clicks", null),
+          stage("Landing page visits", 0),
+          stage("Leads captured", 4),
+          stage("Booked a call", 2),
+          stage("Attended the call", 1),
+          stage("Closed / won", 2),
+        ]}
+      />,
+    );
+
+    expect(html).toContain("one of these two steps has no data yet");
+    expect(html).toContain("the step above is 0");
+    expect(html).toContain("this step counts more than the step above");
   });
 });
