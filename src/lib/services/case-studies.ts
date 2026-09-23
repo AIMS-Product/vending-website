@@ -191,6 +191,27 @@ export async function listCaseStudyCardsBySlugs(slugs: readonly string[]) {
  * Used by `generateStaticParams` at build time, so it must NOT use the
  * cookie-aware server client. RLS still applies — we only see published rows.
  */
+/**
+ * Existence check for the proxy's real-404 branch. Fails OPEN: if the lookup
+ * errors, the story route renders and decides for itself, so a database blip
+ * can never 404 a published story.
+ */
+export async function hasPublishedCaseStudySlug(slug: string) {
+  const supabase = getBuildTimeClient();
+  const { data, error } = await supabase
+    .from("case_studies")
+    .select("id")
+    .eq("status", "published")
+    .eq("slug", slug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("hasPublishedCaseStudySlug failed", error);
+    return true;
+  }
+  return Boolean(data);
+}
+
 export async function listPublishedCaseStudySlugs() {
   const supabase = getBuildTimeClient();
   const { data, error } = await supabase
