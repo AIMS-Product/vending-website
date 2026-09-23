@@ -122,6 +122,11 @@ export const FEEDS = {
     staleAfterHours: DAILY,
     source: { kind: "run", connector: "youtube-analytics" },
   },
+  "search-console": {
+    label: "Google Search Console",
+    staleAfterHours: DAILY,
+    source: { kind: "run", connector: "search-console" },
+  },
   webinar: {
     label: "Webinar registrations",
     // Pushed after each weekly webinar, not on a cron.
@@ -151,6 +156,7 @@ const SPINE: readonly FeedKey[] = [
   "metricool-posts",
   "metricool-ads",
   "youtube",
+  "search-console",
   "webinar",
   "manychat",
 ];

@@ -212,6 +212,77 @@ function base64Url(value: Buffer | string): string {
     .replace(/\//g, "_");
 }
 
+/**
+ * A cached access-token getter for one service account and one scope. Shared
+ * with the Search Console client, which uses the same key with its own
+ * read-only scope, so the JWT dance lives in one place.
+ */
+export function serviceAccountToken(
+  account: Ga4ServiceAccount,
+  scope: string,
+  {
+    fetchImpl = fetch,
+    now = () => Date.now(),
+  }: { fetchImpl?: typeof fetch; now?: () => number } = {},
+): () => Promise<string> {
+  let cachedToken: { value: string; expiresAtMs: number } | null = null;
+
+  const accessToken = async (): Promise<string> => {
+    if (cachedToken && cachedToken.expiresAtMs > now())
+      return cachedToken.value;
+
+    const issuedAt = Math.floor(now() / 1000);
+    const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+    const claims = base64Url(
+      JSON.stringify({
+        iss: account.clientEmail,
+        scope,
+        aud: account.tokenUri,
+        exp: issuedAt + 3600,
+        iat: issuedAt,
+      }),
+    );
+    const signer = createSign("RSA-SHA256");
+    signer.update(`${header}.${claims}`);
+    const assertion = `${header}.${claims}.${base64Url(signer.sign(account.privateKey))}`;
+
+    const response = await fetchImpl(account.tokenUri, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion,
+      }).toString(),
+    });
+
+    // Deliberately does not include the response body: a failed token
+    // exchange echoes back parts of the assertion, and the assertion is signed
+    // with the private key.
+    if (!response.ok) {
+      throw new Error(
+        `Google token exchange failed with HTTP ${response.status}.`,
+      );
+    }
+
+    const body = JSON.parse(await response.text()) as {
+      access_token?: unknown;
+      expires_in?: unknown;
+    };
+    if (typeof body.access_token !== "string" || !body.access_token) {
+      throw new Error("Google token exchange returned no access token.");
+    }
+
+    const lifetime =
+      typeof body.expires_in === "number" ? body.expires_in : 3600;
+    cachedToken = {
+      value: body.access_token,
+      expiresAtMs: now() + Math.max(lifetime - TOKEN_SKEW_SECONDS, 0) * 1000,
+    };
+    return cachedToken.value;
+  };
+  return accessToken;
+}
+
 export type Ga4Client = {
   fetchPageViews(range: {
     startDate: string;
@@ -246,61 +317,10 @@ export function createGa4Client({
     throw new Error("GA4 service account key is missing or unreadable.");
   }
 
-  let cachedToken: { value: string; expiresAtMs: number } | null = null;
-
-  const accessToken = async (): Promise<string> => {
-    if (cachedToken && cachedToken.expiresAtMs > now())
-      return cachedToken.value;
-
-    const issuedAt = Math.floor(now() / 1000);
-    const header = base64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-    const claims = base64Url(
-      JSON.stringify({
-        iss: account.clientEmail,
-        scope: TOKEN_SCOPE,
-        aud: account.tokenUri,
-        exp: issuedAt + 3600,
-        iat: issuedAt,
-      }),
-    );
-    const signer = createSign("RSA-SHA256");
-    signer.update(`${header}.${claims}`);
-    const assertion = `${header}.${claims}.${base64Url(signer.sign(account.privateKey))}`;
-
-    const response = await fetchImpl(account.tokenUri, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }).toString(),
-    });
-
-    // Deliberately does not include the response body: a failed token
-    // exchange echoes back parts of the assertion, and the assertion is signed
-    // with the private key.
-    if (!response.ok) {
-      throw new Error(
-        `GA4 token exchange failed with HTTP ${response.status}.`,
-      );
-    }
-
-    const body = JSON.parse(await response.text()) as {
-      access_token?: unknown;
-      expires_in?: unknown;
-    };
-    if (typeof body.access_token !== "string" || !body.access_token) {
-      throw new Error("GA4 token exchange returned no access token.");
-    }
-
-    const lifetime =
-      typeof body.expires_in === "number" ? body.expires_in : 3600;
-    cachedToken = {
-      value: body.access_token,
-      expiresAtMs: now() + Math.max(lifetime - TOKEN_SKEW_SECONDS, 0) * 1000,
-    };
-    return cachedToken.value;
-  };
+  const accessToken = serviceAccountToken(account, TOKEN_SCOPE, {
+    fetchImpl,
+    now,
+  });
 
   const runReport = async (
     report: ReportSpec,
@@ -428,7 +448,7 @@ function totalOfFirstMetric(totals: unknown): number | null {
 }
 
 /** The API's own error text, without echoing an unbounded response body. */
-function apiMessage(text: string): string {
+export function apiMessage(text: string): string {
   try {
     const parsed = JSON.parse(text) as { error?: { message?: unknown } };
     const message = parsed.error?.message;

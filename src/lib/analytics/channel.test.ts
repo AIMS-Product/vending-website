@@ -10,6 +10,17 @@ import {
 } from "./channel";
 
 describe("resolveChannel", () => {
+  it("files Search Console's own rows under Organic search", () => {
+    // Without the map entry the source title-cased into its own
+    // "Google Search Console" channel, beside Organic search.
+    expect(resolveChannel("google-search-console").channel).toBe(
+      "Organic search",
+    );
+    expect(
+      resolveChannel("google-search-console", { medium: "organic" }).channel,
+    ).toBe("Organic search");
+  });
+
   it("merges the capitalisation split that was under-reporting Instagram", () => {
     // Production held "Instagram" (28) and "instagram" (6) as separate rows.
     expect(resolveChannel("Instagram").channel).toBe("Instagram");

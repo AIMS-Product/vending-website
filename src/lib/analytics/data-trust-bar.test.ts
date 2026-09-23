@@ -131,6 +131,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "metricool-posts",
     "metricool-ads",
     "youtube",
+    "search-console",
     "webinar",
     "manychat",
   ]);
