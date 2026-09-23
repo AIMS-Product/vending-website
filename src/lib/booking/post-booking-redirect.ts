@@ -26,6 +26,5 @@ export function goToPreCallResources(): void {
   } catch {
     // Top is cross-origin and unreachable; navigate this window instead.
   }
-  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
   window.location.assign(PRE_CALL_RESOURCES_PATH);
 }
