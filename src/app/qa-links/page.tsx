@@ -159,7 +159,7 @@ export default function QaLinksPage() {
                 {group.rows.map((row) => (
                   <li key={row.path}>
                     <Link
-                      className="flex items-center justify-between gap-4 rounded-[10px] border-2 border-[#111111] bg-white p-4 shadow-[6px_6px_0_#55b8e8] transition-transform hover:-translate-y-0.5"
+                      className="rounded-card border-ink shadow-card flex items-center justify-between gap-4 border-2 bg-white p-4 transition-transform hover:-translate-y-0.5"
                       href={row.path}
                     >
                       <span className="min-w-0">

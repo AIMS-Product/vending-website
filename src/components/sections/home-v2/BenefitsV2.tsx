@@ -68,7 +68,7 @@ export function BenefitsV2() {
               >
                 <div
                   className={cn(
-                    "group flex w-full flex-col rounded-[14px] border-2 border-[#111111] p-8 shadow-[7px_7px_0_#55b8e8] transition hover:-translate-y-1 hover:shadow-[10px_10px_0_#2a8fcc]",
+                    "group rounded-card border-ink shadow-card hover:shadow-card-hover flex w-full flex-col border-2 p-8 transition hover:-translate-y-1",
                     style.surface,
                   )}
                 >
