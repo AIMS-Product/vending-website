@@ -275,7 +275,9 @@ export async function POST(request: Request) {
     // produced no assistant message still contains the visitor's message,
     // and dropping it would lose both the turn and any contact details it
     // carried. createTurnStream also guarantees at least a spoken fallback.
-    const newMessages = [...historyForModel, ...sink.messages];
+    // Appended, never rewritten: a quick action or a booking card may have
+    // landed since this request read the row (see persistConversationTurn).
+    const newMessages = [userMessage, ...sink.messages];
 
     await flagPriceLeak(conversation.id, sink, client);
 
@@ -283,7 +285,7 @@ export async function POST(request: Request) {
       await persistConversationTurn(
         conversation,
         {
-          messages: newMessages,
+          append: newMessages,
           capturedName: captured.name,
           capturedEmail: captured.email,
           capturedPhone: captured.phone,

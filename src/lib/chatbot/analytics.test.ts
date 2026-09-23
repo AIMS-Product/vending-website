@@ -80,7 +80,15 @@ function fakeClient(options: {
             message: `column chatbot_conversations.${missing} does not exist`,
           },
         }
-      : { data: rows, error: null };
+      : {
+          // Every real conversation row starts with the visitor's message; a
+          // fixture that doesn't care about the transcript gets one.
+          data: rows.map((row) => ({
+            messages: [{ role: "user", content: "hello", ts: row.created_at }],
+            ...row,
+          })),
+          error: null,
+        };
     const builder = {
       gte: () => builder,
       order: () => builder,
@@ -556,6 +564,111 @@ describe("outcome rollup", () => {
 
     expect(analytics.outcomes.d30.booked).toBe(1);
     expect(analytics.outcomes.d30.calendarAbandoned).toBe(0);
+  });
+
+  it("counts quick-action clicks that stayed in the chat, and the bookings they led to", async () => {
+    const quickCalendar = {
+      role: "assistant",
+      content: "Opened the booking calendar in the chat.",
+      ts: daysAgo(2),
+      kind: "calendar",
+      data: { url: "https://calendly.com/x", via: "quick_action" },
+    };
+    const quickRoadmap = {
+      role: "assistant",
+      content: "Shared The 90-Day Vending Route Roadmap in the chat.",
+      ts: daysAgo(2),
+      kind: "shared_resource",
+      data: { key: "roadmap", via: "quick_action" },
+    };
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          {
+            id: "quick-booked",
+            created_at: daysAgo(2),
+            message_count: 1,
+            messages: [quickCalendar],
+            call_booked_at: daysAgo(2),
+          },
+          {
+            id: "quick-not-booked",
+            created_at: daysAgo(2),
+            message_count: 2,
+            messages: [quickRoadmap, quickCalendar],
+          },
+          {
+            // A calendar the model opened is not a quick action.
+            id: "model-calendar",
+            created_at: daysAgo(2),
+            message_count: 2,
+            messages: calendarTranscript("can I book a call"),
+          },
+          {
+            id: "old",
+            created_at: daysAgo(40),
+            message_count: 1,
+            messages: [quickCalendar],
+          },
+        ],
+      }) as never,
+    });
+
+    expect(analytics.outcomes.d30.quickActions).toEqual({
+      calendar: 2,
+      resource: 1,
+      bookedAfterCalendar: 1,
+    });
+    expect(analytics.outcomes.d90.quickActions.calendar).toBe(3);
+
+    // Click-only chats (no visitor message) are not conversations: they stay
+    // off every funnel denominator. The one that booked from its quick-action
+    // calendar still counts, like any in-chat booking.
+    expect(analytics.funnels.d30.conversations).toBe(2);
+    expect(analytics.funnels.d30.booked).toBe(1);
+    expect(analytics.funnels.d90.conversations).toBe(2);
+    expect(analytics.outcomes.d30.total).toBe(2);
+    expect(analytics.funnel30d.conversations).toBe(2);
+    expect(analytics.conversations30d.value).toBe(2);
+  });
+
+  it("does not let click-only chats dilute capture or engagement rates", async () => {
+    const clickOnly = (id: string) => ({
+      id,
+      created_at: daysAgo(1),
+      message_count: 1,
+      messages: [
+        {
+          role: "assistant",
+          content: "Opened the booking calendar in the chat.",
+          ts: daysAgo(1),
+          kind: "calendar",
+          data: { url: "https://calendly.com/x", via: "quick_action" },
+        },
+      ],
+    });
+    const analytics = await getChatbotAnalytics({
+      now: () => NOW,
+      client: fakeClient({
+        rows: [
+          clickOnly("c1"),
+          clickOnly("c2"),
+          clickOnly("c3"),
+          {
+            id: "real",
+            created_at: daysAgo(1),
+            message_count: 4,
+            captured_email: "someone@example.com",
+            messages: [{ role: "user", content: "hi", ts: daysAgo(1) }],
+          },
+        ],
+      }) as never,
+    });
+    expect(analytics.funnels.d30.conversations).toBe(1);
+    expect(analytics.captureRatePct).toBe(100);
+    expect(analytics.funnels.d30.engagedRatePct).toBe(100);
+    expect(analytics.outcomes.d30.quickActions.calendar).toBe(3);
   });
 
   it("leaves a chat that is still moving out of the lost buckets", async () => {

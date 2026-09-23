@@ -107,6 +107,9 @@ const CHANNEL_SESSION_REPORT: ReportSpec = {
 const CONFIRMATION_PATH =
   "^(/(thank-you|your-call-is-booked|booked).*|/.*-thank-you)$";
 
+/** Any page opened from a chatbot link: `via=chat` anywhere in the query. */
+const CHAT_DELIVERED_LINK = ".*[?&]via=chat(&.*)?";
+
 /**
  * Sessions that reached a confirmation page, keyed on the same link
  * dimensions as CHANNEL_SESSION_REPORT.
@@ -119,9 +122,33 @@ const THANK_YOU_REPORT: ReportSpec = {
   dimensions: CHANNEL_SESSION_REPORT.dimensions,
   metrics: ["sessions"],
   dimensionFilter: {
-    filter: {
-      fieldName: "pagePath",
-      stringFilter: { matchType: "FULL_REGEXP", value: CONFIRMATION_PATH },
+    andGroup: {
+      expressions: [
+        {
+          filter: {
+            fieldName: "pagePath",
+            stringFilter: {
+              matchType: "FULL_REGEXP",
+              value: CONFIRMATION_PATH,
+            },
+          },
+        },
+        {
+          // The chatbot links the delivered lead-magnet pages with ?via=chat
+          // (chatbot/resources.ts). No form was filled to get there, so it is
+          // not a conversion. pagePath carries no query string, hence the
+          // second field.
+          notExpression: {
+            filter: {
+              fieldName: "pagePathPlusQueryString",
+              stringFilter: {
+                matchType: "FULL_REGEXP",
+                value: CHAT_DELIVERED_LINK,
+              },
+            },
+          },
+        },
+      ],
     },
   },
 };

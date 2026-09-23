@@ -1,12 +1,13 @@
 import { cn } from "@/lib/utils";
 import { ChatRichMessage } from "@/components/chatbot/ChatRichMessage";
+import type { ChatbotMessageKind } from "@/lib/chatbot/conversation-store";
 import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 
 export interface ChatDisplayMessage {
   role: "user" | "assistant";
   content: string;
   /** Absent means a plain text bubble — see conversation-store's ChatbotMessageKind. */
-  kind?: "text" | "calendar" | "resource_card" | "booking_confirmed";
+  kind?: ChatbotMessageKind;
   data?: Record<string, unknown> | null;
 }
 

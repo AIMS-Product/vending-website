@@ -17,12 +17,15 @@ export type ChatbotMessageKind =
   | "text"
   | "calendar"
   | "resource_card"
+  /** A catalog resource shown in the chat, not emailed. See sharedResourceMessage. */
+  | "shared_resource"
   | "booking_confirmed";
 
 export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
   "text",
   "calendar",
   "resource_card",
+  "shared_resource",
   "booking_confirmed",
 ];
 
@@ -118,9 +121,20 @@ async function recallVisitor(client: ConversationClient, visitorHash: string) {
   return data ?? null;
 }
 
+/** Attempts before giving up on a contended append. */
+const APPEND_ATTEMPTS = 5;
+
 /**
- * Whole-array upsert of one chat turn — see chatbot_conversations comment:
- * atomic single write.
+ * Appends this request's messages to the stored transcript, never rewrites it.
+ *
+ * Several writers touch one conversation: the chat turn (saved in after(), up
+ * to a minute after it read the row), a quick-action click, the capture form,
+ * and the booking webhook's chatbot_append_message. A whole-array write from a
+ * stale snapshot deleted whatever landed in between. So the append is a
+ * compare-and-set on `message_count`: read the current array, write it plus
+ * ours only if the count is still what we read, otherwise re-read and retry.
+ * chatbot_append_message bumps message_count too, so it takes part in the
+ * same check. No migration needed.
  *
  * `conversation` is a snapshot read at the *start* of the request; the model
  * call in between can take seconds, during which a concurrent request (the
@@ -137,7 +151,8 @@ async function recallVisitor(client: ConversationClient, visitorHash: string) {
 export async function persistConversationTurn(
   conversation: ChatbotConversation,
   patch: {
-    messages: ChatbotMessage[];
+    /** Messages this request adds. Empty = update the other fields only. */
+    append: readonly ChatbotMessage[];
     capturedName?: string | null;
     capturedEmail?: string | null;
     capturedPhone?: string | null;
@@ -150,11 +165,7 @@ export async function persistConversationTurn(
   const now = deps.now?.() ?? new Date();
 
   const update: Database["public"]["Tables"]["chatbot_conversations"]["Update"] =
-    {
-      messages: patch.messages as unknown as Json,
-      message_count: patch.messages.length,
-      last_message_at: now.toISOString(),
-    };
+    { last_message_at: now.toISOString() };
   if (patch.capturedName) update.captured_name = patch.capturedName;
   if (patch.capturedEmail) update.captured_email = patch.capturedEmail;
   if (patch.capturedPhone) update.captured_phone = patch.capturedPhone;
@@ -177,12 +188,39 @@ export async function persistConversationTurn(
     update.status = "lead_captured";
   }
 
-  const { error } = await client
-    .from("chatbot_conversations")
-    .update(update)
-    .eq("id", conversation.id);
+  if (patch.append.length === 0) {
+    const { error } = await client
+      .from("chatbot_conversations")
+      .update(update)
+      .eq("id", conversation.id);
+    if (error) throw new Error(error.message);
+    return;
+  }
 
-  if (error) throw new Error(error.message);
+  for (let attempt = 0; attempt < APPEND_ATTEMPTS; attempt += 1) {
+    const current = await client
+      .from("chatbot_conversations")
+      .select("messages,message_count")
+      .eq("id", conversation.id)
+      .single();
+    if (current.error || !current.data) {
+      throw new Error(current.error?.message ?? "conversation not found");
+    }
+    const merged = [
+      ...(Array.isArray(current.data.messages) ? current.data.messages : []),
+      ...(patch.append as unknown as Json[]),
+    ];
+    const { data, error } = await client
+      .from("chatbot_conversations")
+      .update({ ...update, messages: merged, message_count: merged.length })
+      .eq("id", conversation.id)
+      .eq("message_count", current.data.message_count)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (data && data.length > 0) return;
+    // Someone appended between our read and write. Re-read and try again.
+  }
+  throw new Error("chatbot transcript append kept losing the race");
 }
 
 /** Defensive read of the stored `messages` jsonb array — never throws on a shape surprise. */

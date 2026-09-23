@@ -117,10 +117,24 @@ async function countUnansweredQuestions(
 async function fetchConversationStats(client: Client, start: string) {
   const { data, error } = await client
     .from("chatbot_conversations")
-    .select("captured_email, captured_phone, message_count")
+    .select("captured_email, captured_phone, message_count, messages")
     .gte("created_at", start);
   if (error) throw new ChatbotAdminError("Could not load conversation stats.");
-  const rows = data ?? [];
+  // A quick-action click with no visitor message is not a conversation (same
+  // rule as analytics.ts). A missing transcript is read as a real chat.
+  const rows = (data ?? []).filter(
+    (r) =>
+      r.captured_email ||
+      r.captured_phone ||
+      !Array.isArray(r.messages) ||
+      r.messages.some(
+        (m) =>
+          !!m &&
+          typeof m === "object" &&
+          !Array.isArray(m) &&
+          m.role === "user",
+      ),
+  );
   return {
     count: rows.length,
     captured: rows.filter((r) => r.captured_email || r.captured_phone).length,

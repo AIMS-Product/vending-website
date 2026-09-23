@@ -5,7 +5,6 @@ import { loadChatbotConfig } from "@/lib/chatbot/config";
 import {
   loadOrCreateConversation,
   persistConversationTurn,
-  toChatbotMessages,
 } from "@/lib/chatbot/conversation-store";
 import { handleChatbotLeadCaptured } from "@/lib/chatbot/lead-capture";
 import {
@@ -101,7 +100,7 @@ export async function POST(request: Request) {
     await persistConversationTurn(
       conversation,
       {
-        messages: toChatbotMessages(conversation.messages),
+        append: [],
         capturedName,
         capturedEmail: email,
         capturedPhone,
