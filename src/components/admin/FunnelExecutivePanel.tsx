@@ -137,7 +137,7 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
   if (data.months.length === 0) {
     return (
       <section className={adminCardClass}>
-        <h2 className={adminEyebrowClass}>Executive rollup</h2>
+        <h2 className={adminEyebrowClass}>Month on month</h2>
         <p className="text-ui-text-subtle mt-2 text-sm">
           No months to show yet — no leads have been captured.
         </p>
@@ -149,19 +149,28 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
 
   return (
     <div className="space-y-6">
-      <section className={adminCardClass} aria-label="Executive rollup">
+      <section className={adminCardClass} aria-label="Month on month">
         <h2 className={adminEyebrowClass}>Month on month</h2>
-        <p className="text-ui-text-subtle mt-1 text-xs">
-          One row per month, every source and page together. A lead counts in
-          the month it arrived and its call, show and sale count there too,
-          whenever they happened — so a September sale from a July lead is in
-          July, and July keeps moving for weeks.
+        <p className="text-ui-text-muted mt-1 text-sm">
+          Whether the whole funnel is getting better. One line per month, every
+          source and page together.
         </p>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          Green and red mark the move against the month below, never a target. A
-          move resting on fewer than {MIN_WEIGHT} observations, or smaller than{" "}
-          {FLAT_BAND}%, is left uncoloured. A dash means not observed; it never
-          means zero.
+          A lead counts in the month it arrived, and so do its call, show and
+          sale, whenever they happened. A September sale from a July lead is in
+          July, so recent months keep rising for weeks.
+        </p>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Green and red compare each number with the month below it, not with a
+          target. A number stays uncoloured when it moved less than {FLAT_BAND}%
+          or rests on fewer than {MIN_WEIGHT} visits, leads or calls. A dash
+          means no data, not zero.
+        </p>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Opt-in % is leads out of site visits. Book % is booked calls out of
+          leads. Show % is calls a rep logged as showed, out of booked calls
+          with a show or no-show logged. Won and Revenue are sales from that
+          month&rsquo;s leads.
         </p>
 
         <div className="mt-4 overflow-x-auto">
@@ -182,7 +191,7 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
                     {column.crossSystem ? (
                       <span
                         className="text-ui-text-subtle"
-                        title="Divides one instrument by another — read the direction, not the decimal."
+                        title="Divides numbers from two different systems. Read the direction, not the exact figure."
                       >
                         {" "}
                         ‡
@@ -202,7 +211,7 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
                     {month.label}
                     {month.visitsEnd || month.visitsStart ? (
                       <span className="text-ui-text-subtle block text-xs font-normal">
-                        {month.spendFrom ? "visits & spend" : "visits"}{" "}
+                        {month.spendFrom ? "visits & spend" : "visits"} counted{" "}
                         {month.visitsStart ?? "month start"} –{" "}
                         {month.visitsEnd ?? "month end"}
                       </span>
@@ -223,15 +232,15 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
         </div>
 
         <p className="text-ui-text-subtle mt-3 text-xs">
-          ‡ divides one instrument by another. Visits are GA4 sessions, leads
-          are rows in our own table and spend comes from the ad platforms, so
-          read these as a direction rather than an exact figure.
+          ‡ divides numbers from two different systems: visits come from Google
+          Analytics, leads from our own site and spend from the ad platforms.
+          Read these for direction, not as exact figures.
           {data.spendChannels.length > 0 ? (
             <>
               {" "}
-              Spend is observed for {data.spendChannels.join(", ")} only; every
-              other channel&rsquo;s cost per lead is a dash because nothing was
-              observed, not because it was free.
+              We only have spend for {data.spendChannels.join(", ")}. Every
+              other channel&rsquo;s cost per lead is a dash because we have no
+              spend data for it, not because it was free.
             </>
           ) : null}{" "}
           Webinar ad spend buys webinar registrations, not site leads, so it is
@@ -240,8 +249,9 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
         </p>
         {data.visitsThrough ? (
           <p className="text-ui-text-subtle mt-1 text-xs">
-            GA4 has reported through {data.visitsThrough}. The current month is
-            still filling, so its visit total covers fewer days than its leads.
+            Google Analytics has reported visits through {data.visitsThrough}.
+            The current month is still running, so its visits cover fewer days
+            than its leads.
           </p>
         ) : null}
       </section>
@@ -252,12 +262,12 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
           key: month.key,
           label: month.label,
         }))}
-        caption="Every sale Close recorded, in the month it was won. The Won and Revenue columns above follow site leads from the month they arrived, so they leave out buyers who never filled a site form, such as webinar buyers. Use this table for sales by channel."
+        caption="Every sale in Close, in the month it was won. Won and Revenue above only follow people who filled a form on our site, so they miss buyers who never did, such as webinar buyers. Use this table for sales by channel."
       />
 
       <Breakdown
         title="By channel"
-        caption="The same months, split by where the lead came from."
+        caption="The same months, split by where the lead came from. Opt-in % is leads out of site visits."
         months={data.months}
         rowsOf={(month) => month.byChannel}
         costOf={(month, row) => month.costPerLeadByChannel[row.funnel] ?? null}
@@ -265,15 +275,16 @@ export function FunnelExecutiveTab({ data }: { data: FunnelExecutiveReport }) {
       />
       <Breakdown
         title="By page"
-        caption="The same months, split by the page the lead came in on. Spend has no page, so cost per lead is a dash throughout."
+        caption="The same months, split by the page the lead came in on. Opt-in % is leads out of site visits. Spend is not tied to a page, so cost per lead is a dash throughout."
         months={data.months}
         rowsOf={(month) => month.byPage}
         costOf={() => null}
       />
 
       <p className="text-ui-text-subtle text-xs">
-        Show rate could be answered for {latest.totals.showable} of{" "}
-        {latest.totals.booked} booked calls in {latest.label}.
+        Show % for {latest.label} rests on {latest.totals.showable} of its{" "}
+        {latest.totals.booked} booked calls: the ones with a show or no-show
+        logged in Close.
       </p>
     </div>
   );
@@ -319,7 +330,7 @@ function Breakdown({
       <summary className="cursor-pointer text-sm font-medium">
         {title}
         <span className="text-ui-text-subtle ml-2 text-xs font-normal">
-          {keys.length} rows — collapsed
+          {keys.length} {title.replace("By ", "")}s, tap to open
         </span>
       </summary>
       <p className="text-ui-text-subtle mt-2 text-xs">{caption}</p>
@@ -352,10 +363,10 @@ function Breakdown({
                     Leads
                   </th>
                   <th scope="col" className="py-1 pr-3 text-right font-normal">
-                    Opt-in
+                    Opt-in %
                   </th>
                   <th scope="col" className="py-1 pr-3 text-right font-normal">
-                    CPL
+                    Cost per lead
                   </th>
                 </Fragment>
               ))}
@@ -429,7 +440,7 @@ function Cell({
       } ${column.crossSystem ? "opacity-80" : ""}`}
       title={
         tone === "flat" && value !== null && before !== null
-          ? "Change too small, or resting on too few observations, to call"
+          ? "Change too small, or based on too few people, to call"
           : undefined
       }
     >

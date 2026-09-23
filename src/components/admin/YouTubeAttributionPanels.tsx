@@ -32,6 +32,9 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
   return (
     <section className={adminCardClass} aria-label="YouTube funnel by stage">
       <h2 className={adminEyebrowClass}>Click to close</h2>
+      <p className="text-ui-text-subtle mt-2 text-xs">
+        How people from YouTube moved from a link click to a sale in this range.
+      </p>
       <ol className="mt-3 space-y-2.5">
         {stages.map((stage, index) => (
           <li key={stage.label} className="flex flex-col gap-1">
@@ -56,7 +59,7 @@ export function YouTubeStageFunnel({ stages }: { stages: YouTubeStage[] }) {
             {index > 0 ? (
               <p className="text-ui-text-subtle text-xs">
                 {stage.ofPreviousPct === null
-                  ? "Not connected yet — no conversion rate to show."
+                  ? "No rate: one of these two steps has no data yet."
                   : `${stage.ofPreviousPct}% continued from the step above`}
               </p>
             ) : null}
@@ -146,7 +149,7 @@ export function YouTubeVideoTable({
                     <span className="text-ui-text-subtle block text-xs">
                       {row.utmCampaign}
                       {row.publishedAt ? ` · ${row.publishedAt}` : ""}
-                      {row.inRegistry ? "" : " · not in registry"}
+                      {row.inRegistry ? "" : " · not in our video list"}
                     </span>
                   </td>
                   <Num value={row.clicks} />
@@ -168,11 +171,18 @@ export function YouTubeVideoTable({
               ))}
             </tbody>
           </table>
+          <p className="text-ui-text-subtle mt-3 text-xs">
+            Tap a column heading to sort by it. {VIDEO_COLUMN_KEY}
+          </p>
         </div>
       )}
     </section>
   );
 }
+
+/** The column titles below, on screen: a `title` never shows on a phone. */
+const VIDEO_COLUMN_KEY =
+  "Clicks: Bitly link clicks. Visits: visits to the tagged landing page. Leads: forms submitted. Qualified: finished the qualifying questions. Booked: booked a sales call. Attended: a rep logged the show in Close; a call nobody logged is not counted, so this is a minimum. Won: closed-won in Close. Visit→lead, Lead→book and Book→won: the share that moved on to the next step. Avg close: average days from first visit to the sale.";
 
 function Num({ value }: { value: number | null }) {
   return (
@@ -214,13 +224,17 @@ const YOUTUBE_VIDEO_COLUMNS: Array<{
   { sort: "clicks", label: "Clicks", title: "Bitly link clicks" },
   { sort: "visits", label: "Visits", title: "Tagged landing page visits" },
   { sort: "leads", label: "Leads", title: "Forms submitted" },
-  { sort: "qualified", label: "Qual.", title: "Completed the questions" },
+  {
+    sort: "qualified",
+    label: "Qualified",
+    title: "Finished the qualifying questions",
+  },
   { sort: "booked", label: "Booked", title: "Booked a sales call" },
   {
     sort: "attended",
     label: "Attended",
     title:
-      "Booked minus no-show and cancelled — a derivation, not a Close field",
+      "A rep logged the show in Close; a call nobody logged is not counted",
   },
   { sort: "closed", label: "Won", title: "Closed / won in Close" },
   { sort: "visit-to-lead", label: "Visit→lead", title: "Leads per visit" },
@@ -229,7 +243,7 @@ const YOUTUBE_VIDEO_COLUMNS: Array<{
   {
     sort: "days-to-close",
     label: "Avg close",
-    title: "Average days from first touch to won",
+    title: "Average days from first visit to won",
   },
 ];
 
@@ -293,17 +307,18 @@ export function YouTubeTimeToCloseChart({
 
   return (
     <section className={adminCardClass} aria-label="Time to close">
-      <h2 className={adminEyebrowClass}>First touch to closed / won</h2>
+      <h2 className={adminEyebrowClass}>Days from first visit to sale</h2>
       {timeToClose.measured === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
-          No dated wins in this range yet.
+          No sales with a won date in this range yet.
           {timeToClose.undated > 0 ? (
             <>
               {" "}
               {timeToClose.undated} lead
               {timeToClose.undated === 1 ? " is" : "s are"} marked won in Close
-              but carry no reliable won date, so no cycle can be measured for
-              {timeToClose.undated === 1 ? " it" : " them"} yet.
+              but {timeToClose.undated === 1 ? "has" : "have"} no reliable won
+              date, so we cannot time{" "}
+              {timeToClose.undated === 1 ? "it" : "them"} yet.
             </>
           ) : null}
         </p>
@@ -311,12 +326,12 @@ export function YouTubeTimeToCloseChart({
         <>
           <p className="text-ui-text-subtle mt-2 text-xs">
             <span className="text-ui-text-muted font-medium">
-              {timeToClose.medianDays} days median
+              Median {timeToClose.medianDays} days
             </span>{" "}
-            · {timeToClose.avgDays} average · {timeToClose.longCycleCount} ran
-            14 days or longer · {timeToClose.measured} measured
+            · average {timeToClose.avgDays} · {timeToClose.longCycleCount} took
+            14 days or longer · based on {timeToClose.measured} sales
             {timeToClose.undated > 0
-              ? ` · ${timeToClose.undated} won without a reliable date, excluded`
+              ? ` · ${timeToClose.undated} won with no reliable date, left out`
               : ""}
           </p>
           <ol className="mt-3 space-y-1.5">
@@ -354,10 +369,11 @@ export function YouTubeCohortTable({
 }) {
   return (
     <section className={adminCardClass} aria-label="First-touch cohorts">
-      <h2 className={adminEyebrowClass}>By first-touch month</h2>
+      <h2 className={adminEyebrowClass}>By month of first visit</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        A lead that first watched in August and closed in September is credited
-        to August.
+        Each lead sits in the month they first visited the site. A lead who
+        first came in August and bought in September counts under August, so
+        recent months fill in as their sales land.
       </p>
       {cohorts.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
@@ -432,15 +448,15 @@ export function YouTubeCoverageNote({
 }) {
   const gaps: string[] = [];
   if (!coverage.clicksConnected) {
-    gaps.push("Link clicks need a Bitly token before they can be synced.");
+    gaps.push("Link clicks appear once Bitly is connected.");
   }
   if (!coverage.visitsConnected) {
     gaps.push(
-      "Landing page visits start recording once this slice's migration is applied.",
+      "Landing page visits are not recorded yet: a database update is still to be applied.",
     );
   } else if (coverage.visitsSource === "ga4") {
     gaps.push(
-      "Visits are GA4 sessions by Pacific day, so they read lower than a views count in GA4 Explorations.",
+      "Visits are GA4 sessions counted by Pacific day, so they read lower than a page-views count in GA4.",
     );
   } else if (coverage.visitsSource === "site") {
     gaps.push(
@@ -449,7 +465,7 @@ export function YouTubeCoverageNote({
   }
   if (!coverage.outcomesConnected) {
     gaps.push(
-      "Attended and won need the closed-won columns from this slice's migration.",
+      "Attended and Won are not available yet: a database update is still to be applied.",
     );
   }
 
@@ -467,17 +483,17 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.campaignsMissingFromRegistry.length}
             </span>{" "}
-            campaign
+            video tag
             {coverage.campaignsMissingFromRegistry.length === 1 ? "" : "s"} on
             real leads{" "}
             {coverage.campaignsMissingFromRegistry.length === 1 ? "is" : "are"}{" "}
-            missing from the registry (
+            not in our video list (
             {coverage.campaignsMissingFromRegistry.slice(0, 3).join(", ")}
             ), so{" "}
             {coverage.campaignsMissingFromRegistry.length === 1
               ? "it shows"
               : "they show"}{" "}
-            as a slug rather than a title.
+            as the raw tag instead of the video title.
           </>
         ) : null}
         {coverage.bookedBeforeLead > 0 ? (
@@ -486,8 +502,8 @@ export function YouTubeCoverageNote({
             <span className="text-ui-text font-semibold">
               {coverage.bookedBeforeLead}
             </span>{" "}
-            booked before they filled the form — Close already had them, so they
-            are excluded from cycle times.
+            booked before they filled in the form (Close already had them), so
+            they are left out of the days-to-sale figures.
           </>
         ) : null}
       </p>

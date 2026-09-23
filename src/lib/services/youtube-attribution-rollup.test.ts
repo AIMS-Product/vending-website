@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { indexShows } from "@/lib/services/funnel-monthly";
 import {
   buildYouTubeAttribution,
   firstTouchAt,
@@ -33,6 +34,7 @@ function build(
     videos?: Parameters<typeof buildYouTubeAttribution>[0]["videos"];
     clicks?: Parameters<typeof buildYouTubeAttribution>[0]["clicks"];
     pageViews?: Parameters<typeof buildYouTubeAttribution>[0]["pageViews"];
+    shows?: Parameters<typeof buildYouTubeAttribution>[0]["shows"];
   } = {},
 ) {
   return buildYouTubeAttribution({
@@ -43,6 +45,7 @@ function build(
     clicksConnected: options.clicksConnected ?? true,
     visitsConnected: options.visitsConnected ?? true,
     outcomesConnected: options.outcomesConnected ?? true,
+    shows: options.shows,
   });
 }
 
@@ -157,18 +160,61 @@ describe("per-video rows", () => {
 });
 
 describe("attended", () => {
-  it("subtracts only the labels that say the call did not happen", () => {
-    const result = build([
-      lead({ call_booked_at: "2026-08-11", call_outcome: null }),
-      lead({ call_booked_at: "2026-08-11", call_outcome: "no_show" }),
-      lead({ call_booked_at: "2026-08-11", call_outcome: "canceled" }),
-      lead({ call_booked_at: "2026-08-11", call_outcome: "rescheduled" }),
-      lead({ call_booked_at: null }),
-    ]);
+  const mirror = (email: string, showUp: string | null) => ({
+    email,
+    first_sales_call_booked_date: "2026-08-12",
+    first_call_show_up: showUp,
+  });
+  const shows = {
+    byEmail: indexShows([
+      mirror("held@example.com", "Yes"),
+      mirror("noshow@example.com", "No"),
+      mirror("unlogged@example.com", null),
+    ]),
+    today: "2026-09-22",
+  };
+
+  it("counts only calls a rep logged as held in Close", () => {
+    const result = build(
+      [
+        lead({ email: "held@example.com", call_booked_at: "2026-08-11" }),
+        lead({ email: "noshow@example.com", call_booked_at: "2026-08-11" }),
+        // No outcome logged anywhere: not assumed to have happened.
+        lead({ email: "unlogged@example.com", call_booked_at: "2026-08-11" }),
+        lead({ email: "missing@example.com", call_booked_at: "2026-08-11" }),
+        lead({ email: "held@example.com", call_booked_at: null }),
+      ],
+      { shows },
+    );
 
     expect(result.totals.booked).toBe(4);
-    // Rescheduled is not a no-show, and an unlabelled booking is not either.
-    expect(result.totals.attended).toBe(2);
+    expect(result.totals.attended).toBe(1);
+  });
+
+  it("gives no share when sales outnumber logged shows", () => {
+    const result = build(
+      [
+        lead({
+          email: "unlogged@example.com",
+          call_booked_at: "2026-08-11",
+          call_outcome: "won",
+        }),
+      ],
+      { shows },
+    );
+    const closed = result.stages.find(
+      (stage) => stage.label === "Closed / won",
+    );
+    expect(result.totals.attended).toBe(0);
+    expect(closed?.count).toBe(1);
+    expect(closed?.ofPreviousPct).toBeNull();
+  });
+
+  it("reads as not observed when the Close mirror could not be read", () => {
+    const result = build([
+      lead({ email: "held@example.com", call_booked_at: "2026-08-11" }),
+    ]);
+    expect(result.totals.attended).toBeNull();
   });
 });
 

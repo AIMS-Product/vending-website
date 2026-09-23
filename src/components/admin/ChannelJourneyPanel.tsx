@@ -40,17 +40,22 @@ export function ChannelJourneysTab({
       <section className={adminCardClass} aria-label="Channel journeys">
         <h2 className={adminEyebrowClass}>Channel journeys</h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          {data.window.start} to {data.window.end}. Each cell is the count at
-          that stage; the figure above it is the share of the stage to its left.
-          A dash is not observed, never zero.{" "}
+          Each channel&rsquo;s path from first view to sale, {data.window.start}{" "}
+          to {data.window.end}. The large number in each box is how many reached
+          that stage; the small percentage above it is that number as a share of
+          the last counted stage to its left. A dash means no data, which is
+          different from zero.{" "}
           {data.visitsThrough ? (
-            <>Visited stops at {data.visitsThrough}, where GA4 stops.</>
+            <>
+              Visited runs only to {data.visitsThrough}, the last day GA4 has
+              sent.
+            </>
           ) : null}
         </p>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          A rate in grey divides two different instruments — a platform&rsquo;s
-          own impressions against GA4 sessions, say. It is the shape of the
-          drop-off, not a conversion rate, and it should not be quoted as one.
+          A grey percentage divides numbers from two different systems (a
+          platform&rsquo;s own view count against GA4 visits, for example). Use
+          it to see where people drop off; do not quote it as a conversion rate.
         </p>
         <div className="mt-4 overflow-x-auto">
           <div className="min-w-[72rem]">
@@ -69,8 +74,8 @@ export function ChannelJourneysTab({
           </div>
         </div>
         <p className="text-ui-text-subtle mt-3 text-xs">
-          Pick a lane for its step-by-step detail, the pages behind it, and what
-          each number cannot tell you.
+          Tap a channel for its step-by-step detail, the pages behind it, and
+          the caveats on each number.
         </p>
       </section>
 
@@ -210,7 +215,7 @@ function LaneDetail({ lane }: { lane: JourneyLane }) {
                 <td className="text-ui-text-subtle py-2.5 align-top text-xs">
                   {[
                     step.crossSystem
-                      ? "Divides two different measurement systems — read it as shape, not as a rate."
+                      ? "Compares numbers from two different systems: read it as where people drop off, not as a conversion rate."
                       : null,
                     step.caveat ?? null,
                   ]
@@ -226,17 +231,17 @@ function LaneDetail({ lane }: { lane: JourneyLane }) {
         <div className="border-ui-line mt-3 rounded border p-3">
           <p className="text-ui-text text-xs font-medium">
             {lane.leadsOffMap} more {lane.label} lead
-            {lane.leadsOffMap === 1 ? "" : "s"} converted on a page this lane
-            does not list.
+            {lane.leadsOffMap === 1 ? "" : "s"} signed up on a page this
+            channel&rsquo;s map does not list.
           </p>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            They are excluded from every number above, so the lane stays one
-            population. This is how the map tells you it is out of date — add
-            the page to the lane in{" "}
+            They are left out of every number above, so each step counts the
+            same people. It means the map is out of date: an engineer adds the
+            page to this channel in{" "}
             <code className="text-ui-text">
               src/lib/content/channel-journeys.ts
             </code>{" "}
-            and it joins the funnel.
+            and they join the counts.
           </p>
           <ul className="text-ui-text-subtle mt-2 space-y-0.5 text-xs">
             {lane.offMapPaths.map((entry) => (
@@ -264,9 +269,10 @@ function UnmappedChannels({
     <section className={adminCardClass} aria-label="Channels with no journey">
       <h2 className={adminEyebrowClass}>Not on the map yet</h2>
       <p className="text-ui-text-subtle mt-1 text-xs">
-        These channels produced leads in this window and no lane claims them.
-        Add one to <code className="text-ui-text">channel-journeys.ts</code> and
-        it appears above.
+        These channels brought in leads in this range but have no row on the map
+        yet. An engineer adds them in{" "}
+        <code className="text-ui-text">channel-journeys.ts</code> and they
+        appear above.
       </p>
       <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
         {channels.map((entry) => (

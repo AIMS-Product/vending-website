@@ -16,14 +16,15 @@ import type {
 
 /**
  * The KPI tab: the Lead Gen KPI Framework as four tables. Reads only what
- * `getKpiTab` returns. A null renders as a dash with "not observed" on hover.
+ * `getKpiTab` returns. A null renders as a dash, which means no data.
  */
 export function KpiTab({ data }: { data: KpiTabData }) {
   if (!data.connected) {
     return (
       <div className={adminCardClass}>
         <p className="text-ui-text-muted text-sm">
-          The channel spine is not connected yet, so there is nothing to report.
+          The daily channel data is not connected yet, so there is nothing to
+          report.
         </p>
       </div>
     );
@@ -32,14 +33,14 @@ export function KpiTab({ data }: { data: KpiTabData }) {
     <div className="space-y-5">
       <Freshness report={data.report} endDay={data.range.endDay} />
       <p className="text-ui-text-subtle text-xs">
+        Each channel&rsquo;s numbers from first view to sale, for{" "}
         {data.range.label} ({data.range.startDay} to {data.range.endDay}). A
-        dash means not observed, never zero.{" "}
+        dash means no data, not zero.{" "}
         <Method>
-          Opt-in and Conv % are over every visit in the range, counting a
-          visit-day that converted nobody. Rates further down the funnel are
-          measured only where both sides were observed on the same rows; a rate
-          that came out above 100% is shown as not observed because its two
-          sides were not one population.
+          Opt-in and Conv % divide by every visit in the range, including days
+          that produced no leads. Other rates only use days where both numbers
+          were recorded. A rate that came out above 100% shows as a dash,
+          because its two numbers counted different people.
         </Method>
       </p>
       {data.report.sections.map((section) => (
@@ -85,8 +86,8 @@ function Freshness({ report, endDay }: { report: KpiReport; endDay: string }) {
       className={`text-xs ${stale ? "text-ui-bad font-medium" : "text-ui-text-subtle"}`}
     >
       {stale
-        ? `Stale: the oldest connector behind this page last ran ${oldest}. Numbers below have not moved since.`
-        : `Up to date as of ${oldest} \u2014 the oldest connector run behind anything on this page.`}
+        ? `Out of date: the oldest data feed behind this page last ran ${oldest}. Numbers below have not moved since.`
+        : `Up to date as of ${oldest}, the last run of the oldest data feed behind this page.`}
     </p>
   );
 }
@@ -121,6 +122,58 @@ function observedColumns(section: KpiSection): KpiColumn[] {
   );
 }
 
+/** The first column's heading, by section. Anything else is "Name". */
+const FIRST_COLUMN: Record<string, string> = {
+  funnels: "Channel",
+  webinar: "Webinar",
+};
+
+/**
+ * What each shorthand column head means, on screen. The heads are short so 18
+ * columns fit; a phone never shows a tooltip, so the meaning goes under the
+ * table instead. Keyed by column key, so a renamed head keeps its meaning.
+ */
+const COLUMN_HINTS: Record<string, string> = {
+  ctr: "clicks out of impressions",
+  visits: "visits to our landing pages",
+  thankYouConv: "thank-you page visits out of site visits",
+  optIn: "leads out of site visits",
+  leadToBook: "booked calls out of leads",
+  showRate:
+    "shown as a share of booked calls; only calls a rep logged as a show count",
+  closeRate: "won out of shown",
+  leadToClose: "won out of leads",
+  costPerBooked: "spend divided by booked calls",
+  attendanceRate: "attendees out of registrations",
+  regToBook: "booked calls out of registrations",
+  regToClose: "won out of registrations",
+  bookedNightOf: "booked on the night of the webinar",
+  bookedEver:
+    "people who booked and still carry this webinar's tag in Close; not used in any rate",
+  showNoBooking:
+    "marked shown in Close with no booking date; not added to Shown",
+  deliveryRate: "delivered out of sent",
+  replyRate: "replies out of delivered",
+  outcomeKnown:
+    "share of calls that were due with a show or no-show logged in Close",
+};
+
+function ColumnLegend({ columns }: { columns: KpiColumn[] }) {
+  const hints = columns.filter((column) => COLUMN_HINTS[column.key]);
+  if (hints.length === 0) return null;
+  return (
+    <p className="text-ui-text-subtle mt-2 text-xs leading-5">
+      {hints.map((column, index) => (
+        <span key={column.key}>
+          {index > 0 ? " · " : null}
+          <span className="text-ui-text-muted font-medium">{column.label}</span>
+          : {COLUMN_HINTS[column.key]}
+        </span>
+      ))}
+    </p>
+  );
+}
+
 function KpiSectionTable({ section }: { section: KpiSection }) {
   const columns = observedColumns(section);
   const emptied = section.columns.length - columns.length;
@@ -132,7 +185,7 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
       </p>
       {section.rows.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
-          Nothing observed in this range.
+          No data in this range.
         </p>
       ) : (
         <div className="mt-3 overflow-x-auto">
@@ -147,7 +200,7 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
                     off-screen, and a number you cannot name a channel for is
                     worse than no number. */}
                 <th className="bg-ui-surface border-ui-line sticky left-0 z-10 border-r py-2 pr-4 pl-0 font-semibold">
-                  Row
+                  {FIRST_COLUMN[section.key] ?? "Name"}
                 </th>
                 {columns.map((column) => (
                   <th
@@ -168,12 +221,12 @@ function KpiSectionTable({ section }: { section: KpiSection }) {
           </table>
         </div>
       )}
+      {section.rows.length > 0 ? <ColumnLegend columns={columns} /> : null}
       {emptied > 0 ? (
         <p className="text-ui-text-subtle mt-2 text-xs">
-          {emptied} {emptied === 1 ? "column is" : "columns are"} hidden because
-          nothing in this range was observed for {emptied === 1 ? "it" : "them"}
-          . {emptied === 1 ? "It comes" : "They come"} back as soon as a
-          connector reports a value.
+          {emptied} {emptied === 1 ? "column is" : "columns are"} hidden because{" "}
+          {emptied === 1 ? "it has" : "they have"} no data in this range.{" "}
+          {emptied === 1 ? "It comes" : "They come"} back once data arrives.
         </p>
       ) : null}
       {section.hidden > 0 ? (
@@ -235,7 +288,7 @@ function KpiTableRow({ row, columns }: { row: KpiRow; columns: KpiColumn[] }) {
 function Cell({ value, format }: { value: number | null; format: KpiFormat }) {
   if (value == null) {
     return (
-      <span className="text-ui-text-subtle" title="Not observed">
+      <span className="text-ui-text-subtle" title="No data">
         —
       </span>
     );

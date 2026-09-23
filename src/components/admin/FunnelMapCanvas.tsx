@@ -277,16 +277,22 @@ export function FunnelMapCanvas({
               </div>
               <p className="text-ui-text-subtle mt-1 text-[0.625rem] leading-4 tabular-nums">
                 {run?.finishedAt
-                  ? `${run.rowsWritten.toLocaleString()} rows`
+                  ? `${run.rowsWritten.toLocaleString()} records`
                   : "never run"}
               </p>
-              {status === "failed" || status === "stale" ? (
+              {status === "failed" ||
+              status === "stale" ||
+              status === "empty" ? (
                 <p
                   className={`text-[0.625rem] leading-4 font-medium ${
                     status === "failed" ? "text-ui-bad" : "text-ui-warn"
                   }`}
                 >
-                  {status === "failed" ? "failing" : "stale"}
+                  {status === "failed"
+                    ? "failing"
+                    : status === "empty"
+                      ? "no new data"
+                      : "out of date"}
                 </p>
               ) : null}
             </div>
@@ -451,7 +457,7 @@ function StatusDot({ status }: { status: string }) {
       ? "bg-ui-ok"
       : status === "failed"
         ? "bg-ui-bad"
-        : status === "stale"
+        : status === "stale" || status === "empty"
           ? "bg-ui-warn"
           : "bg-ui-line-strong";
   return (

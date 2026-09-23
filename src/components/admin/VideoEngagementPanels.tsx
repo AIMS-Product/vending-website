@@ -50,7 +50,7 @@ export function VideoEngagementTab({
         <AdminMetricPanel
           label="Booked prospects"
           value={report.bookedCount}
-          caption="Calls booked in the window"
+          caption="People who booked a call in this range"
         />
         <AdminMetricPanel
           tone="green"
@@ -58,29 +58,29 @@ export function VideoEngagementTab({
           value={report.watcherCount}
           caption={
             engagedPct === null
-              ? "Nobody trackable has booked yet"
-              : `${engagedPct}% of the ${observed} we could see`
+              ? "Nobody we can track has booked yet"
+              : `${engagedPct}% of the ${observed} we can track`
           }
         />
         <AdminMetricPanel
           tone="amber"
           label="Watched nothing"
           value={report.coldCount}
-          caption="Booked since tracking began and opened nothing — the call list"
+          caption="Booked since tracking began and opened no video. This is the call list."
         />
         <AdminMetricPanel
           label="Before tracking"
           value={report.predatesTrackingCount}
           caption={
             report.trackingStartedAt
-              ? `Booked before ${formatDay(report.trackingStartedAt)}; nothing was recording`
+              ? `Booked before ${formatDay(report.trackingStartedAt)}, when we were not yet recording`
               : "Nothing has been recorded yet"
           }
         />
         <AdminMetricPanel
           label="Can't tell"
           value={report.unknownCount}
-          caption="Booked since tracking began with no session to match; not the same as nothing"
+          caption="Booked since tracking began, but we cannot link the booking to a browser, so we cannot tell if they watched"
         />
       </AdminMetricStrip>
 
@@ -96,7 +96,7 @@ function PeoplePanel({ report }: { report: VideoEngagementReport }) {
       <section className={`${adminPanelClass} mb-4 p-4`}>
         <h2 className={adminSectionTitleClass}>Who is engaging</h2>
         <p className="text-ui-text-muted mt-1 text-xs">
-          Nobody in this window has opened a video, and nobody booked since
+          Nobody in this range has opened a video, and nobody booked since
           tracking began.
         </p>
       </section>
@@ -106,16 +106,23 @@ function PeoplePanel({ report }: { report: VideoEngagementReport }) {
   return (
     <section className={`${adminPanelClass} mb-4 p-4`}>
       <h2 className={adminSectionTitleClass}>Who is engaging</h2>
-      <p className="text-ui-text-muted mt-1 mb-3 text-xs">
-        One line per booked prospect, most engaged first, then soonest call.
-        Time is the furthest point they reached, not time spent — a rewatch is
-        not counted twice. Matched per browser, so a phone booking watched on a
-        laptop shows as no session rather than as nothing. Listed are the
-        bookings this page can answer for: everyone who has opened a video, plus
-        everyone who booked since tracking began. A booking made earlier with
-        nothing recorded against it is counted under &ldquo;Before
-        tracking&rdquo; and left off — no history exists to recover, so its
-        blank row would read as an answer.
+      <p className="text-ui-text-muted mt-1 mb-2 text-xs">
+        One line per person who booked, most engaged first, then soonest call.
+        Listed: everyone who opened a video, plus everyone who booked since
+        tracking began. People who booked earlier with nothing recorded are
+        counted under &ldquo;Before tracking&rdquo; and left off, because there
+        is no history to recover.
+      </p>
+      <p className="text-ui-text-muted mb-3 text-xs">
+        <span className="font-medium">Most of the way</span>: videos they got at
+        least 75% through. <span className="font-medium">Reached</span>: the
+        furthest point in each video, added up across videos; a rewatch is not
+        counted twice, so this is not time spent.{" "}
+        <span className="font-medium">No session</span>: we cannot link the
+        booking to a browser (for example, booked on a phone and watched on a
+        laptop), so they may have watched.{" "}
+        <span className="font-medium">Not tracked yet</span>: booked before we
+        started recording.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[52rem] text-sm">
@@ -202,8 +209,10 @@ function VideoPanel({ report }: { report: VideoEngagementReport }) {
     <section className={`${adminPanelClass} p-4`}>
       <h2 className={adminSectionTitleClass}>Where each video loses people</h2>
       <p className="text-ui-text-muted mt-1 mb-3 text-xs">
-        Counted over booked prospects only. Each column is how many got at least
-        that far, so the drop between two columns is where that video lost them.
+        Counts only people who booked a call. Each column is how many got at
+        least that far, so the drop between two columns is where that video lost
+        them. Avg reached is the average furthest point among those who opened
+        it.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[48rem] text-sm">

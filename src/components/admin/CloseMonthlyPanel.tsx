@@ -206,68 +206,71 @@ export function CloseMonthlyPanel({
         <h2 className={adminSectionTitleClass}>
           Month over month, by Close funnel
         </h2>
-        <p className="text-ui-text-subtle mt-1 text-xs">
-          Colour reads each rate against that column&rsquo;s own rate across the
-          months shown, so{" "}
-          <span className="text-ui-ok font-semibold">green</span> is better than
-          we normally do and{" "}
-          <span className="text-ui-bad font-semibold">red</span> is well below
-          it. A rate with fewer than {MIN_BOOKED_TO_COLOUR} booked calls behind
-          it stays grey rather than shouting.
+        <p className="text-ui-text-muted mt-1 max-w-[80ch] text-sm">
+          How many people each Close funnel booked each month, and what share of
+          them showed up, qualified and bought.
         </p>
-        <details className="group mt-2">
-          <summary className="text-ui-text-muted hover:text-ui-text cursor-pointer text-xs font-medium">
-            Where each column comes from
-          </summary>
-          <dl className="text-ui-text-subtle mt-2 grid max-w-[80ch] gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
-            <dt className="text-ui-text font-medium">Leads</dt>
-            <dd>
-              Form fills on our own site, one per person. Close only holds
-              people who booked, so this is the one column from our tables, and
-              it is blank for a source with no form behind it.
-            </dd>
-            <dt className="text-ui-text font-medium">Booked</dt>
-            <dd>
-              The lead&rsquo;s <em>first</em> sales call, by Close&rsquo;s
-              &ldquo;First Sales Call Booked Date&rdquo;, one row per lead,
-              leaving out leads now &ldquo;Canceled (by Lead)&rdquo; or
-              &ldquo;Outside the US&rdquo;.
-            </dd>
-            <dt className="text-ui-text font-medium">Show %</dt>
-            <dd>
-              &ldquo;First Call Show Up (Opp)&rdquo; = Yes &mdash; the outcome
-              field for that meeting. Not the call disposition, which mostly
-              describes a later follow-up or reschedule.
-            </dd>
-            <dt className="text-ui-text font-medium">Qual %</dt>
-            <dd>&ldquo;Qualified (Opp)&rdquo; = Yes, the rep&rsquo;s call.</dd>
-            <dt className="text-ui-text font-medium">CW %</dt>
-            <dd>
-              The lead&rsquo;s stage being &ldquo;Closed / Won&rdquo;. All three
-              rates are over booked, never over each other.
-            </dd>
-            <dt className="text-ui-text font-medium">Revenue</dt>
-            <dd>The Close deal value those won leads carry.</dd>
-          </dl>
-        </details>
+        <dl className="text-ui-text-subtle mt-3 grid max-w-[80ch] gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
+          <dt className="text-ui-text font-medium">Leads</dt>
+          <dd>
+            People who filled a form on our site, once each. Close only holds
+            people who booked, so this is the one column from our own site.
+          </dd>
+          <dt className="text-ui-text font-medium">Booked</dt>
+          <dd>
+            People whose first sales call is in that month (Close&rsquo;s
+            &ldquo;First Sales Call Booked Date&rdquo;), once each. Leads now
+            &ldquo;Canceled (by Lead)&rdquo; or &ldquo;Outside the US&rdquo; are
+            left out.
+          </dd>
+          <dt className="text-ui-text font-medium">Show %</dt>
+          <dd>
+            Share of booked people a rep logged as showing up (&ldquo;First Call
+            Show Up (Opp)&rdquo; = Yes). A call nobody logged is not counted, so
+            this is a minimum. The call outcome field is not used: it mostly
+            describes a later follow-up or reschedule.
+          </dd>
+          <dt className="text-ui-text font-medium">Qual %</dt>
+          <dd>
+            Qualified: share of booked people the rep marked qualified after the
+            call (&ldquo;Qualified (Opp)&rdquo; = Yes).
+          </dd>
+          <dt className="text-ui-text font-medium">CW % (closed-won)</dt>
+          <dd>
+            Share of booked people whose Close status is now &ldquo;Closed /
+            Won&rdquo;. All three rates are out of Booked, not out of each
+            other, so one can be higher than the one before it.
+          </dd>
+          <dt className="text-ui-text font-medium">Revenue</dt>
+          <dd>The Close deal value on those won leads.</dd>
+        </dl>
         <p className="text-ui-text-subtle mt-3 max-w-[80ch] text-xs">
-          Every column reads off one lead row, so a win counts in the month that
-          lead&rsquo;s call was <em>booked</em>, not the month the deal closed.
-          The sheet counts meeting activities rather than leads, so a lead who
-          rescheduled twice appears in it three times and its booked totals run
-          roughly 1.7&times; these across every source.
+          Each rate is coloured against the same column across the months shown:{" "}
+          <span className="text-ui-ok font-semibold">green</span> is at least
+          15% better than usual, <span className="text-ui-warn">amber</span> is
+          15&ndash;40% below it and{" "}
+          <span className="text-ui-bad font-semibold">red</span> is more than
+          40% below it. Grey means close to usual, or fewer than{" "}
+          {MIN_BOOKED_TO_COLOUR} booked calls behind the rate, too few to judge.
+        </p>
+        <p className="text-ui-text-subtle mt-2 max-w-[80ch] text-xs">
+          A win counts in the month of that person&rsquo;s first call, not the
+          month the deal closed. The sales floor&rsquo;s spreadsheet counts
+          meetings, not people: someone who rescheduled twice is three meetings
+          there and one person here, so its booked totals run about 1.7&times;
+          these for every funnel. Both are correct.
         </p>
         <p className="text-ui-text-subtle mt-2 text-xs">
           {report.mirrorSyncedAt ? (
             <>
-              Close mirror last synced{" "}
+              Our copy of Close last updated{" "}
               <time dateTime={report.mirrorSyncedAt}>
                 {new Date(report.mirrorSyncedAt).toLocaleString("en-US")}
               </time>
-              . It runs hourly.
+              . It updates every hour.
             </>
           ) : (
-            "The Close mirror has not recorded a sync time."
+            "Our copy of Close has no recorded update time."
           )}
           {report.leadsError ? (
             <span className="text-ui-bad">
@@ -278,9 +281,9 @@ export function CloseMonthlyPanel({
           ) : funnel.leadsFrom ? (
             <>
               {" "}
-              Form fills are held from {funnel.leadsFrom} onward only, so{" "}
-              {monthNameOf(funnel.leadsFrom)} is a partial month in the Leads
-              column and every month before it is blank.
+              We have form fills from {funnel.leadsFrom} on, so{" "}
+              {monthNameOf(funnel.leadsFrom)} is a part month in Leads and every
+              month before it is blank.
             </>
           ) : null}
         </p>
@@ -314,10 +317,14 @@ export function CloseMonthlyPanel({
 
       {immature.length > 0 ? (
         <p className="text-ui-text-subtle px-1 text-xs">
-          {immature.map((month) => month.label).join(", ")}{" "}
-          {immature.length === 1 ? "is" : "are"} younger than{" "}
-          {MATURE_AFTER_DAYS} days, so the closed-won and revenue columns there
-          are still filling in. Read them as a floor, not a result.
+          Still filling in: {immature.map((month) => month.label).join(", ")}{" "}
+          {immature.length === 1 ? "is" : "are"} less than {MATURE_AFTER_DAYS}{" "}
+          days past month end. Deals close weeks after the first call and count
+          in the month of that call, so CW % and Revenue there are still
+          climbing. Read them as a minimum, not a final result.
+          {months.some((month) => !month.complete)
+            ? " MTD means month to date: that month is still running, so its Booked is partial too."
+            : null}
         </p>
       ) : null}
 
@@ -405,14 +412,14 @@ export function CloseMonthlyPanel({
           </table>
         </div>
         <p className="text-ui-text-subtle border-ui-line border-t px-4 py-2.5 text-xs">
-          Booked = first calls. Show % and Qual % = share of those booked calls
-          a rep logged as held and as qualified. CW % = share that has closed
-          won so far. Revenue = the value Close carries on those wins.
+          A dash (&mdash;) means there is nothing to count: no form behind that
+          funnel, no form fills kept yet, or no booked calls to work a rate
+          from. A 0 or 0% is a real zero.
           {months.some((month) => month.excluded > 0) ? (
             <>
               {" "}
-              Excluded first calls (canceled by lead, outside the US, quiz
-              funnel):{" "}
+              First calls left out of Booked (canceled by the lead, outside the
+              US, or the quiz funnel):{" "}
               {months
                 .filter((month) => month.excluded > 0)
                 .map((month) => `${month.label} ${month.excluded}`)
@@ -478,7 +485,7 @@ function Cells({
         className={`${TD} border-ui-line border-l ${cell.leads === null ? "text-ui-text-subtle" : "text-ui-text-muted"}`}
         title={
           cell.leads === null
-            ? "No form behind this source, or before form fills were captured."
+            ? "No form behind this funnel, or before we kept form fills."
             : undefined
         }
       >
@@ -499,7 +506,9 @@ function Cells({
         {rate(cell.won, cell.booked)}
       </td>
       <td
-        className={`${TD} ${cell.revenue > 0 ? "text-ui-ok" : "text-ui-text-subtle"}`}
+        // Plain, not green: green on this grid means "better than usual",
+        // and revenue is not graded.
+        className={`${TD} ${cell.revenue > 0 ? "text-ui-text" : "text-ui-text-subtle"}`}
       >
         {money(cell.revenue)}
       </td>

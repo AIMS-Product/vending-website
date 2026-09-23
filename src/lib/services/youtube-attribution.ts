@@ -14,6 +14,7 @@ import {
   DEFAULT_ADMIN_ANALYTICS_RANGE,
   type AdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
+import { fetchShowIndex } from "@/lib/services/kpi-report-data";
 import {
   buildYouTubeAttribution,
   type BitlyClickRow,
@@ -104,12 +105,13 @@ export async function getYouTubeAttribution(
   const start = new Date(end.getTime() - days * DAY_MS);
   const startIso = start.toISOString();
 
-  const [leadRead, videos, clicks, pageViews] = await Promise.all([
+  const [leadRead, videos, clicks, pageViews, showIndex] = await Promise.all([
     // 30 days early so a repeat submission is recognised as the same lead.
     fetchLeads(client, lookbackStart(start).toISOString()),
     fetchVideos(client),
     fetchClicks(client, startIso),
     fetchVisits(client, startIso),
+    fetchShowIndex(client),
   ]);
 
   // Bounded at both ends: a custom range used to count every lead created
@@ -134,6 +136,9 @@ export async function getYouTubeAttribution(
       visitsConnected: pageViews.connected,
       visitsSource: pageViews.source,
       outcomesConnected: leadRead.outcomesConnected,
+      shows: showIndex
+        ? { byEmail: showIndex, today: now.toISOString().slice(0, 10) }
+        : null,
     }),
     range: {
       key: rangeKey,

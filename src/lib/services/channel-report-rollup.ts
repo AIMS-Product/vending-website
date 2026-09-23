@@ -313,6 +313,15 @@ const bookedByOwnAudience = (fact: ChannelFact) =>
   fact.source === "internal-webinar";
 
 /**
+ * A booking with nothing behind it anywhere, shown on the page as "skipped
+ * form": no lead and no registration or contact on the row, and not one of the
+ * in-event links whose audience the channel counted on a different row. The
+ * table and the confidence check both read this, so they cannot disagree.
+ */
+export const isSkippedFormBooking = (fact: ChannelFact) =>
+  fact.leads == null && fact.contacts == null && !bookedByOwnAudience(fact);
+
+/**
  * Book %, denominated on everyone the channel acquired rather than on site
  * leads alone.
  *
@@ -438,16 +447,7 @@ function rowFor(
       winPct: ofObservedPct(current, "won", "booked"),
     },
     directBooked: sumObserved(
-      // A booking with nothing behind it anywhere: no audience on the row, and not one of the
-      // in-event links whose audience the channel counted on a different row.
-      current
-        .filter(
-          (fact) =>
-            fact.leads == null &&
-            fact.contacts == null &&
-            !bookedByOwnAudience(fact),
-        )
-        .map((fact) => fact.booked),
+      current.filter(isSkippedFormBooking).map((fact) => fact.booked),
     ),
     costPerLead:
       spend != null && metrics.leads ? round1(spend / metrics.leads) : null,
@@ -521,7 +521,13 @@ export type SyncRun = Pick<
   "connector" | "started_at" | "finished_at" | "rows_written" | "error"
 >;
 
-export type SyncHealthStatus = "ok" | "skipped" | "failed" | "stale" | "never";
+export type SyncHealthStatus =
+  | "ok"
+  | "empty"
+  | "skipped"
+  | "failed"
+  | "stale"
+  | "never";
 
 export type SyncHealthRow = {
   connector: string;
@@ -532,8 +538,42 @@ export type SyncHealthRow = {
   note: string | null;
 };
 
+/** What each data feed is called on screen. Unknown ids show as themselves. */
+const CONNECTOR_LABELS: Record<string, string> = {
+  "ga4-visits": "GA4 visits",
+  leads: "Our lead forms",
+  "ghl-forms": "GHL forms",
+  "ghl-email": "GHL email",
+  "bitly-clicks": "Bitly clicks",
+  "metricool-posts": "Metricool posts",
+  "metricool-ads": "Metricool spend",
+  "youtube-analytics": "YouTube Analytics",
+  "webinar-ingest": "Webinar registrations",
+  "manychat-ingest": "ManyChat",
+  "close-lead-funnel": "Close outcomes",
+};
+
+export function connectorLabel(connector: string): string {
+  return CONNECTOR_LABELS[connector] ?? connector;
+}
+
 /** A connector is stale when its last run is older than this. Daily crons. */
 export const STALE_AFTER_HOURS = 36;
+
+/**
+ * A connector that runs on time, reports no error and writes nothing for this
+ * long is broken in a way the error column cannot show. Bitly did exactly
+ * that from September 2026: 0 rows a day, every run green, every Clicks cell
+ * blank. Two days so a genuinely quiet day never trips it; at least two runs so
+ * one empty run on its own never does either.
+ */
+export const EMPTY_AFTER_HOURS = 48;
+
+/**
+ * Feeds that legitimately write nothing for days: ad spend while campaigns are
+ * paused, webinar pushes between events. An empty run there is not a fault.
+ */
+const MAY_BE_QUIET = new Set(["metricool-ads", "webinar-ingest"]);
 
 /**
  * The latest run per connector, judged. `expected` lists connectors that
@@ -576,15 +616,44 @@ export function summariseSyncRuns(
         ? "failed"
         : ageHours > STALE_AFTER_HOURS
           ? "stale"
-          : "ok";
+          : writesNothing(runs, connector, now)
+            ? "empty"
+            : "ok";
     return {
       connector,
       status,
       finishedAt,
       rowsWritten: run.rows_written,
-      note: skipped ? run.error!.replace(/^skipped:\s*/, "") : run.error,
+      note: skipped
+        ? run.error!.replace(/^skipped:\s*/, "")
+        : status === "empty"
+          ? emptyNote(runs, connector)
+          : run.error,
     };
   });
+}
+
+function writesNothing(runs: SyncRun[], connector: string, now: Date) {
+  if (MAY_BE_QUIET.has(connector)) return false;
+  const since = now.getTime() - EMPTY_AFTER_HOURS * 60 * 60 * 1000;
+  const recent = runs.filter(
+    (run) =>
+      run.connector === connector &&
+      !run.error &&
+      new Date(run.started_at).getTime() >= since,
+  );
+  return recent.length >= 2 && recent.every((run) => run.rows_written === 0);
+}
+
+function emptyNote(runs: SyncRun[], connector: string): string {
+  const lastWrite = runs
+    .filter((run) => run.connector === connector && run.rows_written > 0)
+    .map((run) => run.started_at)
+    .sort()
+    .at(-1);
+  return lastWrite
+    ? `Runs without errors but has added nothing since ${lastWrite.slice(0, 10)}.`
+    : "Runs without errors but has not added anything in the last two days.";
 }
 
 // ---------------------------------------------------------------------------

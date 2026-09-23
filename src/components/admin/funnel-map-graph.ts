@@ -12,6 +12,8 @@
  * upward, so those two have to meet somewhere.
  */
 
+import { connectorLabel } from "@/lib/services/channel-report-rollup";
+
 export type NodeTone = "source" | "hub" | "site" | "store" | "external";
 
 export type Side = "left" | "right" | "top" | "bottom";
@@ -198,8 +200,8 @@ export const NODES: MapNode[] = [
     y: 1068,
     w: 320,
     h: 92,
-    title: "lead_submissions",
-    body: "UTMs, paid click ids and session, kept with the lead",
+    title: "Our lead record",
+    body: "Tracking tags, ad click ID and visit, saved with it",
     tone: "store",
     stage: "leads",
   },
@@ -254,8 +256,8 @@ export const NODES: MapNode[] = [
     y: 2104,
     w: 300,
     h: 88,
-    title: "channel_daily",
-    body: "One row per day per link. The only table this page reads",
+    title: "Daily channel table",
+    body: "One line per link per day. This page reads only this",
     tone: "store",
   },
   {
@@ -304,7 +306,7 @@ export const GROUP_BOXES: Array<{
     y: 1856,
     w: 914,
     h: 216,
-    label: "Connectors — each platform reports on its own surface, once a day",
+    label: "Data feeds — each platform reports on its own surface, once a day",
   },
 ];
 
@@ -325,23 +327,25 @@ export const CONNECTORS: Array<{
   connector: string;
   label: string;
   logo: string;
-}> = [
-  { connector: "ga4-visits", label: "GA4 visits", logo: "ga4" },
-  { connector: "leads", label: "Our lead forms", logo: "form" },
-  { connector: "ghl-forms", label: "GHL forms", logo: "ghl" },
-  { connector: "ghl-email", label: "GHL email", logo: "ghl" },
-  { connector: "bitly-clicks", label: "Bitly clicks", logo: "bitly" },
-  { connector: "metricool-posts", label: "Metricool posts", logo: "metricool" },
-  { connector: "metricool-ads", label: "Metricool spend", logo: "metricool" },
-  {
-    connector: "youtube-analytics",
-    label: "YouTube Analytics",
-    logo: "youtube",
-  },
-  { connector: "webinar-ingest", label: "vp-webinars", logo: "webinar" },
-  { connector: "manychat-ingest", label: "ManyChat", logo: "manychat" },
-  { connector: "close-lead-funnel", label: "Close outcomes", logo: "close" },
-];
+}> = (
+  [
+    ["ga4-visits", "ga4"],
+    ["leads", "form"],
+    ["ghl-forms", "ghl"],
+    ["ghl-email", "ghl"],
+    ["bitly-clicks", "bitly"],
+    ["metricool-posts", "metricool"],
+    ["metricool-ads", "metricool"],
+    ["youtube-analytics", "youtube"],
+    ["webinar-ingest", "webinar"],
+    ["manychat-ingest", "manychat"],
+    ["close-lead-funnel", "close"],
+  ] as const
+).map(([connector, logo]) => ({
+  connector,
+  label: connectorLabel(connector),
+  logo,
+}));
 
 export const EDGES: MapEdge[] = [
   { from: "link", to: "page", fromSide: "bottom", toSide: "top" },
@@ -416,7 +420,7 @@ export const EDGES: MapEdge[] = [
     fromSide: "left",
     toSide: "left",
     via: [{ x: 168, y: 1114 }],
-    label: "reconciled back onto the lead",
+    label: "matched back to the lead",
     labelAt: { x: 168, y: 1400 },
   },
 

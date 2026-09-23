@@ -18,12 +18,12 @@ import type { BookedPace } from "@/lib/services/booked-metrics-data";
  *
  * Every number carries its definition, because "booked today" had seven
  * defensible answers and the wrong one nearly went to the marketing lead. The
- * definition rides in the `Counts` column and the `title` tooltip, not in
- * paragraphs — the table is the artifact people read.
+ * definition rides in the `Counts` column and under each label, never only in
+ * a tooltip, which a phone never shows — the table is what people read.
  */
 
 const DASH = (
-  <span className="text-ui-text-subtle" title="Not observed">
+  <span className="text-ui-text-subtle" title="No data">
     —
   </span>
 );
@@ -122,7 +122,8 @@ export function BookedDefinitions({ pace }: { pace: BookedPace }) {
           Every booked number for {dayLabel(pace.day)}
         </h2>
         <p className="text-ui-text-subtle text-xs">
-          All correct, all different. Only the highlighted row is the pace goal.
+          Each counts something different, and all are correct. Only the
+          highlighted line counts toward the {DAILY_NEW_CALL_GOAL}-a-day goal.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -148,6 +149,9 @@ export function BookedDefinitions({ pace }: { pace: BookedPace }) {
                     className={`px-4 py-2.5 ${isPace ? "text-ui-text font-semibold" : "text-ui-text"}`}
                   >
                     {row.metric.label}
+                    <span className="text-ui-text-subtle mt-0.5 block text-xs font-normal">
+                      {row.metric.definition}
+                    </span>
                   </td>
                   <td className="text-ui-text px-3 py-2.5 text-right font-semibold tabular-nums">
                     {num(row.value)}
@@ -158,7 +162,7 @@ export function BookedDefinitions({ pace }: { pace: BookedPace }) {
                   <td className="text-ui-text-muted px-3 py-2.5">
                     {row.unavailableReason ? (
                       <span title={row.unavailableReason}>
-                        Not in this database
+                        Not in our data. {row.unavailableReason}
                       </span>
                     ) : (
                       row.metric.includes
@@ -170,6 +174,11 @@ export function BookedDefinitions({ pace }: { pace: BookedPace }) {
           </tbody>
         </table>
       </div>
+      <p className="text-ui-text-subtle border-ui-line border-t px-4 py-2.5 text-xs">
+        Booked on: counted on the day the booking was made, which is what
+        marketing produced that day. Lands on: counted on the day the call
+        happens, which is who the closers talk to that day.
+      </p>
       <Coverage result={pace.newBooked} />
     </section>
   );
@@ -181,20 +190,22 @@ function Coverage({ result }: { result: BookedMetricResult }) {
   const parts: string[] = [];
   if (coverage.unreviewed > 0) {
     parts.push(
-      `${coverage.unreviewed} held out as unclassified (${coverage.unreviewedNames.join(", ")})`,
+      `${coverage.unreviewed} left out because nobody has sorted their calendar type yet (${coverage.unreviewedNames.join(", ")})`,
     );
   }
   if (coverage.laneTwoExcluded > 0) {
-    parts.push(`${coverage.laneTwoExcluded} Lane 2 removed`);
+    parts.push(
+      `${coverage.laneTwoExcluded} sales reactivation (Lane 2) calls removed`,
+    );
   }
   if (coverage.noCloseMatch > 0) {
     parts.push(
-      `${coverage.noCloseMatch} with no Close lead, so channel unknown`,
+      `${coverage.noCloseMatch} counted with no Close lead, so the channel is unknown`,
     );
   }
   if (coverage.undatable > 0) {
     parts.push(
-      `${coverage.undatable} undatable across the whole window, in no daily number`,
+      `${coverage.undatable} across the whole window have no booking date, so they are in no daily number`,
     );
   }
   if (parts.length === 0) return null;
@@ -213,7 +224,9 @@ export function BookedAttribution({ pace }: { pace: BookedPace }) {
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>New calls booked, by channel</h2>
         <p className="text-ui-text-subtle text-xs">
-          Close lead by email first, then UTM. Outbound never carries a UTM.
+          The lead&rsquo;s funnel in Close (matched by email), or the
+          link&rsquo;s tracking tag (UTM) when there is no Close lead. Outbound
+          calls never carry a tracking tag.
         </p>
       </div>
       {pace.attribution.length === 0 ? (
@@ -228,7 +241,7 @@ export function BookedAttribution({ pace }: { pace: BookedPace }) {
                 <th className="px-4 py-2.5 font-semibold">Channel</th>
                 <th className="px-3 py-2.5 text-right font-semibold">Booked</th>
                 <th className="w-[38%] px-3 py-2.5 font-semibold">Share</th>
-                <th className="px-3 py-2.5 font-semibold">Resolved by</th>
+                <th className="px-3 py-2.5 font-semibold">Channel from</th>
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
@@ -255,8 +268,8 @@ export function BookedAttribution({ pace }: { pace: BookedPace }) {
                         row.via === "close-funnel"
                           ? "Close funnel"
                           : row.via === "utm"
-                            ? "UTM only"
-                            : "Unattributed"
+                            ? "Tracking tag"
+                            : "Unknown"
                       }
                     />
                   </td>
@@ -281,9 +294,9 @@ export function BookedForward({ pace }: { pace: BookedPace }) {
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>Already on the calendar</h2>
         <p className="text-ui-text-subtle text-xs">
-          Lands-on basis. Goal of {DAILY_CAPACITY_GOAL} a day is the capacity
-          dashboard&rsquo;s, and is a weak yardstick for days whose booking
-          window has barely opened.
+          Counted on the day each call happens. The goal of{" "}
+          {DAILY_CAPACITY_GOAL} a day comes from the call-capacity dashboard,
+          and means little for days so far out that few people have booked yet.
         </p>
       </div>
       <div className="overflow-x-auto">
@@ -349,8 +362,9 @@ export function BookedForward({ pace }: { pace: BookedPace }) {
         </table>
       </div>
       <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
-        Open slots are not available — no Calendly credentials in this
-        environment. Demand against goal, not against capacity.
+        Open slots are not shown because this site has no Calendly login to read
+        them, so this compares booked calls with the goal, not with how many
+        slots exist.
       </p>
     </section>
   );
@@ -377,7 +391,7 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
     >
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
         <h2 className={adminSectionTitleClass}>
-          Calendar classification is a draft
+          Calendar types are still a draft
         </h2>
         <AdminStatusBadge
           status="draft"
@@ -385,13 +399,18 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
           label={`${review.reviewed} of ${review.total} signed off`}
         />
       </div>
+      <p className="text-ui-text-subtle px-4 pt-3 text-xs">
+        Each Calendly calendar is sorted as a new call, follow-up, reschedule or
+        other type, and that decides which booked numbers it counts in.
+        Calendars nobody has signed off count under their draft type.
+      </p>
       {shown.length > 0 ? (
-        <div className="overflow-x-auto">
+        <div className="mt-3 overflow-x-auto">
           <table className="w-full text-[0.8125rem]">
             <thead>
               <tr className="bg-ui-canvas text-ui-text-subtle text-left text-[0.6875rem] font-semibold tracking-[0.06em] uppercase">
                 <th className="px-4 py-2.5 font-semibold">
-                  Calendar needing a ruling
+                  Calendar needing a decision
                 </th>
                 <th className="px-3 py-2.5 text-right font-semibold">Booked</th>
                 <th className="px-3 py-2.5 font-semibold">Drafted as</th>
@@ -421,11 +440,11 @@ export function BookedMappingReview({ pace }: { pace: BookedPace }) {
           </table>
           <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
             {hidden > 0
-              ? `${hidden} more ${hidden === 1 ? "calendar needs" : "calendars need"} a ruling, covering ${hiddenBookings.toLocaleString()} bookings. `
+              ? `${hidden} more ${hidden === 1 ? "calendar needs" : "calendars need"} a decision, covering ${hiddenBookings.toLocaleString()} bookings. `
               : ""}
             The &ldquo;Next Steps&rdquo; family is the big one: 987 bookings,
-            95.7% Reactivation Scrapers, behaving like Lane 2 first calls rather
-            than follow-ups. Evidence in
+            95.7% Reactivation Scrapers, behaving like sales reactivation (Lane
+            2) first calls rather than follow-ups. Evidence in
             .claude/specs/2026-09-14-calendly-event-type-review.md.
           </p>
         </div>

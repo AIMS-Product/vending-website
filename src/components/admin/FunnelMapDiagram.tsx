@@ -82,16 +82,16 @@ const HOW: Record<string, { title: string; body: string; logos?: string[] }> = {
   },
   clicks: {
     title: "They click a tagged link",
-    body: "Five UTMs on every link: source, medium, campaign, content, and term for the destination. An untagged link produces a lead nobody can credit.",
+    body: "Five tracking tags (UTMs) on every link: source, medium, campaign, content, and term for the destination. An untagged link produces a lead nobody can credit.",
   },
   visits: {
     title: "They land on the site",
-    body: "A landing or SEO page. GA4 records the session against the link's own tags.",
+    body: "A landing or SEO page. Google Analytics (GA4) records the visit against the link's own tags.",
     logos: ["website"],
   },
   leads: {
     title: "They identify themselves",
-    body: "The lead form, or the chatbot capturing mid-conversation. Stored with its origin and pushed to Close every 2 minutes.",
+    body: "The lead form, or the chatbot capturing details mid-conversation. Saved with where it came from and sent to Close every 2 minutes.",
     logos: ["chatbot", "form"],
   },
   booked: {
@@ -101,12 +101,12 @@ const HOW: Record<string, { title: string; body: string; logos?: string[] }> = {
   },
   showed: {
     title: "They turn up",
-    body: "Close decides: showed, no-show or cancelled. There is no attended field, so it is derived.",
+    body: "The rep logs in Close whether the person showed up for the first call (First Call Show Up = Yes).",
     logos: ["close"],
   },
   won: {
     title: "They buy",
-    body: "The Close opportunity, reconciled back onto the lead with its value.",
+    body: "The Close deal, matched back to the lead with its value.",
     logos: ["close"],
   },
 };
@@ -199,7 +199,7 @@ export function FunnelJourney({
       <Band
         eyebrow="2. The journey"
         title={`One person, left to right, ${rangeLabel.toLowerCase()}`}
-        caption="Each step shows the count that reached it and the share carried over from the step before. A share is measured only where both steps were seen on the same link, so the two sides are one population."
+        caption="Each step shows how many reached it and the share that came through from the step before. A share only uses links where both steps were counted, so both numbers describe the same people. The first steps have no share: platforms count their own views and clicks, which do not line up one to one with our visits."
         emphasis
       >
         <div className="overflow-x-auto pb-1">
@@ -249,7 +249,7 @@ export function FunnelJourney({
                 {stage.key === "showed" ? (
                   <Caveat>
                     Counts only calls a rep logged as a show in Close. A call
-                    nobody logged is not counted, so this is a floor.
+                    nobody logged is not counted, so this is a minimum.
                   </Caveat>
                 ) : null}
               </div>
@@ -263,11 +263,13 @@ export function FunnelJourney({
         title="Each platform reports on its own surface, once a day"
         caption={
           <>
-            Every connector writes one row per day per link into{" "}
-            <code className="text-ui-text">channel_daily</code>, the single
-            table this page reads. A connector that fails leaves its step
-            unobserved rather than writing a zero, which is why a dash above
-            matters.
+            Each data feed below adds one line per link per day to a single
+            daily table (<code className="text-ui-text">channel_daily</code>),
+            and this page reads only that table. When a feed fails, its step
+            shows a dash rather than a zero, which is why a dash above matters.
+            The dot is green when the feed ran fine, amber when it is out of
+            date or has stopped adding new data, red when it is failing and grey
+            when it has not run or was skipped.
           </>
         }
       >
@@ -287,7 +289,7 @@ export function FunnelJourney({
                   </p>
                   <p className="text-ui-text-subtle text-[0.625rem] leading-4 tabular-nums">
                     {run?.finishedAt
-                      ? `${run.rowsWritten.toLocaleString()} rows`
+                      ? `${run.rowsWritten.toLocaleString()} records`
                       : "never run"}
                   </p>
                 </div>
@@ -311,7 +313,7 @@ function StageCard({ stage }: { stage: FunnelStage }) {
       {stage.deltaPct != null ? (
         <p className="text-ui-text-subtle mt-0.5 text-[0.6875rem] leading-4 tabular-nums">
           {stage.deltaPct >= 0 ? "+" : ""}
-          {Math.round(stage.deltaPct)}% vs prior
+          {Math.round(stage.deltaPct)}% vs period before
         </p>
       ) : null}
     </div>
@@ -411,7 +413,7 @@ function StatusDot({ status }: { status: string }) {
       ? "bg-ui-ok"
       : status === "failed"
         ? "bg-ui-bad"
-        : status === "stale"
+        : status === "stale" || status === "empty"
           ? "bg-ui-warn"
           : "bg-ui-line-strong";
   return (

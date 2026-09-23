@@ -46,6 +46,7 @@ export default async function AdminOverviewPage({
   const { report } = channels;
   const moves = rankChannelMoves(report.rows);
   const canEdit = canEditAdmin(role);
+  const syncedSince = oldestSync(channels.syncHealth);
 
   // The funnel's own booked share, which is measured only on links carrying
   // both stages. Taken only when the stage above it really is Lead: when no
@@ -69,7 +70,11 @@ export default async function AdminOverviewPage({
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p className="text-ui-text-subtle text-xs">
           {channels.range.label} ({channels.range.startDay} to{" "}
-          {channels.range.endDay}). A dash means not observed, never zero.
+          {channels.range.endDay}).{" "}
+          {syncedSince ? (
+            <>Every data feed updated since {syncedSince}. </>
+          ) : null}
+          A dash means we have no data for it, which is different from zero.
         </p>
         <AnalyticsRangeTabs
           active={range}
@@ -116,9 +121,9 @@ export default async function AdminOverviewPage({
       ) : (
         <div className={`${adminCardClass} mb-5`}>
           <p className="text-ui-text-muted text-sm">
-            The channel spine is not connected yet, so there are no lead or
-            channel numbers to show. {overview.leadsThisWeek} leads arrived in
-            the last 7 days ({overview.leadsTotal} all time).
+            Channel reporting is not set up yet, so there are no lead or channel
+            numbers to show. {overview.leadsThisWeek} leads arrived in the last
+            7 days ({overview.leadsTotal} all time).
           </p>
         </div>
       )}
@@ -137,6 +142,30 @@ export default async function AdminOverviewPage({
       </div>
     </AdminShell>
   );
+}
+
+const SYNC_TIME = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Los_Angeles",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/**
+ * When the stalest healthy feed last finished, in Pacific time: every number
+ * on the page is at least this fresh. The newest would almost always be the
+ * hourly Close sync and say nothing about GA4 or Metricool.
+ */
+function oldestSync(
+  rows: readonly { status: string; finishedAt: string | null }[],
+): string | null {
+  const oldest = rows
+    .filter((row) => row.status === "ok" && row.finishedAt)
+    .map((row) => row.finishedAt!)
+    .sort()
+    .at(0);
+  return oldest ? `${SYNC_TIME.format(new Date(oldest))} PT` : null;
 }
 
 function singleParam(value: string | string[] | undefined): string | undefined {

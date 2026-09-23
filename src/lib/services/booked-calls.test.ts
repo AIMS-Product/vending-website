@@ -143,6 +143,18 @@ describe("buildBookedCalls", () => {
     });
   });
 
+  it("counts Reactivation Email as marketing, as the plan does", () => {
+    const report = buildBookedCalls({
+      bookings: [booking({ inviteeEmail: "a@x.com" })],
+      funnels: [{ email: "a@x.com", funnel: "Reactivation Email" }],
+      weekStarts,
+    });
+    expect(report.weeks[0]).toMatchObject({
+      marketing: 1,
+      reactivationSeen: 0,
+    });
+  });
+
   it("leaves a canceled booking out rather than reporting a number we cannot trust", () => {
     const report = buildBookedCalls({
       bookings: [booking(), booking({ status: "canceled" })],

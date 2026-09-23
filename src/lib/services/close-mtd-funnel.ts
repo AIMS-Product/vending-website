@@ -180,7 +180,7 @@ export function buildCloseMtdFunnel(input: {
         label: "Closed-won",
         count: wonDeals.length,
         population:
-          "Deals won in this month, whenever the call was booked. Not a subset of the booked cohort above.",
+          "Deals won in this month, whenever the call was booked. So these are not necessarily the same people as the booked calls above.",
         source: WON_SOURCE,
         ofBookedPct: null,
       },

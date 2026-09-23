@@ -54,8 +54,8 @@ export function FunnelMapTab({
     return (
       <div className={adminCardClass}>
         <p className="text-ui-text-muted text-sm">
-          The channel spine is not connected yet, so the map has no numbers to
-          show.
+          The daily channel data is not connected yet, so the map has no numbers
+          to show.
         </p>
       </div>
     );
@@ -76,7 +76,7 @@ export function FunnelMapTab({
         `${formatNumber(stageValue(node.stage))} ${node.stage === "visits" ? "visits" : node.stage}`;
     }
   }
-  metrics.close = `${formatNumber(stageValue("leads"))} leads pushed`;
+  metrics.close = `${formatNumber(stageValue("leads"))} leads sent to Close`;
   // Cohort, not calendar: the same basis the rail below uses, so a number does
   // not change meaning between the picture and the strip.
   metrics.outcome = `${formatNumber(actuals.showed)} showed · ${formatNumber(actuals.won)} won`;
@@ -142,8 +142,8 @@ export function FunnelMapTab({
       <p className="text-ui-text-muted max-w-4xl text-sm leading-6">
         How a stranger becomes a booked call, end to end. Every number is{" "}
         {channels.range.label.toLowerCase()}, read from the same tables the
-        Channels tab reads, so the two can never disagree. A dash means nobody
-        measured it, not zero.
+        Channels tab reads, so the two can never disagree. A dash means no data,
+        not zero.
       </p>
 
       <FunnelMapCanvas
@@ -154,6 +154,19 @@ export function FunnelMapTab({
       />
 
       <div className="text-ui-text-muted max-w-4xl space-y-2 text-xs leading-5">
+        <p>
+          Each percentage between two steps on the map is the share of people
+          who made it to the next step, with how many were lost.{" "}
+          <span className="text-ui-bad font-medium">Red</span> marks the step
+          that loses the most people,{" "}
+          <span className="text-ui-ok font-medium">green</span> the step that
+          keeps the highest share. The dot on each data source at the bottom is{" "}
+          <span className="text-ui-ok font-medium">green</span> when it ran
+          fine, <span className="text-ui-warn font-medium">amber</span> when it
+          is out of date or has stopped adding new data,{" "}
+          <span className="text-ui-bad font-medium">red</span> when it is
+          failing and grey when it has not run or was skipped.
+        </p>
         <p>{actualsBasis}</p>
         {cohort ? <CohortNote cohort={cohort} /> : null}
       </div>
@@ -186,19 +199,19 @@ function CohortNote({ cohort }: { cohort: Cohort }) {
   return (
     <p>
       Of {booked.toLocaleString()} calls booked in this range,{" "}
-      {coverage.showUp.known.toLocaleString()} are old enough to judge and carry
-      an answer
+      {coverage.showUp.known.toLocaleString()} have happened and have a show or
+      no-show logged
       {coverage.showUp.pct != null
-        ? ` (${Math.round(coverage.showUp.pct)}% of the cohort)`
+        ? ` (${Math.round(coverage.showUp.pct)}% of them)`
         : ""}
       .{" "}
       {pendingShow > 0
         ? `${pendingShow.toLocaleString()} are still too new to count. `
         : ""}
       {showUnlogged > 0
-        ? `${showUnlogged.toLocaleString()} have had their call and nobody logged the outcome, so they are left out of the rate rather than counted as a no-show. `
+        ? `${showUnlogged.toLocaleString()} have had their call with nothing logged, so they are left out of the rate rather than counted as a no-show. `
         : ""}
-      Every rate above is therefore an upper bound.
+      Every rate above is therefore a ceiling: the true figure may be lower.
     </p>
   );
 }
@@ -235,9 +248,9 @@ function GhlSection({
       <section className={adminCardClass}>
         <p className={adminEyebrowClass}>GoHighLevel</p>
         <p className="text-ui-text-muted mt-2 text-sm">
-          No GoHighLevel data yet. The ghl-email and ghl-forms connectors write
-          nothing until <code>GHL_API_KEY</code> and{" "}
-          <code>GHL_LOCATION_ID</code> are set.
+          No GoHighLevel data yet. The GoHighLevel email and form feeds stay
+          empty until <code>GHL_API_KEY</code> and <code>GHL_LOCATION_ID</code>{" "}
+          are set.
         </p>
       </section>
     );
@@ -248,11 +261,10 @@ function GhlSection({
       <p className={adminEyebrowClass}>Where the GoHighLevel data goes</p>
       <h3 className={`${adminSectionTitleClass} mt-1`}>GoHighLevel, in full</h3>
       <p className="text-ui-text-muted mt-2 max-w-3xl text-xs leading-5">
-        GHL is the one source with no row of its own on the Channels tab, and
-        that is deliberate. Its email sends carry no lead, so they show up as
-        reach under Email. Its form submissions are credited to the channel that
-        actually earned them, not to the tool that collected them. Both sides
-        are below.
+        GoHighLevel (GHL) has no line of its own on the Channels tab, on
+        purpose. Its email sends carry no lead, so they show up as reach under
+        Email. Its form fills are credited to the channel that earned them, not
+        to the tool that collected them. Both are below.
       </p>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -261,10 +273,10 @@ function GhlSection({
             Email workflows
           </h4>
           <p className="text-ui-text-subtle mt-0.5 text-xs leading-5">
-            {ghl.workflowCount} active workflows, snapshot {ghl.snapshotDay}.
-            GHL exposes lifetime totals only, so the {rangeLabel.toLowerCase()}{" "}
-            column is a day-over-day difference and starts the day after the
-            first snapshot.
+            {ghl.workflowCount} active workflows, last read {ghl.snapshotDay}.
+            GHL only gives all-time totals, so &ldquo;Sent in range&rdquo; is
+            worked out from the change day to day, and starts the day after we
+            first read it.
           </p>
           <p className="text-ui-text-muted mt-2 text-xs">
             {rangeLabel}: {formatNumber(ghl.inRange.sent)} sent ·{" "}
@@ -285,7 +297,7 @@ function GhlSection({
                     Clicked
                   </th>
                   <th className="px-2 py-1.5 text-right font-medium">
-                    Sent, range
+                    Sent in range
                   </th>
                 </tr>
               </thead>
@@ -318,13 +330,13 @@ function GhlSection({
 
         <div>
           <h4 className="text-ui-text text-[0.8125rem] font-semibold">
-            Lander forms
+            Landing page forms
           </h4>
           <p className="text-ui-text-subtle mt-0.5 text-xs leading-5">
             {formatNumber(ghl.inRange.formLeads)} leads in{" "}
             {rangeLabel.toLowerCase()}, each credited to the channel in the
-            right-hand column. Webinar registration forms are skipped here
-            because vp-webinars already counts them.
+            right-hand column. Webinar sign-up forms are left out here because
+            the webinar tracker (vp-webinars) already counts them.
           </p>
           <div className="border-ui-line rounded-ui mt-2 overflow-x-auto border">
             <table className="w-full text-xs">
@@ -371,9 +383,10 @@ function GhlSection({
       </div>
 
       <p className="text-ui-text-muted border-ui-line mt-4 border-t pt-3 text-xs leading-5">
-        The gap worth knowing about: links inside GHL emails carry no UTMs, so a
-        workflow that sends thousands of emails can only ever report sends and
-        clicks here. Until those links are tagged to the standard in{" "}
+        The gap worth knowing about: links inside GHL emails carry no tracking
+        tags (UTMs), so a workflow that sends thousands of emails can only ever
+        report sends and clicks here. Until those links are tagged to the
+        standard in{" "}
         <Link href="/admin/links" className={adminLinkClass}>
           Links
         </Link>

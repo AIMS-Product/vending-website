@@ -75,7 +75,7 @@ const METRICS: Metric[] = [
   },
   {
     key: "questions",
-    label: "Qs done %",
+    label: "Questions done %",
     value: (row) => row.rates.questionsCompleted,
     weight: (row) => row.questionsOffered,
     format: percent,
@@ -225,11 +225,16 @@ export function FunnelMonthlyTab({
             : metrics.map((entry) => entry.label).join(" · ")}{" "}
           by {data.grouping === "channel" ? "source" : "page"}, by month
         </h2>
+        <p className="text-ui-text-muted mt-1 text-sm">
+          Which {data.grouping === "channel" ? "sources" : "pages"} turn visits
+          into booked calls, and whether that is getting better. Each lead
+          counts in the month it arrived, along with its later call and sale.
+        </p>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          Green and red are the change against the month to the left, not a
-          target. A move is left uncoloured when it rests on fewer than{" "}
-          {MIN_WEIGHT} observations or is smaller than {FLAT_BAND}%, because
-          below that the arithmetic moves more than the funnel does.
+          Green and red compare each number with the month to its left, not a
+          target. A number stays uncoloured when it moved less than {FLAT_BAND}%
+          or rests on fewer than {MIN_WEIGHT} visits, leads or calls, because at
+          that size the change is noise.
           {data.grouping === "channel"
             ? " Open a source for every page and link under it."
             : " Open a page for the sources that sent it."}
@@ -242,12 +247,17 @@ export function FunnelMonthlyTab({
                   `${month.label} counts visits from ${month.visitsStart}`,
               )
               .join("; ")}
-            , where this site started capturing leads. Before that GA4 was
-            recording and we were not, so the whole month&rsquo;s sessions
-            against a few days&rsquo; leads would understate opt-in several
-            times over.
+            , the day this site started keeping leads. Google Analytics counted
+            visits before that, so the whole month&rsquo;s visits against a few
+            days&rsquo; leads would make opt-in look several times too low.
           </p>
         ) : null}
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Opt-in % is leads out of site visits. Questions done % is leads who
+          finished the form&rsquo;s questions, out of those shown them. Book %
+          is booked calls out of leads. Show % is calls a rep logged as showed,
+          out of booked calls with a show or no-show logged.
+        </p>
         <div className="mt-3 overflow-x-auto">
           <FreezeTableHead />
           <table className="w-full min-w-[52rem] text-[0.8125rem]">
@@ -327,8 +337,8 @@ export function FunnelMonthlyTab({
           <p className="text-ui-text-subtle mt-2 text-xs">
             {tailKeys.size} more{" "}
             {data.grouping === "channel" ? "sources" : "pages"} are hidden: they
-            never reached {TAIL_LEADS} leads in any month, so their rates move
-            entirely on single events.
+            never reached {TAIL_LEADS} leads in any month, so one person more or
+            less swings their rates.
           </p>
         ) : null}
       </section>
@@ -623,7 +633,7 @@ function Cell({
       } ${tone === "up" ? "text-ui-ok" : tone === "down" ? "text-ui-bad" : ""}`}
       title={
         tone === "flat" && value !== null && before !== null
-          ? "Change too small, or resting on too few observations, to call"
+          ? "Change too small, or based on too few people, to call"
           : undefined
       }
     >
@@ -698,17 +708,17 @@ function BeforeAfter({
     >
       <h2 className={adminEyebrowClass}>Since the funnel rebuild</h2>
       <p className="text-ui-text-subtle mt-1 text-xs">
-        {after.label} against {before.label} — the same weekdays a week apart,
-        because bookings are weekday-shaped. The rebuild shipped {changedOn}.
-        Far too short a window to conclude anything; it is here so the starting
-        point is on the record.
+        {after.label} against {before.label}: the same weekdays a week apart,
+        because bookings follow the day of the week. The funnel pages were
+        rebuilt on {changedOn}. This is far too short a window to conclude
+        anything; it is here to record the starting point.
       </p>
       {after.visitsEnd && after.visitsEnd < after.end ? (
         <p className="text-ui-text-subtle mt-1 text-xs">
           Visit counts in the later window stop at {after.visitsEnd}, so it
-          holds fewer days of traffic. Rates are unaffected — both sides of each
-          division use the same days — but do not read the visit totals against
-          each other.
+          holds fewer days of traffic. Rates are unaffected, because both
+          numbers in each rate use the same days, but do not compare the visit
+          totals.
         </p>
       ) : null}
       <div className="mt-3 overflow-x-auto">
@@ -790,46 +800,49 @@ function Caveats({ data }: { data: FunnelMonthlyReport }) {
       <ul className="text-ui-text-subtle mt-2 space-y-1.5 text-xs">
         <li>
           <strong className="text-ui-text">A dash is not a zero.</strong> It
-          means nothing was observed, or the group is too young to judge.
+          means no data, or the month is too recent to judge.
         </li>
         <li>
           <strong className="text-ui-text">
             Opt-in stops at {data.visitsThrough ?? "—"}.
           </strong>{" "}
-          GA4 reports a day late, so the visit rate is measured only over days
-          it has finished counting — on both sides of the division.
+          Google Analytics reports a day late, so opt-in only uses days it has
+          finished counting, for both visits and leads.
         </li>
         <li>
           <strong className="text-ui-text">
             Grouped by source, visits cannot tell paid from organic.
           </strong>{" "}
-          GA4 stores no medium on this table, so Google Ads traffic sits under
-          Organic search and Meta ad traffic under Meta. Leads are split
-          correctly because our own table keeps the medium. Read Opt-in % by
-          page, not by source.
+          Our visit data from Google Analytics does not record paid or organic,
+          so Google Ads traffic sits under Organic search and Meta ad traffic
+          under Meta. Leads are split correctly because our own lead records
+          keep it. Read Opt-in % by page, not by source.
         </li>
         <li>
           <strong className="text-ui-text">
             Half-filled forms are counted after contact details, not before.
           </strong>{" "}
-          The form writes a lead row at the first submit, so somebody who typed
-          and left before that leaves no trace anywhere.
-        </li>
-        <li>
-          <strong className="text-ui-text">Win % waits 30 days.</strong> The Won
-          count does not — a sale is a fact the day it happens.
+          The form saves a lead at the first submit, so someone who typed and
+          left before that leaves no trace anywhere.
         </li>
         <li>
           <strong className="text-ui-text">
-            Show rate covers{" "}
+            Won counts a sale the day it happens.
+          </strong>{" "}
+          Recent months keep rising as their leads buy. A win rate would wait 30
+          days after the call; the Won count does not.
+        </li>
+        <li>
+          <strong className="text-ui-text">
+            Show % covers{" "}
             {data.showCoverage.pct === null
               ? "—"
               : percent(data.showCoverage.pct)}{" "}
             of booked calls
           </strong>{" "}
-          ({data.showCoverage.known} of {data.showCoverage.total} old enough to
-          judge carry a yes/no in Close). The rest leave the denominator rather
-          than counting as no-shows.
+          ({data.showCoverage.known} of {data.showCoverage.total} calls that
+          have happened have a show or no-show logged in Close). Calls with
+          nothing logged are left out of Show % rather than counted as no-shows.
         </li>
       </ul>
     </section>
