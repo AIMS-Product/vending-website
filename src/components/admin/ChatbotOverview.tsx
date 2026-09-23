@@ -168,7 +168,7 @@ function KpiCards({
       icon: "message-square",
       label: `Conversations · ${range}d`,
       value: funnel.conversations,
-      caption: `${funnel.engaged} engaged (${funnel.engagedRatePct}%)`,
+      caption: `${funnel.engaged} engaged (${funnel.engagedRatePct}%)${leftOutCaption(funnel.excluded)}`,
       metric: thirty ? analytics.conversations30d : undefined,
       spark: thirty ? trend.map((r) => r.count) : undefined,
     },
@@ -182,13 +182,12 @@ function KpiCards({
     },
     {
       icon: "check",
-      // The headline counts every chat that ended on the calendar, which is
-      // not the same as the chatbot booking them -- a setter booking someone
-      // who chatted lands here too. The caption carries the chatbot's own
-      // number so the card cannot be read as sole credit.
+      // The headline counts every chat that ended on the calendar after the
+      // chat, which is not the same as the chatbot booking them. The caption
+      // splits it by who booked, so the card cannot be read as sole credit.
       label: `Calls booked · ${range}d`,
       value: funnel.booked,
-      caption: `${funnel.bookedBy.inChat} booked in the chat${analytics.attributionSplitTrustworthy ? "" : " (est.)"} · ${funnel.bookedRateOfCapturedPct}% of captured booked`,
+      caption: `${funnel.bookedBy.inChat} in the chat${analytics.attributionSplitTrustworthy ? "" : " (est.)"} · ${funnel.bookedBy.setter} by a setter after · ${funnel.bookedBy.unknown} elsewhere`,
       metric: thirty ? analytics.callsBooked30d : undefined,
       spark: thirty ? trend.map((r) => r.booked) : undefined,
       tone: "ok",
@@ -232,6 +231,17 @@ function KpiCards({
       ))}
     </section>
   );
+}
+
+/** " · 3 support, 1 already booked left out", or nothing. */
+function leftOutCaption(excluded: ChatbotFunnelWindow["excluded"]): string {
+  const parts = [
+    excluded.support ? `${excluded.support} support` : null,
+    excluded.bookedBeforeChat
+      ? `${excluded.bookedBeforeChat} already booked`
+      : null,
+  ].filter(Boolean);
+  return parts.length ? ` · ${parts.join(", ")} left out` : "";
 }
 
 function Delta({ metric }: { metric: ChatbotAnalyticsMetric }) {
@@ -348,8 +358,9 @@ function JourneyCard({
         <div>
           <h2 className={adminSectionTitleClass}>Conversation journey</h2>
           <p className="text-ui-text-muted mt-0.5 text-xs">
-            Everyone who started a chat in this window, followed through to a
-            booked call.
+            Every sales chat started in this window, followed through to a
+            booked call. Member support chats, and people whose call was booked
+            before they chatted, are left out.
           </p>
         </div>
         <Link
@@ -508,15 +519,20 @@ function TouchGrid({
             : ""}
         </p>
       ) : null}
-      {/* This grid can only ever hold calls the chat booked. A call a setter
-          booked for someone the bot had spoken to is the setter's, and lives
-          where it is credited to them. */}
+      {/* Only calls booked after the chat are here. A call already on the
+          calendar when they chatted (existing members, "cancel my call") is
+          left out, as are support chats. */}
       <p className="text-ui-text-muted mt-2 text-xs">
-        Calls a setter booked for someone who chatted are not counted here.{" "}
+        Only calls booked after the chat. &ldquo;Setter booked&rdquo; is the
+        setter&apos;s credit, not the chat&apos;s
+        {bookedBy.setterInferred
+          ? `; ${bookedBy.setterInferred} of those name the setter whose call or text in Close came last before the booking, not a setter entered in Close`
+          : ""}
+        .{" "}
         <Link href="/admin/bookings?chat=1" className="underline">
           Booked calls
         </Link>{" "}
-        shows those, credited to whoever set them.
+        lists each one.
       </p>
     </div>
   );
@@ -717,8 +733,16 @@ function NeedsYouCard({ kpis }: { kpis: ChatbotInsightsKpis }) {
       chip: "Follow-up",
       tone: "accent" as const,
       count: kpis.followUpTasksDueTodayCount,
-      label: "due today, drafted and waiting",
+      label: "sales follow-ups due today, drafted and waiting",
       action: "Review",
+      href: "/admin/chatbot/insights",
+    },
+    {
+      chip: "Hand-off",
+      tone: "warn" as const,
+      count: kpis.handoffsOpenCount,
+      label: "people promised a teammate (callback or support)",
+      action: "Open",
       href: "/admin/chatbot/insights",
     },
     {

@@ -22,6 +22,7 @@ export class ChatbotAdminError extends Error {
 
 import {
   attributionSourceOf,
+  creditedSetter,
   fetchBookedLeadIds,
   effectiveLeadId,
   fetchLeadCredit,
@@ -387,7 +388,8 @@ async function fetchTouches(
       const stamp = stamps.get(row.id);
       const last = resolveBookingCredit({
         attributionSource: stamp ? attributionSourceOf(stamp) : null,
-        bookedBySetter: lead?.setter ?? null,
+        // Same rule as the dashboard grid, so a row and the grid agree.
+        bookedBySetter: creditedSetter(lead),
       });
       const first = resolveFirstTouch({
         conversationCreatedAt: row.created_at,
@@ -554,7 +556,8 @@ export type AdminChatbotBooking = {
 
 /** Delivery receipt for the hand-off email, shown at the foot of the transcript. */
 export type AdminChatbotHandoffEmail =
-  { sentAt: string; to: string } | { sentAt: null; error: string };
+  | { sentAt: string; to: string }
+  | { sentAt: null; error: string };
 
 export type AdminChatbotConversationDetail = {
   id: string;
