@@ -4,6 +4,10 @@ import { describe, expect, it, vi } from "vitest";
 import { ResourcePageRenderer } from "./ResourcePageRenderer";
 import { pageContentSchema, type PageContent } from "@/lib/page-builder/blocks";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
+import {
+  financeTemplatesLandingPage,
+  roadmapLandingPage,
+} from "@/lib/content/lead-magnets";
 
 vi.mock("@/app/apply/actions", () => ({
   submitApplicationLead: vi.fn(),
@@ -198,6 +202,21 @@ function page(content: PageContent): PublishedSeoPage {
 }
 
 describe("ResourcePageRenderer", () => {
+  it("puts the newsletter notice under the roadmap form and nowhere else", () => {
+    const render = (resource: PublishedSeoPage) =>
+      renderToStaticMarkup(
+        createElement(ResourcePageRenderer, {
+          page: resource,
+          idempotencyKeyPrefix: "test",
+        }),
+      );
+
+    expect(render(roadmapLandingPage)).toContain(
+      "The Route, our weekly newsletter. Unsubscribe anytime.",
+    );
+    expect(render(financeTemplatesLandingPage)).not.toContain("The Route");
+  });
+
   it("shows preview-only guidance for empty draft previews", () => {
     const html = renderToStaticMarkup(
       createElement(ResourcePageRenderer, {

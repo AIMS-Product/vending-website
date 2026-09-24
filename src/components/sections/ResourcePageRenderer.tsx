@@ -1,6 +1,7 @@
 import { submitApplicationLead } from "@/app/apply/actions";
 import { submitQualificationLead } from "@/app/qualification-intake/actions";
 import { PublicLeadForm } from "@/components/forms/PublicLeadForm";
+import { newsletterNoticeForPath } from "@/lib/content/lead-magnets";
 import { ResourcePageContentView } from "@/components/sections/ResourcePageContent";
 import { flattenBlocks, pageChromeSettings } from "@/lib/page-builder/blocks";
 import type { LeadAttribution } from "@/lib/lead-attribution";
@@ -89,6 +90,7 @@ export function ResourcePageRenderer({
                     layout={layout}
                     submitLabel={block.props.submitLabel}
                     bookingRedirectUrl={bookingRedirectUrl}
+                    notice={newsletterNoticeForPath(attribution.landing_path)}
                   />
                 );
               }

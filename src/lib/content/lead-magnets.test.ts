@@ -5,6 +5,9 @@ import {
   roadmapLandingPage,
   roadmapThankYouPage,
   financeTemplatesThankYouPage,
+  financeTemplatesLandingPage,
+  newsletterNoticeForPath,
+  ROADMAP_NEWSLETTER_NOTICE,
 } from "@/lib/content/lead-magnets";
 import { flattenBlocks, pageContentSchema } from "@/lib/page-builder/blocks";
 import { CODED_ROUTE_PATHS } from "@/lib/page-builder/coded-route-paths";
@@ -36,6 +39,25 @@ describe("lead magnet pages", () => {
     expect(resolved.completionRedirectPath).toBe(
       roadmapThankYouPage.route_path,
     );
+  });
+
+  // Downloading the roadmap subscribes the person to The Route, so its form
+  // must say so. The finance templates share the form id and must not.
+  it("shows the newsletter notice on the roadmap page only", () => {
+    expect(newsletterNoticeForPath(roadmapLandingPage.route_path)).toBe(
+      ROADMAP_NEWSLETTER_NOTICE,
+    );
+    expect(newsletterNoticeForPath("/resources/roadmap/")).toBe(
+      ROADMAP_NEWSLETTER_NOTICE,
+    );
+    expect(
+      newsletterNoticeForPath(financeTemplatesLandingPage.route_path),
+    ).toBeUndefined();
+    expect(
+      newsletterNoticeForPath(roadmapThankYouPage.route_path),
+    ).toBeUndefined();
+    expect(newsletterNoticeForPath("")).toBeUndefined();
+    expect(newsletterNoticeForPath(null)).toBeUndefined();
   });
 
   // A thank-you page is reachable by anyone with the URL, so it must never be
