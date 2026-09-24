@@ -25,7 +25,10 @@ import {
   isBookingIntentForm,
   queueWarmReplyActivity,
 } from "@/lib/close/warm-reply-activity";
-import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
+import {
+  LEAD_MAGNET_FORM_ID,
+  newsletterNoticeForPath,
+} from "@/lib/content/lead-magnets";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
 import { queueGhlForward, type LeadCaptureType } from "@/lib/ghl/forward";
 import { getLeadForwardSettings } from "@/lib/services/lead-forward-settings";
@@ -167,6 +170,14 @@ export async function createQualificationIntakeSession(
     latest_qualification_session_id: session.id,
     latest_qualification_started_at: nowIso,
     lifecycle_status: "qualification_pending",
+    // The roadmap form tells people a download also gets them The Route, so a
+    // submit from that page is a subscription. Same check that shows the line
+    // (ResourcePageRenderer), keyed on landing_path because source_path can
+    // come from the URL. Its own column: lifecycle "newsletter_subscribed"
+    // would drop this lead from lead counts and the no-book alert.
+    ...(newsletterNoticeForPath(intake.landingPath)
+      ? { newsletter_subscribed_at: nowIso }
+      : {}),
     // Only reset the sync state for a lead that has none. On a re-submit the
     // lead is reused and its create event already exists, so the enqueue below
     // hits the dedupe key and inserts nothing — forcing "pending" here would

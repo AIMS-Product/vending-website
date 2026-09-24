@@ -64,6 +64,7 @@ export async function markNewsletterSubscription(
   });
   await updateLead(client, context.session.lead_submission_id, {
     lifecycle_status: "newsletter_subscribed",
+    newsletter_subscribed_at: nowIso,
     qualification_summary: normalized,
     close_sync_status: "pending",
     close_sync_next_retry_at: nowIso,

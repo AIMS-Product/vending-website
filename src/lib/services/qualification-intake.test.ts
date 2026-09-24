@@ -75,6 +75,7 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     notification_sent_at: null,
     notification_error: null,
     lifecycle_status: "contact_captured",
+    newsletter_subscribed_at: null,
     qualification_summary: {},
     latest_qualification_form_id: null,
     latest_qualification_form_version_id: null,
@@ -639,6 +640,63 @@ describe("createQualificationIntakeSession", () => {
       `lead_create_or_update:${first.leadId}`,
     );
   });
+
+  // The roadmap form tells people a download also gets them The Route
+  // (ROADMAP_NEWSLETTER_NOTICE), so only a submit from that page records it.
+  // lifecycle_status must stay a lead's: "newsletter_subscribed" there drops
+  // the row from lead counts and the no-book alert.
+  it.each([
+    ["the roadmap page", { landingPath: "/resources/roadmap" }, true],
+    [
+      "the roadmap page with a trailing slash",
+      { landingPath: "/resources/roadmap/" },
+      true,
+    ],
+    [
+      "the finance templates",
+      { landingPath: "/resources/finance-templates" },
+      false,
+    ],
+    // source_path can be set from ?source= in the URL, so it proves nothing
+    // about which form the person saw.
+    [
+      "another page claiming the roadmap as its source",
+      { sourcePath: "/resources/roadmap", landingPath: "/contact" },
+      false,
+    ],
+    ["no landing path", {}, false],
+  ])(
+    "newsletter subscription from %s is %s",
+    async (_name, paths, subscribes) => {
+      const fake = buildClient();
+
+      await createQualificationIntakeSession(
+        {
+          fullName: "Ada Buyer",
+          email: "ada@example.com",
+          phone: "555-0100",
+          ...paths,
+        },
+        {
+          client: fake.client,
+          now: () => new Date("2026-09-23T12:00:00.000Z"),
+          tokenFactory: () => "raw_test_token",
+        },
+      );
+
+      const patch = fake.state.leadUpdates.find(
+        (update) => "lifecycle_status" in update.patch,
+      )?.patch;
+      expect(patch?.lifecycle_status).toBe("qualification_pending");
+      if (subscribes) {
+        expect(patch?.newsletter_subscribed_at).toBe(
+          "2026-09-23T12:00:00.000Z",
+        );
+      } else {
+        expect(patch).not.toHaveProperty("newsletter_subscribed_at");
+      }
+    },
+  );
 
   it("does not reset an already-synced lead back to pending on a re-submit", async () => {
     // The enqueue below is deduped away on a re-submit, so nothing will ever
