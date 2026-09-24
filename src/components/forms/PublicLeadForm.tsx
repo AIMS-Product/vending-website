@@ -119,6 +119,9 @@ type PublicLeadFormProps = {
   // values. Production always starts idle and empty.
   initialFinishState?: PublicLeadActionState;
   initialSubmittedValues?: Record<string, string>;
+  // A line under the submit button naming anything else the submit signs the
+  // person up for (the roadmap's newsletter notice). Omitted everywhere else.
+  notice?: string;
 };
 
 export type PublicLeadFormAction = (
@@ -158,6 +161,7 @@ export function PublicLeadForm({
   initialState = initialLeadActionState,
   initialFinishState = initialLeadActionState,
   initialSubmittedValues = {},
+  notice,
 }: PublicLeadFormProps) {
   const router = useRouter();
   const [submittedValues, setSubmittedValues] = useState<
@@ -689,6 +693,9 @@ export function PublicLeadForm({
         wide={simpleContact}
       />
 
+      {notice && (
+        <p className="text-xs leading-5 font-medium text-slate-500">{notice}</p>
+      )}
       <PrivacyAssurance intent={intent} />
     </form>
   );

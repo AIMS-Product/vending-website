@@ -18,6 +18,20 @@ import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 // Magnet). Both magnets share it.
 export const LEAD_MAGNET_FORM_ID = "2d3b9fbc-c270-4cd4-a970-97aeb95cd5ec";
 
+/**
+ * The line under the roadmap's Download button telling people a download also
+ * gets them The Route. Keyed by page path, not form id: the finance templates
+ * share LEAD_MAGNET_FORM_ID and do not subscribe anyone.
+ */
+export const ROADMAP_NEWSLETTER_NOTICE =
+  "You'll also get The Route, our weekly newsletter. Unsubscribe anytime.";
+
+export function newsletterNoticeForPath(path: string | null | undefined) {
+  return path?.replace(/\/$/, "").toLowerCase() === "/resources/roadmap"
+    ? ROADMAP_NEWSLETTER_NOTICE
+    : undefined;
+}
+
 const ROADMAP_PDF =
   "https://drive.google.com/file/d/1iORHjmg_UzU3tr5EKcEBp8XIQ-8qoNSm/view";
 const FINANCE_SHEET =
