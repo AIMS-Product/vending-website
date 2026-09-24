@@ -77,6 +77,7 @@ function makeLead(overrides: Partial<LeadRow> = {}): LeadRow {
     notification_sent_at: null,
     notification_error: null,
     lifecycle_status: "qualification_pending",
+    newsletter_subscribed_at: null,
     qualification_summary: {
       status: "qualification_pending",
       state_market: "SA",

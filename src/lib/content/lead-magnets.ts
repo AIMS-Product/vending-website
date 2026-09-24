@@ -22,6 +22,10 @@ export const LEAD_MAGNET_FORM_ID = "2d3b9fbc-c270-4cd4-a970-97aeb95cd5ec";
  * The line under the roadmap's Download button telling people a download also
  * gets them The Route. Keyed by page path, not form id: the finance templates
  * share LEAD_MAGNET_FORM_ID and do not subscribe anyone.
+ *
+ * The same check decides both that the line shows (ResourcePageRenderer) and
+ * that the submit records a subscription (qualification-intake.ts), so nobody
+ * is subscribed from a form that did not tell them.
  */
 export const ROADMAP_NEWSLETTER_NOTICE =
   "You'll also get The Route, our weekly newsletter. Unsubscribe anytime.";

@@ -152,3 +152,34 @@ Then re-run the audit so the first verdicts are stored:
 curl -H "Authorization: Bearer $CRON_SECRET" \
   https://www.vendingpreneurs.com/api/admin/data-audit/run
 ```
+
+## 7. Newsletter subscriptions (20260923230000)
+
+Separate paste, safe to run twice. **Apply before merging the roadmap
+newsletter PR**: until this column exists, every roadmap download and
+/newsletter signup fails its lead update. It also marks every existing
+/newsletter subscriber. Past roadmap downloads are left alone, because their
+form never mentioned the newsletter.
+
+```sql
+alter table public.lead_submissions
+  add column if not exists newsletter_subscribed_at timestamptz;
+
+comment on column public.lead_submissions.newsletter_subscribed_at is
+  'When this person agreed to get The Route (/newsletter signup, or a roadmap download whose form showed the newsletter notice). Null = not subscribed. Independent of lifecycle_status.';
+
+-- Existing /newsletter subscribers, from the consent their signup recorded.
+-- Roadmap downloads before this change are deliberately NOT backfilled: their
+-- form never told them about the newsletter.
+update public.lead_submissions as lead
+set newsletter_subscribed_at = consent.first_consent_at
+from (
+  select lead_submission_id, min(consent_accepted_at) as first_consent_at
+  from public.qualification_sessions
+  where form_id = '7f5d8f76-2e5a-4e50-9b6f-8e92b3d9a401' -- NEWSLETTER_FORM_ID
+    and consent_accepted_at is not null
+  group by lead_submission_id
+) as consent
+where lead.id = consent.lead_submission_id
+  and lead.newsletter_subscribed_at is null;
+```
