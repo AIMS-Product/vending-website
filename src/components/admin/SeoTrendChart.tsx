@@ -15,7 +15,6 @@ export type ChartSeries = {
   values: Array<number | null>;
 };
 
-const W = 1000;
 const H = 240;
 const PAD = { top: 14, right: 14, bottom: 28, left: 44 };
 
@@ -26,6 +25,8 @@ export function SeoTrendChart({
   stacked = false,
   invert = false,
   ariaLabel,
+  width: W = 1000,
+  grain = "toggle",
 }: {
   days: string[];
   series: ChartSeries[];
@@ -34,8 +35,12 @@ export function SeoTrendChart({
   /** Position: 1 at the top. */
   invert?: boolean;
   ariaLabel: string;
+  /** viewBox width: narrower for half-width cards so labels keep their size. */
+  width?: number;
+  /** "fixed" hides the daily / weekly toggle (points are already weeks). */
+  grain?: "toggle" | "fixed";
 }) {
-  const [weekly, setWeekly] = useState(days.length > 120);
+  const [weekly, setWeekly] = useState(grain === "toggle" && days.length > 120);
   const [hover, setHover] = useState<number | null>(null);
   const view = useMemo(
     () => (weekly ? toWeeks(days, series, invert) : { days, series }),
@@ -209,7 +214,7 @@ export function SeoTrendChart({
           }}
         >
           <p className="text-ui-text font-semibold">
-            {weekly ? "Week of " : ""}
+            {weekly || grain === "fixed" ? "Week of " : ""}
             {formatDay(view.days[active], true)}
           </p>
           {view.series.map((s) => (

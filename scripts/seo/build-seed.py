@@ -65,8 +65,8 @@ for path in sorted(glob.glob(os.path.join(SRC, "02-p1-drafts/*.md"))):
     text = open(path).read()
     m = re.match(r"\d+-(hub(\d)|spoke([\d.]+))", name)
     pid = f"HUB {m.group(2)}" if m.group(2) else m.group(3).rstrip(".")
-    flags = [re.sub(r"\s+", " ", x.group(0)).strip(" >*|")
-             for x in re.finditer(r"[^\n]{0,80}VERIFY[^\n]{0,160}", text)]
+    flags = [re.sub(r"\s+", " ", x.group(0).replace("**", "")).strip(" >*|")
+             for x in re.finditer(r"[^\n]{0,80}VERIFY[^\n]{0,280}", text)]
     wc = re.search(r"Word count \(body\) \| ([\d,]+)", text)
     drafts[pid] = {"file": name, "flags": flags, "words": num(wc.group(1)) if wc else None}
 

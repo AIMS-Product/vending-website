@@ -559,7 +559,6 @@ export function SeoPlanTab({
   const p1 = plan.pieces.filter(
     (p) => p.priority === "P1" && !p.notes?.startsWith("Same page"),
   );
-  const chartDays = plan.burnUp.map((b) => `W${b.week}`);
   return (
     <div className="space-y-5">
       <AdminMetricStrip columns={4}>
@@ -593,7 +592,7 @@ export function SeoPlanTab({
           <h2 className="text-ui-text text-sm font-semibold">
             Production vs plan
           </h2>
-          <BurnUp rows={plan.burnUp} labels={chartDays} />
+          <BurnUp rows={plan.burnUp} />
         </section>
         <section className={adminCardClass}>
           <h2 className="text-ui-text text-sm font-semibold">Hub coverage</h2>
@@ -723,19 +722,12 @@ export function SeoPlanTab({
   );
 }
 
-function BurnUp({
-  rows,
-  labels,
-}: {
-  rows: ContentPlan["burnUp"];
-  labels: string[];
-}) {
+function BurnUp({ rows }: { rows: ContentPlan["burnUp"] }) {
   // Weeks as pseudo-days so the shared chart can draw them.
   const start = Date.parse("2026-09-28T00:00:00Z");
   const days = rows.map((r) =>
     new Date(start + (r.week - 1) * 7 * 86_400_000).toISOString().slice(0, 10),
   );
-  void labels;
   return (
     <SeoTrendChart
       ariaLabel="Pieces planned vs live, cumulative by week"
@@ -1071,6 +1063,22 @@ function NewTaskForm() {
 }
 
 // ------------------------------------------------------------------ Social
+
+const NETWORK_NAMES: Record<string, string> = {
+  facebook: "Facebook",
+  instagram: "Instagram",
+  linkedin: "LinkedIn",
+  tiktok: "TikTok",
+  twitter: "X",
+  youtube: "YouTube",
+};
+
+/** Each value as a share of the series' own average (average = 100). */
+function indexed(values: number[]): number[] {
+  const nonZero = values.filter((v) => v > 0);
+  const mean = nonZero.reduce((s, v) => s + v, 0) / (nonZero.length || 1);
+  return values.map((v) => (mean ? Math.round((v / mean) * 100) : 0));
+}
 
 export function SeoSocialTab({
   data,

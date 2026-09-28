@@ -108,12 +108,13 @@ describe("page triggers", () => {
     );
   });
 
-  it("ignores the home page and other hosts", () => {
+  it("ignores the home page, legal pages and other hosts", () => {
     const busy = (page: string) =>
       days(56, 0, (i) => ({ impressions: i < 28 ? 5 : 10, position: 7 }), page);
     const pageDays = [
       ...busy("https://www.vendingpreneurs.com/"),
       ...busy("https://community.vendingpreneurs.com/x"),
+      ...busy("https://www.vendingpreneurs.com/privacy"),
     ];
     expect(evaluateTriggers({ ...base, pageDays })).toEqual([]);
   });

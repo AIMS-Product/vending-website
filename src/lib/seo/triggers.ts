@@ -7,7 +7,8 @@
  * 100+ impressions in the current window, and never fire on a page Google
  * first showed less than 6 weeks ago (Kody: leave new pages alone).
  *
- * Scope: every page on www.vendingpreneurs.com except the home page, not only
+ * Scope: every page on www.vendingpreneurs.com except the home page and legal
+ * pages, not only
  * /resources/ (none are live yet, and the /news/ pages hold the traffic).
  */
 
@@ -75,6 +76,14 @@ export const PLAYBOOK: Record<TriggerCode, string> = {
 const FLOOR = 100;
 const NEW_PAGE_DAYS = 42;
 const SITE_HOST = "www.vendingpreneurs.com";
+/** Pages nobody optimizes for search: legal and account pages. */
+const EXCLUDED_PATHS = new Set([
+  "/",
+  "/privacy",
+  "/terms",
+  "/spam-policy",
+  "/login",
+]);
 
 export function evaluateTriggers(input: {
   asOf: string;
@@ -353,7 +362,7 @@ function pct(now: number, before: number): number | null {
 function inScope(page: string): boolean {
   try {
     const url = new URL(page);
-    return url.hostname === SITE_HOST && url.pathname !== "/";
+    return url.hostname === SITE_HOST && !EXCLUDED_PATHS.has(url.pathname);
   } catch {
     // Search Console only reports absolute URLs; anything else is not a page.
     return false;

@@ -63,7 +63,13 @@ export async function getContentPlan(
       p,
     ]),
   );
-  const base = (pieces.data ?? []).map((piece) => {
+  const ordered = [...(pieces.data ?? [])].sort(
+    (a, b) =>
+      (a.sequence_week ?? 99) - (b.sequence_week ?? 99) ||
+      a.hub - b.hub ||
+      a.id.localeCompare(b.id, "en", { numeric: true }),
+  );
+  const base = ordered.map((piece) => {
     const page = bySlug.get(piece.slug);
     const live = page?.status === "published";
     return {
