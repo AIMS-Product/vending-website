@@ -8,7 +8,7 @@ import {
   attributeBooking,
   attributionFor,
   BOOKED_METRICS,
-  capacityByChannel,
+  callsByChannel,
   dayKeyIn,
   readBookedMetric,
   UNATTRIBUTED_LABEL,
@@ -27,6 +27,7 @@ function booking(overrides: Partial<BookingRow> = {}): BookingRow {
     bookedAt: "2026-09-14T18:00:00.000Z",
     eventStartAt: "2026-09-16T15:00:00.000Z",
     utmSource: null,
+    utmMedium: null,
     ...overrides,
   };
 }
@@ -401,53 +402,80 @@ describe("dayKeyIn caching", () => {
   });
 });
 
-describe("capacityByChannel", () => {
+describe("callsByChannel", () => {
   const days = ["2026-09-15", "2026-09-16", "2026-09-17"];
   const followUp = EVENT_TYPE_ENTRIES.find((e) => e.class === "follow_up")!;
+  // All booked 9/14 6pm Eastern unless overridden; land 9/16 11am Eastern.
+  const bookings = [
+    booking(), // Website (Close), lands 9/16
+    booking({ inviteeEmail: "yt@example.com" }), // YouTube (Close), 9/16
+    booking({
+      inviteeEmail: "YT@example.com", // same person, same day
+      eventStartAt: "2026-09-16T18:00:00.000Z",
+    }),
+    booking({
+      inviteeEmail: "yt@example.com",
+      bookedAt: "2026-09-15T14:00:00.000Z",
+      eventStartAt: "2026-09-18T01:00:00.000Z", // 9/17 9pm Eastern
+    }),
+    booking({ inviteeEmail: "nobody@example.com" }), // no trace anywhere
+    booking({ inviteeEmail: "tagged@example.com", utmSource: "webinar" }),
+    booking({ inviteeEmail: "former@example.com" }), // site form: Instagram
+    booking({ inviteeEmail: "lane2@example.com" }),
+    booking({ status: "canceled", bookedAt: "2026-09-16T14:00:00.000Z" }),
+    booking({
+      eventName: followUp.name,
+      eventTypeUri: followUp.eventTypeUris[0] ?? null,
+    }),
+    booking({ eventName: "Never Reviewed", eventTypeUri: null }),
+    booking({ eventStartAt: "2026-09-20T15:00:00.000Z" }), // off-grid
+  ];
+  const funnels = [
+    funnel(),
+    funnel({ email: "yt@example.com", funnel: "YouTube" }),
+    funnel({ email: "lane2@example.com", funnel: "Sales Reactivation" }),
+    funnel({ email: "tagged@example.com", funnel: null }),
+  ];
+  const input = {
+    bookings,
+    funnels,
+    timeZone: "America/New_York",
+    siteChannels: new Map([
+      ["former@example.com", "Instagram"],
+      ["buyer@example.com", "YouTube"], // Close funnel wins over this
+    ]),
+  };
 
-  it("counts new calls on the day they land, by channel, Lane 2 dropped", () => {
-    const grid = capacityByChannel(
-      {
-        bookings: [
-          booking(), // Website, lands 9/16
-          booking({ inviteeEmail: "yt@example.com" }), // YouTube, 9/16
-          booking({
-            inviteeEmail: "YT@example.com", // same person, same day: once
-            eventStartAt: "2026-09-16T18:00:00.000Z",
-          }),
-          booking({
-            inviteeEmail: "yt@example.com",
-            eventStartAt: "2026-09-18T01:00:00.000Z", // 9/17 9pm Eastern
-          }),
-          booking({ inviteeEmail: "nobody@example.com" }), // no Close lead
-          booking({ inviteeEmail: "lane2@example.com" }),
-          booking({ status: "canceled" }),
-          booking({
-            eventName: followUp.name,
-            eventTypeUri: followUp.eventTypeUris[0] ?? null,
-          }),
-          booking({ eventName: "Never Reviewed", eventTypeUri: null }),
-          booking({ eventStartAt: "2026-09-20T15:00:00.000Z" }), // off-grid
-        ],
-        funnels: [
-          funnel(),
-          funnel({ email: "yt@example.com", funnel: "YouTube" }),
-          funnel({ email: "lane2@example.com", funnel: "Sales Reactivation" }),
-        ],
-        timeZone: "America/New_York",
-      },
-      days,
-    );
+  it("lands-on: day of the call, cancels out, one person once a day", () => {
+    const grid = callsByChannel(input, days, "lands-on");
     expect(grid.channels).toEqual([
+      { key: "webinar", label: "Webinar", counts: [0, 1, 0] },
       { key: "youtube", label: "YouTube", counts: [0, 1, 1] },
+      { key: "instagram", label: "Instagram", counts: [0, 1, 0] },
       { key: "website", label: "Website", counts: [0, 1, 0] },
       {
         key: "No funnel in Close",
-        label: "No funnel in Close",
+        label: "No channel on record",
         counts: [0, 1, 0],
       },
     ]);
-    expect(grid.totals).toEqual([0, 3, 1]);
+    expect(grid.totals).toEqual([0, 5, 1]);
+    expect(grid.creditedFromTags).toBe(2);
     expect(grid.unreviewed).toBe(1);
+    expect(grid.unreviewedNames).toEqual(["Never Reviewed"]);
+  });
+
+  it("booked-on: day of the booking, cancels in, totals equal the pace number", () => {
+    const grid = callsByChannel(
+      input,
+      ["2026-09-14", "2026-09-15", "2026-09-16"],
+      "booked-on",
+    );
+    expect(grid.totals).toEqual([7, 1, 1]);
+    for (const [index, day] of grid.days.entries()) {
+      expect(grid.totals[index]).toBe(
+        readBookedMetric("newBookedOn", { ...input, day }).value,
+      );
+    }
   });
 });

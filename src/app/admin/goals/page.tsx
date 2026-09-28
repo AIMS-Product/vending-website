@@ -8,11 +8,10 @@ import {
   GoalTable,
 } from "@/components/admin/GoalPanels";
 import {
-  BookedAttribution,
   BookedDefinitions,
-  BookedCapacity,
   BookedMappingReview,
   BookedPaceStrip,
+  ChannelGrid,
 } from "@/components/admin/BookedPacePanels";
 import { getBookedPace } from "@/lib/services/booked-metrics-data";
 import {
@@ -84,10 +83,25 @@ export default async function AdminGoalsPage({
         )}
         <BookedPaceStrip pace={pace} />
         <div className="grid gap-4">
-          <BookedDefinitions pace={pace} />
-          <BookedAttribution pace={pace} />
-          <BookedCapacity pace={pace} />
-          <BookedMappingReview pace={pace} />
+          <ChannelGrid
+            grid={pace.booked}
+            today={pace.day}
+            siteFormsRead={pace.siteFormsRead}
+          />
+          <ChannelGrid
+            grid={pace.capacity}
+            today={pace.day}
+            siteFormsRead={pace.siteFormsRead}
+          />
+          <details className={adminPanelClass}>
+            <summary className="text-ui-text cursor-pointer px-4 py-3 text-sm font-semibold">
+              How these numbers are counted
+            </summary>
+            <div className="grid gap-4 p-4 pt-0">
+              <BookedDefinitions pace={pace} />
+              <BookedMappingReview pace={pace} />
+            </div>
+          </details>
         </div>
       </section>
 

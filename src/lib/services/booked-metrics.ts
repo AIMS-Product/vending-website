@@ -23,6 +23,7 @@
  *     talking to today", never "what did marketing produce today".
  */
 
+import { resolveChannel } from "@/lib/analytics/channel";
 import {
   classifyEventType,
   type EventClass,
@@ -193,6 +194,7 @@ export type BookingRow = {
   bookedAt: string | null;
   eventStartAt: string | null;
   utmSource: string | null;
+  utmMedium: string | null;
 };
 
 /** A mirrored Close lead. Names the funnel a booking's email belongs to. */
@@ -550,45 +552,106 @@ export function attributionFor(
 }
 
 // ---------------------------------------------------------------------------
-// Capacity by channel
+// Calls by channel, per day
 
-export type CapacityGrid = {
+/**
+ * Website channel label (`resolveChannel`) to Goals page channel key. Chatbot
+ * captures happen on the site, so they are Website. Unknown stays unknown.
+ */
+const SITE_TO_GOAL: Record<string, string | null> = {
+  YouTube: "youtube",
+  Webinar: "webinar",
+  Instagram: "instagram",
+  "Instagram DM": "instagram",
+  Newsletter: "newsletter",
+  Website: "website",
+  Chatbot: "website",
+  Unknown: null,
+};
+
+function goalKeyForSiteChannel(channel: string): string | null {
+  return channel in SITE_TO_GOAL ? SITE_TO_GOAL[channel] : OTHER_CHANNEL.key;
+}
+
+export type CreditVia = "close" | "booking-tag" | "site-form" | "none";
+
+/**
+ * The Goals page channel a booking is credited to, and why.
+ *
+ * Close funnel first: it is the CRM of record. When Close has no funnel for the
+ * email, the booking link's own tracking tag, then the tag on the person's first
+ * website form. Measured 2026-09-28 over two weeks: 70 of 282 new calls had no
+ * Close funnel, and 44 of those carried one of the two tags.
+ */
+export function creditChannel(
+  booking: Pick<BookingRow, "inviteeEmail" | "utmSource" | "utmMedium">,
+  funnels: Map<string, string | null>,
+  siteChannels: ReadonlyMap<string, string> | undefined,
+): { key: string | null; via: CreditVia } {
+  const email = emailKey(booking.inviteeEmail);
+  const funnel = email ? funnels.get(email) : null;
+  if (funnel?.trim()) return { key: channelKeyForFunnel(funnel), via: "close" };
+  if (booking.utmSource?.trim()) {
+    const { channel } = resolveChannel(booking.utmSource, {
+      medium: booking.utmMedium,
+    });
+    return { key: goalKeyForSiteChannel(channel), via: "booking-tag" };
+  }
+  const site = email ? siteChannels?.get(email) : undefined;
+  if (site) return { key: goalKeyForSiteChannel(site), via: "site-form" };
+  return { key: null, via: "none" };
+}
+
+export type ChannelGrid = {
+  basis: MetricBasis;
   days: string[];
-  /** Marketing channels in plan order, then Other, then no funnel. Empty rows dropped. */
+  /** Marketing channels in plan order, then Other, then no channel. Empty rows dropped. */
   channels: Array<{ key: string; label: string; counts: number[] }>;
   /** Marketing total per day, Lane 2 excluded — the number held against the 25. */
   totals: number[];
-  /** New calls held out because their event type is unreviewed. Reported, never counted. */
+  /** Bookings held out because their event type is unreviewed. Reported, never counted. */
   unreviewed: number;
+  /** The calendar names behind `unreviewed`, so the reader can judge them. */
+  unreviewedNames: string[];
+  /** Counted calls credited from a tracking tag because Close had no funnel. */
+  creditedFromTags: number;
 };
 
 /**
- * New first calls on the calendar, per channel per day (lands-on basis).
+ * New first calls per channel per day, on either basis.
  *
- * Calendly bookings of the reviewed `new` class, cancellations removed, dated
- * by `event_start_at` in the business timezone. The channel is the lead's Close
- * funnel rolled into the Goals page channels. A UTM alone does not name a plan
- * channel, so a booking with no Close funnel gets its own row rather than a guess.
- * One person counts once a day: a double booking is one call, not two.
+ * - `booked-on`: dated by Calendly's booked-at, cancellations included. Exactly
+ *   the `newBookedOn` population, so each day's total equals the pace number.
+ *   This is what marketing produced that day.
+ * - `lands-on`: dated by `event_start_at`, cancellations removed, one person
+ *   once a day (a double booking holds one slot). This is how full the day is.
  *
- * Lane 2 is dropped, not shown. Reactivation books its first calls on follow-up
- * calendars and on calendars with no webhook, so this source saw ~1 a day
- * against Close's ~8 in the week of 2026-09-21. A row that wrong is worse than
- * no row.
+ * Lane 2 is dropped, not shown, on both. Reactivation books its first calls on
+ * follow-up calendars and on calendars with no webhook, so this source saw ~1
+ * a day against Close's ~8 in the week of 2026-09-21. A row that wrong is worse
+ * than no row.
  */
-export function capacityByChannel(
-  input: Omit<BookedMetricInput, "day">,
+export function callsByChannel(
+  input: Omit<BookedMetricInput, "day"> & {
+    /** Email to the website channel of that person's first form. */
+    siteChannels?: ReadonlyMap<string, string>;
+  },
   days: string[],
-): CapacityGrid {
+  basis: MetricBasis,
+): ChannelGrid {
   const timeZone = input.timeZone ?? REPORTING_TIME_ZONE;
   const funnels = funnelIndex(input.funnels);
   const column = new Map(days.map((day, index) => [day, index]));
   const rows = new Map<string, number[]>();
   const seen = new Set<string>();
+  const unreviewedNames = new Set<string>();
   let unreviewed = 0;
+  let creditedFromTags = 0;
   for (const booking of input.bookings) {
-    if (booking.status === "canceled") continue;
-    const index = column.get(dayKeyIn(booking.eventStartAt, timeZone) ?? "");
+    const landsOn = basis === "lands-on";
+    if (landsOn && booking.status === "canceled") continue;
+    const at = landsOn ? booking.eventStartAt : booking.bookedAt;
+    const index = column.get(dayKeyIn(at, timeZone) ?? "");
     if (index === undefined) continue;
     const classification = classifyEventType(
       booking.eventTypeUri,
@@ -596,17 +659,20 @@ export function capacityByChannel(
     );
     if (!classification.reviewed) {
       unreviewed += 1;
+      unreviewedNames.add(classification.name ?? "(no event name)");
       continue;
     }
     if (classification.class !== "new") continue;
     const email = emailKey(booking.inviteeEmail);
-    if (email) {
+    if (landsOn && email) {
       if (seen.has(`${email}|${index}`)) continue;
       seen.add(`${email}|${index}`);
     }
-    const funnel = email ? funnels.get(email) : undefined;
-    const key = channelKeyForFunnel(funnel ?? null) ?? UNTRACKED_LABEL;
-    if (key === "lane-2") continue;
+    const credit = creditChannel(booking, funnels, input.siteChannels);
+    if (credit.key === "lane-2") continue;
+    if (credit.via === "booking-tag" || credit.via === "site-form")
+      creditedFromTags += 1;
+    const key = credit.key ?? UNTRACKED_LABEL;
     const counts = rows.get(key) ?? days.map(() => 0);
     counts[index] += 1;
     rows.set(key, counts);
@@ -614,16 +680,22 @@ export function capacityByChannel(
   const ordered = [
     ...GOAL_CHANNELS.filter((channel) => channel.key !== "lane-2"),
     OTHER_CHANNEL,
-    { key: UNTRACKED_LABEL, label: UNTRACKED_LABEL },
+    { key: UNTRACKED_LABEL, label: NO_CHANNEL_LABEL },
   ]
     .filter((channel) => rows.has(channel.key))
     .map(({ key, label }) => ({ key, label, counts: rows.get(key)! }));
   return {
+    basis,
     days,
     channels: ordered,
     totals: days.map((_, index) =>
       ordered.reduce((sum, row) => sum + row.counts[index], 0),
     ),
     unreviewed,
+    unreviewedNames: [...unreviewedNames].sort(),
+    creditedFromTags,
   };
 }
+
+/** No Close funnel and no tracking tag anywhere: the channel is not knowable. */
+export const NO_CHANNEL_LABEL = "No channel on record";
