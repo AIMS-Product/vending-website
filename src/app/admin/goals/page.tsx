@@ -10,7 +10,7 @@ import {
 import {
   BookedAttribution,
   BookedDefinitions,
-  BookedForward,
+  BookedCapacity,
   BookedMappingReview,
   BookedPaceStrip,
 } from "@/components/admin/BookedPacePanels";
@@ -72,9 +72,8 @@ export default async function AdminGoalsPage({
             Daily pace — new calls booked
           </h2>
           <p className="text-ui-text-subtle text-xs">
-            Booked-on basis, Lane 2 excluded, Eastern day. The 25 a day is
-            Jess&rsquo;s floor goal and the 42 is the capacity
-            dashboard&rsquo;s; neither comes from the Q4 plan below.
+            Lane 2 excluded, Eastern day. The 25 a day is Jess&rsquo;s floor
+            goal, not the Q4 plan below.
           </p>
         </div>
         {pace.connected ? null : (
@@ -87,7 +86,7 @@ export default async function AdminGoalsPage({
         <div className="grid gap-4">
           <BookedDefinitions pace={pace} />
           <BookedAttribution pace={pace} />
-          <BookedForward pace={pace} />
+          <BookedCapacity pace={pace} />
           <BookedMappingReview pace={pace} />
         </div>
       </section>

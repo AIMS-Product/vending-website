@@ -2,11 +2,13 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   attributionFor,
+  capacityByChannel,
   readBookedMetric,
   REPORTING_TIME_ZONE,
   type AttributionSource,
   type BookedMetricResult,
   type BookingRow,
+  type CapacityGrid,
   type FunnelRow,
   type MetricKey,
 } from "@/lib/services/booked-metrics";
@@ -32,6 +34,9 @@ const MAX_ROWS = 60_000;
  */
 const LOOKBACK_DAYS = 45;
 
+/** The capacity grid shows this many days either side of today. */
+const CAPACITY_DAYS_EACH_WAY = 7;
+
 export type BookedPace = {
   /** The day every metric here counts, YYYY-MM-DD in the business timezone. */
   day: string;
@@ -45,15 +50,10 @@ export type BookedPace = {
   /** Trailing days, most recent last, for pace against the daily goal. */
   trailing: Array<{ day: string; value: number | null }>;
   /**
-   * Days ahead, on the lands-on basis: what is already on the calendar. Both
-   * numbers are shown because they answer different questions — `firstCalls` is
-   * the plan's basis, `allMeetings` is what the day actually looks like.
+   * New first calls on the calendar by channel, a week back through a week
+   * ahead, lands-on basis. Null when the tables could not be read.
    */
-  forward: Array<{
-    day: string;
-    firstCalls: number | null;
-    allMeetings: number | null;
-  }>;
+  capacity: CapacityGrid | null;
   /** How much of the event-type mapping a human has signed off. */
   review: MappingReviewState;
   /** False when the tables could not be read at all. Never reported as zero. */
@@ -86,7 +86,6 @@ export async function getBookedPace(
     client?: Client;
     now?: Date;
     trailingDays?: number;
-    forwardDays?: number;
   } = {},
 ): Promise<BookedPace> {
   const client = input.client ?? createAdminClient();
@@ -119,23 +118,18 @@ export async function getBookedPace(
     };
   });
 
-  const forward = Array.from({ length: input.forwardDays ?? 8 }, (_, index) => {
-    const at = previousDay(day, -index);
-    if (!connected) {
-      return { day: at, firstCalls: null, allMeetings: null };
-    }
-    const ahead = { ...metricInput, day: at };
-    return {
-      day: at,
-      firstCalls: readBookedMetric("firstCallsOnCalendar", ahead).value,
-      allMeetings: readBookedMetric("allMeetingsOnCalendar", ahead).value,
-    };
-  });
+  const capacityDays = Array.from(
+    { length: CAPACITY_DAYS_EACH_WAY * 2 + 1 },
+    (_, index) => previousDay(day, CAPACITY_DAYS_EACH_WAY - index),
+  );
+  const capacity = connected
+    ? capacityByChannel(metricInput, capacityDays)
+    : null;
 
   return {
     day,
     timeZone,
-    forward,
+    capacity,
     newBooked: readBookedMetric("newBookedOn", metricInput),
     context: CONTEXT_METRICS.map((key) => readBookedMetric(key, metricInput)),
     attribution: attributionFor(metricInput, {
