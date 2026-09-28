@@ -250,7 +250,7 @@ export function snapshotRow(
   };
 }
 
-async function refreshKeywordMetrics(
+export async function refreshKeywordMetrics(
   client: Client,
   dataforseo: DataForSeoClient,
   keywords: string[],

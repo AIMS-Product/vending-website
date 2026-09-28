@@ -395,3 +395,21 @@ describe("retry billing", () => {
     expect(costs).toEqual([0.01, 0.01]);
   });
 });
+
+describe("search volume", () => {
+  it("leaves out keywords Google Ads would reject the batch for", async () => {
+    const { fetchImpl, calls } = fakeFetch(ok([]));
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+    });
+    await client.searchVolume([
+      "vending machine business",
+      "how to start a vending machine business in new york city",
+    ]);
+    expect(JSON.parse(String(calls[0].init?.body))[0].keywords).toEqual([
+      "vending machine business",
+    ]);
+  });
+});

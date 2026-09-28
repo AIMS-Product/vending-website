@@ -315,7 +315,12 @@ export function createDataForSeoClient({
     },
 
     searchVolume(keywords) {
-      return inBatches(keywords, async (batch) => {
+      // Google Ads rejects the whole batch (40501) for one keyword over 10
+      // words or 80 characters; those simply get no volume.
+      const valid = keywords.filter(
+        (k) => k.length <= 80 && k.trim().split(/\s+/).length <= 10,
+      );
+      return inBatches(valid, async (batch) => {
         const results = await post(
           "/keywords_data/google_ads/search_volume/live",
           [{ keywords: batch, ...LOCATION }],
