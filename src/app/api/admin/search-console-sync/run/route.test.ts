@@ -23,6 +23,7 @@ function request(secret?: string, query = "") {
 const run = (error: string | null, rowsWritten = 0) => ({
   endDate: "2026-09-22",
   connector: { connector: "search-console", rowsWritten, error },
+  detail: { connector: "seo-search-console", rowsWritten, error },
 });
 
 describe("Search Console sync runner route", () => {

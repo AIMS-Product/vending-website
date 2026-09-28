@@ -109,6 +109,11 @@ describe("tab to feed mapping matches what each loader reads", () => {
     webinar_events: "webinar",
     ghl_email_stats: "ghl-email",
     metricool_posts: "metricool-posts",
+    seo_gsc_daily: "seo-search",
+    seo_gsc_page_daily: "seo-search",
+    seo_gsc_query_daily: "seo-search",
+    seo_rank_snapshots: "seo-ranks",
+    social_account_daily: "social-accounts",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
   };
@@ -120,6 +125,11 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "qualification_sessions", // written with the lead it belongs to
     "lead_page_views", // written live by the site's page tracker
     "chatbot_conversations", // written live by the chatbot
+    "seo_pages", // the page builder, edited by hand
+    "seo_keywords", // the tracking list, seeded and edited by hand
+    "seo_content_pieces", // the content plan, edited on /admin/seo
+    "seo_tasks", // edited on /admin/seo; the trigger job is not a data feed
+    "seo_monthly_reviews", // a form
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([
@@ -144,9 +154,14 @@ describe("tab to feed mapping matches what each loader reads", () => {
     return [...source.matchAll(/\.from\(\s*"([a-z_]+)"/g)].map((m) => m[1]);
   };
 
-  for (const [tab, files] of Object.entries(LOADERS)) {
+  const SCOPED_LOADERS: Record<string, readonly string[]> = {
+    ...LOADERS,
+    seo: ["seo-command-center", "seo-plan-data"],
+  };
+
+  for (const [tab, files] of Object.entries(SCOPED_LOADERS)) {
     it(`${tab} lists a feed for every table its loader reads`, () => {
-      const feeds = TAB_FEEDS[tab as AnalyticsTabKey];
+      const feeds = TAB_FEEDS[tab as keyof typeof TAB_FEEDS];
       for (const table of files.flatMap(tablesIn)) {
         if (NOT_FEEDS.has(table)) continue;
         const feed = TABLE_FEED[table];

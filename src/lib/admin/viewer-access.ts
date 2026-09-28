@@ -38,6 +38,9 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/leads",
   "/admin/libraries",
   "/admin/links",
+  // Read-only for viewers; every form on it is hidden without edit rights and
+  // its server actions call requireAdmin().
+  "/admin/seo",
   "/admin/links/coverage",
   "/admin/media",
   "/admin/news",
