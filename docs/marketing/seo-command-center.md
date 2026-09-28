@@ -51,8 +51,10 @@ quiet 28 days while its +14 / +28 day numbers come in.
 Hard cap: **$25 a month** (`DATAFORSEO_MONTHLY_BUDGET_USD` overrides). Every
 response's `cost` is added to `dataforseo_spend`; the rank job skips once the
 month's total reaches the cap and stops starting new batches mid-run. Expected
-spend is well under it: about 620 live SERPs a month (63 primary weekly, 161
-supporting bi-weekly, ~$2-12), the monthly volume + difficulty refresh (cents)
+spend is well under it: about 620 SERPs a month (63 primary weekly, 161
+supporting bi-weekly) on the **standard queue** (~$0.0066 each, ~$4; the
+13:00 Monday run posts them, the 13:50 run `?collect=1` collects them before
+the 14:00 trigger job), the monthly volume + difficulty refresh (cents)
 and the monthly competitor pull (4 domains, ~$0.50). Also set a low-balance
 alert in the DataForSEO dashboard.
 

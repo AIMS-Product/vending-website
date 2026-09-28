@@ -313,3 +313,56 @@ describe("retry on transient failures", () => {
     expect(costs).toEqual([0.01, 0.02]);
   });
 });
+
+describe("standard queue", () => {
+  it("posts tasks, lists ready ones with GET, and reads a finished SERP", async () => {
+    const posted = fakeFetch({
+      status_code: 20000,
+      tasks: [
+        { status_code: 20100, id: "t1" },
+        { status_code: 20100, id: "t2" },
+      ],
+    });
+    const c1 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: posted.fetchImpl,
+    });
+    expect(await c1.postSerpTasks(["x", "y"], "2026-09-28")).toBe(2);
+    expect(JSON.parse(String(posted.calls[0].init?.body))[0]).toMatchObject({
+      keyword: "x",
+      tag: "2026-09-28",
+      depth: 100,
+    });
+
+    const ready = fakeFetch(ok([{ id: "t1", tag: "2026-09-28" }, { nope: 1 }]));
+    const c2 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: ready.fetchImpl,
+    });
+    expect(await c2.readySerpTasks()).toEqual([
+      { id: "t1", tag: "2026-09-28" },
+    ]);
+    expect(ready.calls[0].init?.method).toBe("GET");
+    expect(ready.calls[0].init?.body).toBeUndefined();
+
+    const got = fakeFetch(
+      ok([{ keyword: "types of vending machines", items: SERP_ITEMS }]),
+    );
+    const c3 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: got.fetchImpl,
+    });
+    const snap = await c3.getSerpTask("t1");
+    expect(got.calls[0].url).toContain(
+      "/serp/google/organic/task_get/advanced/t1",
+    );
+    expect(snap).toMatchObject({
+      keyword: "types of vending machines",
+      vpPosition: 2,
+      aiOverview: true,
+    });
+  });
+});

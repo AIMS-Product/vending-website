@@ -60,8 +60,14 @@ const serp = (keyword: string): SerpSnapshot => ({
   top10: [],
 });
 
-const fake = (): DataForSeoClient => ({
+/** A queue holding `ready` finished tasks; ids are the keywords. */
+const fake = (
+  ready: Array<{ id: string; tag: string | null }> = [],
+): DataForSeoClient => ({
   serp: vi.fn(async (k: string) => serp(k)),
+  postSerpTasks: vi.fn(async (keywords: string[]) => keywords.length),
+  readySerpTasks: vi.fn(async () => ready),
+  getSerpTask: vi.fn(async (id: string) => serp(id)),
   searchVolume: vi.fn(async () => []),
   keywordDifficulty: vi.fn(async () => []),
   rankedKeywords: vi.fn(async () => [
@@ -93,8 +99,37 @@ describe("syncSeoRanks", () => {
     });
     expect(result.keywords).toBe(1);
     expect(result.volumesRefreshed).toBe(false);
-    expect(dataforseo.serp).toHaveBeenCalledTimes(1);
-    expect(upserts.seo_rank_snapshots).toHaveLength(1);
+    expect(dataforseo.postSerpTasks).toHaveBeenCalledWith(
+      [KEYWORDS.find((k) => k.role === "primary")!.keyword],
+      "2026-09-21",
+    );
+    expect(dataforseo.serp).not.toHaveBeenCalled();
+    expect(upserts.seo_rank_snapshots ?? []).toHaveLength(0);
+  });
+
+  it("collects finished tasks dated by the day they were posted", async () => {
+    const { client, upserts } = buildClient();
+    const dataforseo = fake([
+      { id: "a", tag: "2026-09-14" },
+      { id: "b", tag: null },
+    ]);
+    const result = await syncSeoRanks({
+      client,
+      dataforseo,
+      collectOnly: true,
+      now: new Date("2026-09-21T13:50:00Z"),
+    });
+    expect(dataforseo.postSerpTasks).not.toHaveBeenCalled();
+    expect(dataforseo.searchVolume).not.toHaveBeenCalled();
+    expect(result.keywords).toBe(0);
+    expect(
+      (
+        upserts.seo_rank_snapshots as Array<{ day: string; keyword: string }>
+      ).map((r) => [r.day, r.keyword]),
+    ).toEqual([
+      ["2026-09-14", "a"],
+      ["2026-09-21", "b"],
+    ]);
   });
 
   it("ranks everything and refreshes volumes on a full run", async () => {
@@ -122,7 +157,8 @@ describe("monthly spend cap", () => {
     expect(result.connector.error).toMatch(
       /^skipped: this month's DataForSEO budget is used \(\$26\.00 of \$25\)/,
     );
-    expect(dataforseo.serp).not.toHaveBeenCalled();
+    expect(dataforseo.postSerpTasks).not.toHaveBeenCalled();
+    expect(dataforseo.readySerpTasks).not.toHaveBeenCalled();
   });
 
   it("pulls competitors on the monthly run", async () => {
@@ -144,25 +180,32 @@ describe("monthly spend cap", () => {
 });
 
 describe("time budget", () => {
-  it("keeps what it pulled and says how many it left for next time", async () => {
+  it("keeps what it collected and posts nothing once out of time", async () => {
     const { client, upserts } = buildClient();
+    const dataforseo = fake([
+      { id: "a", tag: "2026-09-21" },
+      { id: "b", tag: "2026-09-21" },
+    ]);
     let t = 0;
     const result = await syncSeoRanks({
       client,
-      dataforseo: fake(),
+      dataforseo,
       full: true,
       now: new Date("2026-09-21T13:00:00Z"),
       clock: () => (t += 1000),
       budgetMs: 1500,
     });
-    // First batch (both keywords) runs; the budget is spent before volumes.
     expect(upserts.seo_rank_snapshots).toHaveLength(2);
+    expect(dataforseo.postSerpTasks).not.toHaveBeenCalled();
     expect(result.volumesRefreshed).toBe(false);
   });
 
-  it("does not fail the snapshots when the volume refresh throws", async () => {
+  it("does not fail the collect when the volume refresh throws", async () => {
     const { client, upserts } = buildClient();
-    const dataforseo = fake();
+    const dataforseo = fake([
+      { id: "a", tag: "2026-09-21" },
+      { id: "b", tag: "2026-09-21" },
+    ]);
     dataforseo.searchVolume = vi.fn(async () => {
       throw new Error("HTTP 500");
     });

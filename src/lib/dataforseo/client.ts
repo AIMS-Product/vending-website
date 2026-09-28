@@ -26,6 +26,7 @@ const envelope = z.object({
         status_code: z.number(),
         status_message: z.string().optional(),
         result: z.array(z.unknown()).nullable().optional(),
+        id: z.string().optional(),
       }),
     )
     .default([]),
@@ -43,7 +44,14 @@ const serpItem = z
   })
   .passthrough();
 
-const serpResult = z.object({ items: z.array(serpItem).nullable().optional() });
+const serpResult = z.object({
+  keyword: z.string().optional(),
+  items: z.array(serpItem).nullable().optional(),
+});
+const readyTask = z.object({
+  id: z.string(),
+  tag: z.string().nullable().optional(),
+});
 
 const volumeResult = z.object({
   keyword: z.string(),
@@ -111,6 +119,12 @@ export type DataForSeoClient = {
   ): Promise<Array<{ keyword: string; kd: number | null }>>;
   /** Keywords a domain ranks for in Google's top 20 (DataForSEO Labs). */
   rankedKeywords(target: string, limit?: number): Promise<RankedKeyword[]>;
+  /** Standard queue: post SERP tasks (billed now), tagged with the snapshot day. */
+  postSerpTasks(keywords: string[], tag: string): Promise<number>;
+  /** Standard queue: finished tasks not collected yet (free). */
+  readySerpTasks(): Promise<Array<{ id: string; tag: string | null }>>;
+  /** Standard queue: one finished task's SERP (free for 30 days). */
+  getSerpTask(id: string): Promise<SerpSnapshot>;
 };
 
 export type RankedKeyword = {
@@ -151,7 +165,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * errors (5xxxx). docs/marketing/dataforseo-v3.md section 2. */
 const RETRY_CODES = new Set([40101, 40103, 40202, 40209]);
 /** Partial results: DataForSEO bills only the pages it returned. Keep them. */
-const OK_CODES = new Set([20000, 40106]);
+const OK_CODES = new Set([20000, 20100, 40106]);
 
 /** HTTP 403/429/5xx, or a retryable envelope/task code, is worth one retry. */
 export function isTransient(httpStatus: number, codes: number[] = []): boolean {
@@ -177,11 +191,12 @@ export function createDataForSeoClient({
 }): DataForSeoClient {
   const auth = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
 
-  const call = async (path: string, body: unknown) => {
+  /** POST with a body; GET without one (tasks_ready, task_get). */
+  const call = async (path: string, body?: unknown) => {
     const response = await fetchImpl(`${API}${path}`, {
-      method: "POST",
+      method: body === undefined ? "GET" : "POST",
       headers: { Authorization: auth, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       // One slow SERP must not hold a worker past the run's time budget.
       signal: AbortSignal.timeout(90_000),
     });
@@ -194,7 +209,7 @@ export function createDataForSeoClient({
     return { status: response.status, data: parsed.data };
   };
 
-  const post = async (path: string, body: unknown): Promise<unknown[]> => {
+  const request = async (path: string, body?: unknown) => {
     let res = await call(path, body);
     // One retry for transient failures: a fresh account answered 403 / 40101
     // on its first call and succeeded on the next; 429 and 5xx are throttling.
@@ -224,8 +239,10 @@ export function createDataForSeoClient({
         );
       }
     }
-    return data.tasks.flatMap((task) => task.result ?? []);
+    return data.tasks;
   };
+  const post = async (path: string, body?: unknown): Promise<unknown[]> =>
+    (await request(path, body)).flatMap((task) => task.result ?? []);
 
   const inBatches = async <T>(
     keywords: string[],
@@ -254,6 +271,45 @@ export function createDataForSeoClient({
         throw new Error("DataForSEO SERP result had an unexpected shape.");
       }
       return snapshotFromItems(keyword, result.data.items ?? []);
+    },
+
+    async postSerpTasks(keywords, tag) {
+      let created = 0;
+      for (let i = 0; i < keywords.length; i += 100) {
+        const tasks = await request(
+          "/serp/google/organic/task_post",
+          keywords.slice(i, i + 100).map((keyword) => ({
+            keyword,
+            ...LOCATION,
+            depth: 100,
+            load_async_ai_overview: true,
+            tag,
+          })),
+        );
+        created += tasks.filter((t) => t.status_code === 20100).length;
+      }
+      return created;
+    },
+
+    async readySerpTasks() {
+      const results = await post("/serp/google/organic/tasks_ready");
+      return results.flatMap((raw) => {
+        const row = readyTask.safeParse(raw);
+        return row.success
+          ? [{ id: row.data.id, tag: row.data.tag ?? null }]
+          : [];
+      });
+    },
+
+    async getSerpTask(id) {
+      const [first] = await post(
+        `/serp/google/organic/task_get/advanced/${encodeURIComponent(id)}`,
+      );
+      const result = serpResult.safeParse(first ?? {});
+      if (!result.success || !result.data.keyword) {
+        throw new Error("DataForSEO SERP task result had an unexpected shape.");
+      }
+      return snapshotFromItems(result.data.keyword, result.data.items ?? []);
     },
 
     searchVolume(keywords) {
