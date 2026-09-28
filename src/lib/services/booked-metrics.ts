@@ -558,8 +558,6 @@ export type CapacityGrid = {
   channels: Array<{ key: string; label: string; counts: number[] }>;
   /** Marketing total per day, Lane 2 excluded — the number held against the 25. */
   totals: number[];
-  /** Lane 2 outbound on the same basis, shown beside the total, never inside it. */
-  laneTwo: number[];
   /** New calls held out because their event type is unreviewed. Reported, never counted. */
   unreviewed: number;
 };
@@ -571,6 +569,12 @@ export type CapacityGrid = {
  * by `event_start_at` in the business timezone. The channel is the lead's Close
  * funnel rolled into the Goals page channels. A UTM alone does not name a plan
  * channel, so a booking with no Close funnel gets its own row rather than a guess.
+ * One person counts once a day: a double booking is one call, not two.
+ *
+ * Lane 2 is dropped, not shown. Reactivation books its first calls on follow-up
+ * calendars and on calendars with no webhook, so this source saw ~1 a day
+ * against Close's ~8 in the week of 2026-09-21. A row that wrong is worse than
+ * no row.
  */
 export function capacityByChannel(
   input: Omit<BookedMetricInput, "day">,
@@ -580,6 +584,7 @@ export function capacityByChannel(
   const funnels = funnelIndex(input.funnels);
   const column = new Map(days.map((day, index) => [day, index]));
   const rows = new Map<string, number[]>();
+  const seen = new Set<string>();
   let unreviewed = 0;
   for (const booking of input.bookings) {
     if (booking.status === "canceled") continue;
@@ -595,13 +600,17 @@ export function capacityByChannel(
     }
     if (classification.class !== "new") continue;
     const email = emailKey(booking.inviteeEmail);
+    if (email) {
+      if (seen.has(`${email}|${index}`)) continue;
+      seen.add(`${email}|${index}`);
+    }
     const funnel = email ? funnels.get(email) : undefined;
     const key = channelKeyForFunnel(funnel ?? null) ?? UNTRACKED_LABEL;
+    if (key === "lane-2") continue;
     const counts = rows.get(key) ?? days.map(() => 0);
     counts[index] += 1;
     rows.set(key, counts);
   }
-  const empty = days.map(() => 0);
   const ordered = [
     ...GOAL_CHANNELS.filter((channel) => channel.key !== "lane-2"),
     OTHER_CHANNEL,
@@ -615,7 +624,6 @@ export function capacityByChannel(
     totals: days.map((_, index) =>
       ordered.reduce((sum, row) => sum + row.counts[index], 0),
     ),
-    laneTwo: rows.get("lane-2") ?? empty,
     unreviewed,
   };
 }

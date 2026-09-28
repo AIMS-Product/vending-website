@@ -332,8 +332,9 @@ export function BookedCapacity({ pace }: { pace: BookedPace }) {
         <p className="text-ui-text-subtle max-w-3xl text-xs">
           New first calls on each day&rsquo;s calendar, by the channel that
           sourced the lead (Close funnel). Counted on the day the call happens,
-          cancellations removed. Past days show what was held, future days show
-          what is already booked. Goal: {DAILY_NEW_CALL_GOAL} a day.
+          cancellations removed, rebooks included since they take a slot. Past
+          days show what was held, future days show what is already booked.
+          Goal: {DAILY_NEW_CALL_GOAL} a day.
         </p>
       </div>
       {grid == null ? (
@@ -406,29 +407,15 @@ export function BookedCapacity({ pace }: { pace: BookedPace }) {
                   );
                 })}
               </tr>
-              <tr>
-                <th
-                  scope="row"
-                  className="bg-ui-surface text-ui-text-subtle sticky left-0 px-4 py-2 text-left font-normal whitespace-nowrap"
-                >
-                  Lane 2 (not in total)
-                </th>
-                {grid.laneTwo.map((count, index) => (
-                  <td
-                    key={grid.days[index]}
-                    className={`${cell} text-ui-text-subtle`}
-                  >
-                    {count || "·"}
-                  </td>
-                ))}
-              </tr>
             </tbody>
           </table>
         </div>
       )}
       <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
-        Lane 2 outbound is shown but kept out of the total, and most of it books
-        on calendars this site never sees.
+        Marketing channels only. Lane 2 is left out because it books first calls
+        on follow-up calendars this data cannot tell apart. A person with two
+        calls the same day counts once. A few calls a week are booked outside
+        the Calendly calendars this site hears from and are missing.
         {grid && grid.unreviewed > 0
           ? ` ${grid.unreviewed} calls in this window sit on event types nobody has classified yet, so they are not counted. See the mapping review below.`
           : ""}{" "}
