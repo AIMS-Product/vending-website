@@ -218,6 +218,8 @@ export function createDataForSeoClient({
         ? [r.data.status_code, ...r.data.tasks.map((t) => t.status_code)]
         : [];
     if (isTransient(res.status, codes(res))) {
+      // The first answer may have billed: book it before asking again.
+      if (res.data) onCost?.(path, res.data.cost ?? 0);
       await sleep(retryDelayMs);
       res = await call(path, body);
     }

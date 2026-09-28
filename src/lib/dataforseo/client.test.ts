@@ -366,3 +366,32 @@ describe("standard queue", () => {
     });
   });
 });
+
+describe("retry billing", () => {
+  it("books the first answer's cost before retrying", async () => {
+    const costs: number[] = [];
+    let i = 0;
+    const bodies = [
+      { status_code: 20000, cost: 0.01, tasks: [{ status_code: 40101 }] },
+      {
+        status_code: 20000,
+        cost: 0.01,
+        tasks: [{ status_code: 20000, result: [{ items: [] }] }],
+      },
+    ];
+    const fetchImpl = (async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(bodies[Math.min(i++, 1)]),
+    })) as unknown as typeof fetch;
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await client.serp("x");
+    expect(costs).toEqual([0.01, 0.01]);
+  });
+});

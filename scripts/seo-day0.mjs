@@ -21,9 +21,8 @@ const SITE = "https://www.vendingpreneurs.com";
 const VP_BRAND = "6626386"; // Metricool Vendingpreneurs brand (AGENTS.md)
 const args = process.argv.slice(2);
 const write = args.includes("--write");
-const day =
-  args[args.indexOf("--day") + 1]?.match(/^\d{4}-\d{2}-\d{2}$/)?.[0] ??
-  new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+const dayArg =
+  args[args.indexOf("--day") + 1]?.match(/^\d{4}-\d{2}-\d{2}$/)?.[0];
 
 for (const name of [
   "NEXT_PUBLIC_SUPABASE_URL",
@@ -56,6 +55,16 @@ const db = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY,
 );
+// A re-run adds to the frozen Day 0 (the Overview reads the earliest day)
+// instead of starting a second baseline, unless --day says otherwise.
+const frozen = await db.from("seo_baselines").select("day").order("day").limit(1);
+if (frozen.error && !/does not exist|Could not find the table/.test(frozen.error.message)) {
+  throw new Error(`seo_baselines read failed: ${frozen.error.message}`);
+}
+const day =
+  dayArg ??
+  frozen.data?.[0]?.day ??
+  new Date().toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
 const account = parseServiceAccount(process.env.GA4_SERVICE_ACCOUNT_JSON);
 const token = (scope) =>
   serviceAccountToken(account, scope, { fetchImpl: fetch, now: Date.now })();

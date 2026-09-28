@@ -11,7 +11,9 @@ import {
   fetchCloseDeals,
   type CloseDeal,
 } from "@/lib/services/close-wins";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { z } from "zod";
 import type { Database } from "@/types/database";
 
 /**
@@ -97,9 +99,14 @@ export function firstEngagement(
   return best;
 }
 
-/** Whole days from first engagement to the won day (never negative). */
+const pacificDay = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-CA", {
+    timeZone: "America/Los_Angeles",
+  });
+
+/** Whole Pacific days from first engagement to the won day (never negative). */
 export function daysBetween(firstAt: string, dateWon: string): number {
-  const start = Date.parse(firstAt.slice(0, 10));
+  const start = Date.parse(pacificDay(firstAt));
   const end = Date.parse(dateWon);
   return Math.max(0, Math.round((end - start) / 86_400_000));
 }
@@ -148,11 +155,23 @@ function check(what: string, error: { message: string } | null) {
   if (error) throw new Error(`${what} read failed: ${error.message}`);
 }
 
+const activityPage = z.object({
+  data: z
+    .array(
+      z
+        .object({ date_created: z.string().nullable().optional() })
+        .passthrough(),
+    )
+    .optional(),
+});
+
 const cachedActivitiesBefore = unstable_cache(
   async (leadId: string, before: string) => {
-    const result = await createCloseClient({
-      apiKey: config.CLOSE_API_KEY,
-    }).listLeadActivitiesBefore(leadId, before);
+    const result = activityPage.parse(
+      await createCloseClient({
+        apiKey: config.CLOSE_API_KEY,
+      }).listLeadActivitiesBefore(leadId, before),
+    );
     const dates = (result.data ?? [])
       .map((a) => a.date_created)
       .filter((d): d is string => Boolean(d))
@@ -190,6 +209,7 @@ async function readSignals(
     string,
     { name: string | null; email: string | null; createdAt: string | null }
   >();
+  const rawEmails = new Set<string>();
   for (let i = 0; i < leadIds.length; i += 100) {
     const { data, error } = await client
       .from("close_lead_funnel")
@@ -197,6 +217,7 @@ async function readSignals(
       .in("lead_id", leadIds.slice(i, i + 100));
     check("close_lead_funnel", error);
     for (const r of data ?? []) {
+      if (r.email) rawEmails.add(r.email);
       lead.set(r.lead_id, {
         name: r.display_name,
         email: r.email?.toLowerCase() ?? null,
@@ -216,17 +237,29 @@ async function readSignals(
       });
     },
   );
+  // One lookup per lead, cached a day. A failed lookup drops only that
+  // lead's pre-creation activity (logged), never the whole tab.
   const activity = new Map<string, string | null>();
   await eachLimited(leadIds, async (id) => {
     const createdAt = lead.get(id)?.createdAt;
-    activity.set(
-      id,
-      createdAt ? await cachedActivitiesBefore(id, createdAt) : null,
-    );
+    if (!createdAt) return;
+    try {
+      activity.set(id, await cachedActivitiesBefore(id, createdAt));
+    } catch (error) {
+      console.error("Closed-won: Close activity lookup failed", {
+        leadId: id,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
   });
 
+  // Calendly and forms keep the case people typed: ask for the mirror's
+  // spelling as well as lower case.
   const emails = [
-    ...new Set([...lead.values()].map((l) => l.email).filter(Boolean)),
+    ...new Set([
+      ...[...lead.values()].map((l) => l.email).filter(Boolean),
+      ...rawEmails,
+    ]),
   ] as string[];
   const form = new Map<string, { at: string; utm: string | null }>();
   const chat = new Map<string, string>();
@@ -274,13 +307,17 @@ async function readSignals(
     for (const read of [byId, byMail]) {
       check("lead_submissions", read?.error ?? null);
       for (const r of read?.data ?? []) {
-        const key = r.close_lead_id ?? r.email.toLowerCase();
-        const seen = form.get(key);
-        if (!seen || Date.parse(r.created_at) < Date.parse(seen.at)) {
-          const utm = [r.utm_source, r.utm_medium, r.utm_campaign]
-            .filter(Boolean)
-            .join(" / ");
-          form.set(key, { at: r.created_at, utm: utm || null });
+        const utm = [r.utm_source, r.utm_medium, r.utm_campaign]
+          .filter(Boolean)
+          .join(" / ");
+        // Under both keys, earliest kept, so an unlinked earlier form still
+        // wins over a later linked one.
+        for (const key of [r.close_lead_id, r.email.toLowerCase()]) {
+          if (!key) continue;
+          const seen = form.get(key);
+          if (!seen || Date.parse(r.created_at) < Date.parse(seen.at)) {
+            form.set(key, { at: r.created_at, utm: utm || null });
+          }
         }
       }
     }
@@ -298,15 +335,18 @@ async function readSignals(
 
   // First calls shown in the range, by source: the close-rate denominator.
   const shown = new Map<string, number>();
-  const shows = await client
-    .from("close_lead_funnel")
-    .select("funnel")
-    .gte("first_sales_call_booked_date", from)
-    .lte("first_sales_call_booked_date", to)
-    .ilike("first_call_show_up", "yes")
-    .limit(10_000);
+  const shows = await readAllPages<{ funnel: string | null }>((a, b, count) =>
+    client
+      .from("close_lead_funnel")
+      .select("funnel", { count })
+      .gte("first_sales_call_booked_date", from)
+      .lte("first_sales_call_booked_date", to)
+      .ilike("first_call_show_up", "yes")
+      .order("lead_id")
+      .range(a, b),
+  );
   check("close_lead_funnel shows", shows.error);
-  for (const r of shows.data ?? []) {
+  for (const r of shows.rows) {
     const label = closeChannelLabel(r.funnel);
     shown.set(label, (shown.get(label) ?? 0) + 1);
   }
@@ -319,8 +359,14 @@ export function toWonDeal(
 ): WonDeal {
   const lead = s.lead.get(deal.leadId);
   const email = lead?.email ?? null;
+  const byId = s.form.get(deal.leadId);
+  const byEmail = email ? s.form.get(email) : undefined;
   const formHit =
-    s.form.get(deal.leadId) ?? (email ? s.form.get(email) : undefined);
+    byId && byEmail
+      ? Date.parse(byEmail.at) < Date.parse(byId.at)
+        ? byEmail
+        : byId
+      : (byId ?? byEmail);
   const first = firstEngagement({
     "Close lead created": lead?.createdAt ?? undefined,
     "Close activity": s.activity.get(deal.leadId) ?? undefined,

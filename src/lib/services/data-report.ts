@@ -481,3 +481,14 @@ function escape(value: string) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 }
+
+/** The instant a Pacific day starts: 07:00Z in PDT, 08:00Z in PST. */
+export function pacificStartIso(day: string): string {
+  const pdt = new Date(`${day}T07:00:00Z`);
+  const hour = pdt.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour: "numeric",
+    hourCycle: "h23",
+  });
+  return Number(hour) === 0 ? pdt.toISOString() : `${day}T08:00:00.000Z`;
+}

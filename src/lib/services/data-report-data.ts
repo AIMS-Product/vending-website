@@ -9,6 +9,7 @@ import { weekStartOf } from "@/lib/services/close-week-view";
 import { getSeoScorecard } from "@/lib/services/seo-scorecard";
 import {
   buildDataReport,
+  pacificStartIso,
   type DataReport,
   type ReportChannelRow,
   type ReportSourceBlock,
@@ -108,14 +109,14 @@ export async function seoBlocks(
       client
         .from("seo_tasks")
         .select("id", { count: "exact", head: true })
-        .gte("created_at", `${from}T00:00:00Z`)
-        .lte("created_at", `${to}T23:59:59Z`),
+        .gte("created_at", pacificStartIso(from))
+        .lt("created_at", pacificStartIso(nextDay(to))),
       client
         .from("seo_tasks")
         .select("id", { count: "exact", head: true })
         .eq("status", "done")
-        .gte("done_at", `${from}T00:00:00Z`)
-        .lte("done_at", `${to}T23:59:59Z`),
+        .gte("done_at", pacificStartIso(from))
+        .lt("done_at", pacificStartIso(nextDay(to))),
     ]);
     for (const read of [opened, done]) {
       if (read.error) throw new Error(`seo_tasks: ${read.error.message}`);

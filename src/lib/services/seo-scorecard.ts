@@ -89,6 +89,7 @@ export const SCORECARD: ScorecardRow[] = [
     metric: "resources_indexed",
     label: "Indexed /resources pages",
     targets: [10, 17, 23],
+    note: "Now needs URL Inspection: run scripts/seo-day0.mjs --day <today>",
   },
   {
     metric: "organic_booked_calls_28d",
