@@ -2505,6 +2505,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      seo_gsc_query_totals_daily: {
+        Row: {
+          clicks: number;
+          day: string;
+          impressions: number;
+          position: number | null;
+          query: string;
+          synced_at: string;
+        };
+        Insert: {
+          clicks?: number;
+          day: string;
+          impressions?: number;
+          position?: number | null;
+          query: string;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          day?: string;
+          impressions?: number;
+          position?: number | null;
+          query?: string;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
       seo_pages: {
         Row: {
           archive_behavior: string;

@@ -71,8 +71,10 @@ export const pieceStatusInput = z.object({
 });
 
 export const reviewInput = z.object({
-  month: z.string().regex(/^\d{4}-\d{2}$/),
-  answers: z.record(z.string(), z.string().max(4000)),
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/),
+  answers: z
+    .record(z.string().max(40), z.string().max(4000))
+    .refine((o) => Object.keys(o).length <= 30, "Too many answers."),
 });
 
 export async function setTaskStatus(
@@ -85,6 +87,10 @@ export async function setTaskStatus(
     status: input.status,
     updated_at: now,
     done_at: input.status === "done" ? now : null,
+    // A new "done" starts a new before/after log; old +14/+28 would mislead.
+    ...(input.status === "done"
+      ? { metrics_after_14: null, metrics_after_28: null }
+      : null),
   };
   if (input.status === "done") {
     const task = await client
@@ -111,8 +117,10 @@ async function metricsFor(client: Client, url: string): Promise<Json> {
     .select("day")
     .order("day", { ascending: false })
     .limit(1);
+  if (latest.error)
+    throw write("read the latest Search Console day", latest.error);
   const asOf = latest.data?.[0]?.day;
-  if (latest.error || !asOf) return null;
+  if (!asOf) return null;
   const rows = await client
     .from("seo_gsc_page_daily")
     .select("day, page, clicks, impressions, position")

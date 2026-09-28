@@ -11,6 +11,7 @@ import {
   window,
   type PageDayRow,
   type QueryDayRow,
+  type QueryTotalRow,
   type RankRow,
   type TriggerHit,
 } from "@/lib/seo/triggers";
@@ -109,18 +110,34 @@ async function readInputs(client: Client, asOf: string, now: Date) {
       .order("page")
       .range(from, to),
   );
+  const totals = await readAllPages<QueryTotalRow>((from, to, count) =>
+    client
+      .from("seo_gsc_query_totals_daily")
+      .select("day, query, clicks, impressions, position", { count })
+      .gte("day", addDays(asOf, -55))
+      .order("day")
+      .order("query")
+      .range(from, to),
+  );
   const keywords = await client
     .from("seo_keywords")
     .select("keyword, piece_ids")
     .eq("tracked", true);
   const pieces = await client.from("seo_content_pieces").select("id, slug");
-  const ranks = await client
-    .from("seo_rank_snapshots")
-    .select(
-      "day, keyword, vp_position, ai_overview, aio_cites_site, aio_cites_youtube, top10",
-    )
-    .gte("day", addDays(now.toISOString().slice(0, 10), -35));
-  for (const read of [pages, queries, keywords, pieces, ranks]) {
+  const ranks = await readAllPages<Omit<RankRow, "top10"> & { top10: Json }>(
+    (from, to, count) =>
+      client
+        .from("seo_rank_snapshots")
+        .select(
+          "day, keyword, vp_position, ai_overview, aio_cites_site, aio_cites_youtube, top10",
+          { count },
+        )
+        .gte("day", addDays(now.toISOString().slice(0, 10), -35))
+        .order("day")
+        .order("keyword")
+        .range(from, to),
+  );
+  for (const read of [pages, queries, totals, keywords, pieces, ranks]) {
     if (read.error)
       throw new Error(`SEO trigger read failed: ${read.error.message}`);
   }
@@ -129,13 +146,30 @@ async function readInputs(client: Client, asOf: string, now: Date) {
   const keywordPage = new Map<string, string>();
   for (const row of keywords.data ?? []) {
     const slug = row.piece_ids.map((id) => slugById.get(id)).find(Boolean);
-    if (slug) keywordPage.set(row.keyword, `${SITE_ORIGIN}/resources/${slug}`);
+    if (slug) {
+      keywordPage.set(
+        row.keyword.toLowerCase(),
+        `${SITE_ORIGIN}/resources/${slug}`,
+      );
+    }
   }
   return {
     pageDays: pages.rows.map(numeric),
     queryDays: queries.rows.map(numeric),
-    tracked: new Set((keywords.data ?? []).map((row) => row.keyword)),
-    ranks: (ranks.data ?? []) as unknown as RankRow[],
+    queryTotals: totals.rows.map(numeric),
+    tracked: new Set(
+      (keywords.data ?? []).map((row) => row.keyword.toLowerCase()),
+    ),
+    ranks: ranks.rows.map(
+      (row): RankRow => ({
+        ...row,
+        keyword: row.keyword.toLowerCase(),
+        // Written by snapshotRow from SerpSnapshot.top10; an array or nothing.
+        top10: Array.isArray(row.top10)
+          ? (row.top10 as unknown as RankRow["top10"])
+          : [],
+      }),
+    ),
     keywordPage,
   };
 }
@@ -148,65 +182,93 @@ function numeric<T extends { position: number | string | null }>(row: T): T {
   };
 }
 
-type OpenTask = {
+type KnownTask = {
   id: string;
   trigger_code: number | null;
   url: string | null;
   subject: string | null;
+  status: string;
+  done_at: string | null;
 };
 
-const taskKey = (
+/**
+ * The dedupe key, matching seo_tasks_open_trigger_idx: a keyword task is one
+ * task per keyword whatever page it lands on this week; a page task is one
+ * per page.
+ */
+export const taskKey = (
   code: number | null,
   url: string | null,
   subject: string | null,
-) => `${code}\u0000${url ?? ""}\u0000${subject ?? ""}`;
+) => `${code}\u0000${subject ?? url ?? ""}`;
+
+/** A done task stays quiet this long before the same trigger may reopen. */
+const DONE_QUIET_DAYS = 28;
 
 async function writeTasks(client: Client, hits: TriggerHit[], now: Date) {
-  const open = await client
+  const known = await client
     .from("seo_tasks")
-    .select("id, trigger_code, url, subject")
+    .select("id, trigger_code, url, subject, status, done_at")
     .not("trigger_code", "is", null)
-    .in("status", ["open", "in_progress"]);
-  if (open.error)
-    throw new Error(`seo_tasks read failed: ${open.error.message}`);
-  const existing = new Map(
-    ((open.data ?? []) as OpenTask[]).map((t) => [
-      taskKey(t.trigger_code, t.url, t.subject),
-      t.id,
-    ]),
-  );
+    .limit(5000);
+  if (known.error)
+    throw new Error(`seo_tasks read failed: ${known.error.message}`);
+  const stamp = now.toISOString();
+  const quietSince = addDays(stamp.slice(0, 10), -DONE_QUIET_DAYS);
+  const open = new Map<string, string>();
+  const silenced = new Set<string>();
+  for (const t of (known.data ?? []) as KnownTask[]) {
+    const key = taskKey(t.trigger_code, t.url, t.subject);
+    if (t.status === "open" || t.status === "in_progress") open.set(key, t.id);
+    // Dismissed means "not this one": never reopened. Done means "handled":
+    // quiet while the +14 / +28 day numbers come in.
+    if (t.status === "dismissed") silenced.add(key);
+    if (t.status === "done" && (t.done_at ?? "") >= quietSince)
+      silenced.add(key);
+  }
 
   let opened = 0;
   let updated = 0;
-  const stamp = now.toISOString();
+  let failed = 0;
   for (const hit of hits) {
+    const key = taskKey(hit.code, hit.url, hit.subject);
     const evidence = { ...hit.evidence, seenAt: stamp } as Json;
-    const id = existing.get(taskKey(hit.code, hit.url, hit.subject));
-    if (id) {
-      const { error } = await client
-        .from("seo_tasks")
-        .update({ evidence, updated_at: stamp })
-        .eq("id", id);
-      if (error) throw new Error(`seo_tasks update failed: ${error.message}`);
-      updated += 1;
+    const id = open.get(key);
+    if (!id && silenced.has(key)) continue;
+    const { error } = id
+      ? await client
+          .from("seo_tasks")
+          .update({ evidence, updated_at: stamp })
+          .eq("id", id)
+      : await client.from("seo_tasks").insert({
+          type: hit.type,
+          trigger_code: hit.code,
+          url: hit.url,
+          subject: hit.subject,
+          title: hit.title.slice(0, 300),
+          detail: PLAYBOOK[hit.code],
+          evidence,
+          priority: hit.priority,
+          due_date: addDays(
+            stamp.slice(0, 10),
+            hit.priority === "urgent" ? 3 : 7,
+          ),
+          created_by: "system",
+        });
+    // 23505: another run opened the same task a moment ago. Same outcome.
+    if (error && error.code !== "23505") {
+      console.error("seo trigger task write failed", {
+        code: hit.code,
+        message: error.message,
+      });
+      failed += 1;
       continue;
     }
-    const { error } = await client.from("seo_tasks").insert({
-      type: hit.type,
-      trigger_code: hit.code,
-      url: hit.url,
-      subject: hit.subject,
-      title: hit.title.slice(0, 300),
-      detail: PLAYBOOK[hit.code],
-      evidence,
-      priority: hit.priority,
-      due_date: addDays(stamp.slice(0, 10), hit.priority === "urgent" ? 3 : 7),
-      created_by: "system",
-    });
-    if (error) throw new Error(`seo_tasks insert failed: ${error.message}`);
-    opened += 1;
+    if (id || error) updated += 1;
+    else opened += 1;
+    open.set(key, id ?? "new");
   }
-  return { opened, updated };
+  return { opened, updated, failed };
 }
 
 /** Search Console numbers for one page over the 28 days ending asOf. */
@@ -249,11 +311,16 @@ async function fillOptimizationLog(
     if (!task.url || !task.done_at) continue;
     const doneDay = task.done_at.slice(0, 10);
     const patch: Record<string, Json> = {};
-    if (!task.metrics_after_14 && asOf >= addDays(doneDay, 14)) {
-      patch.metrics_after_14 = pageMetrics(pageDays, absolute(task.url), asOf);
-    }
-    if (!task.metrics_after_28 && asOf >= addDays(doneDay, 28)) {
-      patch.metrics_after_28 = pageMetrics(pageDays, absolute(task.url), asOf);
+    // Each measured over the 28 days ending exactly done + 14 / done + 28,
+    // whenever the job gets to it, so a late run stores the same window.
+    for (const [column, days] of [
+      ["metrics_after_14", 14],
+      ["metrics_after_28", 28],
+    ] as const) {
+      const end = addDays(doneDay, days);
+      if (!task[column] && asOf >= end) {
+        patch[column] = pageMetrics(pageDays, absolute(task.url), end);
+      }
     }
     if (Object.keys(patch).length === 0) continue;
     const { error } = await client

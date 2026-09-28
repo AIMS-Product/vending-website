@@ -24,6 +24,8 @@ export type DayRow = {
 };
 export type PageDayRow = DayRow & { page: string };
 export type QueryDayRow = DayRow & { query: string; page: string };
+/** One query, all pages together, one day (seo_gsc_query_totals_daily). */
+export type QueryTotalRow = DayRow & { query: string };
 
 export type RankRow = {
   day: string;
@@ -88,6 +90,9 @@ const EXCLUDED_PATHS = new Set([
 export function evaluateTriggers(input: {
   asOf: string;
   pageDays: PageDayRow[];
+  /** Query totals: the thresholds read these. */
+  queryTotals: QueryTotalRow[];
+  /** Query + page rows: only used to name the page a query lands on. */
   queryDays: QueryDayRow[];
   /** Tracked keywords, lower case. */
   tracked: ReadonlySet<string>;
@@ -202,7 +207,10 @@ export function evaluateTriggers(input: {
   }
 
   // 5. New opportunity: an untracked, non-brand query taking off.
-  const byQuery = groupBy(input.queryDays, (row) => row.query.toLowerCase());
+  const byQuery = groupBy(input.queryTotals, (row) => row.query.toLowerCase());
+  const pagesByQuery = groupBy(input.queryDays, (row) =>
+    row.query.toLowerCase(),
+  );
   for (const [query, rows] of byQuery) {
     if (input.tracked.has(query) || input.isBrand(query)) continue;
     const now = sum(rows, cur);
@@ -212,7 +220,7 @@ export function evaluateTriggers(input: {
     if (growth !== null && growth < 50) continue;
     const topPage = [
       ...groupBy(
-        rows.filter((r) => inWindow(r.day, cur)),
+        (pagesByQuery.get(query) ?? []).filter((r) => inWindow(r.day, cur)),
         (r) => r.page,
       ),
     ]

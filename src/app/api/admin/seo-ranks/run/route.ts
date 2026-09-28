@@ -4,8 +4,9 @@ import { syncSeoRanks } from "@/lib/services/seo-rank-sync";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-// 62 to ~220 live SERP calls, six at a time, 5-15s each. A cut-off run is
-// safe: snapshots upsert on (day, keyword) and the next run redoes the day.
+// 62 to ~224 live SERP calls, ten at a time. The sync writes each batch as
+// it lands and stops starting batches at 240s, so a slow run keeps what it
+// paid for and records itself as partial instead of being cut off silently.
 export const maxDuration = 300;
 
 /** Weekly, Mondays. `?full=1` pulls every tracked keyword and volumes now. */

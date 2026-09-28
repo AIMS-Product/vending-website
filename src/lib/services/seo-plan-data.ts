@@ -45,10 +45,7 @@ export async function getContentPlan(
 ): Promise<ContentPlan | Missing> {
   const client = deps.client ?? createAdminClient();
   const now = deps.now ?? new Date();
-  const pieces = await client
-    .from("seo_content_pieces")
-    .select("*")
-    .order("sequence_week", { nullsFirst: false });
+  const pieces = await client.from("seo_content_pieces").select("*");
   if (isMissingTable(pieces.error)) return MISSING;
   if (pieces.error) fail("the content plan", pieces.error);
   const pages = await client

@@ -22,8 +22,10 @@ type Client = Pick<SupabaseClient<Database>, "from">;
 
 export const RANK_CONNECTOR = "dataforseo-ranks";
 
-/** Live SERP calls in flight at once. DataForSEO allows far more. */
-const CONCURRENCY = 6;
+/** Live SERP calls in flight at once. DataForSEO allows 2,000 a minute. */
+const CONCURRENCY = 10;
+/** Stop starting SERP batches after this, inside the route's 300s. */
+const BUDGET_MS = 240_000;
 
 export type RankSyncResult = {
   day: string;
@@ -45,6 +47,8 @@ export async function syncSeoRanks(
     now?: Date;
     /** Force every tracked keyword and the volume refresh (first pull). */
     full?: boolean;
+    clock?: () => number;
+    budgetMs?: number;
   } = {},
 ): Promise<RankSyncResult> {
   const now = deps.now ?? new Date();
@@ -52,6 +56,8 @@ export async function syncSeoRanks(
   const day = now.toISOString().slice(0, 10);
   const dataforseo =
     deps.dataforseo === undefined ? dataForSeoFromConfig() : deps.dataforseo;
+  const clock = deps.clock ?? Date.now;
+  const budgetMs = deps.budgetMs ?? BUDGET_MS;
   const includeSupporting = deps.full || isoWeek(now) % 2 === 0;
   const refreshVolumes = Boolean(deps.full) || now.getUTCDate() <= 7;
   let keywords = 0;
@@ -72,47 +78,86 @@ export async function syncSeoRanks(
       throw new Error(`seo_keywords read failed: ${tracked.error.message}`);
     }
     const all = (tracked.data ?? []).map((row) => row.keyword);
+    // Primary keywords first, so a run cut short still covers them.
+    tracked.data?.sort((a, b) =>
+      a.role === b.role ? 0 : a.role === "primary" ? -1 : 1,
+    );
     const toRank = (tracked.data ?? [])
       .filter((row) => includeSupporting || row.role === "primary")
       .map((row) => row.keyword);
     keywords = toRank.length;
 
     const vpVideoIds = await readVpVideoIds(client);
-    const snapshots = await mapLimit(toRank, CONCURRENCY, (keyword) =>
-      dataforseo.serp(keyword),
-    );
-    const rows = snapshots.flatMap((result, index) => {
-      if (result instanceof Error) {
-        console.error("DataForSEO SERP failed", {
-          keyword: toRank[index],
-          message: result.message,
-        });
-        return [];
-      }
-      return [snapshotRow(day, result, vpVideoIds)];
-    });
-    const written = await upsertInChunks(
-      client,
-      "seo_rank_snapshots",
-      rows,
-      "day,keyword",
-    );
-    if (written.missing) return skipped(TABLE_MISSING);
-    let rowsWritten = written.written;
-    const serpFailures = toRank.length - rows.length;
+    const started = clock();
+    const outOfTime = () => clock() - started > budgetMs;
+    let rowsWritten = 0;
+    let serpFailures = 0;
+    let writeFailures = 0;
+    let skippedForTime = 0;
 
-    if (refreshVolumes && all.length > 0) {
-      rowsWritten += await refreshKeywordMetrics(client, dataforseo, all, now);
-      volumesRefreshed = true;
+    // Batches of CONCURRENCY*4, each written before the next starts, so a run
+    // the platform cuts off still keeps every SERP it paid for.
+    const batchSize = CONCURRENCY * 4;
+    for (let i = 0; i < toRank.length; i += batchSize) {
+      if (outOfTime()) {
+        skippedForTime = toRank.length - i;
+        break;
+      }
+      const batch = toRank.slice(i, i + batchSize);
+      const results = await mapLimit(batch, CONCURRENCY, (keyword) =>
+        dataforseo.serp(keyword),
+      );
+      const rows = results.flatMap((result, index) => {
+        if (result instanceof Error) {
+          console.error("DataForSEO SERP failed", {
+            keyword: batch[index],
+            message: result.message,
+          });
+          serpFailures += 1;
+          return [];
+        }
+        return [snapshotRow(day, result, vpVideoIds)];
+      });
+      const written = await upsertInChunks(
+        client,
+        "seo_rank_snapshots",
+        rows,
+        "day,keyword",
+      );
+      if (written.missing) return skipped(TABLE_MISSING);
+      rowsWritten += written.written;
+      writeFailures += written.failed;
     }
-    const failed = serpFailures + written.failed;
-    return {
-      rowsWritten,
-      error:
-        failed > 0
-          ? `${failed} of ${toRank.length} keywords failed; see the server log.`
-          : null,
-    };
+
+    const problems: string[] = [];
+    if (serpFailures + writeFailures > 0) {
+      problems.push(
+        `${serpFailures + writeFailures} of ${toRank.length} keywords failed; see the server log.`,
+      );
+    }
+    if (skippedForTime > 0) {
+      problems.push(
+        `${skippedForTime} of ${toRank.length} keywords not pulled before the time limit; the next run picks them up.`,
+      );
+    }
+    // The volume refresh is extra: it never costs the snapshots already kept.
+    if (refreshVolumes && all.length > 0 && !outOfTime()) {
+      try {
+        rowsWritten += await refreshKeywordMetrics(
+          client,
+          dataforseo,
+          all,
+          now,
+        );
+        volumesRefreshed = true;
+      } catch (error) {
+        console.error("DataForSEO volume refresh failed", {
+          message: error instanceof Error ? error.message : undefined,
+        });
+        problems.push("The monthly volume refresh failed; see the server log.");
+      }
+    }
+    return { rowsWritten, error: problems.length ? problems.join(" ") : null };
   });
   return { day, keywords, volumesRefreshed, connector };
 }

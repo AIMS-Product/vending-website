@@ -82,7 +82,7 @@ describe("syncSeoSearchDetail", () => {
 
     expect(outcome).toEqual({
       connector: "seo-search-console",
-      rowsWritten: 4,
+      rowsWritten: 6,
       error: null,
     });
     expect(upserts.seo_gsc_daily).toEqual([
@@ -97,6 +97,22 @@ describe("syncSeoSearchDetail", () => {
       },
     ]);
     expect(upserts.seo_gsc_query_daily).toHaveLength(2);
+    expect(upserts.seo_gsc_query_totals_daily).toEqual([
+      {
+        day: "2026-09-20",
+        query: "vendingpreneurs",
+        clicks: 1,
+        impressions: 40,
+        position: 5,
+      },
+      {
+        day: "2026-09-20",
+        query: "vending machine items",
+        clicks: 1,
+        impressions: 30,
+        position: 5,
+      },
+    ]);
     expect(upserts.seo_gsc_page_daily?.[0]).toMatchObject({
       page: "https://www.vendingpreneurs.com/",
       impressions: 90,

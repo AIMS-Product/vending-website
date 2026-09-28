@@ -88,6 +88,17 @@ describe("snapshotFromItems", () => {
       { type: "ai_overview", url: "https://www.vendingpreneurs.com/a" },
     ]);
     expect(cited.aioCitesSite).toBe(true);
+    const lookalike = snapshotFromItems("x", [
+      {
+        type: "organic",
+        rank_group: 1,
+        domain: "notvendingpreneurs.com",
+        url: "https://notvendingpreneurs.com/",
+      },
+      { type: "ai_overview", url: "https://notvendingpreneurs.com/a" },
+    ]);
+    expect(lookalike.vpPosition).toBeNull();
+    expect(lookalike.aioCitesSite).toBe(false);
   });
 });
 

@@ -31,10 +31,17 @@ strategy run in `~/Desktop/vp-seo-output/` (Kody's framework, 2026-09-23).
   YouTube about June 2026). Its OpenAPI metric list is wrong for several
   networks; `src/lib/metricool/timelines.ts` has the names the live API takes.
 
+- Query totals come from `seo_gsc_query_totals_daily` (the date + query
+  report). Never sum `seo_gsc_query_daily` for a query: it holds one row per
+  page, so a search showing two VP pages counts twice ("vendingpreneurs" read
+  2,362 that way against 550 real impressions over 28 days).
+
 ## Kody's 7 triggers
 
 `src/lib/seo/triggers.ts`, thresholds exactly as `05-task5-tracking-system.md`
 section 2. Scope is every www page except the home page (not only
 /resources, since none are live yet). Trigger 7 uses the date Google shows
 on a top-3 result; the "under 1,000 words" and "product page" checks need a
-page fetch and are not automated.
+page fetch and are not automated. A keyword task is one task per keyword
+whatever page ranks; a dismissed task never reopens and a done one stays
+quiet 28 days while its +14 / +28 day numbers come in.

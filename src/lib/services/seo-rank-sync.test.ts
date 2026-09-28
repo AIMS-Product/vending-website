@@ -101,6 +101,41 @@ describe("syncSeoRanks", () => {
   });
 });
 
+describe("time budget", () => {
+  it("keeps what it pulled and says how many it left for next time", async () => {
+    const { client, upserts } = buildClient();
+    let t = 0;
+    const result = await syncSeoRanks({
+      client,
+      dataforseo: fake(),
+      full: true,
+      now: new Date("2026-09-21T13:00:00Z"),
+      clock: () => (t += 1000),
+      budgetMs: 1500,
+    });
+    // First batch (both keywords) runs; the budget is spent before volumes.
+    expect(upserts.seo_rank_snapshots).toHaveLength(2);
+    expect(result.volumesRefreshed).toBe(false);
+  });
+
+  it("does not fail the snapshots when the volume refresh throws", async () => {
+    const { client, upserts } = buildClient();
+    const dataforseo = fake();
+    dataforseo.searchVolume = vi.fn(async () => {
+      throw new Error("HTTP 500");
+    });
+    const result = await syncSeoRanks({
+      client,
+      dataforseo,
+      full: true,
+      now: new Date("2026-09-21T13:00:00Z"),
+    });
+    expect(upserts.seo_rank_snapshots).toHaveLength(2);
+    expect(result.connector.rowsWritten).toBe(2);
+    expect(result.connector.error).toMatch(/volume refresh failed/);
+  });
+});
+
 describe("snapshotRow", () => {
   it("marks a YouTube citation as VP's only for a VP video", () => {
     expect(

@@ -22,7 +22,8 @@ create table if not exists public.seo_keywords (
   tracked     boolean not null default true,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
-  constraint seo_keywords_len check (length(keyword) <= 300)
+  constraint seo_keywords_len check (length(keyword) <= 300),
+  constraint seo_keywords_lower check (keyword = lower(keyword))
 );
 
 create table if not exists public.seo_rank_snapshots (

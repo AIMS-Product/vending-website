@@ -64,10 +64,11 @@ create table if not exists public.seo_tasks (
   constraint seo_tasks_title_len check (length(title) <= 300)
 );
 
--- One open task per trigger per page or keyword: the weekly job updates the
--- evidence on it instead of opening a duplicate.
+-- One open task per trigger per keyword (or, for page triggers, per page):
+-- the weekly job updates the evidence on it instead of opening a duplicate.
+-- A keyword task's page can change week to week, so it is not in the key.
 create unique index if not exists seo_tasks_open_trigger_idx
-  on public.seo_tasks (trigger_code, coalesce(url, ''), coalesce(subject, ''))
+  on public.seo_tasks (trigger_code, coalesce(subject, url, ''))
   where trigger_code is not null and status in ('open', 'in_progress');
 
 create index if not exists seo_tasks_status_idx

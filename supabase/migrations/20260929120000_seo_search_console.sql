@@ -54,7 +54,22 @@ create table if not exists public.seo_gsc_query_daily (
 create index if not exists seo_gsc_query_daily_query_idx
   on public.seo_gsc_query_daily (query, day);
 
+-- Per query per day, all pages together (the date + query report). Use this
+-- for query totals: the query + page table counts one search once per VP
+-- page it showed, so summing it double counts.
+create table if not exists public.seo_gsc_query_totals_daily (
+  day         date not null,
+  query       text not null,
+  clicks      integer not null default 0,
+  impressions integer not null default 0,
+  position    numeric(8, 2),
+  synced_at   timestamptz not null default now(),
+  primary key (day, query),
+  constraint seo_gsc_query_totals_daily_query_len check (length(query) <= 1000)
+);
+
 alter table public.seo_gsc_daily enable row level security;
+alter table public.seo_gsc_query_totals_daily enable row level security;
 alter table public.seo_gsc_page_daily enable row level security;
 alter table public.seo_gsc_query_daily enable row level security;
 

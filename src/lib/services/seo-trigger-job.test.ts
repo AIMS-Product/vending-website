@@ -84,7 +84,9 @@ describe("runSeoTriggers", () => {
   it("updates the open task instead of opening a duplicate", async () => {
     const { client, inserts, updates } = fakeClient({
       seo_gsc_page_daily: [{ day: AS_OF }, ...pageDays],
-      seo_tasks: [{ id: "t1", trigger_code: 1, url: PAGE, subject: null }],
+      seo_tasks: [
+        { id: "t1", trigger_code: 1, url: PAGE, subject: null, status: "open" },
+      ],
     });
     const result = await runSeoTriggers({
       client,
@@ -93,6 +95,27 @@ describe("runSeoTriggers", () => {
     expect(inserts.filter((i) => i.table === "seo_tasks")).toHaveLength(0);
     expect(result.updated).toBe(1);
     expect(updates[0]?.patch.evidence).toMatchObject({ position: 7 });
+  });
+});
+
+describe("silenced triggers", () => {
+  it("never reopens a dismissed task, and waits 28 days after done", async () => {
+    for (const task of [
+      { status: "dismissed", done_at: null },
+      { status: "done", done_at: "2026-09-20T00:00:00Z" },
+    ]) {
+      const { client, inserts } = fakeClient({
+        seo_gsc_page_daily: [{ day: AS_OF }, ...pageDays],
+        seo_tasks: [
+          { id: "t1", trigger_code: 1, url: PAGE, subject: null, ...task },
+        ],
+      });
+      await runSeoTriggers({ client, now: new Date("2026-09-28T14:00:00Z") });
+      expect(
+        inserts.filter((i) => i.table === "seo_tasks"),
+        task.status,
+      ).toHaveLength(0);
+    }
   });
 });
 

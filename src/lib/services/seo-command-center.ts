@@ -74,14 +74,16 @@ export async function getSeoOverview(
   deps: { client?: Client } = {},
 ): Promise<SeoOverview | Missing> {
   const client = deps.client ?? createAdminClient();
+  // Newest first, then reversed: a limit must cut the oldest days, never
+  // the newest. 800 days covers a year-back comparison with room to spare.
   const daily = await client
     .from("seo_gsc_daily")
     .select("day, clicks, impressions, position, brand_impressions")
-    .order("day")
-    .limit(1000);
+    .order("day", { ascending: false })
+    .limit(800);
   if (isMissingTable(daily.error)) return MISSING;
   if (daily.error) fail("Search Console daily totals", daily.error);
-  const points: DailyPoint[] = (daily.data ?? []).map((r) => ({
+  const points: DailyPoint[] = [...(daily.data ?? [])].reverse().map((r) => ({
     day: r.day,
     impressions: r.impressions,
     clicks: r.clicks,
@@ -186,12 +188,11 @@ async function readMovers(client: Client, asOf: string) {
       position: string | number | null;
     }>((from, to, count) =>
       client
-        .from("seo_gsc_query_daily")
+        .from("seo_gsc_query_totals_daily")
         .select("day, query, impressions, clicks, position", { count })
         .gte("day", since)
         .order("day")
         .order("query")
-        .order("page")
         .range(from, to),
     ),
   ]);
@@ -199,7 +200,7 @@ async function readMovers(client: Client, asOf: string) {
   if (queries.error) fail("Search Console queries", queries.error);
   const rank = (rows: Array<DayRow & { key: string }>) => {
     const by = new Map<string, DayRow[]>();
-    for (const r of rows) by.set(r.key, [...(by.get(r.key) ?? []), r]);
+    for (const r of rows) push(by, r.key, r);
     return [...by]
       .map(([key, list]) => {
         const cur = sum(list, window(asOf, 0, 28));
@@ -286,10 +287,7 @@ export async function getSeoPages(
   const byPage = new Map<string, DayRow[]>();
   const firstSeen = new Map<string, string>();
   for (const r of rows.rows) {
-    byPage.set(r.page, [
-      ...(byPage.get(r.page) ?? []),
-      { ...r, position: num(r.position) },
-    ]);
+    push(byPage, r.page, { ...r, position: num(r.position) });
     if (!firstSeen.has(r.page)) firstSeen.set(r.page, r.day);
   }
   const toTotals = (s: ReturnType<typeof sum>): Totals => ({
@@ -335,6 +333,15 @@ export type KeywordRow = {
   citesYouTube: boolean;
 };
 
+type RankSnap = {
+  day: string;
+  keyword: string;
+  vp_position: number | null;
+  ai_overview: boolean;
+  aio_cites_site: boolean;
+  aio_cites_youtube: boolean;
+};
+
 export type SeoKeywords = {
   missing: false;
   keywords: KeywordRow[];
@@ -361,7 +368,7 @@ export async function getSeoKeywords(
   if (keywords.error) fail("tracked keywords", keywords.error);
 
   const latestDay = await client
-    .from("seo_gsc_query_daily")
+    .from("seo_gsc_query_totals_daily")
     .select("day")
     .order("day", { ascending: false })
     .limit(1);
@@ -377,44 +384,43 @@ export async function getSeoKeywords(
           position: string | number | null;
         }>((from, to, count) =>
           client
-            .from("seo_gsc_query_daily")
+            .from("seo_gsc_query_totals_daily")
             .select("day, query, impressions, clicks, position", { count })
             .gte("day", addDays(asOf, -55))
             .order("day")
             .order("query")
-            .order("page")
             .range(from, to),
         )
       : Promise.resolve({ rows: [], error: null }),
-    client
-      .from("seo_rank_snapshots")
-      .select(
-        "day, keyword, vp_position, ai_overview, aio_cites_site, aio_cites_youtube",
-      )
-      .gte("day", addDays(new Date().toISOString().slice(0, 10), -60))
-      .order("day", { ascending: false }),
+    readAllPages<RankSnap>((from, to, count) =>
+      client
+        .from("seo_rank_snapshots")
+        .select(
+          "day, keyword, vp_position, ai_overview, aio_cites_site, aio_cites_youtube",
+          { count },
+        )
+        .gte("day", addDays(new Date().toISOString().slice(0, 10), -60))
+        .order("day", { ascending: false })
+        .order("keyword")
+        .range(from, to),
+    ),
   ]);
   if (queries.error) fail("Search Console queries", queries.error);
   if (ranks.error) fail("rank snapshots", ranks.error);
 
   const byQuery = new Map<string, DayRow[]>();
   for (const r of queries.rows) {
-    const k = r.query.toLowerCase();
-    byQuery.set(k, [
-      ...(byQuery.get(k) ?? []),
-      { ...r, position: num(r.position) },
-    ]);
+    push(byQuery, r.query.toLowerCase(), { ...r, position: num(r.position) });
   }
-  const snaps = new Map<string, Array<(typeof ranks.data & object)[number]>>();
-  for (const s of ranks.data ?? [])
-    snaps.set(s.keyword, [...(snaps.get(s.keyword) ?? []), s]);
-  const lastPull = ranks.data?.[0]?.day ?? null;
+  const snaps = new Map<string, RankSnap[]>();
+  for (const snap of ranks.rows) push(snaps, snap.keyword.toLowerCase(), snap);
+  const lastPull = ranks.rows[0]?.day ?? null;
 
   const rows: KeywordRow[] = (keywords.data ?? []).map((k) => {
     const gsc = asOf
-      ? sum(byQuery.get(k.keyword) ?? [], window(asOf, 0, 28))
+      ? sum(byQuery.get(k.keyword.toLowerCase()) ?? [], window(asOf, 0, 28))
       : null;
-    const [latest, ...older] = snaps.get(k.keyword) ?? [];
+    const [latest, ...older] = snaps.get(k.keyword.toLowerCase()) ?? [];
     const before = older.find(
       (s) => latest && s.day <= addDays(latest.day, -14),
     );
@@ -440,7 +446,7 @@ export async function getSeoKeywords(
     (r) => r.aiOverview !== null && r.role === "primary",
   );
   const withOverview = checked.filter((r) => r.aiOverview);
-  const tracked = new Set(rows.map((r) => r.keyword));
+  const tracked = new Set(rows.map((r) => r.keyword.toLowerCase()));
   const untracked = asOf
     ? [...byQuery]
         .filter(([q]) => !tracked.has(q) && !isBrandQuery(q))
@@ -531,8 +537,8 @@ export async function getSeoSocial(
   const google = await client
     .from("seo_gsc_daily")
     .select("day, impressions, brand_impressions")
-    .order("day")
-    .limit(1000);
+    .order("day", { ascending: false })
+    .limit(800);
   if (google.error && !isMissingTable(google.error))
     fail("Search Console totals", google.error);
 
@@ -598,4 +604,10 @@ export function pathOf(url: string): string {
     // Not an absolute URL: show it as stored.
     return url;
   }
+}
+
+function push<K, V>(map: Map<K, V[]>, key: K, value: V): void {
+  const list = map.get(key);
+  if (list) list.push(value);
+  else map.set(key, [value]);
 }

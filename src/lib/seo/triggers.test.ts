@@ -30,6 +30,7 @@ function days(
 const base = {
   asOf: AS_OF,
   queryDays: [] as QueryDayRow[],
+  queryTotals: [] as QueryDayRow[],
   tracked: new Set<string>(),
   isBrand: (q: string) => q.includes("vendingpreneurs"),
   ranks: [] as RankRow[],
@@ -139,6 +140,8 @@ describe("5. new opportunity", () => {
       ...base,
       pageDays: [],
       queryDays,
+      // Totals equal the single-page rows here; the page rows name the URL.
+      queryTotals: queryDays,
       tracked: new Set(["types of vending machines"]),
     });
     expect(hits).toHaveLength(1);
@@ -148,6 +151,28 @@ describe("5. new opportunity", () => {
       url: PAGE,
       evidence: { impressions28: 56, impressionsChangePct: 100 },
     });
+  });
+});
+
+describe("5 reads query totals, not page rows", () => {
+  it("does not double count a search that showed two VP pages", () => {
+    const rows = (page: string, impressions: number, endOffset: number) =>
+      days(28, endOffset, () => ({ impressions }), page).map((r) => ({
+        ...r,
+        query: "vending machine items",
+      }));
+    // 30 searches a window, each showing two pages: 60 page-impressions.
+    const queryDays = [...rows(PAGE, 1, 0), ...rows(`${PAGE}-2`, 1, 0)];
+    const hits = evaluateTriggers({
+      ...base,
+      pageDays: [],
+      queryDays,
+      queryTotals: days(28, 0, () => ({ impressions: 1 })).map((r) => ({
+        ...r,
+        query: "vending machine items",
+      })),
+    });
+    expect(hits).toEqual([]); // 28 real impressions, under the 50 floor
   });
 });
 

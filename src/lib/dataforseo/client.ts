@@ -126,6 +126,8 @@ export function createDataForSeoClient({
       method: "POST",
       headers: { Authorization: auth, "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      // One slow SERP must not hold a worker past the run's time budget.
+      signal: AbortSignal.timeout(90_000),
     });
     const text = await response.text();
     if (!response.ok) {
@@ -241,7 +243,7 @@ export function snapshotFromItems(
   items: z.infer<typeof serpItem>[],
 ): SerpSnapshot {
   const organic = items.filter((item) => item.type === "organic");
-  const vp = organic.find((item) => (item.domain ?? "").includes(VP_DOMAIN));
+  const vp = organic.find((item) => isVpHost(item.domain ?? ""));
   const aio = items.find((item) => item.type === "ai_overview");
   const refs = aio ? [...new Set(urlsIn(aio))].sort() : [];
   return {
@@ -250,7 +252,7 @@ export function snapshotFromItems(
     vpUrl: vp?.url ?? null,
     aiOverview: Boolean(aio),
     aiOverviewRefs: refs,
-    aioCitesSite: refs.some((url) => hostOf(url).endsWith(VP_DOMAIN)),
+    aioCitesSite: refs.some((url) => isVpHost(hostOf(url))),
     serpFeatures: [
       ...new Set(items.map((i) => i.type).filter((t) => t !== "organic")),
     ].sort(),
@@ -273,6 +275,12 @@ export function urlsIn(value: unknown): string[] {
     );
   }
   return [];
+}
+
+/** vendingpreneurs.com or a subdomain of it; never a look-alike. */
+export function isVpHost(host: string): boolean {
+  const h = host.toLowerCase();
+  return h === VP_DOMAIN || h.endsWith(`.${VP_DOMAIN}`);
 }
 
 function hostOf(url: string): string {

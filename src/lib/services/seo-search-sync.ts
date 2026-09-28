@@ -86,6 +86,20 @@ export async function syncSeoSearchDetail(deps: {
         queryRows,
         "day,query,page",
       ),
+      await upsertInChunks(
+        client,
+        "seo_gsc_query_totals_daily",
+        byQuery.map(
+          ({ keys: [day, query], clicks, impressions, position }) => ({
+            day,
+            query,
+            clicks,
+            impressions,
+            position: round2(position),
+          }),
+        ),
+        "day,query",
+      ),
     ];
     if (writes.some((w) => w.missing)) return skipped(TABLE_MISSING);
     const failed = writes.reduce((sum, w) => sum + w.failed, 0);

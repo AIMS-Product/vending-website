@@ -221,7 +221,7 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   kpi: [...SPINE, "close", "calendly", "site-leads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
-  // seo-command-center.ts + seo-plan-data.ts: seo_gsc_*, seo_rank_snapshots,
+  // seo-command-center.ts + seo-plan-data.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
   seo: ["seo-search", "seo-ranks", "social-accounts"],
   // /admin/data is about every number.

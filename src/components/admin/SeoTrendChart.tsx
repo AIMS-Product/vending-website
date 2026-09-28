@@ -101,17 +101,18 @@ export function SeoTrendChart({
           role="group"
           aria-label="Chart grain"
         >
-          {(["Daily", "Weekly"] as const).map((grain) => (
-            <button
-              key={grain}
-              type="button"
-              aria-pressed={(grain === "Weekly") === weekly}
-              onClick={() => setWeekly(grain === "Weekly")}
-              className={`rounded-ui border px-2 py-0.5 ${(grain === "Weekly") === weekly ? "border-ui-accent text-ui-accent" : "border-ui-line text-ui-text-muted"}`}
-            >
-              {grain}
-            </button>
-          ))}
+          {grain === "toggle" &&
+            (["Daily", "Weekly"] as const).map((g) => (
+              <button
+                key={g}
+                type="button"
+                aria-pressed={(g === "Weekly") === weekly}
+                onClick={() => setWeekly(g === "Weekly")}
+                className={`rounded-ui border px-2 py-0.5 ${(g === "Weekly") === weekly ? "border-ui-accent text-ui-accent" : "border-ui-line text-ui-text-muted"}`}
+              >
+                {g}
+              </button>
+            ))}
         </div>
       </div>
       <svg
