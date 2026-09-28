@@ -1,14 +1,12 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  attributionFor,
-  capacityByChannel,
+  callsByChannel,
   readBookedMetric,
   REPORTING_TIME_ZONE,
-  type AttributionSource,
   type BookedMetricResult,
   type BookingRow,
-  type CapacityGrid,
+  type ChannelGrid,
   type FunnelRow,
   type MetricKey,
 } from "@/lib/services/booked-metrics";
@@ -16,6 +14,8 @@ import {
   mappingReviewState,
   type MappingReviewState,
 } from "@/lib/services/calendly-event-class";
+import { resolveChannel } from "@/lib/analytics/channel";
+import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import { CALENDLY_BOOKED_AT_PATH } from "@/lib/services/calendly-bookings";
 import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -36,6 +36,8 @@ const LOOKBACK_DAYS = 45;
 
 /** The capacity grid shows this many days either side of today. */
 const CAPACITY_DAYS_EACH_WAY = 7;
+/** The booked-on grid shows this many days, ending today. */
+const BOOKED_GRID_DAYS = 14;
 
 export type BookedPace = {
   /** The day every metric here counts, YYYY-MM-DD in the business timezone. */
@@ -45,15 +47,14 @@ export type BookedPace = {
   newBooked: BookedMetricResult;
   /** The neighbouring numbers, so a figure quoted elsewhere can be named. */
   context: BookedMetricResult[];
-  /** Where the day's new calls came from. Close funnel first, then UTM. */
-  attribution: Array<{ label: string; via: AttributionSource; booked: number }>;
   /** Trailing days, most recent last, for pace against the daily goal. */
   trailing: Array<{ day: string; value: number | null }>;
-  /**
-   * New first calls on the calendar by channel, a week back through a week
-   * ahead, lands-on basis. Null when the tables could not be read.
-   */
-  capacity: CapacityGrid | null;
+  /** New calls booked per channel, the last 14 days. Null when unreadable. */
+  booked: ChannelGrid | null;
+  /** New calls on the calendar per channel, a week either side. Null when unreadable. */
+  capacity: ChannelGrid | null;
+  /** False when website forms could not be read, so tag credit is short. */
+  siteFormsRead: boolean;
   /** How much of the event-type mapping a human has signed off. */
   review: MappingReviewState;
   /** False when the tables could not be read at all. Never reported as zero. */
@@ -93,9 +94,10 @@ export async function getBookedPace(
   const day = businessDay(input.now ?? new Date(), timeZone);
   const trailingDays = input.trailingDays ?? 14;
 
-  const [bookings, funnels] = await Promise.all([
+  const [bookings, funnels, siteChannels] = await Promise.all([
     fetchBookings(client, previousDay(day, LOOKBACK_DAYS)),
     fetchFunnels(client),
+    fetchSiteChannels(client),
   ]);
 
   const connected = bookings !== null && funnels !== null;
@@ -122,20 +124,25 @@ export async function getBookedPace(
     { length: CAPACITY_DAYS_EACH_WAY * 2 + 1 },
     (_, index) => previousDay(day, CAPACITY_DAYS_EACH_WAY - index),
   );
+  const bookedDays = Array.from({ length: BOOKED_GRID_DAYS }, (_, index) =>
+    previousDay(day, BOOKED_GRID_DAYS - 1 - index),
+  );
+  const gridInput = { ...metricInput, siteChannels: siteChannels ?? undefined };
+  const booked = connected
+    ? callsByChannel(gridInput, bookedDays, "booked-on")
+    : null;
   const capacity = connected
-    ? capacityByChannel(metricInput, capacityDays)
+    ? callsByChannel(gridInput, capacityDays, "lands-on")
     : null;
 
   return {
     day,
     timeZone,
+    booked,
     capacity,
+    siteFormsRead: siteChannels !== null,
     newBooked: readBookedMetric("newBookedOn", metricInput),
     context: CONTEXT_METRICS.map((key) => readBookedMetric(key, metricInput)),
-    attribution: attributionFor(metricInput, {
-      onlyClass: "new",
-      excludeLaneTwo: true,
-    }),
     trailing,
     review: mappingReviewState(),
     connected,
@@ -164,6 +171,7 @@ async function fetchBookings(
     scheduled_event_name: string | null;
     event_start_at: string | null;
     utm_source: string | null;
+    utm_medium: string | null;
     bookedAt: string | null;
     eventTypeUri: string | null;
   }>(
@@ -171,7 +179,7 @@ async function fetchBookings(
       client
         .from("calendly_bookings")
         .select(
-          "invitee_email,status,scheduled_event_name,event_start_at,utm_source," +
+          "invitee_email,status,scheduled_event_name,event_start_at,utm_source,utm_medium," +
             `bookedAt:${CALENDLY_BOOKED_AT_PATH},` +
             "eventTypeUri:raw_payload->payload->scheduled_event->>event_type",
           { count },
@@ -189,6 +197,7 @@ async function fetchBookings(
           scheduled_event_name: string | null;
           event_start_at: string | null;
           utm_source: string | null;
+          utm_medium: string | null;
           bookedAt: string | null;
           eventTypeUri: string | null;
         }> | null;
@@ -212,6 +221,7 @@ async function fetchBookings(
     bookedAt: row.bookedAt,
     eventStartAt: row.event_start_at,
     utmSource: row.utm_source,
+    utmMedium: row.utm_medium,
   }));
 }
 
@@ -243,4 +253,50 @@ async function fetchFunnels(client: Client): Promise<FunnelRow[] | null> {
     funnel: row.funnel,
     firstSalesCallBookedDate: row.first_sales_call_booked_date,
   }));
+}
+
+/**
+ * Email to the website channel of that person's FIRST form, resolved exactly as
+ * the Analytics page resolves a lead. Only consulted for bookings Close has no
+ * funnel for. Null when the table could not be read.
+ */
+async function fetchSiteChannels(
+  client: Client,
+): Promise<Map<string, string> | null> {
+  const { rows, error } = await readAllPages<{
+    email: string;
+    utm_source: string | null;
+    utm_medium: string | null;
+    metadata: unknown;
+  }>(
+    (from, to, count) =>
+      client
+        .from("lead_submissions")
+        .select("email,utm_source,utm_medium,metadata", { count })
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    { pageSize: PAGE_SIZE, maxRows: MAX_ROWS },
+  );
+  if (error) {
+    console.error("lead_submissions read failed", {
+      code: error.code,
+      message: error.message,
+    });
+    if (rows.length === 0) return null;
+  }
+  const channels = new Map<string, string>();
+  for (const row of rows) {
+    const email = row.email?.trim().toLowerCase();
+    if (!email || channels.has(email)) continue;
+    channels.set(
+      email,
+      resolveChannel(row.utm_source, {
+        medium: row.utm_medium,
+        capturedByChatbot:
+          !row.utm_source?.trim() && isChatbotCapture(row.metadata),
+      }).channel,
+    );
+  }
+  return channels;
 }
