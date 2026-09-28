@@ -1,5 +1,6 @@
 import "server-only";
 
+import { z } from "zod";
 import {
   apiMessage,
   parseServiceAccount,
@@ -33,12 +34,49 @@ export type SearchConsoleDayRow = {
 
 export type SearchConsoleSite = { siteUrl: string; permissionLevel: string };
 
+export type SearchConsoleDimension = "date" | "page" | "query";
+
+/** One row of a multi-dimension report, keys in the order asked for. */
+export type SearchConsoleRow = {
+  keys: string[];
+  clicks: number;
+  impressions: number;
+  /** Impression-weighted average position, 1 = top. */
+  position: number;
+};
+
+const rowsPayload = z.object({
+  rows: z
+    .array(
+      z.object({
+        keys: z.array(z.string()),
+        clicks: z.number(),
+        impressions: z.number(),
+        position: z.number(),
+      }),
+    )
+    .optional(),
+});
+
+/** Stop paging past this many rows so a runaway report cannot hold a function open. */
+const MAX_ROWS = 500_000;
+
 export type SearchConsoleClient = {
   /** Web-search clicks and impressions per day, final data only. */
   fetchDailyTotals(range: {
     startDate: string;
     endDate: string;
   }): Promise<SearchConsoleDayRow[]>;
+  /**
+   * Web-search rows by `dimensions`, every page of them (25,000 a request).
+   * Search Console drops anonymized queries from any report grouped by
+   * query, so query rows never add up to the date totals.
+   */
+  fetchRows(request: {
+    startDate: string;
+    endDate: string;
+    dimensions: SearchConsoleDimension[];
+  }): Promise<SearchConsoleRow[]>;
   /** Every property this service account has been added to. */
   listSites(): Promise<SearchConsoleSite[]>;
 };
@@ -117,6 +155,44 @@ export function createSearchConsoleClient({
           },
         ];
       });
+    },
+    async fetchRows({ startDate, endDate, dimensions }) {
+      const all: SearchConsoleRow[] = [];
+      for (let startRow = 0; startRow < MAX_ROWS; startRow += ROW_LIMIT) {
+        const parsed = rowsPayload.safeParse(
+          await call(
+            `/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`,
+            {
+              startDate,
+              endDate,
+              dimensions,
+              type: "web",
+              dataState: "final",
+              rowLimit: ROW_LIMIT,
+              startRow,
+            },
+          ),
+        );
+        if (!parsed.success) {
+          throw new Error(
+            "Search Console returned rows in an unexpected shape.",
+          );
+        }
+        const page = parsed.data.rows ?? [];
+        for (const row of page) {
+          if (row.keys.length !== dimensions.length) continue;
+          all.push({
+            keys: row.keys,
+            clicks: Math.round(row.clicks),
+            impressions: Math.round(row.impressions),
+            position: row.position,
+          });
+        }
+        if (page.length < ROW_LIMIT) return all;
+      }
+      throw new Error(
+        `Search Console report passed ${MAX_ROWS} rows; ask for a shorter window.`,
+      );
     },
     async listSites() {
       const payload = (await call("/sites")) as { siteEntry?: unknown };

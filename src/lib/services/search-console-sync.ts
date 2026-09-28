@@ -15,6 +15,7 @@ import {
   type SyncRunOutcome,
 } from "@/lib/services/channel-daily";
 import { skipped } from "@/lib/services/channel-sync";
+import { syncSeoSearchDetail } from "@/lib/services/seo-search-sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -33,6 +34,8 @@ const WINDOW_DAYS = 10;
 export type SearchConsoleSyncResult = {
   endDate: string;
   connector: SyncRunOutcome;
+  /** The per-page and per-query tables behind /admin/seo. */
+  detail: SyncRunOutcome;
 };
 
 export async function syncSearchConsole(
@@ -49,14 +52,15 @@ export async function syncSearchConsole(
   const endDate = dayKey(addDays(now, -1));
   const startDate = dayKey(addDays(now, -(deps.days ?? WINDOW_DAYS)));
 
+  const searchConsole =
+    deps.searchConsole === undefined
+      ? searchConsoleFromConfig()
+      : deps.searchConsole;
+
   const connector = await recordSyncRun(
     client,
     SEARCH_CONSOLE_CONNECTOR,
     async () => {
-      const searchConsole =
-        deps.searchConsole === undefined
-          ? searchConsoleFromConfig()
-          : deps.searchConsole;
       if (!searchConsole) return skipped(notConfiguredReason());
 
       const rows = await searchConsole.fetchDailyTotals({ startDate, endDate });
@@ -72,7 +76,14 @@ export async function syncSearchConsole(
       };
     },
   );
-  return { endDate, connector };
+  const detail = await syncSeoSearchDetail({
+    client,
+    searchConsole,
+    notConfigured: searchConsole ? "" : notConfiguredReason(),
+    startDate,
+    endDate,
+  });
+  return { endDate, connector, detail };
 }
 
 /**

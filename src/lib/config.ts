@@ -76,6 +76,9 @@ const envSchema = z.object({
    * search-console connector records "skipped".
    */
   GSC_SITE_URL: optionalTrimmedOptionalEnv,
+  DATAFORSEO_LOGIN: optionalTrimmedOptionalEnv,
+  DATAFORSEO_PASSWORD: optionalTrimmedOptionalEnv,
+  DATAFORSEO_MONTHLY_BUDGET_USD: optionalTrimmedOptionalEnv,
   /**
    * GoHighLevel v2 private integration token (`pit-...`) and the sub-account
    * location id. Read-only use. Absent means the ghl-email / ghl-forms
@@ -238,6 +241,9 @@ const parsed = envSchema.safeParse({
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
   GA4_PROPERTY_ID: process.env.GA4_PROPERTY_ID,
   GSC_SITE_URL: process.env.GSC_SITE_URL,
+  DATAFORSEO_LOGIN: process.env.DATAFORSEO_LOGIN,
+  DATAFORSEO_PASSWORD: process.env.DATAFORSEO_PASSWORD,
+  DATAFORSEO_MONTHLY_BUDGET_USD: process.env.DATAFORSEO_MONTHLY_BUDGET_USD,
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,

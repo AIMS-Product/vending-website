@@ -6,10 +6,11 @@ import { syncSearchConsole } from "@/lib/services/search-console-sync";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-// One Search Analytics request per run, even for a backfill. A cut-off run is
+// Six Search Analytics requests per run, even for a backfill (?days=500
+// writes ~45k detail rows in 500-row upserts, well past 60s). A cut-off run is
 // safe: every write is an upsert on the spine's primary key and the run is
 // recorded, so the next cron redoes it.
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 function hasValidCronSecret(authorization: string | null, secret: string) {
   if (!authorization) return false;
@@ -68,9 +69,10 @@ export async function GET(request: Request) {
   try {
     const result = await syncSearchConsole(options);
     // A skipped connector (not configured) is fine; a failed one is not.
-    const run = result.connector;
-    const failed = Boolean(
-      run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
+    const failed = [result.connector, result.detail].some((run) =>
+      Boolean(
+        run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
+      ),
     );
     return NextResponse.json(
       { ok: !failed, ...result },

@@ -35,6 +35,8 @@ const READ_ONLY_PAGES = [
   "libraries/page.tsx",
   "links/page.tsx",
   "links/coverage/page.tsx",
+  // Forms render only with edit rights; its actions call requireAdmin().
+  "seo/page.tsx",
   "media/page.tsx",
   "news/page.tsx",
   "pages/page.tsx",

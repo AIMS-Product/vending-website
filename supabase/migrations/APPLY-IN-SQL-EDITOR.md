@@ -183,3 +183,30 @@ from (
 where lead.id = consent.lead_submission_id
   and lead.newsletter_subscribed_at is null;
 ```
+
+## 8. SEO command center (20260929120000 to 20260929125000)
+
+Six files, pasted **in this order**, each safe to run twice (verified on a
+scratch Postgres 17, applied twice). They only create new `seo_*` and
+`social_account_daily` tables and seed the plan; nothing existing is altered.
+Until they exist, /admin/seo shows a setup note and the new connectors log
+`skipped: table missing`, not failures.
+
+1. `20260929120000_seo_search_console.sql` (Search Console by day, page, query)
+2. `20260929121000_seo_keywords_ranks.sql` (tracked keywords, DataForSEO snapshots)
+3. `20260929122000_seo_content_tasks.sql` (content plan, tasks)
+4. `20260929123000_seo_social_reviews.sql` (social account days, monthly reviews)
+5. `20260929124000_seo_seed.sql` (63 pieces, 223 keywords, 51 starter tasks;
+   `on conflict do nothing`, so it never overwrites edits made on the page)
+6. `20260929125000_seo_budget_competitors.sql` (DataForSEO spend ledger for
+   the monthly cap, monthly competitor keywords)
+
+Then backfill once (production, with the cron secret):
+
+```
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/api/admin/search-console-sync/run?days=500"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/api/admin/metricool-sync/run?days=400"
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/api/admin/seo-triggers/run"
+# after DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD are set in Vercel:
+curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/api/admin/seo-ranks/run?full=1"
+```

@@ -80,6 +80,14 @@
     {
       "path": "/api/admin/pre-call-notes/run",
       "schedule": "25 * * * *"
+    },
+    {
+      "path": "/api/admin/seo-ranks/run",
+      "schedule": "0 13 * * 1"
+    },
+    {
+      "path": "/api/admin/seo-triggers/run",
+      "schedule": "0 14 * * 1"
     }
   ]
 }

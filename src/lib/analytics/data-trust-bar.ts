@@ -127,6 +127,22 @@ export const FEEDS = {
     staleAfterHours: DAILY,
     source: { kind: "run", connector: "search-console" },
   },
+  "seo-search": {
+    label: "Search Console by page and query",
+    staleAfterHours: DAILY,
+    source: { kind: "run", connector: "seo-search-console" },
+  },
+  "seo-ranks": {
+    label: "Keyword ranks and AI Overviews (DataForSEO)",
+    // Weekly, Mondays.
+    staleAfterHours: 8 * 24,
+    source: { kind: "run", connector: "dataforseo-ranks" },
+  },
+  "social-accounts": {
+    label: "Social followers and reach (Metricool)",
+    staleAfterHours: DAILY,
+    source: { kind: "run", connector: "metricool-accounts" },
+  },
   webinar: {
     label: "Webinar registrations",
     // Pushed after each weekly webinar, not on a cron.
@@ -161,7 +177,7 @@ const SPINE: readonly FeedKey[] = [
   "manychat",
 ];
 
-export type TrustScope = AnalyticsTabKey | "data";
+export type TrustScope = AnalyticsTabKey | "data" | "seo";
 
 /**
  * THE map of tab to the feeds its loader reads. Read off each tab's data
@@ -205,6 +221,9 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   kpi: [...SPINE, "close", "calendly", "site-leads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
+  // seo-command-center.ts + seo-plan-data.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
+  // social_account_daily (the plan, task and review tables are edited by hand)
+  seo: ["seo-search", "seo-ranks", "social-accounts"],
   // /admin/data is about every number.
   data: Object.keys(FEEDS) as FeedKey[],
 };

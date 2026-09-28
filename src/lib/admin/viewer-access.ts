@@ -45,6 +45,9 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/pages/block-preview-audit",
   "/admin/pages/redirects",
   "/admin/popups",
+  // Read-only for viewers: its forms render only with edit rights and its
+  // server actions call requireAdmin().
+  "/admin/seo",
   "/admin/settings/routes",
   "/admin/team",
 ]);

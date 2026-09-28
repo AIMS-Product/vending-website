@@ -49,7 +49,11 @@ function buildClient({
 function fakeSearchConsole(
   fetchDailyTotals: SearchConsoleClient["fetchDailyTotals"],
 ): SearchConsoleClient {
-  return { fetchDailyTotals: vi.fn(fetchDailyTotals), listSites: vi.fn() };
+  return {
+    fetchDailyTotals: vi.fn(fetchDailyTotals),
+    fetchRows: vi.fn(async () => []),
+    listSites: vi.fn(),
+  };
 }
 
 describe("syncSearchConsole", () => {
