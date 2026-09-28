@@ -37,7 +37,7 @@ export async function updateTaskStatus(form: FormData): Promise<void> {
 }
 
 export async function addTask(form: FormData): Promise<void> {
-  const { user } = await requireAdmin();
+  await requireAdmin();
   await createTask(
     newTaskInput.parse({
       title: field(form, "title"),
@@ -48,7 +48,6 @@ export async function addTask(form: FormData): Promise<void> {
       detail: field(form, "detail"),
       due_date: field(form, "due_date"),
     }),
-    user.email ?? null,
   );
   revalidatePath(PATH);
 }

@@ -5,6 +5,7 @@ import { isBrandQuery } from "@/lib/seo/brand";
 import { isMissingTable } from "@/lib/seo/db";
 import { addDays, sum, window, type DayRow } from "@/lib/seo/triggers";
 import { readAllPages } from "@/lib/services/paged-read";
+import { monthlyBudgetUsd } from "@/lib/services/seo-rank-sync";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -354,6 +355,15 @@ export type SeoKeywords = {
     neither: number;
   };
   untracked: Mover[];
+  /** Keywords a competitor ranks top 10 for that VP does not track. */
+  gaps: Array<{
+    keyword: string;
+    volume: number | null;
+    best: number;
+    domains: string[];
+  }>;
+  competitorMonth: string | null;
+  spend: { usd: number; budgetUsd: number };
 };
 
 export async function getSeoKeywords(
@@ -464,10 +474,16 @@ export async function getSeoKeywords(
         .sort((a, b) => b.impressions - a.impressions)
         .slice(0, 25)
     : [];
+  const [competitors, spend] = await Promise.all([
+    readCompetitorGaps(client, tracked),
+    readMonthSpend(client),
+  ]);
   return {
     missing: false,
     keywords: rows,
     lastPull,
+    ...competitors,
+    spend,
     aeo: {
       checked: checked.length,
       withOverview: withOverview.length,
@@ -610,4 +626,77 @@ function push<K, V>(map: Map<K, V[]>, key: K, value: V): void {
   const list = map.get(key);
   if (list) list.push(value);
   else map.set(key, [value]);
+}
+
+const VP = "vendingpreneurs.com";
+
+async function readCompetitorGaps(client: Client, tracked: Set<string>) {
+  const latest = await client
+    .from("seo_competitor_keywords")
+    .select("month")
+    .order("month", { ascending: false })
+    .limit(1);
+  if (isMissingTable(latest.error)) return { gaps: [], competitorMonth: null };
+  if (latest.error) fail("competitor keywords", latest.error);
+  const month = latest.data?.[0]?.month ?? null;
+  if (!month) return { gaps: [], competitorMonth: null };
+  const rows = await readAllPages<{
+    domain: string;
+    keyword: string;
+    position: number | null;
+    volume: number | null;
+  }>((from, to, count) =>
+    client
+      .from("seo_competitor_keywords")
+      .select("domain, keyword, position, volume", { count })
+      .eq("month", month)
+      .order("domain")
+      .order("keyword")
+      .range(from, to),
+  );
+  if (rows.error) fail("competitor keywords", rows.error);
+  const vpRanks = new Set(
+    rows.rows.filter((r) => r.domain === VP).map((r) => r.keyword),
+  );
+  const byKeyword = new Map<
+    string,
+    { keyword: string; volume: number | null; best: number; domains: string[] }
+  >();
+  for (const r of rows.rows) {
+    if (r.domain === VP || r.position === null || r.position > 10) continue;
+    if (
+      tracked.has(r.keyword) ||
+      vpRanks.has(r.keyword) ||
+      isBrandQuery(r.keyword)
+    )
+      continue;
+    const gap = byKeyword.get(r.keyword) ?? {
+      keyword: r.keyword,
+      volume: r.volume,
+      best: r.position,
+      domains: [],
+    };
+    byKeyword.set(r.keyword, {
+      ...gap,
+      best: Math.min(gap.best, r.position),
+      domains: [...gap.domains, r.domain],
+    });
+  }
+  const gaps = [...byKeyword.values()]
+    .sort((a, b) => (b.volume ?? 0) - (a.volume ?? 0))
+    .slice(0, 30);
+  return { gaps, competitorMonth: month };
+}
+
+async function readMonthSpend(client: Client) {
+  const month = `${new Date().toISOString().slice(0, 7)}-01`;
+  const { data, error } = await client
+    .from("dataforseo_spend")
+    .select("usd")
+    .eq("month", month);
+  if (error && !isMissingTable(error)) fail("DataForSEO spend", error);
+  return {
+    usd: (data ?? []).reduce((sum, row) => sum + Number(row.usd), 0),
+    budgetUsd: monthlyBudgetUsd(),
+  };
 }

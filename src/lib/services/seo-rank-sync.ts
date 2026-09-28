@@ -49,24 +49,47 @@ export async function syncSeoRanks(
     full?: boolean;
     clock?: () => number;
     budgetMs?: number;
+    /** Monthly USD cap; default DATAFORSEO_MONTHLY_BUDGET_USD or $25. */
+    budgetUsd?: number;
   } = {},
 ): Promise<RankSyncResult> {
   const now = deps.now ?? new Date();
   const client = deps.client ?? createAdminClient();
   const day = now.toISOString().slice(0, 10);
   const dataforseo =
-    deps.dataforseo === undefined ? dataForSeoFromConfig() : deps.dataforseo;
+    deps.dataforseo === undefined
+      ? dataForSeoFromConfig((endpoint, usd) => spend.add(endpoint, usd))
+      : deps.dataforseo;
   const clock = deps.clock ?? Date.now;
+  const spend = spendTracker();
   const budgetMs = deps.budgetMs ?? BUDGET_MS;
   const includeSupporting = deps.full || isoWeek(now) % 2 === 0;
   const refreshVolumes = Boolean(deps.full) || now.getUTCDate() <= 7;
   let keywords = 0;
   let volumesRefreshed = false;
 
+  const month = `${day.slice(0, 7)}-01`;
+  const budgetUsd = deps.budgetUsd ?? monthlyBudgetUsd();
+  let spentBefore = 0;
+
   const connector = await recordSyncRun(client, RANK_CONNECTOR, async () => {
+    try {
+      return await run();
+    } finally {
+      await spend.flush(client, month);
+    }
+  });
+
+  async function run() {
     if (!dataforseo) {
       return skipped(
         "DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD are not set (Adam: create the account, see .claude/specs/2026-09-28-seo-command-center.md section 6).",
+      );
+    }
+    spentBefore = await monthSpend(client, month);
+    if (spentBefore >= budgetUsd) {
+      return skipped(
+        `this month's DataForSEO budget is used ($${spentBefore.toFixed(2)} of $${budgetUsd}); raise DATAFORSEO_MONTHLY_BUDGET_USD to pull more.`,
       );
     }
     const tracked = await client
@@ -89,7 +112,8 @@ export async function syncSeoRanks(
 
     const vpVideoIds = await readVpVideoIds(client);
     const started = clock();
-    const outOfTime = () => clock() - started > budgetMs;
+    const outOfTime = () =>
+      clock() - started > budgetMs || spentBefore + spend.total() >= budgetUsd;
     let rowsWritten = 0;
     let serpFailures = 0;
     let writeFailures = 0;
@@ -156,9 +180,19 @@ export async function syncSeoRanks(
         });
         problems.push("The monthly volume refresh failed; see the server log.");
       }
+      try {
+        rowsWritten += await pullCompetitors(client, dataforseo, month);
+      } catch (error) {
+        console.error("DataForSEO competitor pull failed", {
+          message: error instanceof Error ? error.message : undefined,
+        });
+        problems.push(
+          "The monthly competitor pull failed; see the server log.",
+        );
+      }
     }
     return { rowsWritten, error: problems.length ? problems.join(" ") : null };
-  });
+  }
   return { day, keywords, volumesRefreshed, connector };
 }
 
@@ -278,9 +312,105 @@ function isoWeek(date: Date): number {
   return Math.ceil(((d.getTime() - yearStart) / 86_400_000 + 1) / 7);
 }
 
-function dataForSeoFromConfig(): DataForSeoClient | null {
+/**
+ * The domains Kody's competitor analysis names, plus VP itself (which
+ * cross-checks Search Console and finds VP pages outside /resources).
+ */
+export const COMPETITOR_DOMAINS = [
+  "vendsoft.com",
+  "upflip.com",
+  "wendor.ai",
+  "vendingpreneurs.com",
+] as const;
+
+/** Monthly: every keyword each domain ranks for in Google's top 20. */
+async function pullCompetitors(
+  client: Client,
+  dataforseo: DataForSeoClient,
+  month: string,
+): Promise<number> {
+  let written = 0;
+  for (const domain of COMPETITOR_DOMAINS) {
+    const rows = await dataforseo.rankedKeywords(domain);
+    const result = await upsertInChunks(
+      client,
+      "seo_competitor_keywords",
+      rows.map((r) => ({ month, domain, ...r })),
+      "month,domain,keyword",
+    );
+    written += result.written;
+  }
+  return written;
+}
+
+/** Default $25 a month: weekly ranks are roughly $2-12, the rest cents. */
+export const DEFAULT_MONTHLY_BUDGET_USD = 25;
+
+export function monthlyBudgetUsd(): number {
+  const value = Number(config.DATAFORSEO_MONTHLY_BUDGET_USD);
+  return Number.isFinite(value) && value > 0
+    ? value
+    : DEFAULT_MONTHLY_BUDGET_USD;
+}
+
+async function monthSpend(client: Client, month: string): Promise<number> {
+  const { data, error } = await client
+    .from("dataforseo_spend")
+    .select("usd")
+    .eq("month", month);
+  if (isMissingTable(error)) return 0;
+  if (error) throw new Error(`dataforseo_spend read failed: ${error.message}`);
+  return (data ?? []).reduce((sum, row) => sum + Number(row.usd), 0);
+}
+
+/** Adds up what each call cost and writes it once the run ends. */
+function spendTracker() {
+  const byEndpoint = new Map<string, { usd: number; calls: number }>();
+  return {
+    add(endpoint: string, usd: number) {
+      const row = byEndpoint.get(endpoint) ?? { usd: 0, calls: 0 };
+      byEndpoint.set(endpoint, { usd: row.usd + usd, calls: row.calls + 1 });
+    },
+    total() {
+      return [...byEndpoint.values()].reduce((s, r) => s + r.usd, 0);
+    },
+    async flush(client: Client, month: string) {
+      for (const [endpoint, run] of byEndpoint) {
+        const prior = await client
+          .from("dataforseo_spend")
+          .select("usd, calls")
+          .eq("month", month)
+          .eq("endpoint", endpoint)
+          .maybeSingle();
+        if (isMissingTable(prior.error)) return;
+        const { error } = await client.from("dataforseo_spend").upsert(
+          {
+            month,
+            endpoint,
+            usd: Number(prior.data?.usd ?? 0) + run.usd,
+            calls: (prior.data?.calls ?? 0) + run.calls,
+          },
+          { onConflict: "month,endpoint" },
+        );
+        if (error) {
+          // Spend already happened; losing the record only weakens the cap.
+          console.error("dataforseo_spend write failed", {
+            endpoint,
+            usd: run.usd,
+            message: error.message,
+          });
+        }
+      }
+      byEndpoint.clear();
+    },
+  };
+}
+
+function dataForSeoFromConfig(
+  onCost: (endpoint: string, usd: number) => void,
+): DataForSeoClient | null {
   const login = config.DATAFORSEO_LOGIN;
   const password = config.DATAFORSEO_PASSWORD;
   if (!login || !password) return null;
-  return createDataForSeoClient({ login, password });
+  return createDataForSeoClient({ login, password, onCost });
 }

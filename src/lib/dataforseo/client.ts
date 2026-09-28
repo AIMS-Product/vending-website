@@ -18,6 +18,7 @@ const MAX_KEYWORDS = 1000;
 
 const envelope = z.object({
   status_code: z.number(),
+  cost: z.number().optional(),
   status_message: z.string().optional(),
   tasks: z
     .array(
@@ -108,16 +109,52 @@ export type DataForSeoClient = {
   keywordDifficulty(
     keywords: string[],
   ): Promise<Array<{ keyword: string; kd: number | null }>>;
+  /** Keywords a domain ranks for in Google's top 20 (DataForSEO Labs). */
+  rankedKeywords(target: string, limit?: number): Promise<RankedKeyword[]>;
 };
+
+export type RankedKeyword = {
+  keyword: string;
+  position: number | null;
+  volume: number | null;
+  url: string | null;
+};
+
+const rankedItem = z
+  .object({
+    keyword_data: z.object({
+      keyword: z.string(),
+      keyword_info: z
+        .object({ search_volume: z.number().nullable().optional() })
+        .nullable()
+        .optional(),
+    }),
+    ranked_serp_element: z
+      .object({
+        serp_item: z
+          .object({
+            rank_group: z.number().nullable().optional(),
+            url: z.string().nullable().optional(),
+          })
+          .nullable()
+          .optional(),
+      })
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
 
 export function createDataForSeoClient({
   login,
   password,
   fetchImpl = fetch,
+  onCost,
 }: {
   login: string;
   password: string;
   fetchImpl?: typeof fetch;
+  /** Called with the USD DataForSEO says each call cost (budget tracking). */
+  onCost?: (endpoint: string, usd: number) => void;
 }): DataForSeoClient {
   const auth = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
 
@@ -152,6 +189,7 @@ export function createDataForSeoClient({
         );
       }
     }
+    onCost?.(path, data.cost ?? 0);
     return data.tasks.flatMap((task) => task.result ?? []);
   };
 
@@ -232,6 +270,34 @@ export function createDataForSeoClient({
               }))
             : [];
         });
+      });
+    },
+
+    async rankedKeywords(target, limit = 1000) {
+      const [first] = await post(
+        "/dataforseo_labs/google/ranked_keywords/live",
+        [
+          {
+            target,
+            ...LOCATION,
+            limit,
+            filters: [["ranked_serp_element.serp_item.rank_group", "<=", 20]],
+          },
+        ],
+      );
+      const items = (first as { items?: unknown[] } | undefined)?.items ?? [];
+      return items.flatMap((raw) => {
+        const row = rankedItem.safeParse(raw);
+        if (!row.success) return [];
+        const item = row.data.ranked_serp_element?.serp_item;
+        return [
+          {
+            keyword: row.data.keyword_data.keyword.toLowerCase(),
+            position: item?.rank_group ?? null,
+            volume: row.data.keyword_data.keyword_info?.search_volume ?? null,
+            url: item?.url ?? null,
+          },
+        ];
       });
     },
   };

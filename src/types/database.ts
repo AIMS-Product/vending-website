@@ -2532,6 +2532,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      dataforseo_spend: {
+        Row: {
+          calls: number;
+          endpoint: string;
+          month: string;
+          usd: number;
+        };
+        Insert: {
+          calls?: number;
+          endpoint: string;
+          month: string;
+          usd?: number;
+        };
+        Update: {
+          calls?: number;
+          endpoint?: string;
+          month?: string;
+          usd?: number;
+        };
+        Relationships: [];
+      };
+      seo_competitor_keywords: {
+        Row: {
+          domain: string;
+          keyword: string;
+          month: string;
+          position: number | null;
+          url: string | null;
+          volume: number | null;
+        };
+        Insert: {
+          domain: string;
+          keyword: string;
+          month: string;
+          position?: number | null;
+          url?: string | null;
+          volume?: number | null;
+        };
+        Update: {
+          domain?: string;
+          keyword?: string;
+          month?: string;
+          position?: number | null;
+          url?: string | null;
+          volume?: number | null;
+        };
+        Relationships: [];
+      };
       seo_pages: {
         Row: {
           archive_behavior: string;

@@ -114,6 +114,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     seo_gsc_query_daily: "seo-search",
     seo_gsc_query_totals_daily: "seo-search",
     seo_rank_snapshots: "seo-ranks",
+    seo_competitor_keywords: "seo-ranks",
     social_account_daily: "social-accounts",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
@@ -131,6 +132,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "seo_content_pieces", // the content plan, edited on /admin/seo
     "seo_tasks", // edited on /admin/seo; the trigger job is not a data feed
     "seo_monthly_reviews", // a form
+    "dataforseo_spend", // the rank job's own cost ledger
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([

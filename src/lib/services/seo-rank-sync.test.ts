@@ -13,7 +13,7 @@ const KEYWORDS = [
   { keyword: "combo vending machine", role: "supporting" },
 ];
 
-function buildClient() {
+function buildClient(spent: number[] = []) {
   const upserts: Record<string, unknown[]> = {};
   const runs: Array<Record<string, unknown>> = [];
   const from = vi.fn((table: string) => {
@@ -21,7 +21,12 @@ function buildClient() {
       select: () => chain,
       eq: () =>
         Promise.resolve({
-          data: table === "seo_keywords" ? KEYWORDS : [],
+          data:
+            table === "seo_keywords"
+              ? KEYWORDS
+              : table === "dataforseo_spend"
+                ? spent.map((usd) => ({ usd }))
+                : [],
           error: null,
         }),
       limit: () =>
@@ -59,6 +64,14 @@ const fake = (): DataForSeoClient => ({
   serp: vi.fn(async (k: string) => serp(k)),
   searchVolume: vi.fn(async () => []),
   keywordDifficulty: vi.fn(async () => []),
+  rankedKeywords: vi.fn(async () => [
+    {
+      keyword: "vending machine for sale",
+      position: 3,
+      volume: 9900,
+      url: "u",
+    },
+  ]),
 });
 
 describe("syncSeoRanks", () => {
@@ -101,6 +114,35 @@ describe("syncSeoRanks", () => {
   });
 });
 
+describe("monthly spend cap", () => {
+  it("skips before any paid call once the month's budget is used", async () => {
+    const { client } = buildClient([20, 6]);
+    const dataforseo = fake();
+    const result = await syncSeoRanks({ client, dataforseo, budgetUsd: 25 });
+    expect(result.connector.error).toMatch(
+      /^skipped: this month's DataForSEO budget is used \(\$26\.00 of \$25\)/,
+    );
+    expect(dataforseo.serp).not.toHaveBeenCalled();
+  });
+
+  it("pulls competitors on the monthly run", async () => {
+    const { client, upserts } = buildClient();
+    const dataforseo = fake();
+    await syncSeoRanks({
+      client,
+      dataforseo,
+      full: true,
+      now: new Date("2026-09-21T13:00:00Z"),
+    });
+    expect(dataforseo.rankedKeywords).toHaveBeenCalledTimes(4);
+    expect(upserts.seo_competitor_keywords?.[0]).toMatchObject({
+      month: "2026-09-01",
+      domain: "vendsoft.com",
+      keyword: "vending machine for sale",
+    });
+  });
+});
+
 describe("time budget", () => {
   it("keeps what it pulled and says how many it left for next time", async () => {
     const { client, upserts } = buildClient();
@@ -131,7 +173,8 @@ describe("time budget", () => {
       now: new Date("2026-09-21T13:00:00Z"),
     });
     expect(upserts.seo_rank_snapshots).toHaveLength(2);
-    expect(result.connector.rowsWritten).toBe(2);
+    // 2 snapshots + 4 competitor rows; the failed volume refresh costs neither.
+    expect(result.connector.rowsWritten).toBe(6);
     expect(result.connector.error).toMatch(/volume refresh failed/);
   });
 });

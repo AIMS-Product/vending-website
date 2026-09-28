@@ -36,16 +36,16 @@ export function SeoSocialTab({
     <div className="space-y-5">
       <nav className="flex gap-2 text-xs" aria-label="Brands">
         <Link
-          href="/admin/seo?tab=social"
+          href="/admin/seo?tab=social&brands=vp"
           className={`rounded-ui border px-2 py-1 ${!allBrands ? "border-ui-accent text-ui-accent" : "border-ui-line text-ui-text-muted"}`}
         >
-          Vendingpreneurs brand
+          Vendingpreneurs accounts only
         </Link>
         <Link
-          href="/admin/seo?tab=social&brands=all"
+          href="/admin/seo?tab=social"
           className={`rounded-ui border px-2 py-1 ${allBrands ? "border-ui-accent text-ui-accent" : "border-ui-line text-ui-text-muted"}`}
         >
-          All brands (incl. Mike)
+          All brands, incl. Mike
         </Link>
       </nav>
       <section className={adminPanelClass}>

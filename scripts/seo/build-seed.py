@@ -34,7 +34,8 @@ EXTRA = [("7.19", 7, "vending-machine-business-washington", "Washington Vending 
           "vending machine laws washington state")]
 # Same page as another piece: tracked, never published or tasked twice.
 ALIAS = {"HUB 4": "1.1", "5.3": "3.4", "5.6": "7.18"}
-WEEK1 = datetime.date(2026, 9, 28)  # Monday the plan starts
+WEEK1 = datetime.date(2026, 9, 28)
+OWNER = "Adam"  # Adam owns SEO (2026-09-29); every seeded task is his  # Monday the plan starts
 
 
 def q(v):
@@ -108,7 +109,7 @@ lines.append(",\n".join(kw_rows) + "\non conflict (keyword) do nothing;\n")
 tasks = []
 def task(key, type_, title, detail=None, piece=None, prio="medium", due_date=None, phase=None, url=None):
     tasks.append("(" + ",".join(q(x) for x in [
-        key, type_, piece, url, title, detail, prio, due_date, phase, "seed"]) + ")")
+        key, type_, piece, url, title, detail, prio, due_date, phase, "seed", OWNER]) + ")")
 
 all_pieces = {p[0]: p for p in list(PIECES) + EXTRA}
 for pid, week in SEQUENCE["P1"].items():
@@ -155,7 +156,7 @@ ROADMAP = [
 ]
 for i, (phase, title, detail) in enumerate(ROADMAP):
     task(f"roadmap:{i + 1:02d}", "roadmap", title, detail, None, "medium", None, phase)
-lines.append("insert into public.seo_tasks (seed_key, type, piece_id, url, title, detail, priority, due_date, phase, created_by) values")
+lines.append("insert into public.seo_tasks (seed_key, type, piece_id, url, title, detail, priority, due_date, phase, created_by, owner) values")
 lines.append(",\n".join(tasks) + "\non conflict (seed_key) do nothing;\n")
 lines.append("-- Search Console access is confirmed; mark that roadmap item done.")
 lines.append("update public.seo_tasks set status = 'done', done_at = now() where seed_key = 'roadmap:01' and status = 'open';\n")

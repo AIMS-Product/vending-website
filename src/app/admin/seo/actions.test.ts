@@ -90,7 +90,6 @@ describe("SEO actions", () => {
         owner: null,
         due_date: null,
       }),
-      "a@b.com",
     );
   });
 });

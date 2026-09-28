@@ -5,7 +5,11 @@ import {
   adminPanelClass,
   adminStickyHeadClass,
 } from "@/components/admin/AdminUi";
-import { type KeywordRow, type Mover } from "@/lib/services/seo-command-center";
+import {
+  type KeywordRow,
+  type Mover,
+  type SeoKeywords,
+} from "@/lib/services/seo-command-center";
 import { n, MoverTable } from "./shared";
 
 export function SeoKeywordsTab({
@@ -13,8 +17,14 @@ export function SeoKeywordsTab({
   lastPull,
   aeo,
   untracked,
+  gaps,
+  competitorMonth,
+  spend,
 }: {
   keywords: KeywordRow[];
+  gaps: SeoKeywords["gaps"];
+  competitorMonth: string | null;
+  spend: SeoKeywords["spend"];
   lastPull: string | null;
   aeo: {
     checked: number;
@@ -125,6 +135,51 @@ export function SeoKeywordsTab({
             </tbody>
           </table>
         </div>
+      </section>
+      <section className={adminPanelClass}>
+        <h3 className="text-ui-text border-ui-line border-b px-4 py-2.5 text-sm font-semibold">
+          Competitor gaps: top-10 keywords for vendsoft, upflip or wendor that
+          VP neither tracks nor ranks for
+        </h3>
+        {gaps.length === 0 ? (
+          <p className="text-ui-text-subtle px-4 py-3 text-xs">
+            {competitorMonth
+              ? "No gaps in the latest pull."
+              : "First pull runs with the first monthly DataForSEO run."}
+          </p>
+        ) : (
+          <table className="w-full table-fixed text-sm">
+            <tbody className="divide-ui-line divide-y">
+              {gaps.map((g) => (
+                <tr key={g.keyword}>
+                  <td
+                    className="text-ui-text w-1/2 truncate px-4 py-1.5"
+                    title={g.keyword}
+                  >
+                    {g.keyword}
+                  </td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">
+                    {n(g.volume)}
+                  </td>
+                  <td className="px-2 py-1.5 text-right tabular-nums">
+                    #{g.best}
+                  </td>
+                  <td className="text-ui-text-muted truncate px-4 py-1.5 text-xs">
+                    {g.domains.join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <p className="text-ui-text-subtle px-4 py-2 text-xs">
+          DataForSEO this month: ${spend.usd.toFixed(2)} of the $
+          {spend.budgetUsd} cap
+          {competitorMonth
+            ? `; competitors as of ${competitorMonth.slice(0, 7)}`
+            : ""}
+          . The weekly job stops pulling once the cap is reached.
+        </p>
       </section>
       <MoverTable
         title="Top untracked, non-brand queries (28 days)"

@@ -3,7 +3,11 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { addDays } from "@/lib/seo/triggers";
-import { absolute, pageMetrics } from "@/lib/services/seo-trigger-job";
+import {
+  absolute,
+  pageMetrics,
+  SEO_OWNER,
+} from "@/lib/services/seo-trigger-job";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json } from "@/types/database";
 
@@ -139,7 +143,6 @@ async function metricsFor(client: Client, url: string): Promise<Json> {
 
 export async function createTask(
   input: z.infer<typeof newTaskInput>,
-  createdBy: string | null,
   deps: { client?: Client } = {},
 ) {
   const client = deps.client ?? createAdminClient();
@@ -148,7 +151,7 @@ export async function createTask(
     type: input.type,
     priority: input.priority,
     url: input.url ?? null,
-    owner: input.owner ?? createdBy,
+    owner: input.owner ?? SEO_OWNER,
     detail: input.detail ?? null,
     due_date: input.due_date ?? null,
     created_by: "user",

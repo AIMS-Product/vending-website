@@ -145,7 +145,8 @@ async function TabBody({
       );
     }
     case "social": {
-      const allBrands = one(params.brands) === "all";
+      // Mike's accounts count toward the brand (Adam, 2026-09-29).
+      const allBrands = one(params.brands) !== "vp";
       const data = await getSeoSocial({ allBrands });
       return data.missing ? (
         <SeoMissing />

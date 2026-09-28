@@ -27,6 +27,8 @@ import type { Database, Json } from "@/types/database";
 type Client = Pick<SupabaseClient<Database>, "from">;
 
 export const TRIGGER_CONNECTOR = "seo-triggers";
+/** Who SEO tasks go to unless someone reassigns them. */
+export const SEO_OWNER = "Adam";
 export const SITE_ORIGIN = "https://www.vendingpreneurs.com";
 
 export type TriggerJobResult = {
@@ -254,6 +256,8 @@ async function writeTasks(client: Client, hits: TriggerHit[], now: Date) {
             hit.priority === "urgent" ? 3 : 7,
           ),
           created_by: "system",
+          // Adam owns SEO; reassign on the task if that changes.
+          owner: SEO_OWNER,
         });
     // 23505: another run opened the same task a moment ago. Same outcome.
     if (error && error.code !== "23505") {

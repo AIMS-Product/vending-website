@@ -45,3 +45,20 @@ on a top-3 result; the "under 1,000 words" and "product page" checks need a
 page fetch and are not automated. A keyword task is one task per keyword
 whatever page ranks; a dismissed task never reopens and a done one stays
 quiet 28 days while its +14 / +28 day numbers come in.
+
+## DataForSEO budget
+
+Hard cap: **$25 a month** (`DATAFORSEO_MONTHLY_BUDGET_USD` overrides). Every
+response's `cost` is added to `dataforseo_spend`; the rank job skips once the
+month's total reaches the cap and stops starting new batches mid-run. Expected
+spend is well under it: about 620 live SERPs a month (63 primary weekly, 161
+supporting bi-weekly, ~$2-12), the monthly volume + difficulty refresh (cents)
+and the monthly competitor pull (4 domains, ~$0.50). Also set a low-balance
+alert in the DataForSEO dashboard.
+
+Competitors (monthly, top 20): vendsoft.com, upflip.com, wendor.ai, plus
+vendingpreneurs.com itself. The Keywords tab lists competitor top-10
+keywords VP neither tracks nor ranks for.
+
+Owner: Adam owns SEO; every seeded and trigger-opened task is his (Social
+counts Mike's accounts too, with a VP-only toggle). Decided 2026-09-29.
