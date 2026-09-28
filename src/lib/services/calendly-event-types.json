@@ -600,6 +600,117 @@
       "eventTypeUris": [
         "https://api.calendly.com/event_types/f6b52602-3747-4754-bbd9-016f534634ee"
       ]
+    },
+    {
+      "name": "Vendingpreneurs Summit - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 12,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/876f7875-6fbc-4f79-889b-e7466d389380"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Keystone - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 7,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/3eccc4e4-af30-4ba2-baab-55f98c482958",
+        "https://api.calendly.com/event_types/5db347b1-0a74-44bb-8c38-1f26be6fa618"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Ascent - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 4,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/50e6f52c-41e5-4b25-8c16-93849e9a8dfe"
+      ]
+    },
+    {
+      "name": "Follow Up/Check in",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28: a check-in with someone already in conversation.",
+      "observed": 3,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/bf0737a5-7d06-4628-b26d-e2296a714fb2"
+      ]
+    },
+    {
+      "name": "Land Investing Strategy Call",
+      "class": "other_brand",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28: land investing is not Vendingpreneurs demand.",
+      "observed": 2,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/f1af1dbf-d703-4323-8b03-20fbece14c9c"
+      ]
+    },
+    {
+      "name": "TLG Clarity - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 2,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/a6d948f6-efcd-49bf-84ee-8969c6282efb"
+      ]
+    },
+    {
+      "name": "PPA Catalyst - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/17a1f29b-a731-4f26-a7a5-32eb7237b752"
+      ]
+    },
+    {
+      "name": "TLG Compass - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/b095145c-714a-4618-8a5d-4ba12464b0bd"
+      ]
+    },
+    {
+      "name": "Vendingpreneurs Blueprint - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/e47bd431-88af-4b26-8ef7-ac16a57bda61"
+      ]
+    },
+    {
+      "name": "TLG Vanguard - Next Steps",
+      "class": "follow_up",
+      "reviewedBy": null,
+      "reviewedOn": null,
+      "note": "Drafted 2026-09-28 by pattern: every signed-off-or-drafted '- Next Steps' calendar is follow_up.",
+      "observed": 1,
+      "eventTypeUris": [
+        "https://api.calendly.com/event_types/92d02ed9-61fc-4736-99de-77e92871edb6"
+      ]
     }
   ]
 }
