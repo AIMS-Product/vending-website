@@ -2325,6 +2325,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      seo_baselines: {
+        Row: {
+          created_at: string;
+          day: string;
+          detail: Json;
+          metric: string;
+          value: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          day: string;
+          detail?: Json;
+          metric: string;
+          value?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          day?: string;
+          detail?: Json;
+          metric?: string;
+          value?: number | null;
+        };
+        Relationships: [];
+      };
       seo_monthly_reviews: {
         Row: {
           answers: Json;

@@ -9,6 +9,7 @@ vi.mock("@/app/admin/seo/actions", () => ({
 }));
 
 import { SeoOverviewTab, SeoTasksTab } from "./SeoPanels";
+import { SCORECARD } from "@/lib/services/seo-scorecard";
 
 const totals = { impressions: 6365, clicks: 584, ctrPct: 9.2, position: 10.7 };
 
@@ -50,8 +51,20 @@ describe("SeoPanels", () => {
           livePagesByDay: [],
           movers: { pages: [], queries: [] },
         }}
+        scorecard={{
+          asOf: "2026-07-28",
+          day0: {
+            day: "2026-07-01",
+            values: { nonbrand_impressions_7d: 1287 },
+          },
+          current: { nonbrand_impressions_7d: 1544 },
+          rows: SCORECARD,
+        }}
       />,
     );
+    expect(html).toContain("Scorecard vs Day 0");
+    expect(html).toContain("1,287");
+    expect(html).toContain("4,500");
     expect(html).toContain("Branded vs non-branded impressions");
     expect(html).toContain("6,365");
     expect(html).toContain("2026-07-27: Webflow to Next.js");

@@ -159,4 +159,25 @@ describe("buildDataReport", () => {
     expect(report.text).toContain("still filling");
     expect(report.subject.startsWith("EOW")).toBe(true);
   });
+
+  it("adds the SEO section only when the week report carries one", () => {
+    expect(buildDataReport(input()).text).not.toContain("SEO vs Day 0");
+    const report = buildDataReport(
+      input({
+        seo: [
+          {
+            label: "Scorecard",
+            values: [
+              {
+                label: "Non-branded impressions per week (north star)",
+                value: "1,287 then, 1,400 now, 30-day target 1,400",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+    expect(report.text).toContain("SEO vs Day 0");
+    expect(report.text).toContain("1,287 then");
+  });
 });

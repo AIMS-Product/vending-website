@@ -23,6 +23,8 @@ import {
   getRoadmap,
   getSeoTasks,
 } from "@/lib/services/seo-plan-data";
+import { getSeoScorecard } from "@/lib/services/seo-scorecard";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
@@ -104,8 +106,15 @@ async function TabBody({
   const today = new Date().toISOString().slice(0, 10);
   switch (tab) {
     case "overview": {
-      const data = await getSeoOverview();
-      return data.missing ? <SeoMissing /> : <SeoOverviewTab data={data} />;
+      const [data, scorecard] = await Promise.all([
+        getSeoOverview(),
+        getSeoScorecard(createAdminClient()),
+      ]);
+      return data.missing ? (
+        <SeoMissing />
+      ) : (
+        <SeoOverviewTab data={data} scorecard={scorecard} />
+      );
     }
     case "pages": {
       const data = await getSeoPages();

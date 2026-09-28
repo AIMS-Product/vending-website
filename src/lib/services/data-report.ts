@@ -54,6 +54,8 @@ export type DataReportInput = {
   } | null;
   /** Webinar, email, chatbot, reach: sources with no place in the channel table. */
   sources?: readonly ReportSourceBlock[];
+  /** Week report only: the SEO scorecard vs Day 0 and the week's SEO tasks. */
+  seo?: readonly ReportSourceBlock[];
   audit: {
     summary: AuditSummary;
     results: readonly AuditResult[];
@@ -131,6 +133,10 @@ export function buildDataReport(input: DataReportInput): DataReport {
   if (input.sources && input.sources.length > 0) {
     sections.push({ kind: "heading", text: "The other sources" });
     sections.push({ kind: "blocks", blocks: input.sources });
+  }
+  if (input.seo && input.seo.length > 0) {
+    sections.push({ kind: "heading", text: "SEO vs Day 0" });
+    sections.push({ kind: "blocks", blocks: input.seo });
   }
 
   if (input.audit) {

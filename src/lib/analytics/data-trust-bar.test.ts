@@ -133,6 +133,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "seo_tasks", // edited on /admin/seo; the trigger job is not a data feed
     "seo_monthly_reviews", // a form
     "dataforseo_spend", // the rank job's own cost ledger
+    "seo_baselines", // Day 0, frozen once by scripts/seo-day0.mjs
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([
@@ -159,7 +160,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
 
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
-    seo: ["seo-command-center", "seo-plan-data"],
+    seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
   };
 
   for (const [tab, files] of Object.entries(SCOPED_LOADERS)) {

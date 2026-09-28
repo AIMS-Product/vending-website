@@ -210,3 +210,10 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/ap
 # after DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD are set in Vercel:
 curl -H "Authorization: Bearer $CRON_SECRET" "https://www.vendingpreneurs.com/api/admin/seo-ranks/run?full=1"
 ```
+
+## 9. SEO Day 0 baseline (20260930120000)
+
+One file, safe to run twice: `20260930120000_seo_baselines.sql`. It creates
+`seo_baselines` only. Until it exists, the Overview shows no "vs Day 0" line.
+Then run `node --env-file=.env.local scripts/seo-day0.mjs` once (insert only,
+never overwrites a frozen value).
