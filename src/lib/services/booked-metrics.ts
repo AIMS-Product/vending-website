@@ -28,7 +28,12 @@ import {
   type EventClass,
   type EventClassification,
 } from "@/lib/services/calendly-event-class";
-import { channelKeyForFunnel } from "@/lib/services/channel-targets";
+import {
+  channelKeyForFunnel,
+  GOAL_CHANNELS,
+  OTHER_CHANNEL,
+  UNTRACKED_LABEL,
+} from "@/lib/services/channel-targets";
 
 /**
  * The business day boundary. Bookings are timestamped in UTC, and the UTC day
@@ -50,13 +55,6 @@ export const REPORTING_TIME_ZONE = "America/New_York";
  * two unrelated measurements. Both are shown, each against its own target.
  */
 export const DAILY_NEW_CALL_GOAL = 25;
-
-/**
- * The call-capacity dashboard's per-day goal, on the lands-on basis. Quoted from
- * that dashboard, not derived here — it governs how full a day's calendar should
- * be, not how much marketing booked.
- */
-export const DAILY_CAPACITY_GOAL = 42;
 
 /** Whether a metric counts bookings by when they were made or when they land. */
 export type MetricBasis = "booked-on" | "lands-on";
@@ -549,4 +547,75 @@ export function attributionFor(
   return [...tally.entries()]
     .map(([label, entry]) => ({ label, ...entry }))
     .sort((a, b) => b.booked - a.booked || a.label.localeCompare(b.label));
+}
+
+// ---------------------------------------------------------------------------
+// Capacity by channel
+
+export type CapacityGrid = {
+  days: string[];
+  /** Marketing channels in plan order, then Other, then no funnel. Empty rows dropped. */
+  channels: Array<{ key: string; label: string; counts: number[] }>;
+  /** Marketing total per day, Lane 2 excluded — the number held against the 25. */
+  totals: number[];
+  /** Lane 2 outbound on the same basis, shown beside the total, never inside it. */
+  laneTwo: number[];
+  /** New calls held out because their event type is unreviewed. Reported, never counted. */
+  unreviewed: number;
+};
+
+/**
+ * New first calls on the calendar, per channel per day (lands-on basis).
+ *
+ * Calendly bookings of the reviewed `new` class, cancellations removed, dated
+ * by `event_start_at` in the business timezone. The channel is the lead's Close
+ * funnel rolled into the Goals page channels. A UTM alone does not name a plan
+ * channel, so a booking with no Close funnel gets its own row rather than a guess.
+ */
+export function capacityByChannel(
+  input: Omit<BookedMetricInput, "day">,
+  days: string[],
+): CapacityGrid {
+  const timeZone = input.timeZone ?? REPORTING_TIME_ZONE;
+  const funnels = funnelIndex(input.funnels);
+  const column = new Map(days.map((day, index) => [day, index]));
+  const rows = new Map<string, number[]>();
+  let unreviewed = 0;
+  for (const booking of input.bookings) {
+    if (booking.status === "canceled") continue;
+    const index = column.get(dayKeyIn(booking.eventStartAt, timeZone) ?? "");
+    if (index === undefined) continue;
+    const classification = classifyEventType(
+      booking.eventTypeUri,
+      booking.eventName,
+    );
+    if (!classification.reviewed) {
+      unreviewed += 1;
+      continue;
+    }
+    if (classification.class !== "new") continue;
+    const email = emailKey(booking.inviteeEmail);
+    const funnel = email ? funnels.get(email) : undefined;
+    const key = channelKeyForFunnel(funnel ?? null) ?? UNTRACKED_LABEL;
+    const counts = rows.get(key) ?? days.map(() => 0);
+    counts[index] += 1;
+    rows.set(key, counts);
+  }
+  const empty = days.map(() => 0);
+  const ordered = [
+    ...GOAL_CHANNELS.filter((channel) => channel.key !== "lane-2"),
+    OTHER_CHANNEL,
+    { key: UNTRACKED_LABEL, label: UNTRACKED_LABEL },
+  ]
+    .filter((channel) => rows.has(channel.key))
+    .map(({ key, label }) => ({ key, label, counts: rows.get(key)! }));
+  return {
+    days,
+    channels: ordered,
+    totals: days.map((_, index) =>
+      ordered.reduce((sum, row) => sum + row.counts[index], 0),
+    ),
+    laneTwo: rows.get("lane-2") ?? empty,
+    unreviewed,
+  };
 }

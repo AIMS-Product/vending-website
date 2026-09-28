@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   AdminBar,
   AdminMetricPanel,
@@ -7,7 +8,6 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import {
-  DAILY_CAPACITY_GOAL,
   DAILY_NEW_CALL_GOAL,
   type BookedMetricResult,
 } from "@/lib/services/booked-metrics";
@@ -283,88 +283,156 @@ export function BookedAttribution({ pace }: { pace: BookedPace }) {
   );
 }
 
-/** What is already on the calendar, looking ahead. */
-export function BookedForward({ pace }: { pace: BookedPace }) {
+/** A cell's shade: stronger as the count nears the busiest cell in the grid. */
+function heat(count: number, max: number): CSSProperties | undefined {
+  if (count === 0) return undefined;
+  const pct = Math.round(12 + (count / max) * 48);
+  return {
+    backgroundColor: `color-mix(in srgb, var(--color-ui-accent) ${pct}%, transparent)`,
+  };
+}
+
+function gapClass(gap: number): string {
+  if (gap >= 0) return "text-ui-ok";
+  return gap >= -8 ? "text-ui-warn" : "text-ui-bad";
+}
+
+/**
+ * New calls on the calendar by channel, a week back through a week ahead.
+ * Days run left to right so today sits in the middle and the forward gap to the
+ * goal reads at a glance.
+ */
+export function BookedCapacity({ pace }: { pace: BookedPace }) {
+  const grid = pace.capacity;
   const max = Math.max(
-    DAILY_CAPACITY_GOAL,
-    ...pace.forward.map((row) => row.allMeetings ?? 0),
+    1,
+    ...(grid?.channels.flatMap((row) => row.counts) ?? []),
+  );
+  const cell = "px-2 py-2 text-center tabular-nums";
+  const dayHeader = (day: string) => (
+    <th
+      key={day}
+      scope="col"
+      className={`min-w-[3.25rem] px-2 py-2.5 text-center font-semibold ${
+        day === pace.day ? "bg-ui-accent text-white" : ""
+      }`}
+    >
+      {dayLabel(day).replace(",", "")}
+    </th>
   );
   return (
-    <section className={adminPanelClass} aria-label="Calendar, looking ahead">
+    <section
+      className={adminPanelClass}
+      aria-label="Daily call capacity by channel"
+    >
       <div className="border-ui-line flex flex-wrap items-baseline justify-between gap-2 border-b px-4 py-3">
-        <h2 className={adminSectionTitleClass}>Already on the calendar</h2>
-        <p className="text-ui-text-subtle text-xs">
-          Counted on the day each call happens. The goal of{" "}
-          {DAILY_CAPACITY_GOAL} a day comes from the call-capacity dashboard,
-          and means little for days so far out that few people have booked yet.
+        <h2 className={adminSectionTitleClass}>
+          Daily call capacity by channel
+        </h2>
+        <p className="text-ui-text-subtle max-w-3xl text-xs">
+          New first calls on each day&rsquo;s calendar, by the channel that
+          sourced the lead (Close funnel). Counted on the day the call happens,
+          cancellations removed. Past days show what was held, future days show
+          what is already booked. Goal: {DAILY_NEW_CALL_GOAL} a day.
         </p>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-[0.8125rem]">
-          <thead>
-            <tr className="bg-ui-canvas text-ui-text-subtle text-left text-[0.6875rem] font-semibold tracking-[0.06em] uppercase">
-              <th className="px-4 py-2.5 font-semibold">Day</th>
-              <th className="px-3 py-2.5 text-right font-semibold">
-                First calls
-              </th>
-              <th className="px-3 py-2.5 text-right font-semibold">
-                All meetings
-              </th>
-              <th className="w-[34%] px-3 py-2.5 font-semibold">Fill</th>
-              <th className="px-3 py-2.5 text-right font-semibold">
-                vs {DAILY_CAPACITY_GOAL}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-ui-line divide-y">
-            {pace.forward.map((row) => {
-              const gap =
-                row.firstCalls == null
-                  ? null
-                  : row.firstCalls - DAILY_CAPACITY_GOAL;
-              return (
-                <tr
-                  key={row.day}
-                  className={row.day === pace.day ? "bg-ui-canvas" : undefined}
+      {grid == null ? (
+        <p className="text-ui-text-muted px-4 py-3 text-[0.8125rem]">
+          The booking tables could not be read, so there is no grid to show.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-[0.8125rem]">
+            <thead>
+              <tr className="bg-ui-canvas text-ui-text-subtle text-[0.6875rem] tracking-[0.06em] uppercase">
+                <th
+                  scope="col"
+                  className="bg-ui-canvas sticky left-0 px-4 py-2.5 text-left font-semibold"
                 >
-                  <td className="text-ui-text px-4 py-2.5 whitespace-nowrap">
-                    {dayLabel(row.day)}
-                    {row.day === pace.day ? (
-                      <span className="text-ui-text-subtle"> · today</span>
-                    ) : null}
-                  </td>
-                  <td className="text-ui-text px-3 py-2.5 text-right font-semibold tabular-nums">
-                    {num(row.firstCalls)}
-                  </td>
-                  <td className="text-ui-text-muted px-3 py-2.5 text-right tabular-nums">
-                    {num(row.allMeetings)}
-                  </td>
-                  <td className="px-3 py-2.5">
-                    <AdminBar share={(row.firstCalls ?? 0) / max} />
-                  </td>
-                  <td
-                    className={`px-3 py-2.5 text-right font-medium tabular-nums ${
-                      gap == null
-                        ? ""
-                        : gap >= 0
-                          ? "text-ui-ok"
-                          : gap >= -15
-                            ? "text-ui-warn"
-                            : "text-ui-bad"
-                    }`}
+                  Channel
+                </th>
+                {grid.days.map(dayHeader)}
+              </tr>
+            </thead>
+            <tbody className="divide-ui-line divide-y">
+              {grid.channels.map((row) => (
+                <tr key={row.key}>
+                  <th
+                    scope="row"
+                    className="bg-ui-surface text-ui-text sticky left-0 px-4 py-2 text-left font-medium whitespace-nowrap"
                   >
-                    {gap == null ? DASH : gap >= 0 ? `+${gap}` : gap}
-                  </td>
+                    {row.label}
+                  </th>
+                  {row.counts.map((count, index) => (
+                    <td
+                      key={grid.days[index]}
+                      className={`${cell} ${count ? "text-ui-text" : "text-ui-text-subtle"}`}
+                      style={heat(count, max)}
+                    >
+                      {count || "·"}
+                    </td>
+                  ))}
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+              ))}
+              <tr className="bg-ui-canvas font-semibold">
+                <th
+                  scope="row"
+                  className="bg-ui-canvas text-ui-text sticky left-0 px-4 py-2 text-left whitespace-nowrap"
+                >
+                  Total
+                </th>
+                {grid.totals.map((total, index) => (
+                  <td key={grid.days[index]} className={`${cell} text-ui-text`}>
+                    {total}
+                  </td>
+                ))}
+              </tr>
+              <tr>
+                <th
+                  scope="row"
+                  className="bg-ui-surface text-ui-text-muted sticky left-0 px-4 py-2 text-left font-medium whitespace-nowrap"
+                >
+                  vs {DAILY_NEW_CALL_GOAL}
+                </th>
+                {grid.totals.map((total, index) => {
+                  const gap = total - DAILY_NEW_CALL_GOAL;
+                  return (
+                    <td
+                      key={grid.days[index]}
+                      className={`${cell} font-medium ${gapClass(gap)}`}
+                    >
+                      {gap >= 0 ? `+${gap}` : gap}
+                    </td>
+                  );
+                })}
+              </tr>
+              <tr>
+                <th
+                  scope="row"
+                  className="bg-ui-surface text-ui-text-subtle sticky left-0 px-4 py-2 text-left font-normal whitespace-nowrap"
+                >
+                  Lane 2 (not in total)
+                </th>
+                {grid.laneTwo.map((count, index) => (
+                  <td
+                    key={grid.days[index]}
+                    className={`${cell} text-ui-text-subtle`}
+                  >
+                    {count || "·"}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      )}
       <p className="text-ui-text-muted border-ui-line border-t px-4 py-2.5 text-xs">
-        Open slots are not shown because this site has no Calendly login to read
-        them, so this compares booked calls with the goal, not with how many
-        slots exist.
+        Lane 2 outbound is shown but kept out of the total, and most of it books
+        on calendars this site never sees.
+        {grid && grid.unreviewed > 0
+          ? ` ${grid.unreviewed} calls in this window sit on event types nobody has classified yet, so they are not counted. See the mapping review below.`
+          : ""}{" "}
+        Open slots are not shown: this site has no Calendly login to read them.
       </p>
     </section>
   );

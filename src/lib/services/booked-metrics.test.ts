@@ -8,6 +8,7 @@ import {
   attributeBooking,
   attributionFor,
   BOOKED_METRICS,
+  capacityByChannel,
   dayKeyIn,
   readBookedMetric,
   UNATTRIBUTED_LABEL,
@@ -397,5 +398,53 @@ describe("dayKeyIn caching", () => {
     expect(dayKeyIn(null, "UTC")).toBeNull();
     expect(dayKeyIn("not a date", "UTC")).toBeNull();
     expect(dayKeyIn("not a date", "UTC")).toBeNull();
+  });
+});
+
+describe("capacityByChannel", () => {
+  const days = ["2026-09-15", "2026-09-16", "2026-09-17"];
+  const followUp = EVENT_TYPE_ENTRIES.find((e) => e.class === "follow_up")!;
+
+  it("counts new calls on the day they land, by channel, Lane 2 held apart", () => {
+    const grid = capacityByChannel(
+      {
+        bookings: [
+          booking(), // Website, lands 9/16
+          booking({ inviteeEmail: "yt@example.com" }), // YouTube, 9/16
+          booking({
+            inviteeEmail: "yt@example.com",
+            eventStartAt: "2026-09-18T01:00:00.000Z", // 9/17 9pm Eastern
+          }),
+          booking({ inviteeEmail: "nobody@example.com" }), // no Close lead
+          booking({ inviteeEmail: "lane2@example.com" }),
+          booking({ status: "canceled" }),
+          booking({
+            eventName: followUp.name,
+            eventTypeUri: followUp.eventTypeUris[0] ?? null,
+          }),
+          booking({ eventName: "Never Reviewed", eventTypeUri: null }),
+          booking({ eventStartAt: "2026-09-20T15:00:00.000Z" }), // off-grid
+        ],
+        funnels: [
+          funnel(),
+          funnel({ email: "yt@example.com", funnel: "YouTube" }),
+          funnel({ email: "lane2@example.com", funnel: "Sales Reactivation" }),
+        ],
+        timeZone: "America/New_York",
+      },
+      days,
+    );
+    expect(grid.channels).toEqual([
+      { key: "youtube", label: "YouTube", counts: [0, 1, 1] },
+      { key: "website", label: "Website", counts: [0, 1, 0] },
+      {
+        key: "No funnel in Close",
+        label: "No funnel in Close",
+        counts: [0, 1, 0],
+      },
+    ]);
+    expect(grid.totals).toEqual([0, 3, 1]);
+    expect(grid.laneTwo).toEqual([0, 1, 0]);
+    expect(grid.unreviewed).toBe(1);
   });
 });
