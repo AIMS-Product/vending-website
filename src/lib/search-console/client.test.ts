@@ -136,3 +136,82 @@ describe("createSearchConsoleClient", () => {
     expect(calls[1]?.init?.method).toBe("GET");
   });
 });
+
+describe("fetchRows", () => {
+  it("pages 25,000 rows at a time until a short page", async () => {
+    let request = 0;
+    const full = Array.from({ length: 25_000 }, (_, i) => ({
+      keys: ["2026-09-01", `/p${i}`],
+      clicks: 1,
+      impressions: 2.0,
+      position: 3.5,
+    }));
+    const { fetchImpl, calls } = buildFetch(() => {
+      request += 1;
+      return {
+        status: 200,
+        body: {
+          rows:
+            request === 1
+              ? full
+              : [
+                  {
+                    keys: ["2026-09-01", "/last"],
+                    clicks: 0,
+                    impressions: 1,
+                    position: 9,
+                  },
+                ],
+        },
+      };
+    });
+    const client = createSearchConsoleClient({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      siteUrl: "sc-domain:vendingpreneurs.com",
+      fetchImpl,
+    });
+
+    const rows = await client.fetchRows({
+      startDate: "2026-09-01",
+      endDate: "2026-09-01",
+      dimensions: ["date", "page"],
+    });
+
+    expect(rows).toHaveLength(25_001);
+    expect(rows.at(-1)).toEqual({
+      keys: ["2026-09-01", "/last"],
+      clicks: 0,
+      impressions: 1,
+      position: 9,
+    });
+    const bodies = calls
+      .filter((c) => c.url.includes("searchAnalytics"))
+      .map((c) => JSON.parse(String(c.init?.body)));
+    expect(bodies.map((b) => b.startRow)).toEqual([0, 25_000]);
+    expect(bodies[0]).toMatchObject({
+      dimensions: ["date", "page"],
+      type: "web",
+      dataState: "final",
+      rowLimit: 25_000,
+    });
+  });
+
+  it("rejects a response it cannot read instead of guessing", async () => {
+    const { fetchImpl } = buildFetch(() => ({
+      status: 200,
+      body: { rows: [{ keys: ["2026-09-01"], clicks: "many" }] },
+    }));
+    const client = createSearchConsoleClient({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      siteUrl: "sc-domain:vendingpreneurs.com",
+      fetchImpl,
+    });
+    await expect(
+      client.fetchRows({
+        startDate: "2026-09-01",
+        endDate: "2026-09-01",
+        dimensions: ["date"],
+      }),
+    ).rejects.toThrow(/unexpected shape/);
+  });
+});

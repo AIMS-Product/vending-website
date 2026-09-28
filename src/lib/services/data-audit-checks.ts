@@ -41,6 +41,7 @@ import {
   orphanedMetricChecks,
   staleOnOwnDay,
 } from "@/lib/services/data-audit-spine-orphans";
+import { seoSearchConsoleCheck } from "@/lib/services/data-audit-seo-checks";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -48,7 +49,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * ad platforms restate spend for one, so a check that included yesterday would
  * cry wolf every morning. Each source is checked over days it has settled.
  */
-const SETTLED_LAG_DAYS = { ga4: 2, ads: 2, youtube: 3, live: 1 } as const;
+// Search Console publishes final data two to three days late.
+const SETTLED_LAG_DAYS = {
+  ga4: 2,
+  ads: 2,
+  youtube: 3,
+  gsc: 4,
+  live: 1,
+} as const;
 const WINDOW_DAYS = 7;
 /**
  * Bookings only. A moved booking is stranded forever, so the spine check looks
@@ -128,6 +136,9 @@ export async function runDataAudit(
       youtubeCheck(client, youtubeSource || null, now),
     )),
     ...(await safe("webinar", () => webinarFreshnessCheck(client, now))),
+    ...(await safe("seo", () =>
+      seoSearchConsoleCheck(client, settledWindow(now, SETTLED_LAG_DAYS.gsc)),
+    )),
     ...(await safe("spine", () => spineChecks(client, now))),
     ...(await safe("spine-orphans", () => orphanedMetricChecks(client, now))),
     ...(await safe("leads", () => leadsInCloseCheck(client, now))),
