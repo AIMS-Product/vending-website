@@ -144,21 +144,33 @@ const rankedItem = z
   })
   .passthrough();
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** HTTP 403/429/5xx, or an envelope 40101 / 5xxxx, is worth one retry. */
+export function isTransient(httpStatus: number, apiStatus?: number): boolean {
+  if (httpStatus === 403 || httpStatus === 429 || httpStatus >= 500) {
+    return true;
+  }
+  return apiStatus === 40101 || (apiStatus !== undefined && apiStatus >= 50000);
+}
+
 export function createDataForSeoClient({
   login,
   password,
   fetchImpl = fetch,
   onCost,
+  retryDelayMs = 2_000,
 }: {
   login: string;
   password: string;
   fetchImpl?: typeof fetch;
+  retryDelayMs?: number;
   /** Called with the USD DataForSEO says each call cost (budget tracking). */
   onCost?: (endpoint: string, usd: number) => void;
 }): DataForSeoClient {
   const auth = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
 
-  const post = async (path: string, body: unknown): Promise<unknown[]> => {
+  const call = async (path: string, body: unknown) => {
     const response = await fetchImpl(`${API}${path}`, {
       method: "POST",
       headers: { Authorization: auth, "Content-Type": "application/json" },
@@ -167,16 +179,26 @@ export function createDataForSeoClient({
       signal: AbortSignal.timeout(90_000),
     });
     const text = await response.text();
-    if (!response.ok) {
-      throw new Error(
-        `DataForSEO ${path} failed with HTTP ${response.status}.`,
-      );
-    }
+    if (!response.ok) return { status: response.status, data: null };
     const parsed = envelope.safeParse(JSON.parse(text));
     if (!parsed.success) {
       throw new Error(`DataForSEO ${path} returned an unexpected shape.`);
     }
-    const data = parsed.data;
+    return { status: response.status, data: parsed.data };
+  };
+
+  const post = async (path: string, body: unknown): Promise<unknown[]> => {
+    let res = await call(path, body);
+    // One retry for transient failures: a fresh account answered 403 / 40101
+    // on its first call and succeeded on the next; 429 and 5xx are throttling.
+    if (isTransient(res.status, res.data?.status_code)) {
+      await sleep(retryDelayMs);
+      res = await call(path, body);
+    }
+    const data = res.data;
+    if (!data) {
+      throw new Error(`DataForSEO ${path} failed with HTTP ${res.status}.`);
+    }
     if (data.status_code !== 20000) {
       throw new Error(
         `DataForSEO ${path}: ${data.status_code} ${data.status_message ?? ""}`.trim(),

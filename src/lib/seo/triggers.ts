@@ -247,6 +247,10 @@ export function evaluateTriggers(input: {
 
   // 3 (DataForSEO), 6 and 7 read the newest snapshot per keyword.
   const byKeyword = groupBy(input.ranks, (row) => row.keyword);
+  // 6 is one task per piece page (listing its keywords), not one per keyword:
+  // a first pull opened ~70 near-identical tasks. A keyword with no page keeps
+  // its own task.
+  const aeoMisses = new Map<string, RankRow[]>();
   for (const [keyword, rows] of byKeyword) {
     const sorted = [...rows].sort((a, b) => (a.day < b.day ? 1 : -1));
     const latest = sorted[0];
@@ -274,19 +278,8 @@ export function evaluateTriggers(input: {
       });
     }
     if (latest.ai_overview && !latest.aio_cites_site) {
-      hits.push({
-        code: 6,
-        type: "aeo_pairing",
-        priority: "high",
-        url: page,
-        subject: keyword,
-        title: `${TRIGGER_NAMES[6]}: "${keyword}"`,
-        evidence: {
-          citesVpYouTube: latest.aio_cites_youtube,
-          rank: latest.vp_position,
-          checked: latest.day,
-        },
-      });
+      const group = page ?? keyword;
+      aeoMisses.set(group, [...(aeoMisses.get(group) ?? []), latest]);
     }
     const vpInTop3 = latest.vp_position !== null && latest.vp_position <= 3;
     const stale = latest.top10
@@ -310,7 +303,46 @@ export function evaluateTriggers(input: {
       });
     }
   }
+  for (const [group, rows] of aeoMisses) {
+    hits.push(aeoHit(group, rows, input.keywordPage));
+  }
   return hits;
+}
+
+function aeoHit(
+  group: string,
+  rows: RankRow[],
+  keywordPage: ReadonlyMap<string, string>,
+): TriggerHit {
+  const page = keywordPage.get(rows[0].keyword) ?? null;
+  const keywords = rows.map((r) => r.keyword);
+  const cited = rows.filter((r) => r.aio_cites_youtube).length;
+  return {
+    code: 6,
+    type: "aeo_pairing",
+    priority: "high",
+    url: page,
+    subject: page ? null : group,
+    title: page
+      ? `${TRIGGER_NAMES[6]}: ${pathOf(page)} (${keywords.length} keyword${keywords.length === 1 ? "" : "s"})`
+      : `${TRIGGER_NAMES[6]}: "${group}"`,
+    evidence: {
+      keywords: keywords.join(", "),
+      keywordCount: keywords.length,
+      citesVpYouTube: cited > 0,
+      youtubeCitedKeywords: cited,
+      bestRank:
+        rows
+          .map((r) => r.vp_position)
+          .filter((p): p is number => p !== null)
+          .sort((a, b) => a - b)[0] ?? null,
+      checked:
+        rows
+          .map((r) => r.day)
+          .sort()
+          .at(-1) ?? null,
+    },
+  };
 }
 
 function pageHit(

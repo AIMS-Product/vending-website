@@ -253,3 +253,49 @@ describe("rank triggers", () => {
     expect(hits).toEqual([]);
   });
 });
+
+describe("trigger 6 grouping", () => {
+  it("opens one task per piece page, listing its keywords", () => {
+    const page =
+      "https://www.vendingpreneurs.com/resources/types-of-vending-machines";
+    const miss = (keyword: string, extra = {}) => ({
+      day: "2026-09-21",
+      keyword,
+      vp_position: null,
+      ai_overview: true,
+      aio_cites_site: false,
+      aio_cites_youtube: false,
+      top10: [],
+      ...extra,
+    });
+    const hits = evaluateTriggers({
+      pageDays: [],
+      queryDays: [],
+      queryTotals: [],
+      tracked: new Set(),
+      asOf: "2026-09-22",
+      keywordPage: new Map([
+        ["a", page],
+        ["b", page],
+      ]),
+      ranks: [
+        miss("a"),
+        miss("b", { aio_cites_youtube: true, vp_position: 40 }),
+        miss("orphan"),
+      ],
+    } as unknown as Parameters<typeof evaluateTriggers>[0]).filter(
+      (h) => h.code === 6,
+    );
+    expect(hits).toHaveLength(2);
+    const grouped = hits.find((h) => h.url === page)!;
+    expect(grouped.subject).toBeNull();
+    expect(grouped.evidence).toMatchObject({
+      keywords: "a, b",
+      keywordCount: 2,
+      citesVpYouTube: true,
+      youtubeCitedKeywords: 1,
+      bestRank: 40,
+    });
+    expect(hits.find((h) => h.url === null)?.subject).toBe("orphan");
+  });
+});

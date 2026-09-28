@@ -197,3 +197,75 @@ describe("createDataForSeoClient", () => {
     ]);
   });
 });
+
+describe("retry on transient failures", () => {
+  function sequence(responses: Array<{ status: number; body: unknown }>) {
+    let i = 0;
+    const fetchImpl = vi.fn(async () => {
+      const r = responses[Math.min(i++, responses.length - 1)];
+      return {
+        ok: r.status < 300,
+        status: r.status,
+        text: async () => JSON.stringify(r.body),
+      } as Response;
+    });
+    return fetchImpl as unknown as typeof fetch & {
+      mock: { calls: unknown[] };
+    };
+  }
+  const serpOk = ok([{ items: [] }]);
+
+  it("retries once on HTTP 403 and succeeds", async () => {
+    const fetchImpl = sequence([
+      { status: 403, body: {} },
+      { status: 200, body: serpOk },
+    ]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).resolves.toBeDefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up after one retry", async () => {
+    const fetchImpl = sequence([{ status: 503, body: {} }]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).rejects.toThrow("HTTP 503");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a 402 (out of funds)", async () => {
+    const fetchImpl = sequence([{ status: 402, body: {} }]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).rejects.toThrow("HTTP 402");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries an envelope 40101", async () => {
+    const fetchImpl = sequence([
+      { status: 200, body: { status_code: 40101, tasks: [] } },
+      { status: 200, body: serpOk },
+    ]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).resolves.toBeDefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+});
