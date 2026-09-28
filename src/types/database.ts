@@ -2127,6 +2127,384 @@ export type Database = {
         };
         Relationships: [];
       };
+      seo_content_pieces: {
+        Row: {
+          draft_file: string | null;
+          hub: number;
+          id: string;
+          last_refreshed_at: string | null;
+          notes: string | null;
+          primary_keyword: string;
+          priority: string;
+          sequence_week: number | null;
+          slug: string;
+          status: string;
+          title: string;
+          updated_at: string;
+          verify_flags: number;
+          word_count: number | null;
+        };
+        Insert: {
+          draft_file?: string | null;
+          hub: number;
+          id: string;
+          last_refreshed_at?: string | null;
+          notes?: string | null;
+          primary_keyword: string;
+          priority?: string;
+          sequence_week?: number | null;
+          slug: string;
+          status?: string;
+          title: string;
+          updated_at?: string;
+          verify_flags?: number;
+          word_count?: number | null;
+        };
+        Update: {
+          draft_file?: string | null;
+          hub?: number;
+          id?: string;
+          last_refreshed_at?: string | null;
+          notes?: string | null;
+          primary_keyword?: string;
+          priority?: string;
+          sequence_week?: number | null;
+          slug?: string;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+          verify_flags?: number;
+          word_count?: number | null;
+        };
+        Relationships: [];
+      };
+      seo_gsc_daily: {
+        Row: {
+          brand_clicks: number;
+          brand_impressions: number;
+          clicks: number;
+          day: string;
+          impressions: number;
+          position: number | null;
+          synced_at: string;
+        };
+        Insert: {
+          brand_clicks?: number;
+          brand_impressions?: number;
+          clicks?: number;
+          day: string;
+          impressions?: number;
+          position?: number | null;
+          synced_at?: string;
+        };
+        Update: {
+          brand_clicks?: number;
+          brand_impressions?: number;
+          clicks?: number;
+          day?: string;
+          impressions?: number;
+          position?: number | null;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_gsc_page_daily: {
+        Row: {
+          clicks: number;
+          day: string;
+          impressions: number;
+          page: string;
+          position: number | null;
+          synced_at: string;
+        };
+        Insert: {
+          clicks?: number;
+          day: string;
+          impressions?: number;
+          page: string;
+          position?: number | null;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          day?: string;
+          impressions?: number;
+          page?: string;
+          position?: number | null;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_gsc_query_daily: {
+        Row: {
+          clicks: number;
+          day: string;
+          impressions: number;
+          page: string;
+          position: number | null;
+          query: string;
+          synced_at: string;
+        };
+        Insert: {
+          clicks?: number;
+          day: string;
+          impressions?: number;
+          page: string;
+          position?: number | null;
+          query: string;
+          synced_at?: string;
+        };
+        Update: {
+          clicks?: number;
+          day?: string;
+          impressions?: number;
+          page?: string;
+          position?: number | null;
+          query?: string;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_keyword_volume_monthly: {
+        Row: {
+          keyword: string;
+          month: string;
+          volume: number;
+        };
+        Insert: {
+          keyword: string;
+          month: string;
+          volume: number;
+        };
+        Update: {
+          keyword?: string;
+          month?: string;
+          volume?: number;
+        };
+        Relationships: [];
+      };
+      seo_keywords: {
+        Row: {
+          competition: number | null;
+          cpc: number | null;
+          created_at: string;
+          hub: string | null;
+          kd: number | null;
+          keyword: string;
+          piece_ids: string[];
+          role: string;
+          tracked: boolean;
+          updated_at: string;
+          volume: number | null;
+        };
+        Insert: {
+          competition?: number | null;
+          cpc?: number | null;
+          created_at?: string;
+          hub?: string | null;
+          kd?: number | null;
+          keyword: string;
+          piece_ids?: string[];
+          role?: string;
+          tracked?: boolean;
+          updated_at?: string;
+          volume?: number | null;
+        };
+        Update: {
+          competition?: number | null;
+          cpc?: number | null;
+          created_at?: string;
+          hub?: string | null;
+          kd?: number | null;
+          keyword?: string;
+          piece_ids?: string[];
+          role?: string;
+          tracked?: boolean;
+          updated_at?: string;
+          volume?: number | null;
+        };
+        Relationships: [];
+      };
+      seo_monthly_reviews: {
+        Row: {
+          answers: Json;
+          created_at: string;
+          month: string;
+          reviewed_by: string | null;
+          snapshot: Json;
+          updated_at: string;
+        };
+        Insert: {
+          answers?: Json;
+          created_at?: string;
+          month: string;
+          reviewed_by?: string | null;
+          snapshot?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          answers?: Json;
+          created_at?: string;
+          month?: string;
+          reviewed_by?: string | null;
+          snapshot?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      seo_rank_snapshots: {
+        Row: {
+          ai_overview: boolean;
+          aio_cites_site: boolean;
+          aio_cites_youtube: boolean;
+          aio_refs: string[];
+          day: string;
+          keyword: string;
+          serp_features: string[];
+          synced_at: string;
+          top10: Json;
+          vp_position: number | null;
+          vp_url: string | null;
+        };
+        Insert: {
+          ai_overview?: boolean;
+          aio_cites_site?: boolean;
+          aio_cites_youtube?: boolean;
+          aio_refs?: string[];
+          day: string;
+          keyword: string;
+          serp_features?: string[];
+          synced_at?: string;
+          top10?: Json;
+          vp_position?: number | null;
+          vp_url?: string | null;
+        };
+        Update: {
+          ai_overview?: boolean;
+          aio_cites_site?: boolean;
+          aio_cites_youtube?: boolean;
+          aio_refs?: string[];
+          day?: string;
+          keyword?: string;
+          serp_features?: string[];
+          synced_at?: string;
+          top10?: Json;
+          vp_position?: number | null;
+          vp_url?: string | null;
+        };
+        Relationships: [];
+      };
+      seo_tasks: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          detail: string | null;
+          done_at: string | null;
+          due_date: string | null;
+          evidence: Json;
+          id: string;
+          metrics_after_14: Json | null;
+          metrics_after_28: Json | null;
+          metrics_at_done: Json | null;
+          owner: string | null;
+          phase: string | null;
+          piece_id: string | null;
+          priority: string;
+          seed_key: string | null;
+          status: string;
+          subject: string | null;
+          title: string;
+          trigger_code: number | null;
+          type: string;
+          updated_at: string;
+          url: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string;
+          detail?: string | null;
+          done_at?: string | null;
+          due_date?: string | null;
+          evidence?: Json;
+          id?: string;
+          metrics_after_14?: Json | null;
+          metrics_after_28?: Json | null;
+          metrics_at_done?: Json | null;
+          owner?: string | null;
+          phase?: string | null;
+          piece_id?: string | null;
+          priority?: string;
+          seed_key?: string | null;
+          status?: string;
+          subject?: string | null;
+          title: string;
+          trigger_code?: number | null;
+          type: string;
+          updated_at?: string;
+          url?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          detail?: string | null;
+          done_at?: string | null;
+          due_date?: string | null;
+          evidence?: Json;
+          id?: string;
+          metrics_after_14?: Json | null;
+          metrics_after_28?: Json | null;
+          metrics_at_done?: Json | null;
+          owner?: string | null;
+          phase?: string | null;
+          piece_id?: string | null;
+          priority?: string;
+          seed_key?: string | null;
+          status?: string;
+          subject?: string | null;
+          title?: string;
+          trigger_code?: number | null;
+          type?: string;
+          updated_at?: string;
+          url?: string | null;
+        };
+        Relationships: [];
+      };
+      social_account_daily: {
+        Row: {
+          brand_id: string;
+          day: string;
+          followers: number | null;
+          impressions: number | null;
+          interactions: number | null;
+          network: string;
+          posts: number | null;
+          reach: number | null;
+          synced_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          day: string;
+          followers?: number | null;
+          impressions?: number | null;
+          interactions?: number | null;
+          network: string;
+          posts?: number | null;
+          reach?: number | null;
+          synced_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          day?: string;
+          followers?: number | null;
+          impressions?: number | null;
+          interactions?: number | null;
+          network?: string;
+          posts?: number | null;
+          reach?: number | null;
+          synced_at?: string;
+        };
+        Relationships: [];
+      };
       seo_pages: {
         Row: {
           archive_behavior: string;
