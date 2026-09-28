@@ -254,9 +254,12 @@ describe("retry on transient failures", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("retries an envelope 40101", async () => {
+  it("retries a task-level 40101", async () => {
     const fetchImpl = sequence([
-      { status: 200, body: { status_code: 40101, tasks: [] } },
+      {
+        status: 200,
+        body: { status_code: 20000, tasks: [{ status_code: 40101 }] },
+      },
       { status: 200, body: serpOk },
     ]);
     const client = createDataForSeoClient({
@@ -267,5 +270,46 @@ describe("retry on transient failures", () => {
     });
     await expect(client.serp("x")).resolves.toBeDefined();
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a 40106 partial result and records cost even on failure", async () => {
+    const costs: number[] = [];
+    const partial = sequence([
+      {
+        status: 200,
+        body: {
+          status_code: 20000,
+          cost: 0.01,
+          tasks: [{ status_code: 40106, result: [{ items: [] }] }],
+        },
+      },
+    ]);
+    const c1 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: partial,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await expect(c1.serp("x")).resolves.toBeDefined();
+    const failed = sequence([
+      {
+        status: 200,
+        body: {
+          status_code: 20000,
+          cost: 0.02,
+          tasks: [{ status_code: 40501, status_message: "Invalid Field" }],
+        },
+      },
+    ]);
+    const c2 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: failed,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await expect(c2.serp("x")).rejects.toThrow("40501");
+    expect(costs).toEqual([0.01, 0.02]);
   });
 });

@@ -146,12 +146,19 @@ const rankedItem = z
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** HTTP 403/429/5xx, or an envelope 40101 / 5xxxx, is worth one retry. */
-export function isTransient(httpStatus: number, apiStatus?: number): boolean {
+/** DataForSEO codes worth one retry: search engine error (40101), task
+ * failed, resubmit (40103), rate limits (40202, 40209), internal / upstream
+ * errors (5xxxx). docs/marketing/dataforseo-v3.md section 2. */
+const RETRY_CODES = new Set([40101, 40103, 40202, 40209]);
+/** Partial results: DataForSEO bills only the pages it returned. Keep them. */
+const OK_CODES = new Set([20000, 40106]);
+
+/** HTTP 403/429/5xx, or a retryable envelope/task code, is worth one retry. */
+export function isTransient(httpStatus: number, codes: number[] = []): boolean {
   if (httpStatus === 403 || httpStatus === 429 || httpStatus >= 500) {
     return true;
   }
-  return apiStatus === 40101 || (apiStatus !== undefined && apiStatus >= 50000);
+  return codes.some((c) => RETRY_CODES.has(c) || c >= 50000);
 }
 
 export function createDataForSeoClient({
@@ -191,7 +198,11 @@ export function createDataForSeoClient({
     let res = await call(path, body);
     // One retry for transient failures: a fresh account answered 403 / 40101
     // on its first call and succeeded on the next; 429 and 5xx are throttling.
-    if (isTransient(res.status, res.data?.status_code)) {
+    const codes = (r: typeof res) =>
+      r.data
+        ? [r.data.status_code, ...r.data.tasks.map((t) => t.status_code)]
+        : [];
+    if (isTransient(res.status, codes(res))) {
       await sleep(retryDelayMs);
       res = await call(path, body);
     }
@@ -199,19 +210,20 @@ export function createDataForSeoClient({
     if (!data) {
       throw new Error(`DataForSEO ${path} failed with HTTP ${res.status}.`);
     }
+    // Record the spend before any status check: a failed task can still bill.
+    onCost?.(path, data.cost ?? 0);
     if (data.status_code !== 20000) {
       throw new Error(
         `DataForSEO ${path}: ${data.status_code} ${data.status_message ?? ""}`.trim(),
       );
     }
     for (const task of data.tasks) {
-      if (task.status_code !== 20000) {
+      if (!OK_CODES.has(task.status_code)) {
         throw new Error(
           `DataForSEO ${path} task: ${task.status_code} ${task.status_message ?? ""}`.trim(),
         );
       }
     }
-    onCost?.(path, data.cost ?? 0);
     return data.tasks.flatMap((task) => task.result ?? []);
   };
 
