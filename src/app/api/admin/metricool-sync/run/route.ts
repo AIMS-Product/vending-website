@@ -2,7 +2,19 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { syncMetricool } from "@/lib/services/metricool-sync";
+import {
+  blogIdsFromConfig,
+  syncMetricool,
+} from "@/lib/services/metricool-sync";
+import { syncSocialAccounts } from "@/lib/services/social-account-sync";
+import { createAdminClient } from "@/lib/supabase/admin";
+
+/** Account series restate for a few days; re-read the last ten. */
+const SOCIAL_WINDOW_DAYS = 10;
+
+function dayKey(offset: number): string {
+  return new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -63,14 +75,21 @@ export async function GET(request: Request) {
 
   try {
     const result = await syncMetricool(options);
+    const days = options.days ?? SOCIAL_WINDOW_DAYS;
+    const accounts = await syncSocialAccounts({
+      client: createAdminClient(),
+      blogIds: blogIdsFromConfig(),
+      from: dayKey(-days),
+      to: dayKey(-1),
+    });
     // A skipped connector (not configured) is fine; a failed one is not.
-    const failed = [result.connector, result.ads].some((run) =>
+    const failed = [result.connector, result.ads, accounts].some((run) =>
       Boolean(
         run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
       ),
     );
     return NextResponse.json(
-      { ok: !failed, ...result },
+      { ok: !failed, ...result, accounts },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
