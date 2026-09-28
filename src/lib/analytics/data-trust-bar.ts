@@ -215,6 +215,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   close: ["close"],
   // close-monthly-funnel-data.ts: Close mirror, site leads
   mom: ["close", "site-leads"],
+  // close-won-deals.ts: Close wins + mirror, site forms, Calendly (chats are live)
+  won: ["close", "site-leads", "calendly"],
   // funnel-executive.ts: spend from the spine, funnel inputs
   exec: ["site-leads", "ga4-pages", "close", "metricool-ads"],
   // kpi-report-data.ts: spine facts, Close, GHL email, webinars, Calendly

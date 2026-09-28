@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { WonDealsPanel } from "@/components/admin/WonDealsPanel";
+import { getWonDeals } from "@/lib/services/close-won-deals";
 import { Suspense } from "react";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { AdminMetricStrip, adminCardClass } from "@/components/admin/AdminUi";
@@ -233,6 +235,7 @@ async function loadTabData({
   const isCloseTab = tab === "close";
   const isMomTab = tab === "mom";
   const isVideoTab = tab === "video";
+  const isWonTab = tab === "won";
   const [
     analytics,
     youtube,
@@ -247,6 +250,7 @@ async function loadTabData({
     closeMtd,
     closeMonthly,
     videoEngagement,
+    wonDeals,
   ] = await Promise.all([
     isYouTubeTab ||
     isChannelsTab ||
@@ -258,7 +262,8 @@ async function loadTabData({
     isExecTab ||
     isCloseTab ||
     isMomTab ||
-    isVideoTab
+    isVideoTab ||
+    isWonTab
       ? null
       : getAdminAnalytics({ range, includeInternal }),
     isYouTubeTab ? getYouTubeAttribution({ range, includeInternal }) : null,
@@ -296,6 +301,7 @@ async function loadTabData({
           days: resolveAdminAnalyticsRange(range).days,
         })
       : null,
+    isWonTab ? getWonDeals(wonWindow(range)) : null,
   ]);
   return {
     analytics,
@@ -312,9 +318,21 @@ async function loadTabData({
     closeMonthly,
     videoEngagement,
     videoSort,
+    wonDeals,
     internalExcluded:
       youtube?.internalExcluded ?? analytics?.internalExcluded ?? 0,
   };
+}
+
+/** The picked range as Pacific days: a custom pair as given, a preset ending today. */
+function wonWindow(range: AdminAnalyticsRangeKey) {
+  const r = resolveAdminAnalyticsRange(range);
+  const to =
+    r.endDay ??
+    r.endsAt.toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+  const start = new Date(`${to}T00:00:00Z`);
+  start.setUTCDate(start.getUTCDate() - (r.days - 1));
+  return { from: r.startDay ?? start.toISOString().slice(0, 10), to };
 }
 
 async function InternalToggleWithCount({
@@ -369,11 +387,14 @@ async function TabBody({
     closeMonthly,
     videoEngagement,
     videoSort,
+    wonDeals,
   } = await data;
 
   return (
     <>
-      {closeMonthly ? (
+      {wonDeals ? (
+        <WonDealsPanel report={wonDeals} />
+      ) : closeMonthly ? (
         <CloseMonthlyPanel
           report={closeMonthly}
           shown={singleParam(params.months) ?? null}

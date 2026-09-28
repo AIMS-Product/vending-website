@@ -46,6 +46,16 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "The person's Close opportunity is marked won, and revenue is that deal's value in Close. On Month over month a sale counts in the month the call was booked. On Close view and Channels it counts in the month the deal was won, which is a different group of people from that month's booked calls, not a subset of them.",
   },
   {
+    term: "First engaged",
+    meaning:
+      "On Closed-won, the earliest of: the Close lead being created, any Close activity dated before that (imported leads), the first site form, the first chatbot chat, or the first Calendly booking (by when it was booked). Webinar registrations are not stored per person, so a webinar buyer's first engagement is when GHL created their Close lead.",
+  },
+  {
+    term: "Days to close",
+    meaning:
+      "On Closed-won, whole days from first engaged to the day Close marked the deal won. Median and p75 are across the source's won deals in the range.",
+  },
+  {
     term: "Show %, Qual %, CW %",
     meaning:
       "On Month over month and Close view, each is out of everyone who booked, never out of the step before it, so Show % is a minimum while logging is incomplete. On Executive and Funnels by month, Show % is out of calls with a show or no-show logged, so calls nobody logged are left out.",

@@ -92,6 +92,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     booked: ["booked-calls-data"],
     close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
     mom: ["close-monthly-funnel-data", "close-monthly-leads", "close-wins"],
+    won: ["close-won-deals", "close-wins"],
     exec: ["funnel-executive", "funnel-monthly-data", "close-wins"],
     kpi: ["kpi-report-data", "call-credit-data", "channel-report"],
     funnels: ["funnel-monthly-data"],
