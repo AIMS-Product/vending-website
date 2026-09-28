@@ -297,7 +297,7 @@ export async function refreshKeywordMetrics(
   return written + monthly.written;
 }
 
-async function readVpVideoIds(client: Client): Promise<Set<string>> {
+export async function readVpVideoIds(client: Client): Promise<Set<string>> {
   const { data, error } = await client
     .from("youtube_videos")
     .select("video_id")
@@ -313,7 +313,7 @@ async function readVpVideoIds(client: Client): Promise<Set<string>> {
 }
 
 /** Runs `fn` over items with at most `limit` in flight; errors are returned. */
-async function mapLimit<T, R>(
+export async function mapLimit<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>,
@@ -386,7 +386,10 @@ export function monthlyBudgetUsd(): number {
     : DEFAULT_MONTHLY_BUDGET_USD;
 }
 
-async function monthSpend(client: Client, month: string): Promise<number> {
+export async function monthSpend(
+  client: Client,
+  month: string,
+): Promise<number> {
   const { data, error } = await client
     .from("dataforseo_spend")
     .select("usd")
@@ -397,7 +400,7 @@ async function monthSpend(client: Client, month: string): Promise<number> {
 }
 
 /** Adds up what each call cost and writes it once the run ends. */
-function spendTracker() {
+export function spendTracker() {
   const byEndpoint = new Map<string, { usd: number; calls: number }>();
   return {
     add(endpoint: string, usd: number) {
@@ -439,7 +442,7 @@ function spendTracker() {
   };
 }
 
-function dataForSeoFromConfig(
+export function dataForSeoFromConfig(
   onCost: (endpoint: string, usd: number) => void,
 ): DataForSeoClient | null {
   const login = config.DATAFORSEO_LOGIN;

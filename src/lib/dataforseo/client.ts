@@ -111,6 +111,36 @@ export type KeywordVolume = {
   monthly: Array<{ month: string; volume: number }>;
 };
 
+/** An AI answer, reduced to what VP tracks: every cited URL and the text. */
+export type AiAnswer = { query: string; refs: string[]; text: string };
+
+export type YoutubeResult = {
+  rank: number;
+  videoId: string | null;
+  channelId: string | null;
+  title: string | null;
+};
+
+export type LlmMention = {
+  platform: string;
+  model: string | null;
+  question: string;
+  refs: string[];
+};
+
+/** Brand words an answer can name VP by (lower case). */
+export const VP_NAMES = [
+  "vendingpreneur",
+  "vending preneur",
+  "mike hoffman",
+  "mike hoffmann",
+];
+
+export function mentionsVp(text: string): boolean {
+  const t = text.toLowerCase();
+  return VP_NAMES.some((name) => t.includes(name));
+}
+
 export type DataForSeoClient = {
   serp(keyword: string): Promise<SerpSnapshot>;
   searchVolume(keywords: string[]): Promise<KeywordVolume[]>;
@@ -119,6 +149,14 @@ export type DataForSeoClient = {
   ): Promise<Array<{ keyword: string; kd: number | null }>>;
   /** Keywords a domain ranks for in Google's top 20 (DataForSEO Labs). */
   rankedKeywords(target: string, limit?: number): Promise<RankedKeyword[]>;
+  /** Google AI Mode answer for a keyword (live). */
+  aiMode(keyword: string): Promise<AiAnswer>;
+  /** The consumer ChatGPT answer for a prompt, with its sources (live). */
+  chatGpt(prompt: string): Promise<AiAnswer>;
+  /** YouTube search results for a keyword (live, top 40). */
+  youtubeSearch(keyword: string): Promise<YoutubeResult[]>;
+  /** Answers in DataForSEO's LLM index that cite or mention a domain. */
+  llmMentions(domain: string, limit?: number): Promise<LlmMention[]>;
   /** Standard queue: post SERP tasks (billed now), tagged with the snapshot day. */
   postSerpTasks(keywords: string[], tag: string): Promise<number>;
   /** Standard queue: finished tasks not collected yet (free). */
@@ -275,6 +313,60 @@ export function createDataForSeoClient({
       return snapshotFromItems(keyword, result.data.items ?? []);
     },
 
+    async aiMode(keyword) {
+      const [first] = await post("/serp/google/ai_mode/live/advanced", [
+        { keyword, ...LOCATION },
+      ]);
+      return toAnswer(keyword, first);
+    },
+
+    async chatGpt(prompt) {
+      const [first] = await post(
+        "/ai_optimization/chat_gpt/llm_scraper/live/advanced",
+        [{ keyword: prompt, ...LOCATION }],
+      );
+      return toAnswer(prompt, first);
+    },
+
+    async youtubeSearch(keyword) {
+      const [first] = await post("/serp/youtube/organic/live/advanced", [
+        { keyword, ...LOCATION, block_depth: 40 },
+      ]);
+      const items = z
+        .object({ items: z.array(youtubeItem).nullable().optional() })
+        .safeParse(first ?? {});
+      if (!items.success) {
+        throw new Error("DataForSEO YouTube result had an unexpected shape.");
+      }
+      return (items.data.items ?? [])
+        .filter((i) => i.type === "youtube_video")
+        .map((i, index) => ({
+          rank: i.rank_group ?? index + 1,
+          videoId: i.video_id ?? null,
+          channelId: i.channel_id ?? null,
+          title: i.title ?? null,
+        }));
+    },
+
+    async llmMentions(domain, limit = 100) {
+      const [first] = await post(
+        "/ai_optimization/llm_mentions/search_mentions/live",
+        [{ target: [{ domain }], limit }],
+      );
+      const parsed = z
+        .object({ items: z.array(mentionItem).nullable().optional() })
+        .safeParse(first ?? {});
+      if (!parsed.success) {
+        throw new Error("DataForSEO LLM mentions had an unexpected shape.");
+      }
+      return (parsed.data.items ?? []).map((i) => ({
+        platform: i.platform,
+        model: i.model_name ?? null,
+        question: i.question,
+        refs: [...new Set(urlsIn(i))],
+      }));
+    },
+
     async postSerpTasks(keywords, tag) {
       let created = 0;
       for (let i = 0; i < keywords.length; i += 100) {
@@ -397,6 +489,38 @@ export function createDataForSeoClient({
         ];
       });
     },
+  };
+}
+
+const youtubeItem = z
+  .object({
+    type: z.string(),
+    rank_group: z.number().nullable().optional(),
+    video_id: z.string().nullable().optional(),
+    channel_id: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+const mentionItem = z
+  .object({
+    platform: z.string(),
+    model_name: z.string().nullable().optional(),
+    question: z.string(),
+  })
+  .passthrough();
+
+/** Any AI answer result: every URL anywhere in it, and all of its text. */
+export function toAnswer(query: string, result: unknown): AiAnswer {
+  if (!result || typeof result !== "object") {
+    throw new Error("DataForSEO AI answer had an unexpected shape.");
+  }
+  return {
+    query,
+    refs: [...new Set(urlsIn(result))].filter(
+      (u) => !u.includes("google.com/search") && !u.includes("chatgpt.com/?"),
+    ),
+    text: JSON.stringify(result),
   };
 }
 

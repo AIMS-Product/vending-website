@@ -2325,6 +2325,42 @@ export type Database = {
         };
         Relationships: [];
       };
+      seo_ai_checks: {
+        Row: {
+          cited_hosts: string[];
+          cites_site: boolean;
+          cites_youtube: boolean;
+          day: string;
+          engine: string;
+          mentions_vp: boolean;
+          query: string;
+          synced_at: string;
+          vp_position: number | null;
+        };
+        Insert: {
+          cited_hosts?: string[];
+          cites_site?: boolean;
+          cites_youtube?: boolean;
+          day: string;
+          engine: string;
+          mentions_vp?: boolean;
+          query: string;
+          synced_at?: string;
+          vp_position?: number | null;
+        };
+        Update: {
+          cited_hosts?: string[];
+          cites_site?: boolean;
+          cites_youtube?: boolean;
+          day?: string;
+          engine?: string;
+          mentions_vp?: boolean;
+          query?: string;
+          synced_at?: string;
+          vp_position?: number | null;
+        };
+        Relationships: [];
+      };
       seo_baselines: {
         Row: {
           created_at: string;

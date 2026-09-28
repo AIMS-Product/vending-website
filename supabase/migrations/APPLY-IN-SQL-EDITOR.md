@@ -217,3 +217,7 @@ One file, safe to run twice: `20260930120000_seo_baselines.sql`. It creates
 `seo_baselines` only. Until it exists, the Overview shows no "vs Day 0" line.
 Then run `node --env-file=.env.local scripts/seo-day0.mjs` once (insert only,
 never overwrites a frozen value).
+
+Also paste `20260930121000_seo_ai_checks.sql` (AI Mode, ChatGPT, YouTube and
+LLM Mentions checks). Until it exists the AI visibility job logs
+`skipped: table missing`.

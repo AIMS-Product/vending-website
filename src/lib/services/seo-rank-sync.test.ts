@@ -68,6 +68,10 @@ const fake = (
   postSerpTasks: vi.fn(async (keywords: string[]) => keywords.length),
   readySerpTasks: vi.fn(async () => ready),
   getSerpTask: vi.fn(async (id: string) => serp(id)),
+  aiMode: vi.fn(),
+  chatGpt: vi.fn(),
+  youtubeSearch: vi.fn(),
+  llmMentions: vi.fn(),
   searchVolume: vi.fn(async () => []),
   keywordDifficulty: vi.fn(async () => []),
   rankedKeywords: vi.fn(async () => [

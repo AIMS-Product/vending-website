@@ -90,6 +90,22 @@
       "schedule": "50 13 * * 1"
     },
     {
+      "path": "/api/admin/seo-ai/run?engine=ai_mode",
+      "schedule": "10 13 * * 1"
+    },
+    {
+      "path": "/api/admin/seo-ai/run?engine=chatgpt",
+      "schedule": "20 13 * * 1"
+    },
+    {
+      "path": "/api/admin/seo-ai/run?engine=youtube",
+      "schedule": "30 13 * * 1"
+    },
+    {
+      "path": "/api/admin/seo-ai/run?engine=mentions",
+      "schedule": "40 13 1 * *"
+    },
+    {
       "path": "/api/admin/seo-triggers/run",
       "schedule": "0 14 * * 1"
     }

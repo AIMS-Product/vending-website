@@ -116,6 +116,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     seo_gsc_query_totals_daily: "seo-search",
     seo_rank_snapshots: "seo-ranks",
     seo_competitor_keywords: "seo-ranks",
+    seo_ai_checks: "seo-ai",
     social_account_daily: "social-accounts",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
