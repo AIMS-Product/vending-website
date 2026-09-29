@@ -49,9 +49,9 @@ describe("DocumentImportPanel truncation warning (issue I7)", () => {
   });
 
   it("renders the dropped-section warning as a status live region", () => {
-    const html = renderPanel(10);
+    const html = renderPanel(32);
     expect(html).toMatch(
-      /<p[^>]*\brole="status"[^>]*>2 sections dropped — only the first 8 were imported\.<\/p>/,
+      /<p[^>]*\brole="status"[^>]*>2 sections dropped; only the first 30 were imported\.<\/p>/,
     );
   });
 
