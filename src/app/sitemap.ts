@@ -13,6 +13,8 @@ import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
 export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  // lastModified only where a real edit date exists (/resources pages).
+  // Stamping every URL with the request time taught Google to ignore it.
   const now = new Date();
   const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
     listPublishedSlugs(),
@@ -23,25 +25,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...staticRoutes.map((route) => ({
       url: absoluteUrl(route.path),
-      lastModified: now,
       changeFrequency: route.changeFrequency,
       priority: route.priority,
     })),
     ...slugs.map((slug) => ({
       url: absoluteUrl(`/news/${slug}`),
-      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),
     ...caseStudySlugs.map((slug) => ({
       url: absoluteUrl(`/case-studies/${slug}`),
-      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
     ...listIndexableSolutionSlugs().map((slug) => ({
       url: absoluteUrl(`/solutions/${slug}`),
-      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
@@ -53,14 +51,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       : [
           {
             url: absoluteUrl("/process"),
-            lastModified: now,
             changeFrequency: "monthly" as const,
             priority: 0.8,
           },
         ]),
     ...listIndexableProcessSlugs().map((slug) => ({
       url: absoluteUrl(`/process/${slug}`),
-      lastModified: now,
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
