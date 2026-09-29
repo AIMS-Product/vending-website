@@ -299,3 +299,30 @@ describe("trigger 6 grouping", () => {
     expect(hits.find((h) => h.url === null)?.subject).toBe("orphan");
   });
 });
+
+describe("unpublished pages", () => {
+  it("opens no rank task for a keyword whose page is not live", () => {
+    const page = "https://www.vendingpreneurs.com/resources/not-yet";
+    const hits = evaluateTriggers({
+      pageDays: [],
+      queryDays: [],
+      queryTotals: [],
+      tracked: new Set(),
+      asOf: "2026-09-22",
+      keywordPage: new Map([["a", page]]),
+      livePages: new Set(),
+      ranks: [
+        {
+          day: "2026-09-21",
+          keyword: "a",
+          vp_position: null,
+          ai_overview: true,
+          aio_cites_site: false,
+          aio_cites_youtube: false,
+          top10: [],
+        },
+      ],
+    } as unknown as Parameters<typeof evaluateTriggers>[0]);
+    expect(hits).toEqual([]);
+  });
+});

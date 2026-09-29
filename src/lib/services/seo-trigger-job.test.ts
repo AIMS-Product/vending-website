@@ -18,7 +18,16 @@ function fakeClient(tables: Record<string, unknown[]>) {
     let range: [number, number] | null = null;
     const rows = () => tables[table] ?? [];
     const chain: Record<string, unknown> = {};
-    for (const m of ["select", "order", "limit", "gte", "eq", "not", "in"]) {
+    for (const m of [
+      "select",
+      "order",
+      "limit",
+      "gte",
+      "eq",
+      "not",
+      "in",
+      "like",
+    ]) {
       chain[m] = () => chain;
     }
     chain.range = (a: number, b: number) => ((range = [a, b]), chain);

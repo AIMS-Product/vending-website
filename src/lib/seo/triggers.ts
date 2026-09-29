@@ -101,6 +101,11 @@ export function evaluateTriggers(input: {
   ranks: RankRow[];
   /** Tracked keyword -> the VP page meant to rank for it. */
   keywordPage: ReadonlyMap<string, string>;
+  /**
+   * Pages live on the site. A keyword whose planned page is not live yet
+   * opens no rank task (3, 6, 7): its publish task is the fix.
+   */
+  livePages?: ReadonlySet<string>;
 }): TriggerHit[] {
   const { asOf } = input;
   const cur = window(asOf, 0, 28);
@@ -255,6 +260,7 @@ export function evaluateTriggers(input: {
     const sorted = [...rows].sort((a, b) => (a.day < b.day ? 1 : -1));
     const latest = sorted[0];
     const page = input.keywordPage.get(keyword) ?? null;
+    if (page && input.livePages && !input.livePages.has(page)) continue;
     const twoWeeksBack = sorted.find(
       (r) => daysBetween(r.day, latest.day) >= 14,
     );
