@@ -56,24 +56,33 @@ Start with the [application guide](/apply) before outreach.
   it("warns with the exact dropped-section count when over the import cap", () => {
     const proposal = createDocumentImportProposal({
       makeProposalId: () => "document_import_test",
-      text: documentWithSections(10),
+      text: documentWithSections(32),
     });
 
-    expect(proposal.blocks).toHaveLength(8);
+    expect(proposal.blocks).toHaveLength(30);
     expect(proposal.warnings).toEqual([
-      "2 sections dropped — only the first 8 were imported.",
+      "2 sections dropped; only the first 30 were imported.",
     ]);
   });
 
   it("uses singular wording when exactly one section is dropped", () => {
     const proposal = createDocumentImportProposal({
       makeProposalId: () => "document_import_test",
-      text: documentWithSections(9),
+      text: documentWithSections(31),
     });
 
     expect(proposal.warnings).toEqual([
-      "1 section dropped — only the first 8 were imported.",
+      "1 section dropped; only the first 30 were imported.",
     ]);
+  });
+
+  it("imports a 12-section SEO hub draft whole", () => {
+    const proposal = createDocumentImportProposal({
+      makeProposalId: () => "document_import_test",
+      text: documentWithSections(12),
+    });
+    expect(proposal.blocks).toHaveLength(12);
+    expect(proposal.warnings).toEqual([]);
   });
 
   it("emits no warning when the document is at or under the import cap", () => {

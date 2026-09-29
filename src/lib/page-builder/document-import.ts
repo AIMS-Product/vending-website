@@ -40,7 +40,9 @@ type CreateDocumentImportProposalInput = {
   sourceTitle?: string;
 };
 
-const MAX_IMPORTED_BLOCKS = 8;
+// Matches the editor's 30-blocks-per-column limit (editor-state.ts). At 8, every
+// SEO hub draft (10+ sections) silently lost its FAQ and closing CTA.
+const MAX_IMPORTED_BLOCKS = 30;
 const MAX_EXCERPT_LENGTH = 700;
 
 export function createDocumentImportProposal({
@@ -60,7 +62,7 @@ export function createDocumentImportProposal({
   const warnings =
     droppedCount > 0
       ? [
-          `${droppedCount} ${droppedCount === 1 ? "section" : "sections"} dropped — only the first ${MAX_IMPORTED_BLOCKS} were imported.`,
+          `${droppedCount} ${droppedCount === 1 ? "section" : "sections"} dropped; only the first ${MAX_IMPORTED_BLOCKS} were imported.`,
         ]
       : [];
 
