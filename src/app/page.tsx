@@ -26,6 +26,11 @@ const anton = Anton({
 export const revalidate = 300;
 
 export const metadata: Metadata = {
+  // The layout default is just the brand, which only competes on brand
+  // searches (baseline audit 2026-09-28). Absolute: no " | Vendingpreneurs".
+  title: {
+    absolute: "Vendingpreneurs: Start and Scale a Vending Machine Business",
+  },
   alternates: {
     canonical: "/",
   },

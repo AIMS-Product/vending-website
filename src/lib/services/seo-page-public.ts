@@ -95,6 +95,21 @@ export async function listSitemapSeoPages() {
   return data ?? [];
 }
 
+/** Live /resources guides for the /news index, newest first. */
+export async function listResourceGuides() {
+  const supabase = getPublicClient();
+  const { data, error } = await supabase
+    .from(PUBLIC_SEO_PAGES_TABLE)
+    .select("route_path, title, meta_description, published_at")
+    .eq("noindex", false)
+    .like("route_path", "/resources/%")
+    .order("published_at", { ascending: false });
+  if (error) {
+    throwPublicSeoPageQueryError("listResourceGuides", error);
+  }
+  return data ?? [];
+}
+
 export async function getPublishedSeoPageBySlug(slug: string) {
   return getPublishedSeoPageByPath(pagePathForSlug(slug));
 }

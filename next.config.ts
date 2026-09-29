@@ -88,20 +88,15 @@ const legacyNewsRedirects: ReadonlyArray<{
       "/news/top-10-profitable-products-to-stock-in-your-vending-machine",
   },
   {
-    // No close live equivalent — send to the article index rather than 404.
+    // No close live equivalent: send to the article index rather than 404.
+    // Never add an article Google still ranks here (a redirect to an index
+    // is a soft 404); republish it instead. The 9 restored 2026-09-28 held
+    // ~53K impressions before the cutover.
     sources: [
       "/news/7-myths-about-vending-machine-business",
-      "/news/expected-costs-earnings-roi-vending-machines-2025",
+      // No news_posts row survived the cutover import; keep until rewritten.
       "/news/finance-first-vending-machines-without-loans",
-      "/news/from-zero-to-first-vending-machine-guide",
-      "/news/how-much-money-do-vending-machines-make-2026",
-      "/news/how-to-build-a-self-managed-route-so-you-can-work-less",
-      "/news/smart-vending-cashless-payments-iot",
-      "/news/top-8-vendpreneur-mistakes-how-to-fix-them",
       "/news/vending-business-for-complete-beginners",
-      "/news/vending-business-taxes-us-beginners-guide",
-      "/news/vending-machine-business-legal-tax-licensing-2025",
-      "/news/vending-machine-business-passive-income",
       "/news/vending-machine-innovation-5",
       "/news/vending-machine-insights-5",
       "/news/vending-machine-success-3",
