@@ -9,13 +9,19 @@ export const runtime = "nodejs";
 // paid for and records itself as partial instead of being cut off silently.
 export const maxDuration = 300;
 
-/** Weekly, Mondays. `?full=1` pulls every tracked keyword and volumes now. */
+/**
+ * Weekly, Mondays. 13:00 collects finished SERPs and queues this week's;
+ * 13:50 (`?collect=1`) only collects. `?full=1` queues every tracked keyword
+ * and refreshes volumes now.
+ */
 export async function GET(request: Request) {
   const rejected = rejectUnlessCron(request, "SEO rank");
   if (rejected) return rejected;
-  const full = new URL(request.url).searchParams.get("full") === "1";
+  const params = new URL(request.url).searchParams;
+  const full = params.get("full") === "1";
+  const collectOnly = params.get("collect") === "1";
   try {
-    const result = await syncSeoRanks({ full });
+    const result = await syncSeoRanks({ full, collectOnly });
     const failed = runFailed(result.connector);
     return NextResponse.json(
       { ok: !failed, ...result },

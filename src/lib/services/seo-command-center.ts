@@ -700,3 +700,111 @@ async function readMonthSpend(client: Client) {
     budgetUsd: monthlyBudgetUsd(),
   };
 }
+
+// ------------------------------------------------------------ AI visibility
+
+export type AiEngineSummary = {
+  engine: string;
+  label: string;
+  day: string;
+  checked: number;
+  citesSite: number;
+  citesYoutube: number;
+  mentionsVp: number;
+  /** YouTube only: keywords with a VP video in the top 10. */
+  top10: number;
+};
+
+export type SeoAi = {
+  engines: AiEngineSummary[];
+  /** Hosts cited most across the newest checks, VP's competition for citations. */
+  topHosts: Array<{ host: string; count: number }>;
+  /** Newest AI Mode / ChatGPT answers that cite others and never name VP. */
+  gaps: Array<{ engine: string; query: string; hosts: string[] }>;
+};
+
+const ENGINE_LABELS: Record<string, string> = {
+  ai_mode: "Google AI Mode",
+  chatgpt: "ChatGPT",
+  youtube: "YouTube search",
+};
+
+export async function getSeoAi(
+  deps: { client?: Client } = {},
+): Promise<SeoAi | Missing> {
+  const client = deps.client ?? createAdminClient();
+  const since = addDays(new Date().toISOString().slice(0, 10), -45);
+  const read = await readAllPages<{
+    day: string;
+    engine: string;
+    query: string;
+    cites_site: boolean;
+    cites_youtube: boolean;
+    mentions_vp: boolean;
+    vp_position: number | null;
+    cited_hosts: string[];
+  }>((from, to, count) =>
+    client
+      .from("seo_ai_checks")
+      .select(
+        "day, engine, query, cites_site, cites_youtube, mentions_vp, vp_position, cited_hosts",
+        { count },
+      )
+      .gte("day", since)
+      .order("day", { ascending: false })
+      .order("engine")
+      .order("query")
+      .range(from, to),
+  );
+  if (isMissingTable(read.error)) return MISSING;
+  if (read.error) fail("AI visibility checks", read.error);
+  // Newest day per engine; LLM Mentions rows roll up as one engine.
+  const newest = new Map<string, string>();
+  const key = (engine: string) =>
+    engine.startsWith("mention:") ? "mentions" : engine;
+  for (const r of read.rows) {
+    const k = key(r.engine);
+    if (!newest.has(k)) newest.set(k, r.day);
+  }
+  const latest = read.rows.filter((r) => newest.get(key(r.engine)) === r.day);
+  const by = new Map<string, typeof latest>();
+  for (const r of latest) push(by, key(r.engine), r);
+  const engines = [...by].map(([engine, rows]) => ({
+    engine,
+    label: ENGINE_LABELS[engine] ?? "LLM answers citing VP (DataForSEO index)",
+    day: rows[0].day,
+    checked: rows.length,
+    citesSite: rows.filter((r) => r.cites_site).length,
+    citesYoutube: rows.filter((r) => r.cites_youtube).length,
+    mentionsVp: rows.filter((r) => r.mentions_vp).length,
+    top10: rows.filter((r) => r.vp_position !== null && r.vp_position <= 10)
+      .length,
+  }));
+  const hostCount = new Map<string, number>();
+  for (const r of latest) {
+    if (r.engine !== "ai_mode" && r.engine !== "chatgpt") continue;
+    for (const h of r.cited_hosts)
+      hostCount.set(h, (hostCount.get(h) ?? 0) + 1);
+  }
+  return {
+    engines,
+    topHosts: [...hostCount]
+      .map(([host, count]) => ({ host, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12),
+    gaps: latest
+      .filter(
+        (r) =>
+          (r.engine === "ai_mode" || r.engine === "chatgpt") &&
+          !r.cites_site &&
+          !r.mentions_vp &&
+          r.cited_hosts.length > 0,
+      )
+      .slice(0, 40)
+      .map((r) => ({
+        engine: ENGINE_LABELS[r.engine],
+        query: r.query,
+        hosts: r.cited_hosts.slice(0, 4),
+      })),
+  };
+}

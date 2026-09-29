@@ -92,6 +92,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     booked: ["booked-calls-data"],
     close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
     mom: ["close-monthly-funnel-data", "close-monthly-leads", "close-wins"],
+    won: ["close-won-deals", "close-wins"],
     exec: ["funnel-executive", "funnel-monthly-data", "close-wins"],
     kpi: ["kpi-report-data", "call-credit-data", "channel-report"],
     funnels: ["funnel-monthly-data"],
@@ -115,6 +116,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     seo_gsc_query_totals_daily: "seo-search",
     seo_rank_snapshots: "seo-ranks",
     seo_competitor_keywords: "seo-ranks",
+    seo_ai_checks: "seo-ai",
     social_account_daily: "social-accounts",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
@@ -133,6 +135,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "seo_tasks", // edited on /admin/seo; the trigger job is not a data feed
     "seo_monthly_reviews", // a form
     "dataforseo_spend", // the rank job's own cost ledger
+    "seo_baselines", // Day 0, frozen once by scripts/seo-day0.mjs
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([
@@ -159,7 +162,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
 
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
-    seo: ["seo-command-center", "seo-plan-data"],
+    seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
   };
 
   for (const [tab, files] of Object.entries(SCOPED_LOADERS)) {

@@ -35,7 +35,10 @@ export type RankSyncResult = {
 };
 
 /**
- * Weekly (Mondays): a live SERP for every tracked primary keyword, plus the
+ * Weekly (Mondays), on DataForSEO's standard queue: the 13:00 run collects
+ * anything finished and posts this week's keywords; the 13:50 run
+ * (collectOnly) collects them before the 14:00 trigger job reads them.
+ * Every tracked primary keyword, plus the
  * supporting keywords on even ISO weeks (bi-weekly). On the first Monday of a
  * month it also refreshes volume, CPC and 12 months of history for every
  * tracked keyword, and difficulty. About $0.15 a week at 62 keywords.
@@ -51,6 +54,8 @@ export async function syncSeoRanks(
     budgetMs?: number;
     /** Monthly USD cap; default DATAFORSEO_MONTHLY_BUDGET_USD or $25. */
     budgetUsd?: number;
+    /** Only collect finished tasks; post nothing (the 13:50 Monday run). */
+    collectOnly?: boolean;
   } = {},
 ): Promise<RankSyncResult> {
   const now = deps.now ?? new Date();
@@ -115,32 +120,40 @@ export async function syncSeoRanks(
     const outOfTime = () =>
       clock() - started > budgetMs || spentBefore + spend.total() >= budgetUsd;
     let rowsWritten = 0;
-    let serpFailures = 0;
+    let getFailures = 0;
     let writeFailures = 0;
-    let skippedForTime = 0;
 
-    // Batches of CONCURRENCY*4, each written before the next starts, so a run
-    // the platform cuts off still keeps every SERP it paid for.
+    // 1. Collect every finished standard-queue task (free), each dated by the
+    // day it was posted (its tag). Written batch by batch, so a run the
+    // platform cuts off keeps what it read; the rest stay ready for next time.
+    const ready = await dataforseo.readySerpTasks();
     const batchSize = CONCURRENCY * 4;
-    for (let i = 0; i < toRank.length; i += batchSize) {
-      if (outOfTime()) {
-        skippedForTime = toRank.length - i;
-        break;
-      }
-      const batch = toRank.slice(i, i + batchSize);
-      const results = await mapLimit(batch, CONCURRENCY, (keyword) =>
-        dataforseo.serp(keyword),
+    for (
+      let i = 0;
+      i < ready.length && clock() - started <= budgetMs;
+      i += batchSize
+    ) {
+      const batch = ready.slice(i, i + batchSize);
+      const results = await mapLimit(batch, CONCURRENCY, (task) =>
+        dataforseo.getSerpTask(task.id),
       );
       const rows = results.flatMap((result, index) => {
         if (result instanceof Error) {
-          console.error("DataForSEO SERP failed", {
-            keyword: batch[index],
+          console.error("DataForSEO task_get failed", {
+            id: batch[index].id,
             message: result.message,
           });
-          serpFailures += 1;
+          getFailures += 1;
           return [];
         }
-        return [snapshotRow(day, result, vpVideoIds)];
+        const tag = batch[index].tag;
+        return [
+          snapshotRow(
+            tag && /^\d{4}-\d{2}-\d{2}$/.test(tag) ? tag : day,
+            result,
+            vpVideoIds,
+          ),
+        ];
       });
       const written = await upsertInChunks(
         client,
@@ -153,19 +166,39 @@ export async function syncSeoRanks(
       writeFailures += written.failed;
     }
 
+    // 2. Post this run's keywords to the standard queue (billed now, about
+    // $0.0066 each vs $0.022 live; results in ~5 min, collected by the next
+    // run). The collect-only run skips this.
+    let posted = 0;
+    let postFailed = false;
+    if (!deps.collectOnly && toRank.length > 0 && !outOfTime()) {
+      try {
+        posted = await dataforseo.postSerpTasks(toRank, day);
+      } catch (error) {
+        console.error("DataForSEO task_post failed", {
+          message: error instanceof Error ? error.message : undefined,
+        });
+        postFailed = true;
+      }
+    }
+    keywords = posted;
+
     const problems: string[] = [];
-    if (serpFailures + writeFailures > 0) {
+    if (getFailures + writeFailures > 0) {
       problems.push(
-        `${serpFailures + writeFailures} of ${toRank.length} keywords failed; see the server log.`,
+        `${getFailures + writeFailures} of ${ready.length} finished SERPs failed to collect; see the server log.`,
       );
     }
-    if (skippedForTime > 0) {
+    if (
+      postFailed ||
+      (!deps.collectOnly && posted < toRank.length && !outOfTime())
+    ) {
       problems.push(
-        `${skippedForTime} of ${toRank.length} keywords not pulled before the time limit; the next run picks them up.`,
+        `${toRank.length - posted} of ${toRank.length} keywords were not queued; see the server log.`,
       );
     }
     // The volume refresh is extra: it never costs the snapshots already kept.
-    if (refreshVolumes && all.length > 0 && !outOfTime()) {
+    if (!deps.collectOnly && refreshVolumes && all.length > 0 && !outOfTime()) {
       try {
         rowsWritten += await refreshKeywordMetrics(
           client,
@@ -217,7 +250,7 @@ export function snapshotRow(
   };
 }
 
-async function refreshKeywordMetrics(
+export async function refreshKeywordMetrics(
   client: Client,
   dataforseo: DataForSeoClient,
   keywords: string[],
@@ -264,7 +297,7 @@ async function refreshKeywordMetrics(
   return written + monthly.written;
 }
 
-async function readVpVideoIds(client: Client): Promise<Set<string>> {
+export async function readVpVideoIds(client: Client): Promise<Set<string>> {
   const { data, error } = await client
     .from("youtube_videos")
     .select("video_id")
@@ -280,7 +313,7 @@ async function readVpVideoIds(client: Client): Promise<Set<string>> {
 }
 
 /** Runs `fn` over items with at most `limit` in flight; errors are returned. */
-async function mapLimit<T, R>(
+export async function mapLimit<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>,
@@ -353,7 +386,10 @@ export function monthlyBudgetUsd(): number {
     : DEFAULT_MONTHLY_BUDGET_USD;
 }
 
-async function monthSpend(client: Client, month: string): Promise<number> {
+export async function monthSpend(
+  client: Client,
+  month: string,
+): Promise<number> {
   const { data, error } = await client
     .from("dataforseo_spend")
     .select("usd")
@@ -364,7 +400,7 @@ async function monthSpend(client: Client, month: string): Promise<number> {
 }
 
 /** Adds up what each call cost and writes it once the run ends. */
-function spendTracker() {
+export function spendTracker() {
   const byEndpoint = new Map<string, { usd: number; calls: number }>();
   return {
     add(endpoint: string, usd: number) {
@@ -406,7 +442,7 @@ function spendTracker() {
   };
 }
 
-function dataForSeoFromConfig(
+export function dataForSeoFromConfig(
   onCost: (endpoint: string, usd: number) => void,
 ): DataForSeoClient | null {
   const login = config.DATAFORSEO_LOGIN;

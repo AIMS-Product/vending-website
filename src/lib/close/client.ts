@@ -188,6 +188,7 @@ type CloseLeadSearchResult = {
  */
 export type CloseLeadReadResult = {
   id: string;
+  display_name?: string | null;
   /** When Close created the lead. Set once, never rewritten: first-touch order. */
   date_created?: string | null;
   status_label?: string | null;
@@ -459,7 +460,7 @@ export function createCloseClient({
       try {
         return await request<CloseLeadReadResult>(
           "GET",
-          `/lead/${encodeURIComponent(leadId)}/?_fields=id,date_created,status_label,custom,opportunities`,
+          `/lead/${encodeURIComponent(leadId)}/?_fields=id,display_name,date_created,status_label,custom,opportunities`,
         );
       } catch (error) {
         if (error instanceof CloseApiError && error.status === 404) return null;
@@ -556,6 +557,23 @@ export function createCloseClient({
         "GET",
         `/activity/?lead_id=${encodeURIComponent(leadId)}&_limit=${limit}`,
       );
+    },
+    /**
+     * Activity dated before `before` (ISO), up to 100, newest first. Close
+     * ignores `_order_by` here, so "the oldest activity" is the minimum of
+     * this page. Used by the Closed-won tab: an imported lead can carry
+     * emails and notes from before Close created it.
+     */
+    listLeadActivitiesBefore(leadId: string, before: string) {
+      const params = new URLSearchParams({
+        lead_id: leadId,
+        date_created__lt: before,
+        _limit: "100",
+        _fields: "_type,date_created",
+      });
+      return request<{
+        data?: Array<{ _type?: string; date_created?: string }>;
+      }>("GET", `/activity/?${params.toString()}`);
     },
     /**
      * Logs an already-received email on the lead. This is the ONLY write in

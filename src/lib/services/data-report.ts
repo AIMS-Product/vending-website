@@ -54,6 +54,8 @@ export type DataReportInput = {
   } | null;
   /** Webinar, email, chatbot, reach: sources with no place in the channel table. */
   sources?: readonly ReportSourceBlock[];
+  /** Week report only: the SEO scorecard vs Day 0 and the week's SEO tasks. */
+  seo?: readonly ReportSourceBlock[];
   audit: {
     summary: AuditSummary;
     results: readonly AuditResult[];
@@ -131,6 +133,10 @@ export function buildDataReport(input: DataReportInput): DataReport {
   if (input.sources && input.sources.length > 0) {
     sections.push({ kind: "heading", text: "The other sources" });
     sections.push({ kind: "blocks", blocks: input.sources });
+  }
+  if (input.seo && input.seo.length > 0) {
+    sections.push({ kind: "heading", text: "SEO vs Day 0" });
+    sections.push({ kind: "blocks", blocks: input.seo });
   }
 
   if (input.audit) {
@@ -474,4 +480,15 @@ function escape(value: string) {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+/** The instant a Pacific day starts: 07:00Z in PDT, 08:00Z in PST. */
+export function pacificStartIso(day: string): string {
+  const pdt = new Date(`${day}T07:00:00Z`);
+  const hour = pdt.toLocaleString("en-US", {
+    timeZone: "America/Los_Angeles",
+    hour: "numeric",
+    hourCycle: "h23",
+  });
+  return Number(hour) === 0 ? pdt.toISOString() : `${day}T08:00:00.000Z`;
 }

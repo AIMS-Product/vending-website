@@ -138,6 +138,12 @@ export const FEEDS = {
     staleAfterHours: 8 * 24,
     source: { kind: "run", connector: "dataforseo-ranks" },
   },
+  "seo-ai": {
+    label: "AI answers and YouTube ranks (DataForSEO)",
+    // Weekly, Mondays.
+    staleAfterHours: 8 * 24,
+    source: { kind: "run", connector: "dataforseo-ai" },
+  },
   "social-accounts": {
     label: "Social followers and reach (Metricool)",
     staleAfterHours: DAILY,
@@ -215,15 +221,17 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   close: ["close"],
   // close-monthly-funnel-data.ts: Close mirror, site leads
   mom: ["close", "site-leads"],
+  // close-won-deals.ts: Close wins + mirror, site forms, Calendly (chats are live)
+  won: ["close", "site-leads", "calendly"],
   // funnel-executive.ts: spend from the spine, funnel inputs
   exec: ["site-leads", "ga4-pages", "close", "metricool-ads"],
   // kpi-report-data.ts: spine facts, Close, GHL email, webinars, Calendly
   kpi: [...SPINE, "close", "calendly", "site-leads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
-  // seo-command-center.ts + seo-plan-data.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
+  // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
-  seo: ["seo-search", "seo-ranks", "social-accounts"],
+  seo: ["seo-search", "seo-ranks", "seo-ai", "social-accounts"],
   // /admin/data is about every number.
   data: Object.keys(FEEDS) as FeedKey[],
 };

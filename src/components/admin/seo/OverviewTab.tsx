@@ -8,7 +8,72 @@ import {
   type SeoOverview,
   type Totals,
 } from "@/lib/services/seo-command-center";
+import { type SeoScorecard } from "@/lib/services/seo-scorecard";
 import { C, n, Delta, MoverTable, PointsDelta } from "./shared";
+
+function Scorecard({ data }: { data: SeoScorecard }) {
+  const { day0, current } = data;
+  return (
+    <section className={adminCardClass}>
+      <h2 className="text-ui-text text-sm font-semibold">Scorecard vs Day 0</h2>
+      <p className="text-ui-text-subtle mt-1 text-xs">
+        {day0
+          ? `Day 0 frozen ${day0.day}. Now = the 28 days (7 for the north star) through ${data.asOf ?? "n/a"}; ranks from the newest DataForSEO pull. Targets are 30, 60 and 90 days after Day 0.`
+          : "Day 0 is not frozen yet: paste APPLY-IN-SQL-EDITOR.md section 9, then run scripts/seo-day0.mjs --write."}
+      </p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-ui-text-muted text-left text-xs">
+              <th className="py-1.5 pr-3 font-medium">Metric</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Day 0</th>
+              <th className="py-1.5 pr-3 text-right font-medium">Now</th>
+              <th className="py-1.5 pr-3 font-medium">vs Day 0</th>
+              <th className="py-1.5 pr-3 text-right font-medium">30 days</th>
+              <th className="py-1.5 pr-3 text-right font-medium">60 days</th>
+              <th className="py-1.5 text-right font-medium">90 days</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((row) => {
+              const base = day0?.values[row.metric] ?? null;
+              const now = current[row.metric] ?? null;
+              return (
+                <tr key={row.metric} className="border-ui-line border-t">
+                  <td className="text-ui-text py-1.5 pr-3">
+                    {row.label}
+                    {row.note ? (
+                      <span className="text-ui-text-subtle block text-xs">
+                        {row.note}
+                      </span>
+                    ) : null}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {n(base)}
+                  </td>
+                  <td className="py-1.5 pr-3 text-right tabular-nums">
+                    {n(now)}
+                  </td>
+                  <td className="py-1.5 pr-3">
+                    <Delta now={now} before={base} />
+                  </td>
+                  {(row.targets ?? [null, null, null]).map((t, i) => (
+                    <td
+                      key={i}
+                      className="text-ui-text-muted py-1.5 pr-3 text-right tabular-nums last:pr-0"
+                    >
+                      {n(t)}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
 
 function KpiStrip({
   current,
@@ -53,7 +118,13 @@ function KpiStrip({
   );
 }
 
-export function SeoOverviewTab({ data }: { data: SeoOverview }) {
+export function SeoOverviewTab({
+  data,
+  scorecard,
+}: {
+  data: SeoOverview;
+  scorecard: SeoScorecard;
+}) {
   const days = data.daily.map((d) => d.day);
   return (
     <div className="space-y-5">
@@ -63,6 +134,7 @@ export function SeoOverviewTab({ data }: { data: SeoOverview }) {
         lastYear={data.lastYear}
         brandShare={data.brandShareCurrent}
       />
+      <Scorecard data={scorecard} />
       <p className="text-ui-text-subtle text-xs">
         Search Console web search, final data through {data.asOf ?? "n/a"}. The
         property holds data from {days[0] ?? "n/a"}; a year-back comparison

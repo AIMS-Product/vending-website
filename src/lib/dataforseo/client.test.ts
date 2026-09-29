@@ -197,3 +197,219 @@ describe("createDataForSeoClient", () => {
     ]);
   });
 });
+
+describe("retry on transient failures", () => {
+  function sequence(responses: Array<{ status: number; body: unknown }>) {
+    let i = 0;
+    const fetchImpl = vi.fn(async () => {
+      const r = responses[Math.min(i++, responses.length - 1)];
+      return {
+        ok: r.status < 300,
+        status: r.status,
+        text: async () => JSON.stringify(r.body),
+      } as Response;
+    });
+    return fetchImpl as unknown as typeof fetch & {
+      mock: { calls: unknown[] };
+    };
+  }
+  const serpOk = ok([{ items: [] }]);
+
+  it("retries once on HTTP 403 and succeeds", async () => {
+    const fetchImpl = sequence([
+      { status: 403, body: {} },
+      { status: 200, body: serpOk },
+    ]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).resolves.toBeDefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up after one retry", async () => {
+    const fetchImpl = sequence([{ status: 503, body: {} }]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).rejects.toThrow("HTTP 503");
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a 402 (out of funds)", async () => {
+    const fetchImpl = sequence([{ status: 402, body: {} }]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).rejects.toThrow("HTTP 402");
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries a task-level 40101", async () => {
+    const fetchImpl = sequence([
+      {
+        status: 200,
+        body: { status_code: 20000, tasks: [{ status_code: 40101 }] },
+      },
+      { status: 200, body: serpOk },
+    ]);
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+    });
+    await expect(client.serp("x")).resolves.toBeDefined();
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps a 40106 partial result and records cost even on failure", async () => {
+    const costs: number[] = [];
+    const partial = sequence([
+      {
+        status: 200,
+        body: {
+          status_code: 20000,
+          cost: 0.01,
+          tasks: [{ status_code: 40106, result: [{ items: [] }] }],
+        },
+      },
+    ]);
+    const c1 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: partial,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await expect(c1.serp("x")).resolves.toBeDefined();
+    const failed = sequence([
+      {
+        status: 200,
+        body: {
+          status_code: 20000,
+          cost: 0.02,
+          tasks: [{ status_code: 40501, status_message: "Invalid Field" }],
+        },
+      },
+    ]);
+    const c2 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: failed,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await expect(c2.serp("x")).rejects.toThrow("40501");
+    expect(costs).toEqual([0.01, 0.02]);
+  });
+});
+
+describe("standard queue", () => {
+  it("posts tasks, lists ready ones with GET, and reads a finished SERP", async () => {
+    const posted = fakeFetch({
+      status_code: 20000,
+      tasks: [
+        { status_code: 20100, id: "t1" },
+        { status_code: 20100, id: "t2" },
+      ],
+    });
+    const c1 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: posted.fetchImpl,
+    });
+    expect(await c1.postSerpTasks(["x", "y"], "2026-09-28")).toBe(2);
+    expect(JSON.parse(String(posted.calls[0].init?.body))[0]).toMatchObject({
+      keyword: "x",
+      tag: "2026-09-28",
+      depth: 100,
+    });
+
+    const ready = fakeFetch(ok([{ id: "t1", tag: "2026-09-28" }, { nope: 1 }]));
+    const c2 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: ready.fetchImpl,
+    });
+    expect(await c2.readySerpTasks()).toEqual([
+      { id: "t1", tag: "2026-09-28" },
+    ]);
+    expect(ready.calls[0].init?.method).toBe("GET");
+    expect(ready.calls[0].init?.body).toBeUndefined();
+
+    const got = fakeFetch(
+      ok([{ keyword: "types of vending machines", items: SERP_ITEMS }]),
+    );
+    const c3 = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl: got.fetchImpl,
+    });
+    const snap = await c3.getSerpTask("t1");
+    expect(got.calls[0].url).toContain(
+      "/serp/google/organic/task_get/advanced/t1",
+    );
+    expect(snap).toMatchObject({
+      keyword: "types of vending machines",
+      vpPosition: 2,
+      aiOverview: true,
+    });
+  });
+});
+
+describe("retry billing", () => {
+  it("books the first answer's cost before retrying", async () => {
+    const costs: number[] = [];
+    let i = 0;
+    const bodies = [
+      { status_code: 20000, cost: 0.01, tasks: [{ status_code: 40101 }] },
+      {
+        status_code: 20000,
+        cost: 0.01,
+        tasks: [{ status_code: 20000, result: [{ items: [] }] }],
+      },
+    ];
+    const fetchImpl = (async () => ({
+      ok: true,
+      status: 200,
+      text: async () => JSON.stringify(bodies[Math.min(i++, 1)]),
+    })) as unknown as typeof fetch;
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+      retryDelayMs: 0,
+      onCost: (_, usd) => costs.push(usd),
+    });
+    await client.serp("x");
+    expect(costs).toEqual([0.01, 0.01]);
+  });
+});
+
+describe("search volume", () => {
+  it("leaves out keywords Google Ads would reject the batch for", async () => {
+    const { fetchImpl, calls } = fakeFetch(ok([]));
+    const client = createDataForSeoClient({
+      login: "a",
+      password: "b",
+      fetchImpl,
+    });
+    await client.searchVolume([
+      "vending machine business",
+      "how to start a vending machine business in new york city",
+    ]);
+    expect(JSON.parse(String(calls[0].init?.body))[0].keywords).toEqual([
+      "vending machine business",
+    ]);
+  });
+});

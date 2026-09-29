@@ -6,8 +6,10 @@ import { config } from "@/lib/config";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { weekStartOf } from "@/lib/services/close-week-view";
+import { getSeoScorecard } from "@/lib/services/seo-scorecard";
 import {
   buildDataReport,
+  pacificStartIso,
   type DataReport,
   type ReportChannelRow,
   type ReportSourceBlock,
@@ -47,11 +49,12 @@ export async function sendDataReport(deps: {
   const client = deps.client ?? createAdminClient();
   const { from, to, label } = reportWindow(deps.period, now);
 
-  const [channels, close, sources, audit] = await Promise.all([
+  const [channels, close, sources, audit, seo] = await Promise.all([
     channelRows(from, to),
     closeRows(to),
     sourceBlocks(client, from, to),
     latestAudit(client),
+    deps.period === "week" ? seoBlocks(client, from, to) : undefined,
   ]);
 
   const report = buildDataReport({
@@ -60,6 +63,7 @@ export async function sendDataReport(deps: {
     channels,
     close,
     sources,
+    seo,
     audit,
     dashboardUrl: `${config.NEXT_PUBLIC_SITE_URL ?? "https://www.vendingpreneurs.com"}/admin/analytics`,
   });
@@ -87,6 +91,69 @@ export async function sendDataReport(deps: {
     ...(sent.ok ? {} : { error: sent.error }),
     report,
   };
+}
+
+/**
+ * The week email's SEO section: each scorecard metric as Day 0, now and the
+ * 30-day target, plus SEO tasks opened and done in the window. A failed read
+ * prints as a block that says so; the rest of the report still sends.
+ */
+export async function seoBlocks(
+  client: Client,
+  from: string,
+  to: string,
+): Promise<ReportSourceBlock[]> {
+  try {
+    const [card, opened, done] = await Promise.all([
+      getSeoScorecard(client),
+      client
+        .from("seo_tasks")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", pacificStartIso(from))
+        .lt("created_at", pacificStartIso(nextDay(to))),
+      client
+        .from("seo_tasks")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "done")
+        .gte("done_at", pacificStartIso(from))
+        .lt("done_at", pacificStartIso(nextDay(to))),
+    ]);
+    for (const read of [opened, done]) {
+      if (read.error) throw new Error(`seo_tasks: ${read.error.message}`);
+    }
+    const fmt = (v: number | null | undefined) =>
+      v === null || v === undefined ? "n/a" : v.toLocaleString("en-US");
+    return [
+      {
+        label: "Scorecard",
+        note: card.day0
+          ? `Day 0 ${card.day0.day}; now = Search Console through ${card.asOf ?? "n/a"}`
+          : "Day 0 not frozen yet (APPLY-IN-SQL-EDITOR.md section 9)",
+        values: card.rows.map((row) => ({
+          label: row.label,
+          value: `${fmt(card.day0?.values[row.metric])} then, ${fmt(card.current[row.metric])} now, 30-day target ${fmt(row.targets?.[0])}`,
+        })),
+      },
+      {
+        label: "SEO tasks",
+        values: [
+          { label: "Opened this week", value: fmt(opened.count) },
+          { label: "Done this week", value: fmt(done.count) },
+        ],
+      },
+    ];
+  } catch (error) {
+    console.error("data report: SEO section failed", {
+      message: error instanceof Error ? error.message : String(error),
+    });
+    return [
+      {
+        label: "SEO",
+        note: "Could not read the SEO tables; see the server log.",
+        values: [],
+      },
+    ];
+  }
 }
 
 /** Today for the day report; the Friday-to-Thursday week for the week report. */

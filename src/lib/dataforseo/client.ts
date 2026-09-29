@@ -26,6 +26,7 @@ const envelope = z.object({
         status_code: z.number(),
         status_message: z.string().optional(),
         result: z.array(z.unknown()).nullable().optional(),
+        id: z.string().optional(),
       }),
     )
     .default([]),
@@ -43,7 +44,14 @@ const serpItem = z
   })
   .passthrough();
 
-const serpResult = z.object({ items: z.array(serpItem).nullable().optional() });
+const serpResult = z.object({
+  keyword: z.string().optional(),
+  items: z.array(serpItem).nullable().optional(),
+});
+const readyTask = z.object({
+  id: z.string(),
+  tag: z.string().nullable().optional(),
+});
 
 const volumeResult = z.object({
   keyword: z.string(),
@@ -103,6 +111,36 @@ export type KeywordVolume = {
   monthly: Array<{ month: string; volume: number }>;
 };
 
+/** An AI answer, reduced to what VP tracks: every cited URL and the text. */
+export type AiAnswer = { query: string; refs: string[]; text: string };
+
+export type YoutubeResult = {
+  rank: number;
+  videoId: string | null;
+  channelId: string | null;
+  title: string | null;
+};
+
+export type LlmMention = {
+  platform: string;
+  model: string | null;
+  question: string;
+  refs: string[];
+};
+
+/** Brand words an answer can name VP by (lower case). */
+export const VP_NAMES = [
+  "vendingpreneur",
+  "vending preneur",
+  "mike hoffman",
+  "mike hoffmann",
+];
+
+export function mentionsVp(text: string): boolean {
+  const t = text.toLowerCase();
+  return VP_NAMES.some((name) => t.includes(name));
+}
+
 export type DataForSeoClient = {
   serp(keyword: string): Promise<SerpSnapshot>;
   searchVolume(keywords: string[]): Promise<KeywordVolume[]>;
@@ -111,6 +149,20 @@ export type DataForSeoClient = {
   ): Promise<Array<{ keyword: string; kd: number | null }>>;
   /** Keywords a domain ranks for in Google's top 20 (DataForSEO Labs). */
   rankedKeywords(target: string, limit?: number): Promise<RankedKeyword[]>;
+  /** Google AI Mode answer for a keyword (live). */
+  aiMode(keyword: string): Promise<AiAnswer>;
+  /** The consumer ChatGPT answer for a prompt, with its sources (live). */
+  chatGpt(prompt: string): Promise<AiAnswer>;
+  /** YouTube search results for a keyword (live, top 40). */
+  youtubeSearch(keyword: string): Promise<YoutubeResult[]>;
+  /** Answers in DataForSEO's LLM index that cite or mention a domain. */
+  llmMentions(domain: string, limit?: number): Promise<LlmMention[]>;
+  /** Standard queue: post SERP tasks (billed now), tagged with the snapshot day. */
+  postSerpTasks(keywords: string[], tag: string): Promise<number>;
+  /** Standard queue: finished tasks not collected yet (free). */
+  readySerpTasks(): Promise<Array<{ id: string; tag: string | null }>>;
+  /** Standard queue: one finished task's SERP (free for 30 days). */
+  getSerpTask(id: string): Promise<SerpSnapshot>;
 };
 
 export type RankedKeyword = {
@@ -144,54 +196,93 @@ const rankedItem = z
   })
   .passthrough();
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** DataForSEO codes worth one retry: search engine error (40101), task
+ * failed, resubmit (40103), rate limits (40202, 40209), internal / upstream
+ * errors (5xxxx). docs/marketing/dataforseo-v3.md section 2. */
+const RETRY_CODES = new Set([40101, 40103, 40202, 40209]);
+/** Partial results: DataForSEO bills only the pages it returned. Keep them. */
+const OK_CODES = new Set([20000, 20100, 40106]);
+
+/** HTTP 403/429/5xx, or a retryable envelope/task code, is worth one retry. */
+export function isTransient(httpStatus: number, codes: number[] = []): boolean {
+  if (httpStatus === 403 || httpStatus === 429 || httpStatus >= 500) {
+    return true;
+  }
+  return codes.some((c) => RETRY_CODES.has(c) || c >= 50000);
+}
+
 export function createDataForSeoClient({
   login,
   password,
   fetchImpl = fetch,
   onCost,
+  retryDelayMs = 2_000,
 }: {
   login: string;
   password: string;
   fetchImpl?: typeof fetch;
+  retryDelayMs?: number;
   /** Called with the USD DataForSEO says each call cost (budget tracking). */
   onCost?: (endpoint: string, usd: number) => void;
 }): DataForSeoClient {
   const auth = `Basic ${Buffer.from(`${login}:${password}`).toString("base64")}`;
 
-  const post = async (path: string, body: unknown): Promise<unknown[]> => {
+  /** POST with a body; GET without one (tasks_ready, task_get). */
+  const call = async (path: string, body?: unknown) => {
     const response = await fetchImpl(`${API}${path}`, {
-      method: "POST",
+      method: body === undefined ? "GET" : "POST",
       headers: { Authorization: auth, "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       // One slow SERP must not hold a worker past the run's time budget.
       signal: AbortSignal.timeout(90_000),
     });
     const text = await response.text();
-    if (!response.ok) {
-      throw new Error(
-        `DataForSEO ${path} failed with HTTP ${response.status}.`,
-      );
-    }
+    if (!response.ok) return { status: response.status, data: null };
     const parsed = envelope.safeParse(JSON.parse(text));
     if (!parsed.success) {
       throw new Error(`DataForSEO ${path} returned an unexpected shape.`);
     }
-    const data = parsed.data;
+    return { status: response.status, data: parsed.data };
+  };
+
+  const request = async (path: string, body?: unknown) => {
+    let res = await call(path, body);
+    // One retry for transient failures: a fresh account answered 403 / 40101
+    // on its first call and succeeded on the next; 429 and 5xx are throttling.
+    const codes = (r: typeof res) =>
+      r.data
+        ? [r.data.status_code, ...r.data.tasks.map((t) => t.status_code)]
+        : [];
+    if (isTransient(res.status, codes(res))) {
+      // The first answer may have billed: book it before asking again.
+      if (res.data) onCost?.(path, res.data.cost ?? 0);
+      await sleep(retryDelayMs);
+      res = await call(path, body);
+    }
+    const data = res.data;
+    if (!data) {
+      throw new Error(`DataForSEO ${path} failed with HTTP ${res.status}.`);
+    }
+    // Record the spend before any status check: a failed task can still bill.
+    onCost?.(path, data.cost ?? 0);
     if (data.status_code !== 20000) {
       throw new Error(
         `DataForSEO ${path}: ${data.status_code} ${data.status_message ?? ""}`.trim(),
       );
     }
     for (const task of data.tasks) {
-      if (task.status_code !== 20000) {
+      if (!OK_CODES.has(task.status_code)) {
         throw new Error(
           `DataForSEO ${path} task: ${task.status_code} ${task.status_message ?? ""}`.trim(),
         );
       }
     }
-    onCost?.(path, data.cost ?? 0);
-    return data.tasks.flatMap((task) => task.result ?? []);
+    return data.tasks;
   };
+  const post = async (path: string, body?: unknown): Promise<unknown[]> =>
+    (await request(path, body)).flatMap((task) => task.result ?? []);
 
   const inBatches = async <T>(
     keywords: string[],
@@ -222,8 +313,106 @@ export function createDataForSeoClient({
       return snapshotFromItems(keyword, result.data.items ?? []);
     },
 
+    async aiMode(keyword) {
+      const [first] = await post("/serp/google/ai_mode/live/advanced", [
+        { keyword, ...LOCATION },
+      ]);
+      return toAnswer(keyword, first);
+    },
+
+    async chatGpt(prompt) {
+      const [first] = await post(
+        "/ai_optimization/chat_gpt/llm_scraper/live/advanced",
+        [{ keyword: prompt, ...LOCATION }],
+      );
+      return toAnswer(prompt, first);
+    },
+
+    async youtubeSearch(keyword) {
+      const [first] = await post("/serp/youtube/organic/live/advanced", [
+        { keyword, ...LOCATION, block_depth: 40 },
+      ]);
+      const items = z
+        .object({ items: z.array(youtubeItem).nullable().optional() })
+        .safeParse(first ?? {});
+      if (!items.success) {
+        throw new Error("DataForSEO YouTube result had an unexpected shape.");
+      }
+      return (items.data.items ?? [])
+        .filter((i) => i.type === "youtube_video")
+        .map((i, index) => ({
+          rank: i.rank_group ?? index + 1,
+          videoId: i.video_id ?? null,
+          channelId: i.channel_id ?? null,
+          title: i.title ?? null,
+        }));
+    },
+
+    async llmMentions(domain, limit = 100) {
+      const [first] = await post(
+        "/ai_optimization/llm_mentions/search_mentions/live",
+        [{ target: [{ domain }], limit }],
+      );
+      const parsed = z
+        .object({ items: z.array(mentionItem).nullable().optional() })
+        .safeParse(first ?? {});
+      if (!parsed.success) {
+        throw new Error("DataForSEO LLM mentions had an unexpected shape.");
+      }
+      return (parsed.data.items ?? []).map((i) => ({
+        platform: i.platform,
+        model: i.model_name ?? null,
+        question: i.question,
+        refs: [...new Set(urlsIn(i))],
+      }));
+    },
+
+    async postSerpTasks(keywords, tag) {
+      let created = 0;
+      for (let i = 0; i < keywords.length; i += 100) {
+        const tasks = await request(
+          "/serp/google/organic/task_post",
+          keywords.slice(i, i + 100).map((keyword) => ({
+            keyword,
+            ...LOCATION,
+            depth: 100,
+            load_async_ai_overview: true,
+            tag,
+          })),
+        );
+        created += tasks.filter((t) => t.status_code === 20100).length;
+      }
+      return created;
+    },
+
+    async readySerpTasks() {
+      const results = await post("/serp/google/organic/tasks_ready");
+      return results.flatMap((raw) => {
+        const row = readyTask.safeParse(raw);
+        return row.success
+          ? [{ id: row.data.id, tag: row.data.tag ?? null }]
+          : [];
+      });
+    },
+
+    async getSerpTask(id) {
+      const [first] = await post(
+        `/serp/google/organic/task_get/advanced/${encodeURIComponent(id)}`,
+      );
+      const result = serpResult.safeParse(first ?? {});
+      if (!result.success || !result.data.keyword) {
+        throw new Error("DataForSEO SERP task result had an unexpected shape.");
+      }
+      return snapshotFromItems(result.data.keyword, result.data.items ?? []);
+    },
+
     searchVolume(keywords) {
-      return inBatches(keywords, async (batch) => {
+      // Google Ads rejects the whole batch (40501) for one keyword over 10
+      // words or 80 characters; those simply get no volume.
+      const valid = keywords.filter(
+        (k) => k.length <= 80 && k.trim().split(/\s+/).length <= 10,
+      );
+      return inBatches(valid, async (batch) => {
         const results = await post(
           "/keywords_data/google_ads/search_volume/live",
           [{ keywords: batch, ...LOCATION }],
@@ -300,6 +489,38 @@ export function createDataForSeoClient({
         ];
       });
     },
+  };
+}
+
+const youtubeItem = z
+  .object({
+    type: z.string(),
+    rank_group: z.number().nullable().optional(),
+    video_id: z.string().nullable().optional(),
+    channel_id: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+const mentionItem = z
+  .object({
+    platform: z.string(),
+    model_name: z.string().nullable().optional(),
+    question: z.string(),
+  })
+  .passthrough();
+
+/** Any AI answer result: every URL anywhere in it, and all of its text. */
+export function toAnswer(query: string, result: unknown): AiAnswer {
+  if (!result || typeof result !== "object") {
+    throw new Error("DataForSEO AI answer had an unexpected shape.");
+  }
+  return {
+    query,
+    refs: [...new Set(urlsIn(result))].filter(
+      (u) => !u.includes("google.com/search") && !u.includes("chatgpt.com/?"),
+    ),
+    text: JSON.stringify(result),
   };
 }
 

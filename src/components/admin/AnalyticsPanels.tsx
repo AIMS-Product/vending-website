@@ -648,6 +648,7 @@ export const ANALYTICS_TABS = [
   { key: "booked", label: "Booked calls", section: "sales" },
   { key: "close", label: "Close view", section: "sales" },
   { key: "mom", label: "Month over month", section: "sales" },
+  { key: "won", label: "Closed-won", section: "sales" },
   { key: "exec", label: "Executive", section: "exec" },
   { key: "kpi", label: "KPI", section: "exec" },
   { key: "funnels", label: "Funnels by month", section: "exec" },

@@ -126,6 +126,11 @@ async function readInputs(client: Client, asOf: string, now: Date) {
     .select("keyword, piece_ids")
     .eq("tracked", true);
   const pieces = await client.from("seo_content_pieces").select("id, slug");
+  const live = await client
+    .from("seo_pages")
+    .select("route_path")
+    .eq("status", "published")
+    .like("route_path", "/resources/%");
   const ranks = await readAllPages<Omit<RankRow, "top10"> & { top10: Json }>(
     (from, to, count) =>
       client
@@ -139,7 +144,7 @@ async function readInputs(client: Client, asOf: string, now: Date) {
         .order("keyword")
         .range(from, to),
   );
-  for (const read of [pages, queries, totals, keywords, pieces, ranks]) {
+  for (const read of [pages, queries, totals, keywords, pieces, ranks, live]) {
     if (read.error)
       throw new Error(`SEO trigger read failed: ${read.error.message}`);
   }
@@ -173,6 +178,9 @@ async function readInputs(client: Client, asOf: string, now: Date) {
       }),
     ),
     keywordPage,
+    livePages: new Set(
+      (live.data ?? []).map((p) => `${SITE_ORIGIN}${p.route_path}`),
+    ),
   };
 }
 
