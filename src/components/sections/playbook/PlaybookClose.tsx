@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Card } from "@/components/ui/Card";
+import Link from "next/link";
 import {
   BUY_CTA_SHORT,
   DISCLAIMER,
@@ -9,7 +9,7 @@ import {
   host,
   images,
 } from "@/lib/content/playbook";
-import { EYEBROW, H2, PlaybookCta, PlaybookCtaBand } from "./PlaybookCta";
+import { EYEBROW, H2, PlaybookCta } from "./PlaybookCta";
 
 interface PlaybookCloseProps {
   checkoutHref: string;
@@ -18,25 +18,31 @@ interface PlaybookCloseProps {
 export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
   return (
     <section className="bg-brand-50 border-ink border-b-2 py-16 lg:py-24">
-      <div className="mx-auto grid max-w-[1180px] items-start gap-10 px-5 lg:grid-cols-[0.6fr_1.4fr] lg:px-10">
-        <Image
-          src={images.mike.src}
-          alt={images.mike.alt}
-          width={images.mike.width}
-          height={images.mike.height}
-          sizes="(min-width: 1024px) 340px, 70vw"
-          className="border-ink shadow-card rounded-card mx-auto h-auto w-full max-w-[340px] border-2"
-        />
+      <div className="mx-auto grid max-w-[1180px] items-start gap-10 px-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16 lg:px-10">
+        <div className="lg:sticky lg:top-8">
+          <Image
+            src={images.mike.src}
+            alt={images.mike.alt}
+            width={images.mike.width}
+            height={images.mike.height}
+            sizes="(min-width: 1024px) 420px, 90vw"
+            className="border-ink shadow-card rounded-card mx-auto h-auto w-full max-w-[420px] border-2"
+          />
+        </div>
         <div>
-          <h2 data-reveal className={`${H2} text-[clamp(1.5rem,3vw,2.3rem)]`}>
+          <h2 data-reveal className={`${H2} text-[clamp(2rem,3.6vw,3rem)]`}>
             {host.title}
           </h2>
-          <div className="mt-5 space-y-4 leading-relaxed">
+          <div className="mt-8 max-w-[65ch] space-y-5 text-[1.05rem] leading-relaxed">
             {host.paragraphs.map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
-          <PlaybookCtaBand href={checkoutHref} label={BUY_CTA_SHORT} />
+          <PlaybookCta
+            href={checkoutHref}
+            label={BUY_CTA_SHORT}
+            className="mt-9 w-full sm:w-auto"
+          />
         </div>
       </div>
     </section>
@@ -46,20 +52,29 @@ export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
 export function PlaybookFaq() {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
-      <div className="mx-auto max-w-3xl px-5 lg:px-10">
-        <p className={EYEBROW}>{faq.eyebrow}</p>
-        <h2 data-reveal className={`${H2} mt-2`}>
-          {faq.title}
-        </h2>
-        <div className="mt-8 space-y-3">
+      <div className="mx-auto grid max-w-[1180px] gap-10 px-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:px-10">
+        <div>
+          <p className={EYEBROW}>{faq.eyebrow}</p>
+          <h2 data-reveal className={`${H2} mt-3`}>
+            {faq.title}
+          </h2>
+        </div>
+        <div className="space-y-3">
           {faq.items.map((item) => (
-            <details key={item.q} className="group">
-              <Card variant="flat" className="p-0 lg:p-0">
-                <summary className="text-ink cursor-pointer list-none p-5 font-black">
-                  {item.q}
-                </summary>
-                <p className="px-5 pb-5 leading-snug">{item.a}</p>
-              </Card>
+            <details
+              key={item.q}
+              className="group border-ink rounded-card open:bg-tint border-2 bg-white"
+            >
+              <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[1.05rem] font-black [&::-webkit-details-marker]:hidden">
+                {item.q}
+                <span
+                  aria-hidden
+                  className="border-ink grid size-8 shrink-0 place-items-center rounded-full border-2 text-lg leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="-mt-1 px-5 pb-5 leading-relaxed">{item.a}</p>
             </details>
           ))}
         </div>
@@ -71,37 +86,62 @@ export function PlaybookFaq() {
 export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
   return (
     <section className="bg-brand-50 py-16 lg:py-24">
-      <div className="mx-auto max-w-2xl px-5 text-center lg:px-10">
-        <Card>
-          <p className={EYEBROW}>{finalOffer.badge}</p>
-          <h2 className={`${H2} mt-3`}>{finalOffer.title}</h2>
-          <p className="mt-3 text-sm font-bold">{finalOffer.proof}</p>
-          <p className="text-eyebrow mt-1 text-sm font-black uppercase">
-            {finalOffer.urgency}
-          </p>
-          <p className="mt-5 flex items-baseline justify-center gap-3">
-            <span className="text-ink/60 text-xl font-black line-through">
-              {PRICE.anchor}
-            </span>
-            <span className="text-brand-700 text-5xl font-black">
-              {finalOffer.price}
-            </span>
-          </p>
-          <p className="mt-1 text-sm font-bold">{PRICE.save}</p>
-          <p className="mx-auto mt-4 max-w-md leading-snug">
-            {finalOffer.line}
-          </p>
-          <div className="mt-6">
+      <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
+        <div className="border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white lg:grid-cols-2">
+          <div className="bg-tint border-ink v2-dots flex items-center overflow-hidden border-b-2 p-6 lg:border-r-2 lg:border-b-0 lg:p-8">
+            <Image
+              src={images.product.src}
+              alt={images.product.alt}
+              width={images.product.width}
+              height={images.product.height}
+              sizes="(min-width: 1024px) 640px, 100vw"
+              className="h-auto w-full scale-110"
+            />
+          </div>
+          <div className="p-6 text-center sm:p-10">
+            <p className={EYEBROW}>{finalOffer.badge}</p>
+            <h2 className="v2-display text-ink mt-3 text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
+              {finalOffer.title}
+            </h2>
+            <p className="mt-3 text-sm font-bold">{finalOffer.proof}</p>
+            <p className="text-eyebrow mt-5 text-sm font-black uppercase">
+              {finalOffer.urgency}
+            </p>
+            <p className="mt-2 flex items-baseline justify-center gap-3">
+              <span className="text-ink/55 text-2xl font-black line-through">
+                {PRICE.anchor}
+              </span>
+              <span className="v2-display text-brand-700 text-6xl leading-none">
+                {finalOffer.price}
+              </span>
+            </p>
+            <p className="mt-2 text-sm font-bold">{PRICE.save}</p>
+            <p className="mx-auto mt-5 max-w-sm leading-snug">
+              {finalOffer.line}
+            </p>
             <PlaybookCta
               href={checkoutHref}
               label={finalOffer.cta}
-              className="w-full sm:w-auto"
+              className="mt-7 w-full sm:w-auto"
             />
+            <p className="text-ink/70 mt-4 text-xs font-bold">
+              {finalOffer.secure}
+            </p>
           </div>
-          <p className="mt-4 text-xs font-bold">{finalOffer.secure}</p>
-        </Card>
-        <p className="mt-8 text-xs leading-relaxed">{DISCLAIMER}</p>
+        </div>
       </div>
+      <footer className="mx-auto mt-12 max-w-3xl px-5 text-center text-xs leading-relaxed text-slate-600">
+        <p>{DISCLAIMER}</p>
+        <p className="mt-3">
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          {" · "}
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms
+          </Link>
+        </p>
+      </footer>
     </section>
   );
 }

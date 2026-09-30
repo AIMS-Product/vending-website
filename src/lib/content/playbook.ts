@@ -87,6 +87,22 @@ export const images = {
   },
 } as const;
 
+/** Site-owned member photos, the same people the story cards name. */
+const storyPhotos = {
+  anthony: {
+    src: "/images/newsletter/anthony-kolodziej.webp",
+    alt: "Anthony Kolodziej with his son",
+    width: 720,
+    height: 720,
+  },
+  shannon: {
+    src: "/apply/stories/shannon-r.jpg",
+    alt: "Shannon R. on a member call",
+    width: 480,
+    height: 270,
+  },
+} as const;
+
 export const hero = {
   eyebrow: "Get Mike Hoffmann's Playbook",
   headline: "Exact Course Anthony Used to exceed 120k$ in monthly revenue",
@@ -211,11 +227,8 @@ export const includedBonuses = {
 
 export const opportunity = {
   eyebrow: "THE OPPORTUNITY",
-  headline: [
-    "PLACE ONE MACHINE.",
-    "POTENTIAL TO COLLECT 3K - 8K/MO.",
-    "REPEAT",
-  ],
+  headline: "PLACE ONE MACHINE. POTENTIAL TO COLLECT 3K - 8K/MO. REPEAT.",
+  highlight: "3K - 8K/MO.",
   points: [
     {
       lead: "How Mike generates 100k/mo from 102 machines",
@@ -342,10 +355,12 @@ export const stories = {
     },
     {
       name: "Shannon",
+      photo: storyPhotos.shannon,
       text: "Using the same location-scoring process taught in Mike's Playbook, Shannon picked one Seattle micro market that became her 22,000 - 25,000/mo unicorn location on her first try.",
     },
     {
       name: "Anthony",
+      photo: storyPhotos.anthony,
       text: "Former real estate entrepreneur, Anthony, followed this same process to scale to 45 locations and 79 machines, generating over 100k in revenue in one month.",
     },
     {

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "../home-v2.css";
+import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import {
   PlaybookCompare,
@@ -21,7 +22,8 @@ import { checkoutHref } from "@/lib/content/playbook";
 
 // Paid-traffic landing page; kept out of search.
 export const metadata: Metadata = {
-  title: "Mike Hoffmann's Vending Playbook | Vendingpreneurs",
+  // The root layout appends " | Vendingpreneurs".
+  title: "Mike Hoffmann's Vending Playbook",
   description:
     "Mike Hoffmann's Playbook: the Profit Machine System for finding, closing and running vending locations.",
   robots: { index: false, follow: false },
@@ -34,10 +36,10 @@ export default async function PlaybookPage({
 }) {
   const href = checkoutHref(await searchParams);
   return (
-    <main>
+    <main className={anton.variable}>
       <RevealObserver />
       <PlaybookHero checkoutHref={href} />
-      <PlaybookSteps checkoutHref={href} />
+      <PlaybookSteps />
       <PlaybookCurriculum checkoutHref={href} />
       <PlaybookOpportunity checkoutHref={href} />
       <PlaybookMoreBonuses checkoutHref={href} />
