@@ -105,11 +105,31 @@ export const confirmedCopy = {
     { n: "01", title: "Find your Zoom link" },
     {
       n: "02",
-      title: "Show up live",
-      body: "Three things go only to people in the room. They are not in the replay.",
+      title: "Hit reply to Anthony",
+      body: "Tell him what made you sign up. He reads every response, and it shapes the live Q&A.",
     },
   ],
-  videosHeading: "While you wait: how they did it",
+  storiesEyebrow: "While you wait",
+  storiesHeading: "How they did it",
+};
+
+/**
+ * What the masterclass covers, in Anthony's words from the GHL confirmation
+ * email ("You're in!", workflow "1. New Lead > Form Submission Webinar",
+ * read 2026-09-30). Reuse, never reword.
+ */
+export const coverCopy = {
+  eyebrow: "On the live call",
+  heading: "What we'll cover",
+  topics: [
+    "The mistake that costs new operators months",
+    "How I judge a location before buying equipment",
+    "Whether this actually fits your schedule and goals",
+  ],
+  quote:
+    "I'm not trying to convince you vending is for everyone. I just want to give you enough to decide for yourself.",
+  signoff: "Anthony",
+  photoAlt: "Anthony Kolodziej with his son",
 };
 
 export const fitFor = [
@@ -121,22 +141,6 @@ export const fitFor = [
 export const notFitFor = [
   "You want overnight results with zero work",
   "You won't put in real effort for the first 90 days",
-] as const;
-
-/** Member stories from the GHL confirmation page, served from GHL's CDN. */
-export const confirmationVideos = [
-  "https://assets.cdn.filesafe.space/Qxw5m2PoOz2MCr6m2v0M/media/69dd7792caf24b80a0fee0b2.mp4",
-  "https://assets.cdn.filesafe.space/Qxw5m2PoOz2MCr6m2v0M/media/69dd77a1328c56e1a049b99d.mp4",
-  "https://assets.cdn.filesafe.space/Qxw5m2PoOz2MCr6m2v0M/media/69dd77e5328c56e1a049c5e9.mp4",
-] as const;
-
-export const liveOnlyBonuses = [
-  {
-    title: "Fast-action bonus",
-    body: "An attendee-only discount, tonight only",
-  },
-  { title: "Exclusive resource", body: "Not available anywhere else" },
-  { title: "Launch guide", body: "Fast-track your first 90 days" },
 ] as const;
 
 export const SENDER_EMAIL = "anthony@webinar.vendingpreneurs.co";

@@ -4,13 +4,16 @@ import {
   OutlookLogo,
 } from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
+import Image from "next/image";
+import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
 import {
   SENDER_EMAIL,
-  confirmationVideos,
+  ANTHONY_VIDEO_ID,
   confirmedCopy,
-  liveOnlyBonuses,
+  coverCopy,
   type calendarLinks,
 } from "@/lib/content/masterclass";
 
@@ -96,9 +99,9 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
   );
 }
 
-/** Whitelist the sender, then the live-only reasons to show up. */
+/** Whitelist the sender, then reply to Anthony (both from his confirmation email). */
 export function NextSteps() {
-  const [zoom, live] = confirmedCopy.steps;
+  const [zoom, reply] = confirmedCopy.steps;
   return (
     <section className="bg-white">
       <div className="mx-auto grid max-w-[1080px] gap-6 px-5 py-14 md:grid-cols-2 lg:px-10">
@@ -106,46 +109,81 @@ export function NextSteps() {
           It comes from <strong>{SENDER_EMAIL}</strong>. Check spam and
           promotions, and move it to your inbox.
         </Step>
-        <Step n={live.n} title={live.title}>
-          {live.body}
+        <Step n={reply.n} title={reply.title}>
+          {reply.body}
         </Step>
       </div>
-      <ul className="mx-auto grid max-w-[1080px] gap-4 px-5 pb-14 sm:grid-cols-3 lg:px-10">
-        {liveOnlyBonuses.map((bonus) => (
-          <li
-            key={bonus.title}
-            className="rounded-card border-ink bg-tint border-2 p-5"
-          >
-            <p className="text-ink font-black uppercase">{bonus.title}</p>
-            <p className="mt-1 text-sm text-slate-600">{bonus.body}</p>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
 
-/** The member videos from the GHL confirmation page. */
-export function MemberVideos() {
+/** What the call covers, with Anthony's own framing. */
+export function CoverSection() {
   return (
     <section className="border-ink bg-tint border-t-2">
-      <div className="mx-auto max-w-[1180px] px-5 py-14 lg:px-10">
-        <h2 className="text-ink text-center text-[clamp(1.6rem,3.4vw,2.4rem)] font-black uppercase">
-          {confirmedCopy.videosHeading}
-        </h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {confirmationVideos.map((src) => (
-            <video
-              key={src}
-              src={`${src}#t=2`}
-              controls
-              playsInline
-              preload="metadata"
-              data-reveal
-              className="rounded-card border-ink shadow-card aspect-video w-full border-2 bg-black"
-            />
-          ))}
+      <div className="mx-auto grid max-w-[1080px] items-center gap-10 px-5 py-16 md:grid-cols-[0.9fr_1.1fr] lg:px-10">
+        <div
+          data-reveal
+          className="rounded-card border-ink shadow-card relative aspect-square overflow-hidden border-2 bg-white"
+        >
+          <Image
+            src="/images/newsletter/anthony-kolodziej.webp"
+            alt={coverCopy.photoAlt}
+            fill
+            sizes="(min-width: 768px) 460px, 100vw"
+            className="object-cover"
+          />
         </div>
+        <div data-reveal>
+          <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+            {coverCopy.eyebrow}
+          </p>
+          <h2 className="text-ink mt-2 text-[clamp(1.8rem,3.6vw,2.6rem)] leading-none font-black uppercase">
+            {coverCopy.heading}
+          </h2>
+          <ol className="mt-6 grid gap-3">
+            {coverCopy.topics.map((topic, index) => (
+              <li
+                key={topic}
+                className="rounded-card border-ink flex items-center gap-4 border-2 bg-white p-4"
+              >
+                <span className="bg-brand-700 grid size-10 shrink-0 place-items-center rounded-md text-sm font-black text-white">
+                  0{index + 1}
+                </span>
+                <span className="text-ink text-[17px] font-bold">{topic}</span>
+              </li>
+            ))}
+          </ol>
+          <blockquote className="mt-6 border-l-4 border-[#2a8fcc] pl-4 text-[17px] text-slate-700 italic">
+            {coverCopy.quote}
+            <footer className="text-ink mt-2 text-sm font-black not-italic">
+              {coverCopy.signoff}
+            </footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Three named member stories, playing in place (same cards as /masterclass). */
+export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
+  const featured = stories
+    .filter(
+      (s) => s.youtube_video_id && s.youtube_video_id !== ANTHONY_VIDEO_ID,
+    )
+    .slice(0, 3);
+  if (!featured.length) return null;
+  return (
+    <section className="border-ink border-t-2 bg-white">
+      <div className="mx-auto max-w-[1180px] px-5 py-14 lg:px-10">
+        <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
+          {confirmedCopy.storiesEyebrow}
+        </p>
+        <h2 className="text-ink mt-2 text-center text-[clamp(1.6rem,3.4vw,2.4rem)] font-black uppercase">
+          {confirmedCopy.storiesHeading}
+        </h2>
+        <StoryList stories={featured} columns={3} />
       </div>
     </section>
   );

@@ -4,7 +4,8 @@ import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import {
   ConfirmedHero,
-  MemberVideos,
+  CoverSection,
+  FeaturedStories,
   NextSteps,
 } from "@/components/sections/masterclass/ConfirmedSections";
 import {
@@ -13,6 +14,7 @@ import {
   calendarLinks,
   confirmedCopy,
 } from "@/lib/content/masterclass";
+import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 export const revalidate = 300;
@@ -27,9 +29,10 @@ export default async function MasterclassConfirmedPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [event, params] = await Promise.all([
+  const [event, params, stories] = await Promise.all([
     getMasterclassEvent(),
     searchParams,
+    listCaseStudyStories(),
   ]);
   const rawFirst = Array.isArray(params.first) ? params.first[0] : params.first;
   const links = event.startsAt
@@ -51,7 +54,8 @@ export default async function MasterclassConfirmedPage({
         links={links}
       />
       <NextSteps />
-      <MemberVideos />
+      <CoverSection />
+      <FeaturedStories stories={stories} />
       <MasterclassFooter />
     </main>
   );

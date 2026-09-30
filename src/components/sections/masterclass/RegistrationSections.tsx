@@ -189,9 +189,20 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
   );
 }
 
-function StoryList({ stories }: { stories: CaseStudyStory[] }) {
+export function StoryList({
+  stories,
+  columns = 4,
+}: {
+  stories: CaseStudyStory[];
+  columns?: 3 | 4;
+}) {
   return (
-    <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+    <ul
+      className={cn(
+        "mt-8 grid gap-6 sm:grid-cols-2",
+        columns === 3 ? "lg:grid-cols-3" : "lg:grid-cols-4",
+      )}
+    >
       {stories.map((story, index) => {
         const embed = youtube(story.youtube_video_id!);
         const { first, second } = headline(story);
