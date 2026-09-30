@@ -1,5 +1,7 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
+
 import { config } from "@/lib/config";
 import { GHL_VALUE_NAMES, parseWebinarStart } from "@/lib/content/masterclass";
 import { createGhlClient } from "@/lib/ghl/client";
@@ -18,17 +20,29 @@ export type MasterclassEvent = {
  * its own date edit. A failed read degrades to no date and no stats; it never
  * blocks registration, and it is reported rather than swallowed.
  */
+/**
+ * One GHL read per 5 minutes per region, not one per page view and submit: the
+ * registration path shares the location's 100-requests-per-10s budget. A
+ * failed read throws, and unstable_cache never stores a throw.
+ */
+const cachedCustomValues = unstable_cache(
+  // Config is read inside, so the token never becomes part of a cache key.
+  () =>
+    createGhlClient({
+      apiKey: config.GHL_API_KEY ?? "",
+      locationId: config.GHL_LOCATION_ID ?? "",
+    }).listCustomValues(),
+  ["masterclass-ghl-custom-values"],
+  { revalidate: 300 },
+);
+
 export async function getMasterclassEvent(): Promise<MasterclassEvent> {
   if (!config.GHL_API_KEY || !config.GHL_LOCATION_ID) {
     return { label: null, startsAt: null, anthony: null };
   }
-  const client = createGhlClient({
-    apiKey: config.GHL_API_KEY,
-    locationId: config.GHL_LOCATION_ID,
-  });
   try {
     const values = new Map(
-      (await client.listCustomValues()).map((v) => [v.name, v.value.trim()]),
+      (await cachedCustomValues()).map((v) => [v.name, v.value.trim()]),
     );
     const label = values.get(GHL_VALUE_NAMES.dateTime) || null;
     const start = label ? parseWebinarStart(label) : null;

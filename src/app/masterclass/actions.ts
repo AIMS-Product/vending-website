@@ -117,17 +117,20 @@ export async function registerForMasterclass(
   // limiter outage must not uncap it. The phone gets its own budget, so
   // rotating emails and IPs cannot keep texting one person.
   const ip = requestIp(await headers());
-  const allowed =
-    (await checkPublicRateLimit(
-      "masterclass_register",
-      { ip, email: parsed.data.email },
-      { failClosed: true },
-    )) &&
-    (await checkPublicRateLimit(
-      "masterclass_register_phone",
-      { ip: null, email: `phone:${parsed.data.phone}` },
-      { failClosed: true },
-    ));
+  const checks = [
+    { action: "masterclass_register_ip", ip, email: null },
+    { action: "masterclass_register", ip: null, email: parsed.data.email },
+    {
+      action: "masterclass_register_phone",
+      ip: null,
+      email: `phone:${parsed.data.phone}`,
+    },
+  ] as const;
+  let allowed = true;
+  for (const { action, ...subject } of checks) {
+    allowed = await checkPublicRateLimit(action, subject, { failClosed: true });
+    if (!allowed) break;
+  }
   if (!allowed) return { errors: { form: TOO_MANY_REQUESTS_MESSAGE }, values };
 
   if (!config.GHL_WRITE_TOKEN) {

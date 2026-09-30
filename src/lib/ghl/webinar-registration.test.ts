@@ -225,8 +225,24 @@ describe("registerWebinarContact", () => {
     expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(2);
   });
 
+  it("waits out a GHL burst limit, as long as GHL asks (capped)", async () => {
+    const waits: number[] = [];
+    const { calls, fetchImpl } = ghl({ status: { upsert: [429, 429] } });
+    await expect(
+      registerWebinarContact(person, {
+        ...auth,
+        fetchImpl,
+        sleep: async (ms) => {
+          waits.push(ms);
+        },
+      }),
+    ).resolves.toBe("registered");
+    expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(3);
+    expect(waits).toEqual([1500, 1500]);
+  });
+
   it("fails closed when GHL keeps failing, and never tags a contact it could not save", async () => {
-    const { calls, fetchImpl } = ghl({ status: { upsert: [500, 500] } });
+    const { calls, fetchImpl } = ghl({ status: { upsert: [500, 500, 500] } });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
     ).rejects.toBeInstanceOf(WebinarRegistrationError);

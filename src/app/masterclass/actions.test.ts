@@ -111,16 +111,37 @@ describe("registerForMasterclass", () => {
     mocks.checkPublicRateLimit.mockResolvedValue(false);
     const state = await registerForMasterclass({}, form());
     expect(state.errors?.form).toBeTruthy();
-    expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
-      "masterclass_register",
-      { ip: "1.2.3.4", email: "mary@example.com" },
-      { failClosed: true },
-    );
+    // Stops at the first refusal.
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledTimes(1);
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
+  });
+
+  it("checks a loose IP budget, then tight email and phone budgets, all fail closed", async () => {
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT",
+    );
+    expect(mocks.checkPublicRateLimit.mock.calls).toEqual([
+      [
+        "masterclass_register_ip",
+        { ip: "1.2.3.4", email: null },
+        { failClosed: true },
+      ],
+      [
+        "masterclass_register",
+        { ip: null, email: "mary@example.com" },
+        { failClosed: true },
+      ],
+      [
+        "masterclass_register_phone",
+        { ip: null, email: "phone:+15415550123" },
+        { failClosed: true },
+      ],
+    ]);
   });
 
   it("gives each phone its own budget, fail closed", async () => {
     mocks.checkPublicRateLimit
+      .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false);
     const state = await registerForMasterclass({}, form());

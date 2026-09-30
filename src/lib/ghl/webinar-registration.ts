@@ -87,7 +87,10 @@ export class WebinarRegistrationError extends Error {
 export const SMS_CONSENT_FIELD_ID = "7UnFD4LUSeTwW9QlVrqh";
 
 const TIMEOUT_MS = 8000;
+const ATTEMPTS = 3;
 const RETRY_DELAY_MS = 500;
+/** GHL's burst window is 10s; wait what it asks for, capped so a visitor is not held. */
+const MAX_RATE_LIMIT_WAIT_MS = 3000;
 
 const contactShape = z.object({
   id: z.string().min(1),
@@ -126,7 +129,7 @@ export async function registerWebinarContact(
     path: string,
     body?: unknown,
   ): Promise<unknown> => {
-    // One retry for a network error, timeout, 429 or 5xx; a 4xx is a refusal.
+    // Up to 3 tries for a network error, timeout, 429 or 5xx; a 4xx is a refusal.
     for (let attempt = 1; ; attempt++) {
       let response: Response | null = null;
       try {
@@ -162,10 +165,17 @@ export async function registerWebinarContact(
       }
       await response?.body?.cancel();
       const transient = status === 0 || status === 429 || status >= 500;
-      if (!transient || attempt >= 2) {
+      if (!transient || attempt >= ATTEMPTS) {
         throw new WebinarRegistrationError(step, status);
       }
-      await sleep(RETRY_DELAY_MS);
+      const retryAfterMs =
+        status === 429
+          ? Math.min(
+              Number(response?.headers.get("retry-after") ?? 0) * 1000 || 1500,
+              MAX_RATE_LIMIT_WAIT_MS,
+            )
+          : RETRY_DELAY_MS;
+      await sleep(retryAfterMs);
     }
   };
 

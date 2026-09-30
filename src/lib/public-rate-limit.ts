@@ -18,6 +18,9 @@ type RateLimitClient = Pick<SupabaseClient<Database>, "from">;
 const LIMITS = {
   lead_submit: { windowMs: 10 * 60 * 1000, max: 8 },
   // Each accepted registration texts, emails and Zoom-registers a person.
+  // Split on purpose: a carrier puts many phones behind one IP (CGNAT), so the
+  // IP budget is loose while each email and phone stays tight.
+  masterclass_register_ip: { windowMs: 10 * 60 * 1000, max: 30 },
   masterclass_register: { windowMs: 10 * 60 * 1000, max: 5 },
   masterclass_register_phone: { windowMs: 24 * 60 * 60 * 1000, max: 3 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
