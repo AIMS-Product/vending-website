@@ -3,11 +3,13 @@ import {
   SESSION_COOKIE,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
+import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import { registerForMasterclass } from "./actions";
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
   cookieSet: vi.fn(),
+  cookieDelete: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`REDIRECT ${url}`);
   }),
@@ -22,7 +24,10 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/headers", () => ({
   headers: mocks.headers,
-  cookies: async () => ({ set: mocks.cookieSet }),
+  cookies: async () => ({
+    set: mocks.cookieSet,
+    delete: mocks.cookieDelete,
+  }),
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
@@ -125,7 +130,8 @@ describe("registerForMasterclass", () => {
   it("stops at the rate limit", async () => {
     mocks.checkPublicRateLimit.mockResolvedValue(false);
     const state = await registerForMasterclass({}, form());
-    expect(state.errors?.form).toBeTruthy();
+    // The limiter also refuses during an outage, so never "too many".
+    expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
     // Stops at the first refusal.
     expect(mocks.checkPublicRateLimit).toHaveBeenCalledTimes(1);
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
@@ -255,7 +261,7 @@ describe("registerForMasterclass", () => {
         secure: true,
         sameSite: "lax",
         path: "/masterclass-confirmed",
-        maxAge: 24 * 60 * 60,
+        maxAge: 2 * 60 * 60,
       });
     },
   );
@@ -280,5 +286,47 @@ describe("registerForMasterclass", () => {
       registerForMasterclass({}, form({ company_website: "spam.example" })),
     ).rejects.toThrow("REDIRECT");
     expect(mocks.cookieSet).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      "GHL fails",
+      () => mocks.registerWebinarContact.mockRejectedValue(new Error("x")),
+    ],
+    ["rate limited", () => mocks.checkPublicRateLimit.mockResolvedValue(false)],
+    ["no write token", () => (mocks.config.GHL_WRITE_TOKEN = undefined)],
+  ])(
+    "drops an earlier registration's session when this one does not land (%s)",
+    async (_label, fail) => {
+      fail();
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      const state = await registerForMasterclass({}, form());
+      expect(state.errors?.form).toBeTruthy();
+      expect(mocks.cookieDelete).toHaveBeenCalledWith({
+        name: SESSION_COOKIE,
+        path: "/masterclass-confirmed",
+      });
+      expect(mocks.cookieSet).not.toHaveBeenCalled();
+    },
+  );
+
+  it("replaces an earlier registration's session with this contact's", async () => {
+    mocks.registerWebinarContact.mockResolvedValue({
+      outcome: "registered",
+      contactId: "c2",
+    });
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT",
+    );
+    // Cleared first, then set: the last write for the name wins.
+    expect(mocks.cookieDelete.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.cookieSet.mock.invocationCallOrder[0],
+    );
+    expect(
+      verifyMasterclassSession(
+        mocks.cookieSet.mock.calls[0][1],
+        mocks.config.MASTERCLASS_SESSION_SECRET,
+      ),
+    ).toBe("c2");
   });
 });

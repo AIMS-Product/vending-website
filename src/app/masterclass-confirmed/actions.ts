@@ -3,7 +3,10 @@
 import { cookies } from "next/headers";
 import { z } from "zod";
 import { config } from "@/lib/config";
-import { intakeCopy } from "@/lib/content/masterclass";
+import {
+  intakeCopy,
+  MASTERCLASS_BUSY_MESSAGE,
+} from "@/lib/content/masterclass";
 import {
   saveWebinarIntake,
   WebinarRegistrationError,
@@ -11,12 +14,10 @@ import {
 } from "@/lib/ghl/webinar-registration";
 import {
   SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
-import {
-  checkPublicRateLimit,
-  TOO_MANY_REQUESTS_MESSAGE,
-} from "@/lib/public-rate-limit";
+import { checkPublicRateLimit } from "@/lib/public-rate-limit";
 
 type Key = keyof WebinarIntake;
 
@@ -60,11 +61,15 @@ export async function saveMasterclassIntake(
     return { errors, values };
   }
 
+  const cookieStore = await cookies();
+  const session = cookieStore.get(SESSION_COOKIE)?.value;
   const contactId = verifyMasterclassSession(
-    (await cookies()).get(SESSION_COOKIE)?.value,
+    session,
     config.MASTERCLASS_SESSION_SECRET,
   );
-  if (!contactId) return { errors: { form: intakeCopy.expired }, values };
+  if (!contactId || !session) {
+    return { errors: { form: intakeCopy.expired }, values };
+  }
 
   // Per contact, not per IP: only a signed cookie gets here, and a carrier IP
   // (CGNAT) is shared by many registrants. Fail closed: a limiter outage must
@@ -74,7 +79,8 @@ export async function saveMasterclassIntake(
     { ip: null, email: `contact:${contactId}` },
     { failClosed: true },
   );
-  if (!allowed) return { errors: { form: TOO_MANY_REQUESTS_MESSAGE }, values };
+  // Also false when the limiter is down, so the copy never says "too many".
+  if (!allowed) return { errors: { form: MASTERCLASS_BUSY_MESSAGE }, values };
 
   if (!config.GHL_WRITE_TOKEN) {
     console.error("masterclass intake: GHL_WRITE_TOKEN is not set");
@@ -91,5 +97,13 @@ export async function saveMasterclassIntake(
     });
     return { errors: { form: intakeCopy.failed }, values };
   }
+  // One save per session: a reload no longer shows the form. Re-set with
+  // maxAge 0 rather than deleted, because the page re-renders in this same
+  // round trip from the cookies set here; a deleted cookie would unmount the
+  // form before its thank-you shows. The browser drops it on arrival.
+  cookieStore.set(SESSION_COOKIE, session, {
+    ...SESSION_COOKIE_OPTIONS,
+    maxAge: 0,
+  });
   return { saved: true, values: parsed.data };
 }

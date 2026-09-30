@@ -72,6 +72,7 @@ export type WebinarRegistrationStep =
   | "upsert"
   | "remove-tag"
   | "add-tag"
+  | "intake-read"
   | "intake";
 
 export class WebinarRegistrationError extends Error {
@@ -268,24 +269,52 @@ export const INTAKE_FIELD_IDS = {
 
 export type WebinarIntake = Record<keyof typeof INTAKE_FIELD_IDS, string>;
 
+const intakeContact = z.object({
+  contact: z.object({
+    id: z.string().min(1),
+    customFields: z
+      .array(z.object({ id: z.string(), value: z.unknown() }))
+      .nullish(),
+  }),
+});
+
+const isBlank = (value: unknown) =>
+  value === undefined ||
+  value === null ||
+  (typeof value === "string" && !value.trim()) ||
+  (Array.isArray(value) && value.length === 0);
+
 /**
- * Writes the three intake answers onto a contact, and nothing else: never
- * name, email, phone or tags. A PUT, so a re-submit or a retry just rewrites
- * the same fields.
+ * Fills the intake answers a contact is MISSING, and nothing else: never name,
+ * email, phone, tags, or an answer already on file. The session cookie proves
+ * only that this browser registered with the contact's email, which anyone who
+ * knows the email can do, so an existing answer is never overwritten (the
+ * registration rule: an existing contact only gains fields it is missing).
+ * Returns the keys written; none written (all already answered) is a success.
  */
 export async function saveWebinarIntake(
   contactId: string,
   answers: WebinarIntake,
   options: Omit<Options, "locationId" | "now">,
-): Promise<void> {
-  const customFields = Object.entries(INTAKE_FIELD_IDS).map(([key, id]) => ({
-    id,
-    field_value: answers[key as keyof WebinarIntake],
-  }));
-  await ghlCaller(options)(
-    "intake",
-    "PUT",
-    `/contacts/${encodeURIComponent(contactId)}`,
-    { customFields },
+): Promise<(keyof WebinarIntake)[]> {
+  const call = ghlCaller(options);
+  const path = `/contacts/${encodeURIComponent(contactId)}`;
+  const read = intakeContact.safeParse(await call("intake-read", "GET", path));
+  if (!read.success || read.data.contact.id !== contactId) {
+    throw new WebinarRegistrationError("intake-read", 200);
+  }
+  const onFile = new Map(
+    (read.data.contact.customFields ?? []).map((f) => [f.id, f.value]),
   );
+  const blankKeys = (
+    Object.keys(INTAKE_FIELD_IDS) as (keyof WebinarIntake)[]
+  ).filter((key) => isBlank(onFile.get(INTAKE_FIELD_IDS[key])));
+  if (!blankKeys.length) return [];
+  await call("intake", "PUT", path, {
+    customFields: blankKeys.map((key) => ({
+      id: INTAKE_FIELD_IDS[key],
+      field_value: answers[key],
+    })),
+  });
+  return blankKeys;
 }

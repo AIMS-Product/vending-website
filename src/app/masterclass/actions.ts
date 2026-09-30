@@ -8,6 +8,7 @@ import {
   ATTRIBUTION_KEYS,
   GHL_LOCATION_ID,
   HONEYPOT_FIELD,
+  MASTERCLASS_BUSY_MESSAGE,
   MASTERCLASS_CONFIRMED_PATH,
   registrationErrorCopy,
 } from "@/lib/content/masterclass";
@@ -16,14 +17,10 @@ import {
   webinarEventTag,
   WebinarRegistrationError,
 } from "@/lib/ghl/webinar-registration";
-import {
-  checkPublicRateLimit,
-  requestIp,
-  TOO_MANY_REQUESTS_MESSAGE,
-} from "@/lib/public-rate-limit";
+import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
 import {
   SESSION_COOKIE,
-  SESSION_COOKIE_PATH,
+  SESSION_COOKIE_OPTIONS,
   SESSION_TTL_MS,
   signMasterclassSession,
 } from "@/lib/masterclass-session";
@@ -119,6 +116,15 @@ export async function registerForMasterclass(
   const next = new URLSearchParams({ first: parsed.data.firstName });
   if (text(HONEYPOT_FIELD)) redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
 
+  // Drop any earlier registration's intake session up front: a failed attempt
+  // must not leave this browser holding a previous contact's cookie. A
+  // successful one replaces this with its own session below.
+  const cookieStore = await cookies();
+  cookieStore.delete({
+    name: SESSION_COOKIE,
+    path: SESSION_COOKIE_OPTIONS.path,
+  });
+
   // Fail closed: every accepted registration texts a phone number, so a
   // limiter outage must not uncap it. The phone gets its own budget, so
   // rotating emails and IPs cannot keep texting one person.
@@ -137,7 +143,8 @@ export async function registerForMasterclass(
     allowed = await checkPublicRateLimit(action, subject, { failClosed: true });
     if (!allowed) break;
   }
-  if (!allowed) return { errors: { form: TOO_MANY_REQUESTS_MESSAGE }, values };
+  // Also false when the limiter is down, so the copy never says "too many".
+  if (!allowed) return { errors: { form: MASTERCLASS_BUSY_MESSAGE }, values };
 
   if (!config.GHL_WRITE_TOKEN) {
     console.error(
@@ -178,11 +185,8 @@ export async function registerForMasterclass(
     config.MASTERCLASS_SESSION_SECRET,
   );
   if (session) {
-    (await cookies()).set(SESSION_COOKIE, session, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: SESSION_COOKIE_PATH,
+    cookieStore.set(SESSION_COOKIE, session, {
+      ...SESSION_COOKIE_OPTIONS,
       maxAge: SESSION_TTL_MS / 1000,
     });
   } else {

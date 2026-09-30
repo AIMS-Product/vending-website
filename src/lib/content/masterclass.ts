@@ -114,6 +114,13 @@ export const confirmedCopy = {
 };
 
 /**
+ * Shown by both masterclass forms when the limiter refuses. It also refuses
+ * during a limiter outage (fail closed), so it must not say "too many".
+ */
+export const MASTERCLASS_BUSY_MESSAGE =
+  "We couldn't save that just now. Please try again in a few minutes.";
+
+/**
  * The GHL "Webinar Intake Form" (nnne5vuyx5sLjhqneIFg) from the GHL thank-you
  * page. Option text is the GHL picklist value, written to the contact as is:
  * never reword an option, or GHL stores a value its own field does not offer.

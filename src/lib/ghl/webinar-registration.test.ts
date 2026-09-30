@@ -275,28 +275,50 @@ describe("saveWebinarIntake", () => {
     timeline: "Right now",
     income: "$56,000 - $90,000",
   };
-  function put(statuses: number[] = []) {
+  /** Scripted GHL contact read + write; statuses are per method. */
+  function contact(
+    customFields: { id: string; value: unknown }[] = [],
+    status: { GET?: readonly number[]; PUT?: readonly number[] } = {},
+    readBody?: string,
+  ) {
     const calls: Call[] = [];
+    const queues = {
+      GET: [...(status.GET ?? [])],
+      PUT: [...(status.PUT ?? [])],
+    };
     const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      const method = (init.method ?? "GET") as "GET" | "PUT";
       calls.push({
-        method: init.method ?? "GET",
+        method,
         url,
         body: init.body ? JSON.parse(String(init.body)) : undefined,
       });
-      return new Response("{}", { status: statuses.shift() ?? 200 });
+      const code = queues[method]?.shift() ?? 200;
+      if (method === "GET") {
+        return new Response(
+          readBody ?? JSON.stringify({ contact: { id: "c1", customFields } }),
+          { status: code },
+        );
+      }
+      return new Response("{}", { status: code });
     });
     return { calls, fetchImpl: fetchImpl as unknown as typeof fetch };
   }
+  const puts = (calls: Call[]) => calls.filter((c) => c.method === "PUT");
 
-  it("PUTs only the three intake custom fields onto the contact", async () => {
-    const { calls, fetchImpl } = put();
-    await saveWebinarIntake("c1", answers, { ...auth, fetchImpl });
-    expect(calls).toHaveLength(1);
-    expect(calls[0].method).toBe("PUT");
-    expect(calls[0].url).toBe(
-      "https://services.leadconnectorhq.com/contacts/c1",
-    );
-    expect(calls[0].body).toEqual({
+  it("fills all three fields on a contact with no answers, and nothing else", async () => {
+    const { calls, fetchImpl } = contact([
+      { id: "other", value: "x" },
+      { id: INTAKE_FIELD_IDS.timeline, value: "" },
+    ]);
+    await expect(
+      saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
+    ).resolves.toEqual(["situation", "timeline", "income"]);
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual([
+      "GET https://services.leadconnectorhq.com/contacts/c1",
+      "PUT https://services.leadconnectorhq.com/contacts/c1",
+    ]);
+    expect(calls[1].body).toEqual({
       customFields: [
         { id: INTAKE_FIELD_IDS.situation, field_value: answers.situation },
         { id: INTAKE_FIELD_IDS.timeline, field_value: "Right now" },
@@ -305,29 +327,70 @@ describe("saveWebinarIntake", () => {
     });
   });
 
-  it("retries a transient failure, never a 4xx", async () => {
-    const retried = put([502]);
+  it("never overwrites an answer already on the contact, and fills the blank ones", async () => {
+    const { calls, fetchImpl } = contact([
+      { id: INTAKE_FIELD_IDS.situation, value: "Their own answer" },
+      { id: INTAKE_FIELD_IDS.income, value: [] },
+    ]);
+    await expect(
+      saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
+    ).resolves.toEqual(["timeline", "income"]);
+    expect(puts(calls)[0].body).toEqual({
+      customFields: [
+        { id: INTAKE_FIELD_IDS.timeline, field_value: "Right now" },
+        { id: INTAKE_FIELD_IDS.income, field_value: "$56,000 - $90,000" },
+      ],
+    });
+  });
+
+  it("writes nothing when every answer is already on file", async () => {
+    const { calls, fetchImpl } = contact(
+      Object.values(INTAKE_FIELD_IDS).map((id) => ({ id, value: "on file" })),
+    );
+    await expect(
+      saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
+    ).resolves.toEqual([]);
+    expect(puts(calls)).toHaveLength(0);
+  });
+
+  it("fails closed, writing nothing, when the contact cannot be read", async () => {
+    for (const [status, body] of [
+      [{ GET: [404] }, undefined],
+      [{ GET: [500, 500, 500] }, undefined],
+      [{}, "<html>"],
+      [{}, JSON.stringify({ contact: { id: "c2", customFields: [] } })],
+    ] as const) {
+      const { calls, fetchImpl } = contact([], status, body);
+      await expect(
+        saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
+      ).rejects.toMatchObject({ step: "intake-read" });
+      expect(puts(calls)).toHaveLength(0);
+    }
+  });
+
+  it("retries a transient write failure, never a 4xx", async () => {
+    const retried = contact([], { PUT: [502] });
     await saveWebinarIntake("c1", answers, {
       ...auth,
       fetchImpl: retried.fetchImpl,
     });
-    expect(retried.calls).toHaveLength(2);
+    expect(puts(retried.calls)).toHaveLength(2);
 
-    const refused = put([400]);
+    const refused = contact([], { PUT: [400] });
     await expect(
       saveWebinarIntake("c1", answers, {
         ...auth,
         fetchImpl: refused.fetchImpl,
       }),
     ).rejects.toMatchObject({ step: "intake", status: 400 });
-    expect(refused.calls).toHaveLength(1);
+    expect(puts(refused.calls)).toHaveLength(1);
   });
 
-  it("fails closed after three transient failures", async () => {
-    const { calls, fetchImpl } = put([500, 500, 500]);
+  it("fails closed after three transient write failures", async () => {
+    const { calls, fetchImpl } = contact([], { PUT: [500, 500, 500] });
     await expect(
       saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
     ).rejects.toBeInstanceOf(WebinarRegistrationError);
-    expect(calls).toHaveLength(3);
+    expect(puts(calls)).toHaveLength(3);
   });
 });

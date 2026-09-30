@@ -9,9 +9,18 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * .claude/specs/2026-09-30-s1-site-registration.md.
  */
 export const SESSION_COOKIE = "mc_session";
-export const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+/** Covers the confirmation page visit; the cookie is also expired after a save. */
+export const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 /** Only the confirmation page (and its server action) ever needs it. */
 export const SESSION_COOKIE_PATH = "/masterclass-confirmed";
+
+/** Every write of the cookie (set, overwrite, expire) uses these. */
+export const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  path: SESSION_COOKIE_PATH,
+} as const;
 
 const MIN_SECRET_LENGTH = 32;
 /** GHL ids are alphanumeric; anything else is refused before it reaches a URL. */

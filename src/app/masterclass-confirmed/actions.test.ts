@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { intakeCopy } from "@/lib/content/masterclass";
+import {
+  intakeCopy,
+  MASTERCLASS_BUSY_MESSAGE,
+} from "@/lib/content/masterclass";
 import {
   SESSION_COOKIE,
   SESSION_TTL_MS,
@@ -11,6 +14,7 @@ const SECRET = "k".repeat(32);
 
 const mocks = vi.hoisted(() => ({
   cookie: vi.fn(),
+  cookieSet: vi.fn(),
   checkPublicRateLimit: vi.fn(),
   config: {
     GHL_WRITE_TOKEN: "pit-test" as string | undefined,
@@ -19,7 +23,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("next/headers", () => ({
-  cookies: async () => ({ get: mocks.cookie }),
+  cookies: async () => ({ get: mocks.cookie, set: mocks.cookieSet }),
 }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
 vi.mock("@/lib/public-rate-limit", async () => ({
@@ -49,7 +53,13 @@ function form(overrides: Partial<Record<keyof typeof ANSWERS, string>> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal("fetch", fetchMock);
-  fetchMock.mockImplementation(async () => new Response("{}"));
+  fetchMock.mockImplementation(async (_url: string, init: RequestInit) =>
+    init.method === "GET"
+      ? new Response(
+          JSON.stringify({ contact: { id: "c1", customFields: [] } }),
+        )
+      : new Response("{}"),
+  );
   mocks.config.GHL_WRITE_TOKEN = "pit-test";
   mocks.config.MASTERCLASS_SESSION_SECRET = SECRET;
   mocks.checkPublicRateLimit.mockResolvedValue(true);
@@ -70,8 +80,9 @@ describe("saveMasterclassIntake", () => {
   it("writes only the three answers to the cookie's contact", async () => {
     const state = await saveMasterclassIntake({}, form());
     expect(state).toEqual({ saved: true, values: ANSWERS });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0];
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+    const [url, init] = fetchMock.mock.calls[1];
     expect(url).toBe("https://services.leadconnectorhq.com/contacts/c1");
     expect(init.method).toBe("PUT");
     expect(init.headers.Authorization).toBe("Bearer pit-test");
@@ -141,7 +152,8 @@ describe("saveMasterclassIntake", () => {
   it("stops at the rate limit", async () => {
     mocks.checkPublicRateLimit.mockResolvedValue(false);
     const state = await saveMasterclassIntake({}, form());
-    expect(state.errors?.form).toMatch(/Too many/);
+    // The limiter also refuses during an outage, so never "too many".
+    expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
     expect(state.values).toEqual(ANSWERS);
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -165,5 +177,50 @@ describe("saveMasterclassIntake", () => {
     const state = await saveMasterclassIntake({}, form());
     expect(state.errors?.form).toBe(intakeCopy.failed);
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("expires the session after a save, so a reload hides the form", async () => {
+    const value = signMasterclassSession("c1", SECRET);
+    mocks.cookie.mockReturnValue({ value });
+    await saveMasterclassIntake({}, form());
+    // Re-set with maxAge 0, not deleted: the same-trip re-render keeps the thank-you.
+    expect(mocks.cookieSet).toHaveBeenCalledWith(SESSION_COOKIE, value, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/masterclass-confirmed",
+      maxAge: 0,
+    });
+  });
+
+  it("never overwrites answers already on the contact, and still says thanks", async () => {
+    fetchMock.mockImplementation(async () =>
+      Response.json({
+        contact: {
+          id: "c1",
+          customFields: [
+            { id: "z2qJKdiM9l6y0X1K38eJ", value: "a" },
+            { id: "UrA1On8ehTnSkzuS97Vu", value: "b" },
+            { id: "VxAS61ZmZ88O3txQ4Rr8", value: "c" },
+          ],
+        },
+      }),
+    );
+    const state = await saveMasterclassIntake({}, form());
+    expect(state.saved).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][1].method).toBe("GET");
+  });
+
+  it("fails closed with the safe message when the contact cannot be read", async () => {
+    fetchMock.mockImplementation(
+      async () => new Response("not found", { status: 404 }),
+    );
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const state = await saveMasterclassIntake({}, form());
+    expect(state.errors?.form).toBe(intakeCopy.failed);
+    expect(state.values).toEqual(ANSWERS);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
 });
