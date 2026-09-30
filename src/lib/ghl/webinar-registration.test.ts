@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  INTAKE_FIELD_IDS,
   registerWebinarContact,
+  saveWebinarIntake,
   SITE_REGISTRATION_TAG,
   SMS_CONSENT_FIELD_ID,
   UTM_FIELD_IDS,
@@ -91,7 +93,7 @@ describe("registerWebinarContact", () => {
     const { calls, fetchImpl } = ghl({});
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toBe("registered");
+    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
 
     expect(calls.map((c) => `${c.method} ${c.url.split("?")[0]}`)).toEqual([
       "GET https://services.leadconnectorhq.com/contacts/search/duplicate",
@@ -191,7 +193,7 @@ describe("registerWebinarContact", () => {
     const { fetchImpl } = ghl({ rawBody: { "DELETE tags": "" } });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toBe("registered");
+    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
   });
 
   it("does not re-trigger someone already registered for this event", async () => {
@@ -200,7 +202,7 @@ describe("registerWebinarContact", () => {
     });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toBe("already-registered");
+    ).resolves.toEqual({ outcome: "already-registered", contactId: "c1" });
     expect(calls).toHaveLength(1);
   });
 
@@ -213,7 +215,7 @@ describe("registerWebinarContact", () => {
         { ...person, eventTag: null },
         { ...auth, fetchImpl },
       ),
-    ).resolves.toBe("registered");
+    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
     expect(calls).toHaveLength(4);
   });
 
@@ -221,7 +223,7 @@ describe("registerWebinarContact", () => {
     const { calls, fetchImpl } = ghl({ status: { upsert: [502] } });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toBe("registered");
+    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
     expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(2);
   });
 
@@ -236,7 +238,7 @@ describe("registerWebinarContact", () => {
           waits.push(ms);
         },
       }),
-    ).resolves.toBe("registered");
+    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
     expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(3);
     expect(waits).toEqual([1500, 1500]);
   });
@@ -264,5 +266,68 @@ describe("registerWebinarContact", () => {
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
     ).rejects.toMatchObject({ step: "upsert" });
+  });
+});
+
+describe("saveWebinarIntake", () => {
+  const answers = {
+    situation: "I have a full-time job and want to build side income",
+    timeline: "Right now",
+    income: "$56,000 - $90,000",
+  };
+  function put(statuses: number[] = []) {
+    const calls: Call[] = [];
+    const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
+      calls.push({
+        method: init.method ?? "GET",
+        url,
+        body: init.body ? JSON.parse(String(init.body)) : undefined,
+      });
+      return new Response("{}", { status: statuses.shift() ?? 200 });
+    });
+    return { calls, fetchImpl: fetchImpl as unknown as typeof fetch };
+  }
+
+  it("PUTs only the three intake custom fields onto the contact", async () => {
+    const { calls, fetchImpl } = put();
+    await saveWebinarIntake("c1", answers, { ...auth, fetchImpl });
+    expect(calls).toHaveLength(1);
+    expect(calls[0].method).toBe("PUT");
+    expect(calls[0].url).toBe(
+      "https://services.leadconnectorhq.com/contacts/c1",
+    );
+    expect(calls[0].body).toEqual({
+      customFields: [
+        { id: INTAKE_FIELD_IDS.situation, field_value: answers.situation },
+        { id: INTAKE_FIELD_IDS.timeline, field_value: "Right now" },
+        { id: INTAKE_FIELD_IDS.income, field_value: "$56,000 - $90,000" },
+      ],
+    });
+  });
+
+  it("retries a transient failure, never a 4xx", async () => {
+    const retried = put([502]);
+    await saveWebinarIntake("c1", answers, {
+      ...auth,
+      fetchImpl: retried.fetchImpl,
+    });
+    expect(retried.calls).toHaveLength(2);
+
+    const refused = put([400]);
+    await expect(
+      saveWebinarIntake("c1", answers, {
+        ...auth,
+        fetchImpl: refused.fetchImpl,
+      }),
+    ).rejects.toMatchObject({ step: "intake", status: 400 });
+    expect(refused.calls).toHaveLength(1);
+  });
+
+  it("fails closed after three transient failures", async () => {
+    const { calls, fetchImpl } = put([500, 500, 500]);
+    await expect(
+      saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
+    ).rejects.toBeInstanceOf(WebinarRegistrationError);
+    expect(calls).toHaveLength(3);
   });
 });

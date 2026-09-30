@@ -23,6 +23,8 @@ const LIMITS = {
   masterclass_register_ip: { windowMs: 10 * 60 * 1000, max: 30 },
   masterclass_register: { windowMs: 10 * 60 * 1000, max: 5 },
   masterclass_register_phone: { windowMs: 24 * 60 * 60 * 1000, max: 3 },
+  // Intake answers onto a contact the signed cookie names; keyed per contact.
+  masterclass_intake: { windowMs: 10 * 60 * 1000, max: 10 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
   attribution_event: { windowMs: 60 * 1000, max: 60 },
   // Site chatbot (see .claude/specs/2026-08-20-site-chatbot.md §API): a chat

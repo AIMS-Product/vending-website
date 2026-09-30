@@ -1,6 +1,6 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { config } from "@/lib/config";
@@ -21,6 +21,12 @@ import {
   requestIp,
   TOO_MANY_REQUESTS_MESSAGE,
 } from "@/lib/public-rate-limit";
+import {
+  SESSION_COOKIE,
+  SESSION_COOKIE_PATH,
+  SESSION_TTL_MS,
+  signMasterclassSession,
+} from "@/lib/masterclass-session";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 export type RegistrationState = {
@@ -147,14 +153,15 @@ export async function registerForMasterclass(
       "masterclass: event tag unknown, repeat-registration check off",
     );
   }
+  let contactId: string;
   try {
-    await registerWebinarContact(
+    ({ contactId } = await registerWebinarContact(
       { ...parsed.data, eventTag },
       {
         token: config.GHL_WRITE_TOKEN,
         locationId: config.GHL_LOCATION_ID ?? GHL_LOCATION_ID,
       },
-    );
+    ));
   } catch (error) {
     console.error("masterclass: registration not saved", {
       step: error instanceof WebinarRegistrationError ? error.step : "unknown",
@@ -162,6 +169,26 @@ export async function registerForMasterclass(
       name: error instanceof Error ? error.name : "UnknownError",
     });
     return { errors: { form: registrationErrorCopy.failed }, values };
+  }
+
+  // Lets the confirmation page write intake answers to this contact. Optional:
+  // without the secret the page simply shows no intake form.
+  const session = signMasterclassSession(
+    contactId,
+    config.MASTERCLASS_SESSION_SECRET,
+  );
+  if (session) {
+    (await cookies()).set(SESSION_COOKIE, session, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: SESSION_COOKIE_PATH,
+      maxAge: SESSION_TTL_MS / 1000,
+    });
+  } else {
+    console.warn(
+      "masterclass: no intake session (secret missing or short, or odd contact id)",
+    );
   }
 
   redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);

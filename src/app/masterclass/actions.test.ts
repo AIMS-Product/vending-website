@@ -1,18 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  SESSION_COOKIE,
+  verifyMasterclassSession,
+} from "@/lib/masterclass-session";
 import { registerForMasterclass } from "./actions";
 
 const mocks = vi.hoisted(() => ({
   headers: vi.fn(),
+  cookieSet: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`REDIRECT ${url}`);
   }),
   checkPublicRateLimit: vi.fn(),
   registerWebinarContact: vi.fn(),
   getMasterclassEvent: vi.fn(),
-  config: { GHL_WRITE_TOKEN: "pit-test" as string | undefined },
+  config: {
+    GHL_WRITE_TOKEN: "pit-test" as string | undefined,
+    MASTERCLASS_SESSION_SECRET: "k".repeat(32) as string | undefined,
+  },
 }));
 
-vi.mock("next/headers", () => ({ headers: mocks.headers }));
+vi.mock("next/headers", () => ({
+  headers: mocks.headers,
+  cookies: async () => ({ set: mocks.cookieSet }),
+}));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
 vi.mock("@/lib/public-rate-limit", async () => ({
@@ -52,9 +63,13 @@ function form(overrides: Record<string, string | null> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.config.GHL_WRITE_TOKEN = "pit-test";
+  mocks.config.MASTERCLASS_SESSION_SECRET = "k".repeat(32);
   mocks.headers.mockResolvedValue(new Headers({ "x-real-ip": "1.2.3.4" }));
   mocks.checkPublicRateLimit.mockResolvedValue(true);
-  mocks.registerWebinarContact.mockResolvedValue("registered");
+  mocks.registerWebinarContact.mockResolvedValue({
+    outcome: "registered",
+    contactId: "c1",
+  });
   mocks.getMasterclassEvent.mockResolvedValue({
     label: "October 6, 2026 at 7:30 PM CDT",
     startsAt: null,
@@ -214,5 +229,56 @@ describe("registerForMasterclass", () => {
       "REDIRECT",
     );
     expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBeNull();
+  });
+
+  it.each(["registered", "already-registered"])(
+    "sets a signed, short-lived session cookie for the contact (%s)",
+    async (outcome) => {
+      mocks.registerWebinarContact.mockResolvedValue({
+        outcome,
+        contactId: "c1",
+      });
+      await expect(registerForMasterclass({}, form())).rejects.toThrow(
+        "REDIRECT",
+      );
+      expect(mocks.cookieSet).toHaveBeenCalledTimes(1);
+      const [name, value, options] = mocks.cookieSet.mock.calls[0];
+      expect(name).toBe(SESSION_COOKIE);
+      expect(
+        verifyMasterclassSession(
+          value,
+          mocks.config.MASTERCLASS_SESSION_SECRET,
+        ),
+      ).toBe("c1");
+      expect(options).toEqual({
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/masterclass-confirmed",
+        maxAge: 24 * 60 * 60,
+      });
+    },
+  );
+
+  it("registers exactly as before, with no cookie, when the secret is missing", async () => {
+    mocks.config.MASTERCLASS_SESSION_SECRET = undefined;
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?first=Mary",
+    );
+    expect(mocks.registerWebinarContact).toHaveBeenCalledTimes(1);
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it("sets no cookie when registration fails or for a honeypot bot", async () => {
+    mocks.registerWebinarContact.mockRejectedValue(new Error("GHL 500"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await registerForMasterclass({}, form());
+    await expect(
+      registerForMasterclass({}, form({ company_website: "spam.example" })),
+    ).rejects.toThrow("REDIRECT");
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
   });
 });

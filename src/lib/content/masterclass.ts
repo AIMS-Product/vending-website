@@ -114,6 +114,59 @@ export const confirmedCopy = {
 };
 
 /**
+ * The GHL "Webinar Intake Form" (nnne5vuyx5sLjhqneIFg) from the GHL thank-you
+ * page. Option text is the GHL picklist value, written to the contact as is:
+ * never reword an option, or GHL stores a value its own field does not offer.
+ */
+export const intakeCopy = {
+  eyebrow: "Two minutes",
+  heading: "We like to meet you where you're at.",
+  body: "Answer these questions so we can build a few sections of the masterclass around you.",
+  questions: [
+    {
+      name: "situation",
+      legend: "What best describes where you're at right now?",
+      options: [
+        "I have a full-time job and want to build side income",
+        "I thought about starting a vending business but never took action",
+        "I already have some kind of side hustle or small business, but it didn't work out",
+        "I'm not working right now and want to build something of my own from scratch",
+      ],
+    },
+    {
+      name: "timeline",
+      legend: "How soon do you want to get started?",
+      options: [
+        "Right now",
+        "Next two weeks",
+        "Within 30 days",
+        "In the next two months",
+        "Three months or longer",
+      ],
+    },
+    {
+      name: "income",
+      legend: "What is your current annual household income?",
+      options: [
+        "Less than $30,000",
+        "$31,000 - $55,000",
+        "$56,000 - $90,000",
+        "$91,000 - $150,000",
+        "More than $151,000",
+      ],
+    },
+  ],
+  submit: "Send my answers",
+  pending: "Sending…",
+  required: "Pick one",
+  saved: "Got it, thanks. We will use your answers to shape the masterclass.",
+  failed:
+    "We could not save your answers just now. Please try again in a minute.",
+  expired:
+    "This page has timed out. Your seat is still saved; your answers just could not be linked to it.",
+} as const;
+
+/**
  * What the masterclass covers, in Anthony's words from the GHL confirmation
  * email ("You're in!", workflow "1. New Lead > Form Submission Webinar",
  * read 2026-09-30). Reuse, never reword.
