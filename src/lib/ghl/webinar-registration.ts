@@ -71,7 +71,8 @@ export type WebinarRegistrationStep =
   | "lookup"
   | "upsert"
   | "remove-tag"
-  | "add-tag";
+  | "add-tag"
+  | "intake";
 
 export class WebinarRegistrationError extends Error {
   constructor(
@@ -113,23 +114,21 @@ type Options = {
 /** A leading = + - @ makes a spreadsheet cell a formula (the zap writes a Sheet row). */
 const cell = (value: string) => value.trim().replace(/^[=+\-@\s]+/, "");
 
-export async function registerWebinarContact(
-  person: WebinarRegistration,
-  {
-    token,
-    locationId,
-    fetchImpl = fetch,
-    sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    now = () => new Date(),
-  }: Options,
-): Promise<"registered" | "already-registered"> {
-  const call = async (
+/**
+ * One GHL request with the registration's retry rules: up to 3 tries for a
+ * network error, timeout, 429 or 5xx; a 4xx is a refusal; a 2xx is never resent.
+ */
+function ghlCaller({
+  token,
+  fetchImpl = fetch,
+  sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+}: Pick<Options, "token" | "fetchImpl" | "sleep">) {
+  return async (
     step: WebinarRegistrationStep,
     method: string,
     path: string,
     body?: unknown,
   ): Promise<unknown> => {
-    // Up to 3 tries for a network error, timeout, 429 or 5xx; a 4xx is a refusal.
     for (let attempt = 1; ; attempt++) {
       let response: Response | null = null;
       try {
@@ -178,6 +177,19 @@ export async function registerWebinarContact(
       await sleep(retryAfterMs);
     }
   };
+}
+
+export type WebinarRegistrationResult = {
+  outcome: "registered" | "already-registered";
+  /** The GHL contact this registration landed on. */
+  contactId: string;
+};
+
+export async function registerWebinarContact(
+  person: WebinarRegistration,
+  { locationId, now = () => new Date(), ...options }: Options,
+): Promise<WebinarRegistrationResult> {
+  const call = ghlCaller(options);
 
   const found = duplicateResponse.safeParse(
     await call(
@@ -189,7 +201,7 @@ export async function registerWebinarContact(
   if (!found.success) throw new WebinarRegistrationError("lookup", 200);
   const existing = found.data.contact;
   if (person.eventTag && existing?.tags?.includes(person.eventTag)) {
-    return "already-registered";
+    return { outcome: "already-registered", contactId: existing.id };
   }
 
   // A public form must not rewrite a known contact: someone who knows a lead's
@@ -241,5 +253,39 @@ export async function registerWebinarContact(
   // Removing a tag the contact lacks is a no-op.
   await call("remove-tag", "DELETE", tagPath, tagBody);
   await call("add-tag", "POST", tagPath, tagBody);
-  return "registered";
+  return { outcome: "registered", contactId: contact.id };
+}
+
+/**
+ * The GHL "Webinar Intake Form" (nnne5vuyx5sLjhqneIFg) fields, all RADIO;
+ * values must equal the picklist text exactly (read live 2026-09-30).
+ */
+export const INTAKE_FIELD_IDS = {
+  situation: "z2qJKdiM9l6y0X1K38eJ",
+  timeline: "UrA1On8ehTnSkzuS97Vu",
+  income: "VxAS61ZmZ88O3txQ4Rr8",
+} as const;
+
+export type WebinarIntake = Record<keyof typeof INTAKE_FIELD_IDS, string>;
+
+/**
+ * Writes the three intake answers onto a contact, and nothing else: never
+ * name, email, phone or tags. A PUT, so a re-submit or a retry just rewrites
+ * the same fields.
+ */
+export async function saveWebinarIntake(
+  contactId: string,
+  answers: WebinarIntake,
+  options: Omit<Options, "locationId" | "now">,
+): Promise<void> {
+  const customFields = Object.entries(INTAKE_FIELD_IDS).map(([key, id]) => ({
+    id,
+    field_value: answers[key as keyof WebinarIntake],
+  }));
+  await ghlCaller(options)(
+    "intake",
+    "PUT",
+    `/contacts/${encodeURIComponent(contactId)}`,
+    { customFields },
+  );
 }

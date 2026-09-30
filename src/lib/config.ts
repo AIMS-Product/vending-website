@@ -93,6 +93,13 @@ const envSchema = z.object({
    */
   GHL_WRITE_TOKEN: optionalTrimmedOptionalEnv,
   /**
+   * HMAC key (>= 32 chars) for the `mc_session` cookie that lets the
+   * /masterclass-confirmed intake form write to the contact that just
+   * registered. Absent means no cookie and no intake form; registration is
+   * unaffected.
+   */
+  MASTERCLASS_SESSION_SECRET: optionalTrimmedOptionalEnv,
+  /**
    * Forwarding leads OUT to WeScale's GoHighLevel sub-account — a different
    * account from the GHL_* pair above, which is our own and read-only.
    *
@@ -253,6 +260,7 @@ const parsed = envSchema.safeParse({
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   GHL_WRITE_TOKEN: process.env.GHL_WRITE_TOKEN,
+  MASTERCLASS_SESSION_SECRET: process.env.MASTERCLASS_SESSION_SECRET,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
   WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,
   WESCALE_GHL_LOCATION_ID: process.env.WESCALE_GHL_LOCATION_ID,

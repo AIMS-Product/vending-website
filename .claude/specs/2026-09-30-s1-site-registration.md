@@ -63,3 +63,56 @@ SMS + email received, vp-webinars dashboard counts it. Then remove the test regi
 - 8s timeout per GHL call, one retry after 500 ms, a 2xx is never resent.
 - SMS consent written to GHL "SMS Consent Marketing" (`7UnFD4LUSeTwW9QlVrqh`) with a timestamp.
 - Not done (LOW): first name in the confirmation URL (pre-existing); Turnstile/BotID (honeypot + limits for now).
+
+## S1b: webinar intake on the confirmation page (2026-09-30)
+
+Tier 1 (public write into a live CRM contact). safe-feature-slice.
+
+### Verified live before code
+
+- GHL thank-you page embeds "Webinar Intake Form" `nnne5vuyx5sLjhqneIFg`: "We like to meet you where you're at." /
+  "Answer these questions so we can build a few sections of the masterclass around you". Option text read from the
+  page HTML and from the field picklists (identical, ASCII apostrophes):
+  - `z2qJKdiM9l6y0X1K38eJ` (RADIO, "Radio 1zsc", `contact.radio_1zsc`): situation, 4 options.
+  - `UrA1On8ehTnSkzuS97Vu` (RADIO, `contact.contactradio_1zsc_qr9_copy`): how soon, 5 options.
+  - `VxAS61ZmZ88O3txQ4Rr8` (RADIO, `contact.contactradio_1zsc_qr9_copy_kid_copy`): household income, 5 options.
+  The last 20 submissions (983 total) carry exactly these ids in `others` with these values.
+- Workflows / tags: no workflow name mentions intake/survey/income (65 workflows). The 20 latest submitters carry
+  only registration-era tags (`webinar-registrant`, `webinar-sept29`, `webinar-adnb`/`rdna`, ...); no tag is unique to
+  intake. "Form Submission Webhook" (published) may trigger on form submissions; its trigger is not readable by API.
+  A contact PUT does not fire a form-submitted trigger, so if that webhook reads intake answers it will not see site
+  answers. UNKNOWN until someone opens that workflow in GHL; a "contact changed / custom field" trigger would fire.
+
+### Identity
+
+No login on the confirmation page. On success (`registered` AND `already-registered`) the registration action sets
+cookie `mc_session` = `<contactId>.<expiresMs>.<hmac>` (HMAC-SHA256 over `contactId.expiresMs`, base64url, key
+`MASTERCLASS_SESSION_SECRET`, >= 32 chars), httpOnly, Secure, SameSite=Lax, path `/masterclass-confirmed`, 24h.
+Verify: shape regex, constant-time compare (`timingSafeEqual`), expiry. The contact id is opaque (no PII);
+`registerWebinarContact` now returns `{ outcome, contactId }`. Honeypot redirects set no cookie.
+Secret missing/short: no cookie, warning logged, registration unchanged, form not rendered, action refuses.
+
+### Intake action (`saveMasterclassIntake`)
+
+1. zod: three `z.enum`s built from the verbatim option lists in `intakeCopy`.
+2. Cookie verify; missing/tampered/expired -> user-safe "open this page from your registration" message.
+3. `checkPublicRateLimit("masterclass_intake", { ip, email: "contact:<id>" }, failClosed)` (10 / 10 min).
+4. `PUT /contacts/{id}` body `{ customFields: [3 x {id, field_value}] }` only. Same client as registration
+   (8s timeout, 3 tries on network/429/5xx, 4xx is final, 2xx never resent). PUT is idempotent, so a
+   retry after a lost response just rewrites the same three values.
+5. Fail closed: friendly error, answers kept. Success: inline thank-you. Logs carry step/status only.
+
+The page renders the form only when the cookie verifies (the page is already request-time: it reads searchParams).
+
+### Known limits (S1b)
+
+- Anyone who registers with an email already in GHL gets a session for THAT contact (both outcomes set the cookie,
+  by design), so they can overwrite its three intake answers. No PII is read or shown, name/email/phone/tags are
+  never written, and GHL's own intake form has the same exposure (it takes a typed email). Close it, if needed, by
+  writing only blank intake fields for contacts that existed before this registration.
+- Safari on plain-http localhost may drop the Secure cookie, so the form can be missing in local Safari dev only.
+
+### Env
+
+`MASTERCLASS_SESSION_SECRET` (random, >= 32 chars, e.g. `openssl rand -base64 48`) in Vercel Preview + Production.
+Unset = no intake form; registration unchanged.
