@@ -16,15 +16,6 @@ type Props = {
   links: ReturnType<typeof calendarLinks> | null;
 };
 
-/** ponytail: remove with the preview guard in app/masterclass/actions.ts once GHL is wired. */
-export function PreviewRibbon() {
-  return (
-    <p className="bg-amber-100 px-5 py-2 text-center text-xs font-bold text-amber-900">
-      {confirmedCopy.preview}
-    </p>
-  );
-}
-
 /** Name, date, live countdown and free add-to-calendar buttons. */
 export function ConfirmedHero({ first, label, startsAt, links }: Props) {
   return (

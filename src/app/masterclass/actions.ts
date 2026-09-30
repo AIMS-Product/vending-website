@@ -1,14 +1,35 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { config } from "@/lib/config";
 import {
   ATTRIBUTION_KEYS,
+  GHL_LOCATION_ID,
+  HONEYPOT_FIELD,
   MASTERCLASS_CONFIRMED_PATH,
+  registrationErrorCopy,
 } from "@/lib/content/masterclass";
+import {
+  registerWebinarContact,
+  webinarEventTag,
+  WebinarRegistrationError,
+} from "@/lib/ghl/webinar-registration";
+import {
+  checkPublicRateLimit,
+  requestIp,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/public-rate-limit";
+import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 export type RegistrationState = {
-  errors?: Partial<Record<"firstName" | "email" | "phone" | "form", string>>;
+  errors?: Partial<
+    Record<
+      "firstName" | "lastName" | "email" | "phone" | "smsConsent" | "form",
+      string
+    >
+  >;
   values?: {
     firstName: string;
     lastName: string;
@@ -17,30 +38,49 @@ export type RegistrationState = {
   };
 };
 
+const NAME = /^[\p{L}' -]+$/u;
+
 const registration = z.object({
-  firstName: z.string().trim().min(1, "Enter your first name").max(80),
-  lastName: z.string().trim().max(80),
-  email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  phone: z
+  // Names are merged into the confirmation SMS: letters only, so a form
+  // cannot put a link in a text sent from our number.
+  firstName: z
     .string()
     .trim()
-    .refine(
-      (v) => v.replace(/\D/g, "").length >= 10,
-      "Enter a valid phone number",
-    ),
-  smsConsent: z.boolean(),
-  attribution: z.record(z.string(), z.string()),
+    .min(1, "Enter your first name")
+    .max(40)
+    .regex(NAME, "Use letters only"),
+  lastName: z
+    .string()
+    .trim()
+    .max(40)
+    .regex(/^$|^[\p{L}' -]+$/u, "Use letters only"),
+  email: z.string().trim().toLowerCase().email("Enter a valid email"),
+  // US and Canada only (99 of the last 100 GHL registrants), as E.164.
+  phone: z
+    .string()
+    .transform((v) => v.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""))
+    .refine((v) => /^[2-9]\d{2}[2-9]\d{6}$/.test(v), {
+      error: "Enter a US or Canada mobile number",
+    })
+    .transform((v) => `+1${v}`),
+  // The GHL form requires it (100 of the last 100 submissions carry it), and
+  // the workflow texts every registrant.
+  smsConsent: z.literal(true, { error: registrationErrorCopy.consent }),
+  attribution: z.record(z.string(), z.string().max(500)),
 });
 
+const FIELD_KEYS = [
+  "firstName",
+  "lastName",
+  "email",
+  "phone",
+  "smsConsent",
+] as const;
+
 /**
- * Registration for the site-built masterclass page.
- *
- * ponytail: preview only. It validates and moves the visitor to the
- * confirmation page, but writes nothing to GHL yet. The GHL pages feed a Zapier
- * zap (Zoom registration, Close, the Sheet) and a Meta CAPI workflow whose
- * triggers are not visible through the API. The write goes in once Ivan
- * confirms the trigger, so a site registration fires exactly what a GHL one
- * does. Until then the page must not take paid traffic.
+ * Registers a visitor for the next masterclass through GHL, which then runs the
+ * same workflow as its own form. Fails closed: the confirmation page is shown
+ * only once GHL has the contact and the trigger tag.
  */
 export async function registerForMasterclass(
   _previous: RegistrationState,
@@ -63,13 +103,62 @@ export async function registerForMasterclass(
   if (!parsed.success) {
     const errors: RegistrationState["errors"] = {};
     for (const issue of parsed.error.issues) {
-      const field = issue.path[0];
-      if (field === "firstName" || field === "email" || field === "phone") {
-        errors[field] ??= issue.message;
-      }
+      const field = FIELD_KEYS.find((key) => key === issue.path[0]);
+      if (field) errors[field] ??= issue.message;
     }
     return { errors, values };
   }
+
   const next = new URLSearchParams({ first: parsed.data.firstName });
+  if (text(HONEYPOT_FIELD)) redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
+
+  // Fail closed: every accepted registration texts a phone number, so a
+  // limiter outage must not uncap it. The phone gets its own budget, so
+  // rotating emails and IPs cannot keep texting one person.
+  const ip = requestIp(await headers());
+  const allowed =
+    (await checkPublicRateLimit(
+      "masterclass_register",
+      { ip, email: parsed.data.email },
+      { failClosed: true },
+    )) &&
+    (await checkPublicRateLimit(
+      "masterclass_register_phone",
+      { ip: null, email: `phone:${parsed.data.phone}` },
+      { failClosed: true },
+    ));
+  if (!allowed) return { errors: { form: TOO_MANY_REQUESTS_MESSAGE }, values };
+
+  if (!config.GHL_WRITE_TOKEN) {
+    console.error(
+      "masterclass: GHL_WRITE_TOKEN is not set; refusing to register",
+    );
+    return { errors: { form: registrationErrorCopy.failed }, values };
+  }
+
+  const event = await getMasterclassEvent();
+  const eventTag = event.label ? webinarEventTag(event.label) : null;
+  if (!eventTag) {
+    console.warn(
+      "masterclass: event tag unknown, repeat-registration check off",
+    );
+  }
+  try {
+    await registerWebinarContact(
+      { ...parsed.data, eventTag },
+      {
+        token: config.GHL_WRITE_TOKEN,
+        locationId: config.GHL_LOCATION_ID ?? GHL_LOCATION_ID,
+      },
+    );
+  } catch (error) {
+    console.error("masterclass: registration not saved", {
+      step: error instanceof WebinarRegistrationError ? error.step : "unknown",
+      status: error instanceof WebinarRegistrationError ? error.status : null,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { errors: { form: registrationErrorCopy.failed }, values };
+  }
+
   redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
 }

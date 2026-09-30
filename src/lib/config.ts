@@ -87,6 +87,12 @@ const envSchema = z.object({
   GHL_API_KEY: optionalTrimmedOptionalEnv,
   GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
   /**
+   * Write-scoped GHL token for our own location, used ONLY by the masterclass
+   * registration (`lib/ghl/webinar-registration.ts`). Absent means the form
+   * refuses to register rather than pretending to.
+   */
+  GHL_WRITE_TOKEN: optionalTrimmedOptionalEnv,
+  /**
    * Forwarding leads OUT to WeScale's GoHighLevel sub-account — a different
    * account from the GHL_* pair above, which is our own and read-only.
    *
@@ -246,6 +252,7 @@ const parsed = envSchema.safeParse({
   DATAFORSEO_MONTHLY_BUDGET_USD: process.env.DATAFORSEO_MONTHLY_BUDGET_USD,
   GHL_API_KEY: process.env.GHL_API_KEY,
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
+  GHL_WRITE_TOKEN: process.env.GHL_WRITE_TOKEN,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
   WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,
   WESCALE_GHL_LOCATION_ID: process.env.WESCALE_GHL_LOCATION_ID,

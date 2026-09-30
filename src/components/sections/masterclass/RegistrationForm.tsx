@@ -9,7 +9,7 @@ import {
 import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
-import { SMS_CONSENT_TEXT } from "@/lib/content/masterclass";
+import { HONEYPOT_FIELD, SMS_CONSENT_TEXT } from "@/lib/content/masterclass";
 
 type Props = {
   /** UTMs from the ad click, carried into the submission. */
@@ -43,6 +43,14 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
         </p>
       ) : null}
 
+      <input
+        type="text"
+        name={HONEYPOT_FIELD}
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        className="absolute -left-[9999px] h-px w-px opacity-0"
+      />
       {Object.entries(attribution).map(([key, value]) => (
         <input key={key} type="hidden" name={key} value={value} />
       ))}
@@ -61,6 +69,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
           label="Last name"
           autoComplete="family-name"
           defaultValue={values?.lastName}
+          error={errors.lastName}
         />
       </div>
       <div className="mt-3 grid gap-3">
@@ -88,10 +97,21 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
         <input
           type="checkbox"
           name="smsConsent"
+          required
+          aria-invalid={errors.smsConsent ? true : undefined}
+          aria-describedby={errors.smsConsent ? "smsConsent-error" : undefined}
           className="mt-0.5 size-4 shrink-0 accent-[#1f72a5]"
         />
         <span>{SMS_CONSENT_TEXT}</span>
       </label>
+      {errors.smsConsent ? (
+        <p
+          id="smsConsent-error"
+          className="mt-1 text-xs font-semibold text-red-600"
+        >
+          {errors.smsConsent}
+        </p>
+      ) : null}
 
       <button
         type="submit"
@@ -103,6 +123,15 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
       >
         {pending ? "Saving your seat…" : "Save my seat"}
       </button>
+
+      {errors.form ? (
+        <p
+          role="alert"
+          className="mt-3 text-center text-sm font-semibold text-red-600"
+        >
+          {errors.form}
+        </p>
+      ) : null}
 
       <p className="mt-3 text-center text-xs text-slate-500">
         Free. Takes 20 seconds.{" "}

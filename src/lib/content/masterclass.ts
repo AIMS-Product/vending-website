@@ -23,6 +23,9 @@ export const GHL_VALUE_NAMES = {
   revenue: "Anthony Revenue",
 } as const;
 
+/** Hidden from people; a bot that fills it gets the thank-you page and nothing is written. */
+export const HONEYPOT_FIELD = "company_website";
+
 /** Ad-click parameters carried from the landing URL into the submission. */
 export const ATTRIBUTION_KEYS = [
   "utm_source",
@@ -89,9 +92,13 @@ export const fitCopy = {
   cta: "Save my free seat",
 };
 
+/** Registration form errors. Never shows a raw service error. */
+export const registrationErrorCopy = {
+  consent: "Check the box so we can text you the Zoom link",
+  failed: "We could not save your seat just now. Please try again in a minute.",
+};
+
 export const confirmedCopy = {
-  preview:
-    "Preview: this page does not register anyone yet. Live registration still runs on the GHL page.",
   eyebrow: "Seat confirmed",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
   steps: [

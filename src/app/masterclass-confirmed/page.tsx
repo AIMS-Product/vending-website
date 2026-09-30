@@ -6,7 +6,6 @@ import {
   ConfirmedHero,
   MemberVideos,
   NextSteps,
-  PreviewRibbon,
 } from "@/components/sections/masterclass/ConfirmedSections";
 import {
   MASTERCLASS_MINUTES,
@@ -45,7 +44,6 @@ export default async function MasterclassConfirmedPage({
   return (
     <main>
       <RevealObserver />
-      <PreviewRibbon />
       <ConfirmedHero
         first={rawFirst?.trim().slice(0, 40)}
         label={event.label}
