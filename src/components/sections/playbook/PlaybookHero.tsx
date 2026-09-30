@@ -10,8 +10,8 @@ interface PlaybookHeroProps {
 export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
   const [before, after] = hero.headline.split(hero.highlight);
   return (
-    <section className="border-ink border-b-2 bg-white">
-      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 py-14 lg:grid-cols-[1.05fr_1fr] lg:px-10 lg:py-20">
+    <section className="border-ink overflow-hidden border-b-2 bg-white">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-20">
         <div>
           <p className={EYEBROW}>{hero.eyebrow}</p>
           <h1 className="text-ink mt-3 text-[clamp(2rem,5vw,3.6rem)] leading-[1.1] font-black uppercase">
@@ -41,9 +41,10 @@ export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
           alt={images.product.alt}
           width={images.product.width}
           height={images.product.height}
-          sizes="(min-width: 1024px) 560px, 100vw"
+          sizes="(min-width: 1024px) 760px, 100vw"
           priority
-          className="h-auto w-full"
+          // The artwork carries wide transparent margins; scale past them.
+          className="h-auto w-full scale-110 lg:scale-[1.3]"
         />
       </div>
       <dl className="border-ink grid grid-cols-3 border-t-2">
