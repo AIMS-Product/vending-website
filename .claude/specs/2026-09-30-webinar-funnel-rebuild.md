@@ -21,6 +21,39 @@ Meta pixel `2008180456764704`: GHL pages fire PageView only (the site already do
 - Date and Anthony stats read from GHL custom values every 5 min, so the weekly rollover moves this page too.
 - noindex, unlinked, no site chrome.
 
+## Verified wiring (read from GHL + Zapier, 2026-09-30, view-only)
+
+GHL workflow `1. New Lead > Form Submission Webinar` (folder "1. WEBINAR 2026"), single trigger "Form submitted:
+General 2026 Webinar Registration". Actions: tag `webinar-registrant` -> update contact field -> assign -> **create
+opportunity** (event pipeline, e.g. Oct 6 `0CFZCDpzjAanWoMLVMXC` stage `a8dc6e8f-...`) -> confirmation SMS ->
+confirmation email -> wait -> SMS -> wait -> condition -> SMS sequence + email sequence (2A workflows).
+
+Everything downstream keys off two things that workflow creates:
+
+- Tag `webinar-registrant` -> GHL `Webinar Leads to Meta Complete Registration` (Meta Conversions API).
+- Opportunity in the event pipeline stage -> Zapier `Webinar 2026 GHL > Zoom > Google Sheet` (Zoom registrant on the
+  event webinar, GHL contact `zoom_url` + `webinar_registration=Yes`, Sheet row) AND Zapier `Webinar Registrants >
+  Close` (Close lead).
+  Other zaps: `Particpate > GHL` (Zoom joiner -> Sheet + attended stage), `Calendly > GHL` (Advisory Call booking ->
+  stage + Sheet), `GHL to Close lead`, `Attended`, `RDNA` (pipeline stages -> Close), `LTF paid > Close`,
+  `LTF cart left > Close` (LTF pipeline `mho6skO0SLZ2N8fVAEvZ`).
+
+Weekly hand-rolled IDs: the Zoom zap (webinar id + pipeline), `Particpate > GHL` and `Calendly > GHL` (still on the
+Sept 29 webinar/pipeline as of 2026-09-30), and the workflow's Create opportunity pipeline.
+
+### The transfer is one additive GHL change
+
+Add a second trigger to `1. New Lead > Form Submission Webinar`: **Contact tag added = `site-webinar-registration`**.
+The site upserts the contact (name, email, phone, SMS consent, UTM custom fields) with that tag via the GHL API; the
+same workflow then runs every step above unchanged. The form trigger stays; nothing is turned off.
+
+### Low-ticket offer (LTF)
+
+`webinar.vendingpreneurs.com/playbook` (Mike Hoffmann's Playbook / Profit Machine System, $67 vs $199) ->
+`/checkout` (GHL order form, Stripe, 2-step with upgrade). Purchase -> LTF pipeline -> `LTF paid > Close`, and GHL
+`LTF Purchases to Meta Purchase Event`. Plan: rebuild /playbook on the site UI; keep the GHL checkout (money path,
+course delivery, Purchase event) until a separate safe-feature-slice.
+
 ## Transfer checklist: what a registration must do (2026-09-30)
 
 Submitting into the GHL form from our page is ruled out: GHL's submit endpoint answered a real-browser probe from
