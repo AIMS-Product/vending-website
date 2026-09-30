@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Metadata } from "next";
 import "@/app/home-v2.css";
+import { anton } from "@/app/fonts";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import {
   ReplayBooking,
@@ -38,7 +39,7 @@ export async function renderReplayPage(
   ]);
   const attribution = buildLeadAttribution(params, variant.path);
   return (
-    <main>
+    <main className={anton.variable}>
       <ReplayHero variant={variant} expiresAt={liveExpiry(event.startsAt)} />
       <ReplayBooking variant={variant} attribution={attribution} />
       <ReplayTestimonials variant={variant} />

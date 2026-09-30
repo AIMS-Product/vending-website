@@ -4,6 +4,7 @@ import {
   OutlookLogo,
 } from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
 import Image from "next/image";
 import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
@@ -13,6 +14,7 @@ import { Highlight } from "@/components/ui/Highlight";
 import {
   SENDER_EMAIL,
   ANTHONY_VIDEO_ID,
+  CONFIRMED_VIDEO_EMBED_ID,
   confirmedCopy,
   coverCopy,
   type calendarLinks,
@@ -25,7 +27,7 @@ type Props = {
   links: ReturnType<typeof calendarLinks> | null;
 };
 
-/** Name, date, live countdown and free add-to-calendar buttons. */
+/** Name, Anthony's welcome video, date, live countdown and add-to-calendar buttons. */
 export function ConfirmedHero({ first, label, startsAt, links }: Props) {
   return (
     <section
@@ -36,11 +38,11 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
         backgroundSize: "22px 22px",
       }}
     >
-      <div className="mx-auto flex max-w-[860px] flex-col items-center px-5 py-14 text-center">
+      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:py-16">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
         </p>
-        <h1 className="text-ink mt-4 text-[clamp(2.2rem,5vw,3.6rem)] leading-[1.05] font-black uppercase">
+        <h1 className="v2-display text-ink mt-4 text-[clamp(2.8rem,6vw,4.75rem)] leading-[1] uppercase">
           You&apos;re in
           {first ? (
             <>
@@ -49,11 +51,16 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
           ) : null}
           .
         </h1>
+        <VidalyticsPlayer
+          embedId={CONFIRMED_VIDEO_EMBED_ID}
+          title="A welcome from Anthony"
+          className="mt-8 w-full"
+        />
         {label ? (
-          <p className="mt-3 text-lg font-bold text-slate-700">{label}</p>
+          <p className="text-ink mt-8 text-xl font-black">{label}</p>
         ) : null}
         {startsAt ? (
-          <div className="mt-8">
+          <div className="mt-5">
             <Countdown startsAt={startsAt} />
           </div>
         ) : null}
@@ -139,7 +146,7 @@ export function CoverSection() {
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {coverCopy.eyebrow}
           </p>
-          <h2 className="text-ink mt-2 text-[clamp(1.8rem,3.6vw,2.6rem)] leading-none font-black uppercase">
+          <h2 className="v2-display text-ink mt-2 text-[clamp(2.2rem,4vw,3.25rem)] leading-none uppercase">
             {coverCopy.heading}
           </h2>
           <ol className="mt-6 grid gap-3">
@@ -155,7 +162,13 @@ export function CoverSection() {
               </li>
             ))}
           </ol>
-          <blockquote className="mt-6 border-l-4 border-[#2a8fcc] pl-4 text-[17px] text-slate-700 italic">
+          <blockquote className="mt-7 text-[17px] text-slate-700 italic">
+            <span
+              aria-hidden
+              className="v2-display text-brand-600 block text-5xl leading-[0.6] not-italic"
+            >
+              &ldquo;
+            </span>
             {coverCopy.quote}
             <footer className="text-ink mt-2 text-sm font-black not-italic">
               {coverCopy.signoff}
@@ -181,7 +194,7 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
         <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.storiesEyebrow}
         </p>
-        <h2 className="text-ink mt-2 text-center text-[clamp(1.6rem,3.4vw,2.4rem)] font-black uppercase">
+        <h2 className="v2-display text-ink mt-2 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-none uppercase">
           {confirmedCopy.storiesHeading}
         </h2>
         <StoryList stories={featured} columns={3} />
@@ -214,7 +227,7 @@ function Step({
 export function PlaybookBand({ first }: { first: string | undefined }) {
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-[860px] px-5 pb-14 lg:px-10">
+      <div className="mx-auto max-w-[1080px] px-5 pb-16 lg:px-10">
         <PlaybookTeaser searchParams={first ? { first_name: first } : {}} />
       </div>
     </section>

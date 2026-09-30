@@ -93,7 +93,7 @@ export function ReviewGuide() {
           ))}
         </div>
 
-        <p className="mt-10 border-l-4 border-[#2a8fcc] pl-4 text-sm text-slate-600">
+        <p className="bg-tint border-ink rounded-card mt-10 border-2 p-4 text-sm text-slate-700">
           {reviewCopy.note}
         </p>
       </div>

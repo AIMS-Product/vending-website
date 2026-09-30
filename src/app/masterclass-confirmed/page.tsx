@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "../home-v2.css";
+import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import {
@@ -28,7 +29,7 @@ import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "You're in | Vendingpreneurs Masterclass",
+  title: "You're in: Masterclass",
   robots: { index: false, follow: false },
 };
 
@@ -62,7 +63,7 @@ export default async function MasterclassConfirmedPage({
     : null;
 
   return (
-    <main>
+    <main className={anton.variable}>
       <RevealObserver />
       <ConfirmedHero
         first={rawFirst?.trim().slice(0, 40)}

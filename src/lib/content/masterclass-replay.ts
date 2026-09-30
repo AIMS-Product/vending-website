@@ -158,7 +158,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   dna: {
     key: "dna",
     path: REPLAY_PATHS.dna,
-    metaTitle: "Masterclass Replay | Vendingpreneurs",
+    metaTitle: "Masterclass Replay",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "If you want an income stream you're in control of, watch this.",
     sub: [
@@ -180,7 +180,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   adnb: {
     key: "adnb",
     path: REPLAY_PATHS.adnb,
-    metaTitle: "Masterclass Replay | Vendingpreneurs",
+    metaTitle: "Masterclass Replay",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "Miss Something?",
     sub: [
@@ -206,7 +206,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   meta: {
     key: "meta",
     path: REPLAY_PATHS.meta,
-    metaTitle: "Masterclass Replay | Vendingpreneurs",
+    metaTitle: "Masterclass Replay",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See why professionals, entrepreneurs, and families are choosing vending over other business opportunities.",
@@ -222,7 +222,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   advisory: {
     key: "advisory",
     path: REPLAY_PATHS.advisory,
-    metaTitle: "Masterclass Replay | Vendingpreneurs",
+    metaTitle: "Masterclass Replay",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See How Professionals Are Building an Additional Income Stream With Vending",

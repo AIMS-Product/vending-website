@@ -59,7 +59,7 @@ function AnchorButton({
       href={`#${REPLAY_ANCHORS[target]}`}
       className={buttonClass({ size: "lg" })}
     >
-      <span className="flex flex-col items-center leading-tight">
+      <span className="flex flex-col items-center text-center leading-tight">
         <span>{label}</span>
         {subLabel ? (
           <span className="text-xs font-semibold normal-case">{subLabel}</span>
@@ -90,7 +90,7 @@ export function ReplayHero({
             />
           </>
         ) : null}
-        <h1 className="text-ink text-[clamp(1.7rem,3.6vw,2.8rem)] leading-[1.15] font-black uppercase">
+        <h1 className="v2-display text-ink text-[clamp(2.4rem,5vw,4rem)] leading-[1.02] uppercase">
           {variant.heading}
         </h1>
         {variant.sub.map((line) => (
@@ -111,7 +111,7 @@ export function ReplayHero({
           />
         </div>
         {variant.steps.length ? (
-          <ol className="text-ink text-xl font-black">
+          <ol className="text-ink text-xl leading-snug font-black">
             {variant.steps.map((step) => (
               <li key={step}>{step}</li>
             ))}
@@ -137,7 +137,7 @@ export function ReplayBooking({
       className="border-ink bg-tint scroll-mt-6 border-b-2"
     >
       <div className="mx-auto max-w-[760px] px-5 py-14 lg:px-10">
-        <h2 className="text-ink text-center text-[clamp(1.6rem,3vw,2.3rem)] leading-[1.15] font-black uppercase">
+        <h2 className="v2-display text-ink text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {cta.heading}
         </h2>
         <div className="mt-5 space-y-3 text-center text-[17px] text-slate-700">
@@ -201,7 +201,7 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
         <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
           {replayTestimonialsCopy.eyebrow}
         </p>
-        <h2 className="text-ink mt-3 text-center text-[clamp(1.8rem,3.6vw,2.8rem)] leading-[1.15] font-black uppercase">
+        <h2 className="v2-display text-ink mt-3 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {replayTestimonialsCopy.heading}
         </h2>
         <ul className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">

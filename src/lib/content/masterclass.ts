@@ -98,6 +98,9 @@ export const registrationErrorCopy = {
   failed: "We could not save your seat just now. Please try again in a minute.",
 };
 
+/** The Vidalytics welcome video from the GHL thank-you page (embed id read off that page 2026-09-30). */
+export const CONFIRMED_VIDEO_EMBED_ID = "Uu01XEF76UJIUSOJ";
+
 export const confirmedCopy = {
   eyebrow: "Seat confirmed",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
