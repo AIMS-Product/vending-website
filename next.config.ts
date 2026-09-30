@@ -258,6 +258,17 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "media2-production.mightynetworks.com",
       },
+      // GHL-hosted Playbook offer art (/playbook): the filesafe CDN and the
+      // GHL funnel-ai bucket, scoped to that bucket only.
+      {
+        protocol: "https",
+        hostname: "assets.cdn.filesafe.space",
+      },
+      {
+        protocol: "https",
+        hostname: "storage.googleapis.com",
+        pathname: "/funnel-ai-production/**",
+      },
     ],
   },
 };

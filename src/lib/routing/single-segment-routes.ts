@@ -30,6 +30,7 @@ export const APP_TOP_LEVEL_PAGE_SEGMENTS: ReadonlySet<string> = new Set([
   "masterclass-review",
   "news",
   "newsletter",
+  "playbook",
   "pre-call-resources",
   "privacy",
   "process",
