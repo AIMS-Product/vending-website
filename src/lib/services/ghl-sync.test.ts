@@ -42,6 +42,7 @@ function buildClient(priorSnapshots: unknown[] = []) {
 }
 
 const ghl: GhlClient = {
+  listCustomValues: async () => [],
   listWorkflows: async () => [
     { id: "w1", name: "Webinar Follow Up", status: "published" },
   ],

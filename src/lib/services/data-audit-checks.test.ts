@@ -190,6 +190,7 @@ describe("runDataAudit", () => {
         listForms: async () => [{ id: "f1", name: "90 Day Checklist" }],
         fetchFormSubmissions,
         listWorkflows: async () => [],
+        listCustomValues: async () => [],
         fetchWorkflowEmailStats: async () => ({
           sent: 0,
           delivered: 0,

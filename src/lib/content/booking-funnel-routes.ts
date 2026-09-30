@@ -19,7 +19,11 @@ import { isLegacyLeadPath } from "./legacy-routes";
  * The clone and social-ad routes are read off their own registries so a new
  * booking page is covered the day it is added.
  */
-const HAND_WRITTEN_BOOKING_ROUTES = ["/contact", "/book-now"] as const;
+const HAND_WRITTEN_BOOKING_ROUTES = [
+  "/contact",
+  "/book-now",
+  "/masterclass",
+] as const;
 
 export const BOOKING_FUNNEL_PATHS: readonly string[] = [
   ...HAND_WRITTEN_BOOKING_ROUTES,
@@ -54,6 +58,7 @@ export function isBookingFunnelPath(pathname: string): boolean {
 const POST_CONVERSION_PATHS = [
   "/thank-you",
   "/thank-you-for-applying",
+  "/masterclass-confirmed",
 ] as const;
 
 const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(

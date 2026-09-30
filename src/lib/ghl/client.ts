@@ -34,6 +34,8 @@ export type GhlEmailStats = {
 
 export type GhlForm = { id: string; name: string };
 
+export type GhlCustomValue = { name: string; value: string };
+
 export type GhlFormSubmission = {
   id: string;
   formId: string;
@@ -45,6 +47,8 @@ export type GhlClient = {
   listWorkflows(): Promise<GhlWorkflow[]>;
   fetchWorkflowEmailStats(workflowId: string): Promise<GhlEmailStats>;
   listForms(): Promise<GhlForm[]>;
+  /** The location's custom values: the globals every GHL funnel page reads. */
+  listCustomValues(): Promise<GhlCustomValue[]>;
   /** Every submission with createdAt in [startAt, endAt], dates as YYYY-MM-DD. */
   fetchFormSubmissions(range: {
     startAt: string;
@@ -112,6 +116,17 @@ export function createGhlClient(options: {
     ).toString();
 
   return {
+    async listCustomValues() {
+      const body = await get<{ customValues?: GhlCustomValue[] }>(
+        `/locations/${encodeURIComponent(locationId)}/customValues`,
+        "2021-07-28",
+      );
+      return (body.customValues ?? []).map((value) => ({
+        name: value.name,
+        value: value.value ?? "",
+      }));
+    },
+
     async listWorkflows() {
       const body = await get<{ workflows?: GhlWorkflow[] }>(
         `/workflows/?${query({ locationId })}`,
