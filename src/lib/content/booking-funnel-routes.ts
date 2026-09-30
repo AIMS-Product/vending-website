@@ -23,6 +23,12 @@ const HAND_WRITTEN_BOOKING_ROUTES = [
   "/contact",
   "/book-now",
   "/masterclass",
+  // The rest of the webinar funnel: entry points from GHL emails, SMS and ads.
+  "/playbook",
+  "/masterclass-replay-dna",
+  "/masterclass-replay-adnb",
+  "/masterclass-replay-meta",
+  "/masterclass-replay-advisory",
 ] as const;
 
 export const BOOKING_FUNNEL_PATHS: readonly string[] = [

@@ -33,8 +33,8 @@ describe("booking funnel routes", () => {
       expect(isBookingFunnelPath(page.path)).toBe(true);
     }
     expect(BOOKING_FUNNEL_PATHS).toHaveLength(
-      // /contact, /book-now, /masterclass
-      3 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
+      // /contact, /book-now, /masterclass, /playbook, 4 webinar replays
+      8 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
     );
   });
 
