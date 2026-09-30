@@ -1,5 +1,6 @@
 import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { buttonClass } from "@/components/ui/Button";
+import { Highlight } from "@/components/ui/Highlight";
 import {
   SENDER_EMAIL,
   confirmationVideos,
@@ -40,7 +41,13 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
           {confirmedCopy.eyebrow}
         </p>
         <h1 className="text-ink mt-4 text-[clamp(2.2rem,5vw,3.6rem)] leading-[1.05] font-black uppercase">
-          You&apos;re in{first ? `, ${first}` : ""}.
+          You&apos;re in
+          {first ? (
+            <>
+              , <Highlight>{first}</Highlight>
+            </>
+          ) : null}
+          .
         </h1>
         {label ? (
           <p className="mt-3 text-lg font-bold text-slate-700">{label}</p>
@@ -114,9 +121,9 @@ export function NextSteps() {
 /** The member videos from the GHL confirmation page. */
 export function MemberVideos() {
   return (
-    <section className="border-ink bg-ink border-t-2">
+    <section className="border-ink bg-tint border-t-2">
       <div className="mx-auto max-w-[1180px] px-5 py-14 lg:px-10">
-        <h2 className="text-center text-[clamp(1.6rem,3.4vw,2.4rem)] font-black text-white uppercase">
+        <h2 className="text-ink text-center text-[clamp(1.6rem,3.4vw,2.4rem)] font-black uppercase">
           {confirmedCopy.videosHeading}
         </h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -127,7 +134,8 @@ export function MemberVideos() {
               controls
               playsInline
               preload="metadata"
-              className="rounded-card aspect-video w-full border-2 border-white bg-black"
+              data-reveal
+              className="rounded-card border-ink shadow-card aspect-video w-full border-2 bg-black"
             />
           ))}
         </div>

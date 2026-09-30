@@ -1,21 +1,25 @@
 import type { Metadata } from "next";
-import { ApplyDisclaimer } from "@/components/sections/apply/ApplyDisclaimer";
+import "../home-v2.css";
 import { ApplyHero } from "@/components/sections/apply/ApplyHero";
+import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { RegistrationForm } from "@/components/sections/masterclass/RegistrationForm";
 import {
   FitSection,
   HostBand,
-  OperatorGrid,
+  MasterclassFooter,
+  ResultsTicker,
+  StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
 import {
   ATTRIBUTION_KEYS,
   masterclassBody,
   masterclassHero,
 } from "@/lib/content/masterclass";
+import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
-// Re-read the GHL date and Anthony's numbers every five minutes, so the page
-// follows the weekly rollover without a deploy.
+// Re-read the GHL date, Anthony's numbers and the member stories every five
+// minutes, so the page follows the weekly rollover without a deploy.
 export const revalidate = 300;
 
 // Not linked anywhere and kept out of search until it has won a split test.
@@ -31,8 +35,9 @@ export default async function MasterclassPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [event, params] = await Promise.all([
+  const [event, stories, params] = await Promise.all([
     getMasterclassEvent(),
+    listCaseStudyStories(),
     searchParams,
   ]);
   const attribution = Object.fromEntries(
@@ -45,6 +50,7 @@ export default async function MasterclassPage({
 
   return (
     <main>
+      <RevealObserver />
       <ApplyHero
         copy={masterclassHero}
         body={masterclassBody}
@@ -55,10 +61,11 @@ export default async function MasterclassPage({
           />
         }
       />
-      {event.anthony ? <HostBand stats={event.anthony} /> : null}
-      <OperatorGrid />
+      <ResultsTicker stories={stories} />
+      <HostBand stats={event.anthony} />
+      <StoriesGrid stories={stories} />
       <FitSection />
-      <ApplyDisclaimer />
+      <MasterclassFooter />
     </main>
   );
 }

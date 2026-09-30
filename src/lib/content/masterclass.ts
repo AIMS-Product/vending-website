@@ -40,6 +40,8 @@ export const masterclassHero = {
   eyebrow: "Free live masterclass with Anthony Kolodziej",
   headline: "Your company can replace you. Your business can't.",
   subheadline: "Learn how to build a cash-flowing vending route in 2026",
+  highlight: "can't.",
+  videoCue: "Watch Anthony's story",
 };
 
 export const masterclassBody =
@@ -50,8 +52,9 @@ export const SMS_CONSENT_TEXT =
 
 export const hostCopy = {
   eyebrow: "Your host, Anthony Kolodziej",
-  line: "Laid off. Built a route instead. 2.5 years later:",
-  photoAlt: "Anthony Kolodziej beside one of his machines",
+  line: "Laid off. Built a route instead.",
+  highlight: "Built a route instead.",
+  videoTitle: "How Anthony built a $102K/month vending business",
   statLabels: {
     locations: "Locations",
     machines: "Machines",
@@ -60,10 +63,25 @@ export const hostCopy = {
   footnote: "Anthony's verified numbers.",
 };
 
-export const operatorsCopy = {
+/** Anthony's own case-study video; also left out of the member grid below it. */
+export const ANTHONY_VIDEO_ID = "fsRX7K_Hg08";
+
+export const storiesCopy = {
   eyebrow: "Real operators. Real routes.",
   heading: "People with jobs like yours",
+  highlight: "jobs like yours",
+  body: "Tap any story to watch it here.",
+  /** Stories shown before "more"; the rest open in place, never on a new page. */
+  initial: 8,
+  more: (n: number) => `Show ${n} more stories`,
 };
+
+/**
+ * The approved disclaimer from applyFooter, less its "$5,000-$60,000" sentence:
+ * that sentence covers the apply page's headline, which this page does not make.
+ */
+export const MASTERCLASS_DISCLAIMER =
+  "Earnings may vary and are not guaranteed. Outcomes depend on effort, market, and execution.";
 
 export const fitCopy = {
   forTitle: "This is for you if",
@@ -86,46 +104,6 @@ export const confirmedCopy = {
   ],
   videosHeading: "While you wait: how they did it",
 };
-
-export type Operator = {
-  name: string;
-  before: string;
-  result: string;
-  photo: string;
-};
-
-export const operators: readonly Operator[] = [
-  {
-    name: "Graham & Katie",
-    before: "W2 sales couple",
-    result: "16 machines grossing $36K a month",
-    photo: "/images/masterclass/graham-katie.jpg",
-  },
-  {
-    name: "Shannon R.",
-    before: "Full-time W2 employee",
-    result: "4 locations grossing $22K–$25K a month",
-    photo: "/images/masterclass/shannon.jpg",
-  },
-  {
-    name: "Michael D.",
-    before: "Entrepreneur",
-    result: "18 machines, roughly $650K gross revenue a year",
-    photo: "/images/masterclass/michael.jpg",
-  },
-  {
-    name: "Madison G.",
-    before: "Stay-at-home mom",
-    result: "6 locations grossing $10–12K a month",
-    photo: "/images/masterclass/madison.jpg",
-  },
-  {
-    name: "Joe N.",
-    before: "Retired at 66",
-    result: "15 locations, 18 machines, ~$5,500 a month",
-    photo: "/images/masterclass/joe.jpg",
-  },
-];
 
 export const fitFor = [
   "You want income you own, not another job",

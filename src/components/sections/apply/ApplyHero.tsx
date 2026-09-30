@@ -41,8 +41,20 @@ export function splitMoneyPhrase(text: string) {
   };
 }
 
-function Headline({ text }: { text: string }) {
-  const parts = splitMoneyPhrase(text);
+function splitOn(text: string, phrase: string) {
+  const index = text.indexOf(phrase);
+  if (index < 0) return null;
+  return {
+    before: text.slice(0, index),
+    money: phrase,
+    after: text.slice(index + phrase.length),
+  };
+}
+
+function Headline({ text, highlight }: { text: string; highlight?: string }) {
+  // A page can name its own emphasis phrase; otherwise the money phrase wins.
+  const parts =
+    (highlight && splitOn(text, highlight)) || splitMoneyPhrase(text);
   // An inline background paints the font's whole content area, which for
   // Anton is taller than the line box, so it ran over the lines above and
   // below (Adam, 2026-09-22). As an inline-block the line grows to fit it.
@@ -77,6 +89,8 @@ type HeroCopy = {
   eyebrow: string;
   headline: string;
   subheadline?: string;
+  /** Phrase in the headline to set in the blue highlight block. */
+  highlight?: string;
   /** Pointer to the VSL under the hero. Leave it out on pages with no VSL. */
   videoCue?: string;
 };
@@ -126,7 +140,7 @@ export function ApplyHero({
             {copy.eyebrow}
           </p>
 
-          <Headline text={copy.headline} />
+          <Headline text={copy.headline} highlight={copy.highlight} />
 
           {copy.subheadline ? (
             <p className="mt-4 max-w-[32ch] text-[clamp(0.9rem,1.3vw,1.05rem)] leading-[1.35] font-black tracking-[0.02em] text-[#066a99] uppercase">

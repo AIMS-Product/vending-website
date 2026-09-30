@@ -21,14 +21,35 @@ Meta pixel `2008180456764704`: GHL pages fire PageView only (the site already do
 - Date and Anthony stats read from GHL custom values every 5 min, so the weekly rollover moves this page too.
 - noindex, unlinked, no site chrome.
 
-## Not wired yet (preview only)
+## Transfer checklist: what a registration must do (2026-09-30)
 
-The form validates and redirects but writes nothing. Options, in order of preference:
+Submitting into the GHL form from our page is ruled out: GHL's submit endpoint answered a real-browser probe from
+www.vendingpreneurs.com with `429 "No tokens provided" (missing-input-response)`, so it requires a captcha token
+only GHL's own pages can mint. The site therefore does each step itself, through documented APIs.
 
-1. **Same GHL form**: post to GHL's form-submit endpoint from the visitor's browser (what GHL's own pages do). Everything downstream is identical. Endpoint is undocumented and Cloudflare-protected; a headless probe was blocked. Needs one real test registration (Adam's go: it creates a Zoom registrant, Close lead and sends the SMS/email).
-2. **GHL API upsert + tag**, and Ivan adds that tag as a second trigger on the registration workflow and the zap. Documented, but needs the site a write token and Ivan's change.
+| #   | What happens today on a GHL registration                                       | Done by today                                              | Site replacement                                                                                 | Status                                                         |
+| --- | ------------------------------------------------------------------------------ | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| 1   | GHL contact created: name, email, phone, SMS consent, 5 UTM fields             | GHL form                                                   | GHL `POST /contacts/upsert` (pattern already live in `src/lib/ghl/forward.ts`, queued + retried) | Needs a GHL write token in the site env                        |
+| 2   | Event tag added (`webinar-oct6` etc, from vp-webinars event registry)          | GHL workflow "1. New Lead > Form Submission Webinar"       | Same upsert, `tags: [event tag]`                                                                 | Needs the tag source (read the registry or a GHL custom value) |
+| 3   | Zoom registrant created; Zoom sends its confirmation                           | Ivan's Zapier zap                                          | Zoom API, same logic as `vp-webinars/automation/zoom/zoom_registrant_repair.py`                  | Needs `ANTHONY_ZOOM_*` in the site env                         |
+| 4   | Personal Zoom join link written to GHL `zoom_url` (every email/SMS merges it)  | Zap + GHL workflow "2. URL Zoom Update"                    | Same script logic, GHL write                                                                     | Same as 3                                                      |
+| 5   | Close lead + event cohort (`utm_content` prefix `oct06`, Entry Source Webinar) | Zap / GHL->Close webhook                                   | Site Close client (`CLOSE_API_KEY` present)                                                      | Must match the Zap's fields exactly; read them first           |
+| 6   | Google Sheet row                                                               | Zap                                                        | Skip (dashboard reads Zoom/GHL/Close directly)                                                   | Confirm nobody still reads the Sheet                           |
+| 7   | Meta "Complete Registration" (ad optimization signal)                          | GHL workflow "Webinar Leads to Meta Complete Registration" | Either the same GHL workflow via a tag trigger, or Meta CAPI from the site                       | UNKNOWN trigger; do not launch without it                      |
+| 8   | Confirmation SMS + email, 4 reminder emails, reminder SMS, Anthony voice drop  | GHL workflows                                              | Same workflows, triggered by the tag from step 2                                                 | UNKNOWN trigger; do not launch without it                      |
+| 9   | Original ad UTMs kept for reporting                                            | GHL form hidden fields + `eventData`                       | Upsert custom fields + the site's own lead attribution                                           | Buildable now                                                  |
 
-Question for Ivan: what does the registration zap trigger on (GHL form submission, workflow webhook, or tag)? That answer picks 1 or 2.
+Steps 7 and 8 are the only unknowns, and they are one question: what triggers those GHL workflows (form
+submitted, or tag added)? If it is "tag added", the site upsert with the tag fires everything unchanged. If it is
+"form submitted", Ivan adds "tag added: <event tag>" as a second trigger (additive, nothing turned off).
+
+### Launch gate (nothing goes to paid traffic until all pass)
+
+1. One test registration from the preview (a real contact Adam names) produces, within 5 minutes: GHL contact
+   with tag + UTMs + zoom_url; Zoom registrant; Close lead in the event cohort; confirmation SMS + email received;
+   Meta Events Manager shows CompleteRegistration.
+2. The vp-webinars dashboard counts that test registrant in the event (then it is removed).
+3. Split test: one ad set -> /masterclass. Compare opt-in rate, show rate, booked rate against control.
 
 ## Tracking
 

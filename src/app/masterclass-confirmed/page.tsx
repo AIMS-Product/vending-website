@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import { ApplyDisclaimer } from "@/components/sections/apply/ApplyDisclaimer";
+import "../home-v2.css";
+import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
+import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import {
   ConfirmedHero,
   MemberVideos,
@@ -42,6 +44,7 @@ export default async function MasterclassConfirmedPage({
 
   return (
     <main>
+      <RevealObserver />
       <PreviewRibbon />
       <ConfirmedHero
         first={rawFirst?.trim().slice(0, 40)}
@@ -51,7 +54,7 @@ export default async function MasterclassConfirmedPage({
       />
       <NextSteps />
       <MemberVideos />
-      <ApplyDisclaimer />
+      <MasterclassFooter />
     </main>
   );
 }

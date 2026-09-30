@@ -277,3 +277,28 @@ export async function adminUpdateCaseStudy(id: string, patch: CaseStudyUpdate) {
   if (error) throw error;
   return data;
 }
+
+export type CaseStudyStory = Pick<
+  CaseStudy,
+  "slug" | "member_name" | "prior_occupation" | "youtube_video_id" | "stats"
+>;
+
+/**
+ * Every published story with its video and stat set, for surfaces that play
+ * the story in place instead of linking to it (the webinar registration page
+ * keeps visitors on the form).
+ */
+export async function listCaseStudyStories(): Promise<CaseStudyStory[]> {
+  const supabase = getBuildTimeClient();
+  const { data, error } = await supabase
+    .from("case_studies")
+    .select("slug, member_name, prior_occupation, youtube_video_id, stats")
+    .eq("status", "published")
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    console.error("listCaseStudyStories failed", error);
+    return [];
+  }
+  return data ?? [];
+}
