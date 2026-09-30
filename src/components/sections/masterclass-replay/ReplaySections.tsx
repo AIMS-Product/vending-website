@@ -1,12 +1,14 @@
 import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
-import { BookingForm } from "@/components/sections/apply/BookingForm";
+import Script from "next/script";
 import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { buttonClass } from "@/components/ui/Button";
 import {
   REPLAY_ANCHORS,
-  REPLAY_EXPIRES_AT,
+  REPLAY_GHL_FORM_ID,
+  REPLAY_GHL_FORM_SCRIPT,
+  REPLAY_GHL_FORM_SRC,
   replayExpiresLabel,
   replayTestimonials,
   replayTestimonialsCopy,
@@ -67,17 +69,27 @@ function AnchorButton({
   );
 }
 
-export function ReplayHero({ variant }: { variant: ReplayVariant }) {
+export function ReplayHero({
+  variant,
+  expiresAt,
+}: {
+  variant: ReplayVariant;
+  expiresAt: string | null;
+}) {
   return (
     <section className="border-ink border-b-2 bg-white">
       <div className="mx-auto flex max-w-[980px] flex-col items-center gap-6 px-5 py-14 text-center lg:px-10">
-        <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-          {replayExpiresLabel}
-        </p>
-        <Countdown
-          startsAt={REPLAY_EXPIRES_AT}
-          expiredLabel="This replay has ended"
-        />
+        {expiresAt ? (
+          <>
+            <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+              {replayExpiresLabel}
+            </p>
+            <Countdown
+              startsAt={expiresAt}
+              expiredLabel="This replay has ended"
+            />
+          </>
+        ) : null}
         <h1 className="text-ink text-[clamp(1.7rem,3.6vw,2.8rem)] leading-[1.15] font-black uppercase">
           {variant.heading}
         </h1>
@@ -113,11 +125,9 @@ export function ReplayHero({ variant }: { variant: ReplayVariant }) {
 export function ReplayBooking({
   variant,
   attribution,
-  idempotencyKey,
 }: {
   variant: ReplayVariant;
   attribution: LeadAttribution;
-  idempotencyKey: string;
 }) {
   const cta = variant.cta;
   if (!cta) return null;
@@ -136,12 +146,8 @@ export function ReplayBooking({
           ))}
         </div>
         <div className="mt-8">
-          {cta.action.kind === "form" ? (
-            <BookingForm
-              attribution={attribution}
-              idempotencyKey={idempotencyKey}
-              calendlyUrl={cta.action.calendlyUrl}
-            />
+          {cta.action.kind === "ghl-form" ? (
+            <GhlForm attribution={attribution} />
           ) : (
             <CalendlyEmbed
               url={cta.action.calendlyUrl}
@@ -151,6 +157,40 @@ export function ReplayBooking({
         </div>
       </div>
     </section>
+  );
+}
+
+const FORWARDED = [
+  "utm_source",
+  "utm_medium",
+  "utm_campaign",
+  "utm_term",
+  "utm_content",
+] as const;
+
+/**
+ * GHL's own form, so GHL receives the submission, the score, and runs its
+ * redirect exactly as on the GHL page. Deliberately not the site lead form,
+ * which would write lead_submissions and sync to Close.
+ */
+function GhlForm({ attribution }: { attribution: LeadAttribution }) {
+  const src = new URL(REPLAY_GHL_FORM_SRC);
+  for (const key of FORWARDED) {
+    if (attribution[key]) src.searchParams.set(key, attribution[key]);
+  }
+  return (
+    <div className="rounded-card border-ink shadow-card overflow-hidden border-2 bg-white">
+      <iframe
+        id={`inline-${REPLAY_GHL_FORM_ID}`}
+        src={src.toString()}
+        title="Lead Scoring -> Book a Call"
+        className="block h-[900px] w-full border-0"
+        data-form-id={REPLAY_GHL_FORM_ID}
+        data-layout="{'id':'INLINE'}"
+        data-form-name="Lead Scoring -> Book a Call"
+      />
+      <Script src={REPLAY_GHL_FORM_SCRIPT} strategy="lazyOnload" />
+    </div>
   );
 }
 

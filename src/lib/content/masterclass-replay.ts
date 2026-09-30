@@ -1,3 +1,5 @@
+import { chicagoHour } from "@/lib/content/masterclass";
+
 // Copy and wiring for the four webinar replay pages, rebuilt from the GHL
 // funnel "How to Build a Smart Vending Business in 2026"
 // (webinar.vendingpreneurs.com/masterclass-replay-{dna,adnb,meta,advisory-team-798452}).
@@ -19,12 +21,58 @@ export const REPLAY_PATHS: Record<ReplayVariantKey, `/${string}`> = {
 };
 
 /**
- * GHL countdown ("timerType: countdown", identical on all four pages): end date
- * 2026-10-04, end time 23:00, timezone America/Chicago (CDT, UTC-5). It is a
- * fixed date baked into each GHL page, not a GHL custom value. On expiry GHL
- * redirects to "#", i.e. does nothing, and the page stays up.
+ * GHL hand-edits a fixed countdown weekly. The observed rule: the replay
+ * expires the Sunday BEFORE the next webinar at 23:00 America/Chicago (Oct 4
+ * 23:00 CT for the Oct 6 room). Derived here from the next event start, which
+ * masterclass-event.ts reads from the GHL "Webinar Date n Time" value.
+ * Returns null when there is no usable start, so the page hides the countdown
+ * rather than showing a wrong one.
  */
-export const REPLAY_EXPIRES_AT = "2026-10-05T04:00:00.000Z";
+export function replayExpiry(startsAt: string | null): string | null {
+  const start = startsAt ? new Date(startsAt) : null;
+  if (!start || Number.isNaN(start.getTime())) return null;
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Chicago",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      weekday: "short",
+    })
+      .formatToParts(start)
+      .map((p) => [p.type, p.value]),
+  );
+  const weekday = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(
+    parts.weekday,
+  );
+  // Strictly before the event day: a Sunday event expires the prior Sunday.
+  const back = weekday === 0 ? 7 : weekday;
+  const sunday = new Date(
+    Date.UTC(
+      Number(parts.year),
+      Number(parts.month) - 1,
+      Number(parts.day) - back,
+    ),
+  );
+  for (const offsetHours of [5, 6]) {
+    const candidate = new Date(
+      Date.UTC(
+        sunday.getUTCFullYear(),
+        sunday.getUTCMonth(),
+        sunday.getUTCDate(),
+        23 + offsetHours,
+      ),
+    );
+    if (chicagoHour(candidate) === 23) return candidate.toISOString();
+  }
+  return null;
+}
+
+/** The GHL "Lead Scoring -> Book a Call" form, embedded as-is on DNA and Meta. */
+export const REPLAY_GHL_FORM_ID = "0vrICJhXXOmSC9aGHj3P";
+export const REPLAY_GHL_FORM_SRC = `https://api.leadconnectorhq.com/widget/form/${REPLAY_GHL_FORM_ID}`;
+export const REPLAY_GHL_FORM_SCRIPT =
+  "https://link.msgsndr.com/js/form_embed.js";
 
 /** Every GHL "Lead Scoring -> Book a Call" score band redirects to this page. */
 export const REPLAY_L1_BOOKING_CALENDLY =
@@ -46,7 +94,7 @@ export const REPLAY_ANCHORS = {
 } as const;
 
 export type ReplayCta =
-  | { kind: "form"; calendlyUrl: string }
+  | { kind: "ghl-form" }
   | { kind: "calendly"; calendlyUrl: string };
 
 export type ReplayVariant = {
@@ -103,7 +151,7 @@ const READY_TO_BUILD = {
     "Complete the short application below and schedule a Strategy Call. We'll learn about your goals, answer your questions, and if it makes sense, show you the fastest path to building your own vending business.",
     "Fill out the application below to reserve your call.",
   ],
-  action: { kind: "form", calendlyUrl: REPLAY_L1_BOOKING_CALENDLY },
+  action: { kind: "ghl-form" },
 } as const;
 
 export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {

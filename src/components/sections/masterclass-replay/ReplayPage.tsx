@@ -1,6 +1,5 @@
 import "server-only";
 
-import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import "@/app/home-v2.css";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
@@ -10,9 +9,11 @@ import {
   ReplayTestimonials,
 } from "@/components/sections/masterclass-replay/ReplaySections";
 import {
+  replayExpiry,
   replayVariants,
   type ReplayVariantKey,
 } from "@/lib/content/masterclass-replay";
+import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 import {
   buildLeadAttribution,
   type LeadSearchParams,
@@ -31,15 +32,15 @@ export async function renderReplayPage(
   searchParams: Promise<LeadSearchParams>,
 ) {
   const variant = replayVariants[key];
-  const attribution = buildLeadAttribution(await searchParams, variant.path);
+  const [event, params] = await Promise.all([
+    getMasterclassEvent(),
+    searchParams,
+  ]);
+  const attribution = buildLeadAttribution(params, variant.path);
   return (
     <main>
-      <ReplayHero variant={variant} />
-      <ReplayBooking
-        variant={variant}
-        attribution={attribution}
-        idempotencyKey={randomUUID()}
-      />
+      <ReplayHero variant={variant} expiresAt={replayExpiry(event.startsAt)} />
+      <ReplayBooking variant={variant} attribution={attribution} />
       <ReplayTestimonials variant={variant} />
       <MasterclassFooter />
     </main>

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   REPLAY_ADVISORY_CALENDLY,
-  REPLAY_EXPIRES_AT,
+  REPLAY_GHL_FORM_SRC,
+  replayExpiry,
   REPLAY_L1_BOOKING_CALENDLY,
   REPLAY_MAIN_VIDEO,
   REPLAY_PATHS,
@@ -31,15 +32,14 @@ describe("masterclass replay content", () => {
   });
 
   it("matches the GHL booking destination per variant", () => {
-    // DNA and meta: GHL form "Lead Scoring -> Book a Call", every score band
-    // redirects to /book-my-advisory-call-l1-topcl (this Calendly).
+    // DNA and meta: the GHL form itself ("Lead Scoring -> Book a Call"); GHL
+    // redirects every score band to /book-my-advisory-call-l1-topcl.
     for (const key of ["dna", "meta"] as const) {
-      expect(replayVariants[key].cta?.action).toEqual({
-        kind: "form",
-        calendlyUrl:
-          "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call",
-      });
+      expect(replayVariants[key].cta?.action).toEqual({ kind: "ghl-form" });
     }
+    expect(REPLAY_GHL_FORM_SRC).toBe(
+      "https://api.leadconnectorhq.com/widget/form/0vrICJhXXOmSC9aGHj3P",
+    );
     expect(REPLAY_L1_BOOKING_CALENDLY).toContain("cvr6-cfd-zgd");
     // ADNB: inline Calendly embed.
     expect(replayVariants.adnb.cta?.action).toEqual({
@@ -76,8 +76,32 @@ describe("masterclass replay content", () => {
     ]);
   });
 
-  it("expires 2026-10-04 23:00 America/Chicago, as the GHL countdown", () => {
-    expect(REPLAY_EXPIRES_AT).toBe("2026-10-05T04:00:00.000Z");
+  it("expires the Sunday before the event at 23:00 America/Chicago", () => {
+    // Oct 6 2026 7:30 PM CDT (Tuesday) -> Sun Oct 4 23:00 CDT.
+    expect(replayExpiry("2026-10-07T00:30:00.000Z")).toBe(
+      "2026-10-05T04:00:00.000Z",
+    );
+    // Across the Nov 1 DST end: Tue Nov 3 -> Sun Nov 1 23:00 CST (UTC-6).
+    expect(replayExpiry("2026-11-04T01:30:00.000Z")).toBe(
+      "2026-11-02T05:00:00.000Z",
+    );
+    // Just before the change: Tue Oct 27 -> Sun Oct 25 23:00 CDT (UTC-5).
+    expect(replayExpiry("2026-10-28T00:30:00.000Z")).toBe(
+      "2026-10-26T04:00:00.000Z",
+    );
+    // After: Tue Nov 10 -> Sun Nov 8 23:00 CST.
+    expect(replayExpiry("2026-11-11T01:30:00.000Z")).toBe(
+      "2026-11-09T05:00:00.000Z",
+    );
+    // Sunday event -> the prior Sunday. Mar 2027 spring forward: Tue Mar 16.
+    expect(replayExpiry("2027-03-17T00:30:00.000Z")).toBe(
+      "2027-03-15T04:00:00.000Z",
+    );
+  });
+
+  it("returns null (countdown hidden) without a usable start", () => {
+    expect(replayExpiry(null)).toBeNull();
+    expect(replayExpiry("not a date")).toBeNull();
   });
 
   it("carries no emoji", () => {
