@@ -19,7 +19,7 @@ describe("playbook offer", () => {
     expect(new URL(href).origin).toBe("https://webinar.vendingpreneurs.com");
   });
 
-  it("carries UTMs and prefill, drops everything else", () => {
+  it("carries UTMs and the name, never email or phone (PII stays out of URLs)", () => {
     const url = new URL(
       checkoutHref({
         utm_source: "fb",
@@ -35,8 +35,6 @@ describe("playbook offer", () => {
       utm_source: "fb",
       fbclid: "x1",
       full_name: "Ann Lee",
-      email: "a@b.co",
-      phone: "+15551234567",
     });
   });
 

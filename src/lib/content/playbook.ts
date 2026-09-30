@@ -28,9 +28,9 @@ export const PLAYBOOK_ATTRIBUTION_KEYS = [
 /**
  * Order-form prefill. Verified in the GHL order-form bundle, which reads these
  * from the page query on mount: full_name, company_name, email, phone,
- * postal_code, address, state, city, country. Only the contact trio is passed.
+ * postal_code, address, state, city, country. Only the name is passed: email and
+ * phone in a URL end up in logs, analytics and referrers (review 2026-09-30).
  */
-export const PLAYBOOK_PREFILL_KEYS = ["full_name", "email", "phone"] as const;
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -51,10 +51,6 @@ export function pickPlaybookParams(params: SearchParams): URLSearchParams {
       .filter(Boolean)
       .join(" ");
   if (fullName) out.set("full_name", fullName);
-  for (const key of ["email", "phone"] as const) {
-    const value = first(params[key]);
-    if (value) out.set(key, value);
-  }
   return out;
 }
 

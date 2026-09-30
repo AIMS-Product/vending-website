@@ -39,10 +39,19 @@ export async function renderReplayPage(
   const attribution = buildLeadAttribution(params, variant.path);
   return (
     <main>
-      <ReplayHero variant={variant} expiresAt={replayExpiry(event.startsAt)} />
+      <ReplayHero variant={variant} expiresAt={liveExpiry(event.startsAt)} />
       <ReplayBooking variant={variant} attribution={attribution} />
       <ReplayTestimonials variant={variant} />
       <MasterclassFooter />
     </main>
   );
+}
+
+/**
+ * Between Sunday 23:00 and the next room the expiry is in the past while the
+ * replay still plays, so show no countdown then rather than "ended".
+ */
+function liveExpiry(startsAt: string | null): string | null {
+  const expiry = replayExpiry(startsAt);
+  return expiry && Date.parse(expiry) > Date.now() ? expiry : null;
 }
