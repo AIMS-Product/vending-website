@@ -1,3 +1,8 @@
+import {
+  AppleLogo,
+  GoogleCalendarLogo,
+  OutlookLogo,
+} from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
@@ -54,23 +59,34 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
               href={links.google}
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonClass()}
+              className={buttonClass({ className: "gap-2.5" })}
             >
+              <span className="grid size-7 place-items-center rounded-md bg-white">
+                <GoogleCalendarLogo />
+              </span>
               Google Calendar
             </a>
             <a
               href={links.ics}
               download="vendingpreneurs-masterclass.ics"
-              className={buttonClass({ variant: "ghost" })}
+              className={buttonClass({
+                variant: "ghost",
+                className: "gap-2.5",
+              })}
             >
+              <AppleLogo />
               Apple / iCal
             </a>
             <a
               href={links.outlook}
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonClass({ variant: "ghost" })}
+              className={buttonClass({
+                variant: "ghost",
+                className: "gap-2.5",
+              })}
             >
+              <OutlookLogo />
               Outlook
             </a>
           </div>

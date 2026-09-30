@@ -35,6 +35,7 @@ export type RegistrationState = {
     lastName: string;
     email: string;
     phone: string;
+    smsConsent: boolean;
   };
 };
 
@@ -92,10 +93,10 @@ export async function registerForMasterclass(
     lastName: text("lastName"),
     email: text("email"),
     phone: text("phone"),
+    smsConsent: formData.get("smsConsent") === "on",
   };
   const parsed = registration.safeParse({
     ...values,
-    smsConsent: formData.get("smsConsent") === "on",
     attribution: Object.fromEntries(
       ATTRIBUTION_KEYS.map((key) => [key, text(key)]).filter(([, v]) => v),
     ),

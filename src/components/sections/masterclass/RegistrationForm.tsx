@@ -98,6 +98,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
           type="checkbox"
           name="smsConsent"
           required
+          defaultChecked={values?.smsConsent}
           aria-invalid={errors.smsConsent ? true : undefined}
           aria-describedby={errors.smsConsent ? "smsConsent-error" : undefined}
           className="mt-0.5 size-4 shrink-0 accent-[#1f72a5]"
