@@ -244,7 +244,7 @@ export function parseWebinarStart(text: string): Date | null {
   return null;
 }
 
-function chicagoHour(date: Date): number {
+export function chicagoHour(date: Date): number {
   const text = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Chicago",
     hour: "numeric",

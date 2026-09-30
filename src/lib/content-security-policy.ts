@@ -36,6 +36,7 @@ const SCRIPT_HOSTS = [
   "https://mccdn.me",
   "https://wisepops.net", // Wisepops
   "https://assets.calendly.com", // Calendly embed
+  "https://link.msgsndr.com", // GHL form_embed.js (replay pages)
 ] as const;
 
 /** Where the tags above report back to, plus our own Supabase and Sentry. */
@@ -73,6 +74,7 @@ const FRAME_HOSTS = [
   "https://www.facebook.com", // Meta Pixel fallback
   "https://fast.vidalytics.com",
   "https://widget.manychat.com",
+  "https://api.leadconnectorhq.com", // GHL form widget (replay pages)
 ] as const;
 
 export const CSP_REPORT_PATH = "/api/csp-report";

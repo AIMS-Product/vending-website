@@ -22,7 +22,13 @@ const UNITS = [
  * confirmation page's timer it never needs a weekly hand reset. Renders
  * nothing until mounted so the server and client never disagree on a second.
  */
-export function Countdown({ startsAt }: { startsAt: string }) {
+export function Countdown({
+  startsAt,
+  expiredLabel = "We are live now",
+}: {
+  startsAt: string;
+  expiredLabel?: string;
+}) {
   const target = Date.parse(startsAt);
   const now = useSyncExternalStore(subscribeToSeconds, readSecond, readNothing);
 
@@ -30,7 +36,7 @@ export function Countdown({ startsAt }: { startsAt: string }) {
   const left = target - now;
   if (left <= 0) {
     return (
-      <p className="text-ink text-2xl font-black uppercase">We are live now</p>
+      <p className="text-ink text-2xl font-black uppercase">{expiredLabel}</p>
     );
   }
 
