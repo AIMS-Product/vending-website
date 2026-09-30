@@ -14,7 +14,7 @@ export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
       <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 py-14 lg:grid-cols-[0.85fr_1.15fr] lg:px-10 lg:py-20">
         <div>
           <p className={EYEBROW}>{hero.eyebrow}</p>
-          <h1 className="text-ink mt-3 text-[clamp(2rem,5vw,3.6rem)] leading-[1.1] font-black uppercase">
+          <h1 className="text-ink mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.05] font-black uppercase">
             {before}
             <Highlight>{hero.highlight}</Highlight>
             {after}
