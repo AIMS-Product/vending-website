@@ -27,6 +27,15 @@ export const reviewCopy = {
       body: "You land on your confirmation page: your name, the live countdown, add-to-calendar buttons (try one), what the call covers and member stories that play in place.",
     },
     {
+      title: "Answer the 3 questions",
+      body: "On the confirmation page, answer the short questions. They save to your contact in GoHighLevel, the same fields the old GHL form filled.",
+    },
+    {
+      title: "Open the Playbook offer",
+      body: "Click through the $67 Playbook offer to the checkout. Your name carries into the checkout. Do not complete the purchase unless you mean it: it is a real card charge.",
+      cta: { label: "Open the Playbook page", href: `/playbook?${REVIEW_UTM}` },
+    },
+    {
       title: "Check your phone and inbox (within a minute)",
       body: 'A text from Anthony confirming your seat. An email "You\'re in!" from anthony@webinar.vendingpreneurs.co. A Zoom email with your personal join link. If one is missing, check spam, then tell Adam.',
     },
@@ -68,6 +77,16 @@ export const reviewCopy = {
       detail: "Lead created in the webinar cohort (about 9 seconds).",
     },
     {
+      step: "Intake answers",
+      detail:
+        "The 3 questions on the confirmation page save to the same GHL contact.",
+    },
+    {
+      step: "Playbook offer",
+      detail:
+        "The $67 offer page on our site; checkout and payment stay on the GHL checkout (Stripe), prefilled.",
+    },
+    {
       step: "Meta",
       detail: "Registration reported to Meta for ad optimisation.",
     },
@@ -83,6 +102,17 @@ export const reviewCopy = {
       label: "Confirmation page (preview)",
       href: "/masterclass-confirmed?first=Team",
     },
+    { label: "Playbook offer ($67)", href: `/playbook?${REVIEW_UTM}` },
+    {
+      label: "Replay: registered, did not attend",
+      href: "/masterclass-replay-dna",
+    },
+    {
+      label: "Replay: attended, did not book",
+      href: "/masterclass-replay-adnb",
+    },
+    { label: "Replay: Meta retargeting", href: "/masterclass-replay-meta" },
+    { label: "Replay: advisory team", href: "/masterclass-replay-advisory" },
     {
       label: "Current GHL registration page",
       href: "https://webinar.vendingpreneurs.com/home",

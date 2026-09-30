@@ -6,6 +6,7 @@ import {
 import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
 import Image from "next/image";
+import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
@@ -206,5 +207,16 @@ function Step({
       <p className="text-ink mt-2 text-xl font-black uppercase">{title}</p>
       <p className="mt-2 text-[15px] text-slate-600">{children}</p>
     </div>
+  );
+}
+
+/** The low-ticket offer the GHL emails promote, offered while the visitor is here. */
+export function PlaybookBand({ first }: { first: string | undefined }) {
+  return (
+    <section className="bg-white">
+      <div className="mx-auto max-w-[860px] px-5 pb-14 lg:px-10">
+        <PlaybookTeaser searchParams={first ? { first_name: first } : {}} />
+      </div>
+    </section>
   );
 }

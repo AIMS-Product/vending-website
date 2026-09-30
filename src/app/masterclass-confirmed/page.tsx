@@ -8,6 +8,7 @@ import {
   CoverSection,
   FeaturedStories,
   NextSteps,
+  PlaybookBand,
 } from "@/components/sections/masterclass/ConfirmedSections";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
 import { config } from "@/lib/config";
@@ -71,6 +72,7 @@ export default async function MasterclassConfirmedPage({
       />
       <NextSteps />
       {hasSession ? <IntakeForm /> : null}
+      <PlaybookBand first={rawFirst?.trim().slice(0, 40)} />
       <CoverSection />
       <FeaturedStories stories={stories} />
       <MasterclassFooter />
