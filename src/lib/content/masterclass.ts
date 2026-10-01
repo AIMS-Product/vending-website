@@ -183,7 +183,8 @@ export const masterclassHero = {
   formHeading: "Secure your free spot",
   headline: "Your company can replace you. Your business can't.",
   subheadline: "Learn how to build a cash-flowing vending route in 2026",
-  highlight: "can't.",
+  /** Highlighted with a left-to-right sweep (Adam, 2026-10-01). */
+  highlight: "Your business can't.",
   videoCue: "Watch Anthony's story",
   /** Under the phone field. True to the GHL texts: link at T-15m and T-0. */
   phoneHint: "We text your Zoom link and a 15-minute reminder.",
@@ -676,3 +677,14 @@ export const masterclassCalendarEvent = (start: Date): CalendarEvent => ({
   start,
   minutes: MASTERCLASS_MINUTES,
 });
+
+/**
+ * A member card's "Was:" line, short: the text before any "(" or ";" detail
+ * ("Blue-collar worker (Air Force, ...); ran a ..." -> "Blue-collar worker").
+ * The case-study article keeps the full field (Adam, 2026-10-01).
+ */
+export function shortOccupation(text: string): string {
+  const cut = text.search(/\s*[(;]/);
+  const short = (cut > 0 ? text.slice(0, cut) : text).trim();
+  return short || text.trim();
+}

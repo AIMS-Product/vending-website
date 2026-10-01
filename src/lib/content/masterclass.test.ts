@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ATTRIBUTION_KEYS,
+  shortOccupation,
   stickyEventLine,
   MASTERCLASS_ICS_PATH,
   calendarIcs,
@@ -273,5 +274,22 @@ describe("stickyEventLine", () => {
       "Free live masterclass",
     );
     expect(stickyEventLine(null, 0)).toBe("Free live masterclass");
+  });
+});
+
+describe("shortOccupation", () => {
+  it("keeps the role before any detail", () => {
+    expect(
+      shortOccupation(
+        "Blue-collar worker (Air Force, construction, mail carrier); ran a crypto-mining farm",
+      ),
+    ).toBe("Blue-collar worker");
+    expect(shortOccupation("Corporate sales (startups, life insurance)")).toBe(
+      "Corporate sales",
+    );
+    expect(shortOccupation("Sales team manager, software company")).toBe(
+      "Sales team manager, software company",
+    );
+    expect(shortOccupation("(odd) text")).toBe("(odd) text");
   });
 });

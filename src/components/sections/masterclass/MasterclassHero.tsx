@@ -98,7 +98,7 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
                 ) : (
                   <>
                     {text.slice(0, at)}
-                    <Highlight>{copy.highlight}</Highlight>
+                    <Highlight className="mc-sweep">{copy.highlight}</Highlight>
                     {text.slice(at + copy.highlight.length)}
                   </>
                 )}

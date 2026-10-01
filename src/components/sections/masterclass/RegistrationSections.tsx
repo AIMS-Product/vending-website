@@ -24,6 +24,7 @@ import {
   masterclassLiveEnd,
   notFitFor,
   storiesCopy,
+  shortOccupation,
 } from "@/lib/content/masterclass";
 import { parseStats } from "@/lib/case-studies/stats";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
@@ -299,8 +300,8 @@ export function StoryList({
                 {story.member_name}
               </p>
               {story.prior_occupation ? (
-                <p className="text-ink/70 text-[14px] leading-snug font-semibold sm:min-h-[3lh]">
-                  Was: {story.prior_occupation}
+                <p className="text-ink/70 text-[14px] leading-snug font-semibold sm:min-h-[2lh]">
+                  Was: {shortOccupation(story.prior_occupation)}
                 </p>
               ) : null}
               {first || second ? (
