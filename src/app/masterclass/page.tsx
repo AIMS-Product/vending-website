@@ -24,7 +24,7 @@ export const revalidate = 300;
 
 // Not linked anywhere and kept out of search until it has won a split test.
 export const metadata: Metadata = {
-  title: "Free Vending Masterclass | Vendingpreneurs",
+  title: "Free Vending Masterclass",
   description:
     "Free live masterclass: how everyday professionals build a cash-flowing vending route in 2026.",
   robots: { index: false, follow: false },
