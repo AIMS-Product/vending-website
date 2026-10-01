@@ -58,22 +58,62 @@ describe("masterclass replay content", () => {
       replayVariants[key].testimonialVideos.map((v) =>
         v.kind === "youtube" ? v.id : v.embedId,
       );
+    // Same order as replayTestimonials: Michael, Joe, Mallorie, Shannon,
+    // Katie + Graham.
+    expect(replayTestimonials.map((t) => t.name)).toEqual([
+      "Michael",
+      "Joe",
+      "Mallorie",
+      "Shannon",
+      "Katie + Graham",
+    ]);
     expect(ids("dna")).toEqual([
       "U7KKbZHqBvg",
-      "yP4Y_BBAvq4",
-      "heSbv_uG734",
       "gvvz2nMax0w",
       "io1Jkei-yFs",
+      "yP4Y_BBAvq4",
+      "heSbv_uG734",
     ]);
     expect(ids("adnb")).toEqual(ids("dna"));
     expect(ids("advisory")).toEqual(ids("dna"));
     expect(ids("meta")).toEqual([
       "JcjYb4jILP6zsniI",
-      "OHz6S1sB3ahBvu8D",
-      "LchE9_kgP012adAZ",
       "U1unfH4Jvr6TjBrS",
       "5IT3tUDRQOJfSJ2m",
+      "OHz6S1sB3ahBvu8D",
+      "LchE9_kgP012adAZ",
     ]);
+  });
+
+  it("gives every Vidalytics testimonial a poster: the same member's YouTube thumbnail", () => {
+    const youtubeIds = replayVariants.dna.testimonialVideos.map((v) =>
+      v.kind === "youtube" ? v.id : null,
+    );
+    for (const key of KEYS) {
+      replayVariants[key].testimonialVideos.forEach((video, index) => {
+        if (video.kind !== "vidalytics") return;
+        expect(video.poster).toBe(
+          `https://i.ytimg.com/vi/${youtubeIds[index]}/hqdefault.jpg`,
+        );
+      });
+    }
+    expect(
+      replayVariants.meta.testimonialVideos.every(
+        (v) => v.kind === "vidalytics" && Boolean(v.poster),
+      ),
+    ).toBe(true);
+  });
+
+  it("links the DNA booking step and closes meta with a CTA to the form", () => {
+    expect(replayVariants.dna.steps.map((s) => s.label)).toEqual([
+      "Watch the replay",
+      "Set up call below to get your free advisory call",
+    ]);
+    expect(replayVariants.dna.steps[1].target).toBe("cta");
+    expect(replayVariants.meta.closing).toEqual({
+      label: "Reserve my free advisory call",
+      target: "cta",
+    });
   });
 
   it("expires the Sunday before the event at 23:00 America/Chicago", () => {

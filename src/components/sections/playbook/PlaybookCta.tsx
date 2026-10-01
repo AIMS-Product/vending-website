@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/Button";
+import { PRICE } from "@/lib/content/playbook";
 import { cn } from "@/lib/utils";
 
 interface PlaybookCtaProps {
@@ -7,12 +8,39 @@ interface PlaybookCtaProps {
   className?: string;
 }
 
-/** Every buy button on /playbook: one link to the GHL order form. */
+/**
+ * Every buy button on /playbook: one link to the GHL order form. Full width
+ * below sm so every phone CTA is the same 56px bar.
+ */
 export function PlaybookCta({ href, label, className }: PlaybookCtaProps) {
   return (
-    <Button href={href} size="lg" showArrow className={className}>
+    <Button
+      href={href}
+      size="lg"
+      showArrow
+      className={cn("min-h-14 w-full sm:w-auto", className)}
+    >
       {label}
     </Button>
+  );
+}
+
+/** $199 struck, $67, and the save line: the compact price tag. */
+export function PriceTag({ className }: { className?: string }) {
+  return (
+    <div
+      className={cn("flex flex-wrap items-baseline gap-x-3 gap-y-1", className)}
+    >
+      <span className="text-ink/55 text-xl font-black line-through">
+        <span className="sr-only">Was </span>
+        {PRICE.anchor}
+      </span>
+      <span className="v2-display text-brand-700 text-5xl leading-none">
+        <span className="sr-only">Now </span>
+        {PRICE.today}
+      </span>
+      <span className="text-sm font-bold">{PRICE.save}</span>
+    </div>
   );
 }
 
@@ -56,5 +84,5 @@ export const H2 =
   "v2-display text-ink text-[clamp(2.3rem,4.6vw,3.75rem)] leading-[1.02] uppercase";
 export const EYEBROW =
   "text-eyebrow text-xs font-black tracking-[0.14em] uppercase";
-/** Oversized outlined numeral used for chapters, steps and bonuses. */
+/** Oversized outlined numeral used for chapters and steps. */
 export const NUMERAL = "v2-display v2-outline leading-none tabular-nums";

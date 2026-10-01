@@ -83,6 +83,22 @@ beforeEach(() => {
 });
 
 describe("registerForMasterclass", () => {
+  it("carries the ad attribution into the confirmation redirect", async () => {
+    await expect(
+      registerForMasterclass({}, form({ gclid: "g-1" })),
+    ).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?first=Mary&utm_source=meta&utm_content=120251367443830338&gclid=g-1",
+    );
+  });
+
+  it("says plainly when a name is too long", async () => {
+    const state = await registerForMasterclass(
+      {},
+      form({ firstName: "A".repeat(41) }),
+    );
+    expect(state.errors?.firstName).toBe("Use 40 characters or fewer");
+  });
+
   it("registers through GHL with this room's tag, then confirms", async () => {
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
       "REDIRECT /masterclass-confirmed?first=Mary",

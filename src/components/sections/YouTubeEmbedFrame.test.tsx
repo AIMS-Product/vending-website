@@ -15,6 +15,26 @@ describe("YouTubeEmbedFrame", () => {
     expect(html).toContain("hqdefault.jpg");
   });
 
+  it("keeps the centred disc by default and moves it to the corner on cards", () => {
+    const hero = renderToStaticMarkup(
+      <YouTubeEmbedFrame embed={embed} title="Host video" />,
+    );
+    expect(hero).toContain("-translate-x-1/2");
+    expect(hero).not.toContain("bottom-3 left-3");
+
+    const card = renderToStaticMarkup(
+      <YouTubeEmbedFrame embed={embed} title="Member story" variant="card" />,
+    );
+    // Clear of the burned-in result text, and no centring translate.
+    expect(card).toContain("bottom-3 left-3");
+    expect(card).toContain("size-12");
+    expect(card).toContain("border-ink");
+    expect(card).not.toContain("-translate-x-1/2");
+    // The whole thumbnail is still the one labelled button.
+    expect(card).toContain('aria-label="Play Member story"');
+    expect(card.match(/<button/g)).toHaveLength(1);
+  });
+
   // The iframe only mounts after a click, so it is unreachable from a server
   // render. Guard the source instead: a `sandbox` without allow-same-origin
   // gives the frame an opaque origin the YouTube player cannot run in, and it

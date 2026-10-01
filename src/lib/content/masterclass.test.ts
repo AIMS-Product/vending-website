@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { calendarLinks, parseWebinarStart } from "./masterclass";
+import {
+  ATTRIBUTION_KEYS,
+  calendarLinks,
+  confirmedPlaybookParams,
+  parseWebinarStart,
+  safeFirstName,
+} from "./masterclass";
+import { playbookHref } from "./playbook";
 
 describe("parseWebinarStart", () => {
   it("reads the GHL date value as Central time", () => {
@@ -43,5 +50,64 @@ describe("calendarLinks", () => {
       "20261007T003000Z/20261007T014500Z",
     );
     expect(decodeURIComponent(links.ics)).toContain("DTSTART:20261007T003000Z");
+  });
+});
+
+describe("ATTRIBUTION_KEYS", () => {
+  it("carries Google click ids as well as UTMs and fbclid", () => {
+    expect(ATTRIBUTION_KEYS).toEqual(
+      expect.arrayContaining([
+        "utm_source",
+        "fbclid",
+        "gclid",
+        "gbraid",
+        "wbraid",
+      ]),
+    );
+  });
+});
+
+describe("safeFirstName", () => {
+  it("accepts a plain name and rejects anything else", () => {
+    expect(safeFirstName({ first: " Mary " })).toBe("Mary");
+    expect(safeFirstName({ first: "Anne-Marie O'Neil" })).toBe(
+      "Anne-Marie O'Neil",
+    );
+    expect(safeFirstName({ first: "<script>" })).toBeUndefined();
+    expect(safeFirstName({ first: "visit evil.com" })).toBeUndefined();
+    expect(safeFirstName({})).toBeUndefined();
+  });
+});
+
+describe("confirmed page Playbook link", () => {
+  it("keeps the ad attribution and the validated first name", () => {
+    const href = playbookHref(
+      confirmedPlaybookParams({
+        first: "Mary",
+        utm_source: "meta",
+        utm_campaign: "sep-22",
+        fbclid: "abc",
+      }),
+    );
+    const query = new URL(href, "https://x.test").searchParams;
+    expect(query.get("utm_source")).toBe("meta");
+    expect(query.get("utm_campaign")).toBe("sep-22");
+    expect(query.get("fbclid")).toBe("abc");
+    expect(query.get("full_name")).toBe("Mary");
+  });
+
+  it("never forwards contact details or an invalid name", () => {
+    const params = confirmedPlaybookParams({
+      first: "http://x",
+      email: "a@b.co",
+      phone: "5415550123",
+      full_name: "Someone Else",
+      utm_source: "meta",
+    });
+    const query = new URL(playbookHref(params), "https://x.test").searchParams;
+    expect(query.get("utm_source")).toBe("meta");
+    expect(query.has("full_name")).toBe(false);
+    expect(query.has("email")).toBe(false);
+    expect(query.has("phone")).toBe(false);
   });
 });

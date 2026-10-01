@@ -1,6 +1,8 @@
 import { buildCalendlySrc } from "@/lib/content/lead-embed";
 import { CalendlyBookingRedirect } from "./CalendlyBookingRedirect";
+import { CalendlyFrame } from "./CalendlyFrame";
 import type { LeadAttribution } from "@/lib/lead-attribution";
+import { cn } from "@/lib/utils";
 
 type CalendlyEmbedProps = {
   url: string;
@@ -9,6 +11,14 @@ type CalendlyEmbedProps = {
   /** Open straight on the date picker (hides Calendly's event-details block). */
   hideDetails?: boolean;
   title?: string;
+  /**
+   * Height classes for the iframe. Calendly stacks the month and the times
+   * on phones, so a single-column surface needs far more height there than
+   * on desktop (e.g. "h-[1050px] md:h-[700px]").
+   */
+  heightClassName?: string;
+  /** False drops the ink border and shadow, leaving only Calendly's own. */
+  framed?: boolean;
 };
 
 /**
@@ -25,16 +35,23 @@ export function CalendlyEmbed({
   attribution,
   hideDetails = false,
   title = "Book your Vendingpreneurs call",
+  heightClassName = "h-[720px]",
+  framed = true,
 }: CalendlyEmbedProps) {
   const src = buildCalendlySrc(url, attribution, { hideDetails });
 
   return (
-    <div className="w-full rounded-[10px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#55b8e8]">
-      <iframe
-        className="h-[720px] w-full rounded-[8px] border-0"
-        loading="eager"
+    <div
+      className={cn(
+        "relative w-full overflow-hidden",
+        framed &&
+          "rounded-[10px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#55b8e8]",
+      )}
+    >
+      <CalendlyFrame
         src={src}
         title={title}
+        heightClassName={heightClassName}
       />
       <CalendlyBookingRedirect url={src} />
     </div>

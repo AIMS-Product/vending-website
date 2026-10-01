@@ -10,6 +10,7 @@ import {
   HONEYPOT_FIELD,
   MASTERCLASS_BUSY_MESSAGE,
   MASTERCLASS_CONFIRMED_PATH,
+  NAME_PATTERN,
   registrationErrorCopy,
 } from "@/lib/content/masterclass";
 import {
@@ -42,7 +43,8 @@ export type RegistrationState = {
   };
 };
 
-const NAME = /^[\p{L}' -]+$/u;
+const NAME = NAME_PATTERN;
+const NAME_MAX = "Use 40 characters or fewer";
 
 const registration = z.object({
   // Names are merged into the confirmation SMS: letters only, so a form
@@ -51,12 +53,12 @@ const registration = z.object({
     .string()
     .trim()
     .min(1, "Enter your first name")
-    .max(40)
+    .max(40, NAME_MAX)
     .regex(NAME, "Use letters only"),
   lastName: z
     .string()
     .trim()
-    .max(40)
+    .max(40, NAME_MAX)
     .regex(/^$|^[\p{L}' -]+$/u, "Use letters only"),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   // US and Canada only (99 of the last 100 GHL registrants), as E.164.
@@ -113,7 +115,13 @@ export async function registerForMasterclass(
     return { errors, values };
   }
 
+  // The ad attribution rides along, so the confirmation page can hand it on
+  // to the Playbook checkout. Whitelisted and capped by the schema above.
   const next = new URLSearchParams({ first: parsed.data.firstName });
+  for (const key of ATTRIBUTION_KEYS) {
+    const value = parsed.data.attribution[key];
+    if (value) next.set(key, value.slice(0, 200));
+  }
   if (text(HONEYPOT_FIELD)) redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
 
   // Drop any earlier registration's intake session up front: a failed attempt

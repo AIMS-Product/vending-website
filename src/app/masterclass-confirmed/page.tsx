@@ -12,12 +12,15 @@ import {
   PlaybookBand,
 } from "@/components/sections/masterclass/ConfirmedSections";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
+import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { config } from "@/lib/config";
 import {
   MASTERCLASS_MINUTES,
   SENDER_EMAIL,
   calendarLinks,
   confirmedCopy,
+  confirmedPlaybookParams,
+  safeFirstName,
 } from "@/lib/content/masterclass";
 import {
   SESSION_COOKIE,
@@ -52,7 +55,9 @@ export default async function MasterclassConfirmedPage({
       config.MASTERCLASS_SESSION_SECRET,
     ),
   );
-  const rawFirst = Array.isArray(params.first) ? params.first[0] : params.first;
+  // Same name rule as the form: anything else falls back to the nameless
+  // greeting and no name is forwarded to the checkout.
+  const first = safeFirstName(params);
   const links = event.startsAt
     ? calendarLinks({
         title: confirmedCopy.calendarTitle,
@@ -64,16 +69,17 @@ export default async function MasterclassConfirmedPage({
 
   return (
     <main className={anton.variable}>
+      <StripPiiParams />
       <RevealObserver />
       <ConfirmedHero
-        first={rawFirst?.trim().slice(0, 40)}
+        first={first}
         label={event.label}
         startsAt={event.startsAt}
         links={links}
       />
       <NextSteps />
       {hasSession ? <IntakeForm /> : null}
-      <PlaybookBand first={rawFirst?.trim().slice(0, 40)} />
+      <PlaybookBand params={confirmedPlaybookParams(params)} />
       <CoverSection />
       <FeaturedStories stories={stories} />
       <MasterclassFooter />

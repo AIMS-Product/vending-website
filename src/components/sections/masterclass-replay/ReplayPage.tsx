@@ -9,6 +9,7 @@ import {
   ReplayHero,
   ReplayTestimonials,
 } from "@/components/sections/masterclass-replay/ReplaySections";
+import { StripPiiParams } from "@/components/sections/masterclass-replay/StripPiiParams";
 import {
   replayExpiry,
   replayVariants,
@@ -40,6 +41,7 @@ export async function renderReplayPage(
   const attribution = buildLeadAttribution(params, variant.path);
   return (
     <main className={anton.variable}>
+      <StripPiiParams />
       <ReplayHero variant={variant} expiresAt={liveExpiry(event.startsAt)} />
       <ReplayBooking variant={variant} attribution={attribution} />
       <ReplayTestimonials variant={variant} />

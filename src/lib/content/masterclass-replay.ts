@@ -10,7 +10,12 @@ import { chicagoHour } from "@/lib/content/masterclass";
 export type ReplayVariantKey = "dna" | "adnb" | "meta" | "advisory";
 
 export type ReplayVideo =
-  | { kind: "vidalytics"; embedId: string }
+  | {
+      kind: "vidalytics";
+      embedId: string;
+      /** Still shown behind the play button until the player loads. */
+      poster?: string;
+    }
   | { kind: "youtube"; id: string };
 
 export const REPLAY_PATHS: Record<ReplayVariantKey, `/${string}`> = {
@@ -97,6 +102,15 @@ export type ReplayCta =
   | { kind: "ghl-form" }
   | { kind: "calendly"; calendlyUrl: string };
 
+/** One paragraph of booking copy; `lines` are set on separate lines. */
+export type ReplayCtaParagraph = {
+  lines: readonly string[];
+  weight?: "black" | "semibold";
+};
+
+/** An under-video step; `target` makes it a link to that anchor. */
+export type ReplayStep = { label: string; target?: "video" | "cta" };
+
 export type ReplayVariant = {
   key: ReplayVariantKey;
   path: `/${string}`;
@@ -106,50 +120,60 @@ export type ReplayVariant = {
   /** Lines under the heading. */
   sub: readonly string[];
   /** Numbered steps shown under the video (DNA only). */
-  steps: readonly string[];
+  steps: readonly ReplayStep[];
   /** Replay-hero button: scrolls to the anchor named by `target`. */
   hero: { label: string; target: "video" | "cta" } | null;
   /** Booking section; null on the advisory page, which has none on GHL. */
   cta: {
     heading: string;
-    paragraphs: readonly string[];
+    /** Set larger and darker above the paragraphs. */
+    lead?: string;
+    paragraphs: readonly ReplayCtaParagraph[];
     action: ReplayCta;
   } | null;
   /** Repeat button after the testimonials. */
-  closing: { label: string; subLabel?: string; target: "video" | "cta" } | null;
+  closing: { label: string; target: "video" | "cta" } | null;
   testimonialVideos: readonly ReplayVideo[];
 };
 
 const youtube = (id: string): ReplayVideo => ({ kind: "youtube", id });
-const vidalytics = (embedId: string): ReplayVideo => ({
+/**
+ * Vidalytics shows nothing until its player loads, so each meta testimonial
+ * borrows the YouTube thumbnail of the same member's story as its poster.
+ */
+const vidalytics = (embedId: string, posterOf: string): ReplayVideo => ({
   kind: "vidalytics",
   embedId,
+  poster: `https://i.ytimg.com/vi/${posterOf}/hqdefault.jpg`,
 });
 
-// Same five member videos as GHL, in the order of the five testimonials below.
+// Same five member videos as GHL, in the order of the five testimonials below
+// (Michael, Joe, Mallorie, Shannon, Katie + Graham).
 const YOUTUBE_TESTIMONIAL_VIDEOS = [
   youtube("U7KKbZHqBvg"),
-  youtube("yP4Y_BBAvq4"),
-  youtube("heSbv_uG734"),
   youtube("gvvz2nMax0w"),
   youtube("io1Jkei-yFs"),
+  youtube("yP4Y_BBAvq4"),
+  youtube("heSbv_uG734"),
 ] as const;
 
 const META_TESTIMONIAL_VIDEOS = [
-  vidalytics("JcjYb4jILP6zsniI"),
-  vidalytics("OHz6S1sB3ahBvu8D"),
-  vidalytics("LchE9_kgP012adAZ"),
-  vidalytics("U1unfH4Jvr6TjBrS"),
-  vidalytics("5IT3tUDRQOJfSJ2m"),
+  vidalytics("JcjYb4jILP6zsniI", "U7KKbZHqBvg"),
+  vidalytics("U1unfH4Jvr6TjBrS", "gvvz2nMax0w"),
+  vidalytics("5IT3tUDRQOJfSJ2m", "io1Jkei-yFs"),
+  vidalytics("OHz6S1sB3ahBvu8D", "yP4Y_BBAvq4"),
+  vidalytics("LchE9_kgP012adAZ", "heSbv_uG734"),
 ] as const;
 
 const READY_TO_BUILD = {
   heading: "Ready to Build Something You Actually Own?",
+  lead: "You've seen the strategy. Now let's see if it's the right fit for you.",
   paragraphs: [
-    "You've seen the strategy.",
-    "Now let's see if it's the right fit for you.",
-    "Complete the short application below and schedule a Strategy Call. We'll learn about your goals, answer your questions, and if it makes sense, show you the fastest path to building your own vending business.",
-    "Fill out the application below to reserve your call.",
+    {
+      lines: [
+        "Complete the short application below and schedule a Strategy Call. We'll learn about your goals, answer your questions, and if it makes sense, show you the fastest path to building your own vending business.",
+      ],
+    },
   ],
   action: { kind: "ghl-form" },
 } as const;
@@ -165,16 +189,15 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
       "Inside, you'll see how entrepreneurs, professionals, and families are building recurring revenue through one of America's most overlooked business models.",
     ],
     steps: [
-      "1. Watch the replay",
-      "2. Set up call below to get your free advisory call",
+      { label: "Watch the replay" },
+      {
+        label: "Set up call below to get your free advisory call",
+        target: "cta",
+      },
     ],
     hero: null,
     cta: READY_TO_BUILD,
-    closing: {
-      label: "I am ready for my free advisory call",
-      subLabel: "click here",
-      target: "cta",
-    },
+    closing: { label: "I am ready for my free advisory call", target: "cta" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
   adnb: {
@@ -191,12 +214,29 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     cta: {
       heading: "Still Have Questions?",
       paragraphs: [
-        "Most people don't book a strategy call because they're still trying to figure out whether this business makes sense for their situation.",
-        "That's exactly what the call is for.",
-        "We'll look at your goals, timeline, available capital, and market to determine whether building a vending business is a realistic fit.",
-        "If it isn't, we'll tell you.",
-        "If it is, we'll show you what the next steps look like.",
-        "The replay won't be available forever, but the bigger question is whether you want clarity on whether this opportunity is right for you.",
+        {
+          lines: [
+            "Most people don't book a strategy call because they're still trying to figure out whether this business makes sense for their situation.",
+          ],
+        },
+        { lines: ["That's exactly what the call is for."], weight: "black" },
+        {
+          lines: [
+            "We'll look at your goals, timeline, available capital, and market to determine whether building a vending business is a realistic fit.",
+          ],
+        },
+        {
+          lines: [
+            "If it isn't, we'll tell you.",
+            "If it is, we'll show you what the next steps look like.",
+          ],
+          weight: "semibold",
+        },
+        {
+          lines: [
+            "The replay won't be available forever, but the bigger question is whether you want clarity on whether this opportunity is right for you.",
+          ],
+        },
       ],
       action: { kind: "calendly", calendlyUrl: REPLAY_ADVISORY_CALENDLY },
     },
@@ -216,7 +256,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     steps: [],
     hero: { label: "RESERVE MY FREE ADVISORY CALL", target: "cta" },
     cta: READY_TO_BUILD,
-    closing: null,
+    closing: { label: "Reserve my free advisory call", target: "cta" },
     testimonialVideos: META_TESTIMONIAL_VIDEOS,
   },
   advisory: {
@@ -246,10 +286,13 @@ export type ReplayTestimonial = {
   tag: string;
   quote: string;
   name: string;
+  /** Two figures joined by " | "; the card splits them at render. */
   result: string;
 };
 
-// GHL order, top to bottom.
+// GHL's five, reordered (wording untouched) so the two-card second row on
+// desktop pairs the two longest quotes and Mallorie's one-liner sits with the
+// two shortest.
 export const replayTestimonials: readonly ReplayTestimonial[] = [
   {
     tag: "Scaling With a W2",
@@ -257,20 +300,6 @@ export const replayTestimonials: readonly ReplayTestimonial[] = [
       "Joining Vendingpreneurs is one of the best business decisions I've ever had or ever made — simply because it's given me way more than I put into it. Way more.",
     name: "Michael",
     result: "18 locations | ~$54K/mo",
-  },
-  {
-    tag: "Scaling With a W2",
-    quote:
-      "I was really lucky to have Mike kind of walk me through a bunch of different areas and different steps — what does it really look like? How do you start your own business from the ground up?",
-    name: "Shannon",
-    result: "4 locations | ~$25K/mo",
-  },
-  {
-    tag: "Scaling Up Couple",
-    quote:
-      "Vendingpreneurs felt safer than the house thing. And I really liked it — I like to organize and do logistics and bookkeeping. This kind of falls within my wheelhouse.",
-    name: "Katie + Graham",
-    result: "16 machines | ~$36K/mo",
   },
   {
     tag: "Building Momentum",
@@ -285,5 +314,19 @@ export const replayTestimonials: readonly ReplayTestimonial[] = [
       "This community has been crucial in us building our business properly.",
     name: "Mallorie",
     result: "6 locations | ~$4K/mo",
+  },
+  {
+    tag: "Scaling With a W2",
+    quote:
+      "I was really lucky to have Mike kind of walk me through a bunch of different areas and different steps — what does it really look like? How do you start your own business from the ground up?",
+    name: "Shannon",
+    result: "4 locations | ~$25K/mo",
+  },
+  {
+    tag: "Scaling Up Couple",
+    quote:
+      "Vendingpreneurs felt safer than the house thing. And I really liked it — I like to organize and do logistics and bookkeeping. This kind of falls within my wheelhouse.",
+    name: "Katie + Graham",
+    result: "16 machines | ~$36K/mo",
   },
 ];

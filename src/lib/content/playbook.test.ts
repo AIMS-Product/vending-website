@@ -38,6 +38,19 @@ describe("playbook offer", () => {
     });
   });
 
+  it("carries Google Ads click ids (gclid, gbraid, wbraid) to checkout", () => {
+    const url = new URL(
+      checkoutHref({ gclid: "g1", gbraid: "b1", wbraid: "w1" }),
+    );
+    expect(url.searchParams.get("gclid")).toBe("g1");
+    expect(url.searchParams.get("gbraid")).toBe("b1");
+    expect(url.searchParams.get("wbraid")).toBe("w1");
+  });
+
+  it("states the saving in whole dollars", () => {
+    expect(PRICE.save).toBe("Save $132 today");
+  });
+
   it("teaser link keeps the query on /playbook", () => {
     expect(playbookHref({ utm_campaign: "c" })).toBe(
       "/playbook?utm_campaign=c",

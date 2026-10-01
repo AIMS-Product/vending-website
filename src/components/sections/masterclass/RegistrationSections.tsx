@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { AnimatedStatValue } from "@/components/sections/AnimatedStatValue";
+import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { CheckDisc } from "@/components/sections/masterclass/MasterclassHero";
+import { StoriesToggle } from "@/components/sections/masterclass/StoriesToggle";
+import { Wordmark } from "@/components/site/Wordmark";
 import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
@@ -7,6 +10,7 @@ import { APPLY_QUIZ_ANCHOR, APPLY_VSL_ANCHOR } from "@/lib/content/apply-page";
 import {
   ANTHONY_VIDEO_ID,
   MASTERCLASS_DISCLAIMER,
+  MASTERCLASS_MINUTES,
   fitCopy,
   fitFor,
   hostCopy,
@@ -37,7 +41,14 @@ export function Emphasis({ text, phrase }: { text: string; phrase: string }) {
 const youtube = (id: string) =>
   getVideoEmbed(`https://www.youtube.com/watch?v=${id}`);
 
-/** Anthony's story video beside his live GHL numbers, counting up on arrival. */
+/** Section headline size shared by the host line, stories and Fit titles. */
+const SECTION_HEADING =
+  "v2-display text-ink text-[clamp(1.75rem,9vw,2.2rem)] leading-[1.0] uppercase sm:text-[clamp(2.2rem,4.4vw,3.4rem)]";
+
+/**
+ * Anthony's story video beside his live GHL numbers. The figures render as
+ * they are: a count-up showed totals that were never real mid-animation.
+ */
 export function HostBand({ stats }: { stats: AnthonyStats | null }) {
   const embed = youtube(ANTHONY_VIDEO_ID);
   const rows = stats
@@ -52,11 +63,11 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
       id={APPLY_VSL_ANCHOR}
       className="border-ink scroll-mt-6 border-y-2 bg-white"
     >
-      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 py-16 lg:grid-cols-[1.15fr_1fr] lg:px-10">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 py-16 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:px-10">
         {embed ? (
           <div
             data-reveal
-            className="rounded-card border-ink shadow-card border-2"
+            className="rounded-card border-ink shadow-card min-w-0 border-2"
           >
             <YouTubeEmbedFrame
               embed={embed}
@@ -67,26 +78,30 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
         ) : null}
         <div
           data-reveal
+          className="min-w-0"
           style={{ "--v2-delay": "0.1s" } as React.CSSProperties}
         >
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {hostCopy.eyebrow}
           </p>
-          <p className="text-ink mt-3 text-[clamp(1.6rem,3vw,2.3rem)] leading-[1.15] font-black uppercase">
+          <h2 className={cn(SECTION_HEADING, "mt-3 text-balance")}>
             <Emphasis text={hostCopy.line} phrase={hostCopy.highlight} />
-          </p>
+          </h2>
           {rows.length ? (
-            <dl className="mt-7 grid grid-cols-[1fr_1fr_1.7fr] gap-3">
-              {rows.map(([label, value]) => (
+            <dl className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.7fr)]">
+              {rows.map(([label, value], index) => (
                 <div
                   key={label}
-                  className="rounded-control border-ink bg-tint flex flex-col-reverse border-2 px-3 py-3"
+                  className={cn(
+                    "rounded-control border-ink bg-tint flex min-w-0 flex-col-reverse border-2 px-3 py-3",
+                    index === 2 && "col-span-2 sm:col-span-1",
+                  )}
                 >
-                  <dt className="text-eyebrow text-[11px] font-black tracking-[0.12em] uppercase">
+                  <dt className="text-eyebrow text-xs font-black tracking-[0.12em] uppercase">
                     {label}
                   </dt>
-                  <dd className="text-ink text-[clamp(1.25rem,2.6vw,1.9rem)] font-black tabular-nums">
-                    <AnimatedStatValue value={value} />
+                  <dd className="text-ink text-[clamp(1.5rem,2.6vw,1.9rem)] font-black tabular-nums">
+                    {value}
                   </dd>
                 </div>
               ))}
@@ -151,8 +166,6 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
     (s) => s.youtube_video_id && s.youtube_video_id !== ANTHONY_VIDEO_ID,
   );
   if (!members.length) return null;
-  const shown = members.slice(0, storiesCopy.initial);
-  const rest = members.slice(storiesCopy.initial);
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
@@ -160,7 +173,7 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {storiesCopy.eyebrow}
           </p>
-          <h2 className="text-ink mt-3 text-[clamp(1.8rem,3.6vw,2.8rem)] leading-[1.15] font-black uppercase">
+          <h2 className={cn(SECTION_HEADING, "mt-3 text-balance")}>
             <Emphasis
               text={storiesCopy.heading}
               phrase={storiesCopy.highlight}
@@ -170,20 +183,19 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
             {members.length} members, in their own words. {storiesCopy.body}
           </p>
         </div>
-        <StoryList stories={shown} />
-        {rest.length ? (
-          <details className="group mt-6">
-            <summary
-              className={cn(
-                buttonClass({ variant: "ghost" }),
-                "mx-auto flex w-fit cursor-pointer list-none group-open:hidden [&::-webkit-details-marker]:hidden",
-              )}
-            >
-              {storiesCopy.more(rest.length)}
-            </summary>
-            <StoryList stories={rest} />
-          </details>
-        ) : null}
+        <StoriesToggle
+          total={members.length}
+          mobile={storiesCopy.initialMobile}
+          desktop={storiesCopy.initial}
+        >
+          <StoryList
+            stories={members}
+            collapse={{
+              mobile: storiesCopy.initialMobile,
+              desktop: storiesCopy.initial,
+            }}
+          />
+        </StoriesToggle>
       </div>
     </section>
   );
@@ -192,9 +204,15 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
 export function StoryList({
   stories,
   columns = 4,
+  collapse,
 }: {
   stories: CaseStudyStory[];
   columns?: 3 | 4;
+  /**
+   * Cards past these counts hide until the surrounding StoriesToggle opens
+   * (it sets data-expanded on its group). Mobile shows fewer.
+   */
+  collapse?: { mobile: number; desktop: number };
 }) {
   return (
     <ul
@@ -213,36 +231,49 @@ export function StoryList({
             style={
               { "--v2-delay": `${(index % 4) * 0.07}s` } as React.CSSProperties
             }
-            className="rounded-card border-ink shadow-card hover:shadow-card-hover overflow-hidden border-2 bg-white transition hover:-translate-y-1"
+            className={cn(
+              "rounded-card border-ink shadow-card hover:shadow-card-hover flex flex-col overflow-hidden border-2 bg-white transition hover:-translate-y-1",
+              collapse &&
+                index >= collapse.desktop &&
+                "group-data-[expanded=false]/stories:hidden",
+              collapse &&
+                index >= collapse.mobile &&
+                "max-md:group-data-[expanded=false]/stories:hidden",
+            )}
           >
             {embed ? (
               <YouTubeEmbedFrame
                 embed={embed}
                 title={`${story.member_name}'s story`}
                 className="aspect-video w-full"
+                variant="card"
               />
             ) : null}
-            <div className="p-4">
+            <div className="flex flex-1 flex-col p-4">
               <p className="text-ink font-black uppercase">
                 {story.member_name}
               </p>
-              {story.prior_occupation ? (
-                <p className="line-clamp-2 text-xs font-semibold text-slate-500">
-                  Was: {story.prior_occupation}
-                </p>
-              ) : null}
-              {first ? (
-                <p className="mt-3 flex flex-wrap items-baseline gap-x-2">
-                  <Highlight className="text-lg">{first.value}</Highlight>
-                  <span className="text-eyebrow text-xs font-black tracking-[0.1em] uppercase">
-                    {first.label}
-                  </span>
-                </p>
-              ) : null}
-              {second ? (
-                <p className="mt-1 text-sm font-semibold text-slate-600">
-                  {second.value} {second.label.toLowerCase()}
-                </p>
+              <p className="text-ink/70 line-clamp-2 min-h-[2lh] text-[14px] leading-snug font-semibold">
+                {story.prior_occupation ? `Was: ${story.prior_occupation}` : ""}
+              </p>
+              {first || second ? (
+                <div className="mt-auto pt-4">
+                  {first ? (
+                    <p className="flex flex-col items-start gap-1">
+                      <Highlight className="v2-display px-1.5 text-2xl leading-none tabular-nums">
+                        {first.value}
+                      </Highlight>
+                      <span className="text-eyebrow text-xs font-black tracking-[0.1em] uppercase">
+                        {first.label}
+                      </span>
+                    </p>
+                  ) : null}
+                  {second ? (
+                    <p className="mt-1 text-sm font-semibold text-slate-600">
+                      {second.value} {second.label.toLowerCase()}
+                    </p>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           </li>
@@ -252,21 +283,59 @@ export function StoryList({
   );
 }
 
-/** Who it is for, then one CTA back to the form in the hero. */
-export function FitSection() {
+/**
+ * The close: the GHL "Your freedom starts here" block with the date and a
+ * live countdown, who it is for, then one CTA back to the form in the hero.
+ */
+export function FitSection({
+  label,
+  startsAt,
+}: {
+  label: string | null;
+  startsAt: string | null;
+}) {
+  const endsAt = startsAt
+    ? new Date(
+        Date.parse(startsAt) + MASTERCLASS_MINUTES * 60_000,
+      ).toISOString()
+    : null;
   return (
     <section className="border-ink bg-tint border-t-2">
-      <div className="mx-auto grid max-w-[1180px] gap-6 px-5 py-16 md:grid-cols-2 lg:px-10">
-        <FitCard title={fitCopy.forTitle} items={fitFor} good />
-        <FitCard title={fitCopy.notForTitle} items={notFitFor} />
-      </div>
-      <div className="flex justify-center pb-16">
-        <a
-          href={`#${APPLY_QUIZ_ANCHOR}`}
-          className={buttonClass({ size: "lg" })}
-        >
-          {fitCopy.cta}
-        </a>
+      <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
+        <div data-reveal className="flex flex-col items-center text-center">
+          <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+            {fitCopy.eyebrow}
+          </p>
+          <h2 className={cn(SECTION_HEADING, "mt-3 text-balance")}>
+            <Emphasis text={fitCopy.heading} phrase={fitCopy.highlight} />
+          </h2>
+          {label ? (
+            <p className="text-ink mt-4 text-lg font-bold">{label}</p>
+          ) : null}
+          {startsAt && endsAt ? (
+            <div className="mt-5">
+              <Countdown startsAt={startsAt} endsAt={endsAt} />
+            </div>
+          ) : null}
+        </div>
+        <div className="mt-12 grid items-start gap-6 md:grid-cols-2">
+          <FitCard title={fitCopy.forTitle} items={fitFor} good />
+          <FitCard title={fitCopy.notForTitle} items={notFitFor} />
+        </div>
+        <div className="mt-12 flex flex-col items-center gap-3">
+          <a
+            href={`#${APPLY_QUIZ_ANCHOR}`}
+            className={buttonClass({
+              size: "lg",
+              className: "w-full sm:w-auto",
+            })}
+          >
+            {fitCopy.cta}
+          </a>
+          <p className="text-[15px] font-semibold text-slate-600">
+            {fitCopy.ctaNote}
+          </p>
+        </div>
       </div>
     </section>
   );
@@ -286,22 +355,25 @@ function FitCard({
       data-reveal
       className="rounded-card border-ink shadow-card border-2 bg-white p-6"
     >
-      <p className="text-ink text-lg font-black uppercase">{title}</p>
-      <ul className="mt-4 space-y-3">
+      <h3 className="v2-display text-ink text-[clamp(1.6rem,2.6vw,2rem)] leading-none uppercase">
+        {title}
+      </h3>
+      <ul className="mt-5 space-y-3">
         {items.map((item) => (
           <li
             key={item}
             className="flex gap-3 text-[15px] font-medium text-slate-700"
           >
-            <span
-              aria-hidden
-              className={cn(
-                "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full text-xs font-black text-white",
-                good ? "bg-brand-700" : "bg-slate-400",
-              )}
-            >
-              {good ? "✓" : "–"}
-            </span>
+            {good ? (
+              <CheckDisc />
+            ) : (
+              <span
+                aria-hidden
+                className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-slate-400 text-sm font-black text-white"
+              >
+                –
+              </span>
+            )}
             {item}
           </li>
         ))}
@@ -315,16 +387,20 @@ export function MasterclassFooter() {
   return (
     <footer className="border-ink border-t-2 bg-white">
       <div className="mx-auto flex max-w-[860px] flex-col items-center gap-3 px-5 py-10 text-center">
-        <p className="text-ink text-lg font-black tracking-wide uppercase">
-          Vendingpreneurs
-        </p>
+        <Wordmark height={38} />
         <p className="text-[13px] text-slate-500">{MASTERCLASS_DISCLAIMER}</p>
         <p className="text-[13px] text-slate-500">
-          <Link href="/privacy" className="underline underline-offset-2">
+          <Link
+            href="/privacy"
+            className="inline-block py-2 underline underline-offset-2"
+          >
             Privacy Policy
           </Link>
           {" · "}
-          <Link href="/terms" className="underline underline-offset-2">
+          <Link
+            href="/terms"
+            className="inline-block py-2 underline underline-offset-2"
+          >
             Terms
           </Link>
         </p>

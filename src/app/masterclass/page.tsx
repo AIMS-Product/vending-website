@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import "../home-v2.css";
-import { ApplyHero } from "@/components/sections/apply/ApplyHero";
+import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
+import { MasterclassHero } from "@/components/sections/masterclass/MasterclassHero";
 import { RegistrationForm } from "@/components/sections/masterclass/RegistrationForm";
 import {
   FitSection,
@@ -10,11 +11,7 @@ import {
   ResultsTicker,
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
-import {
-  ATTRIBUTION_KEYS,
-  masterclassBody,
-  masterclassHero,
-} from "@/lib/content/masterclass";
+import { ATTRIBUTION_KEYS } from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -49,11 +46,9 @@ export default async function MasterclassPage({
   );
 
   return (
-    <main>
+    <main className={anton.variable}>
       <RevealObserver />
-      <ApplyHero
-        copy={masterclassHero}
-        body={masterclassBody}
+      <MasterclassHero
         aside={
           <RegistrationForm
             attribution={attribution}
@@ -64,7 +59,7 @@ export default async function MasterclassPage({
       <ResultsTicker stories={stories} />
       <HostBand stats={event.anthony} />
       <StoriesGrid stories={stories} />
-      <FitSection />
+      <FitSection label={event.label} startsAt={event.startsAt} />
       <MasterclassFooter />
     </main>
   );

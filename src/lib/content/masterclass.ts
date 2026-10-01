@@ -34,21 +34,73 @@ export const ATTRIBUTION_KEYS = [
   "utm_term",
   "utm_content",
   "fbclid",
+  "gclid",
+  "gbraid",
+  "wbraid",
 ] as const;
+
+/** Same rule as the registration form: letters, spaces, apostrophes, hyphens. */
+export const NAME_PATTERN = /^[\p{L}' -]+$/u;
+
+/** Query params that identify a person; stripped from the confirmed page's URL. */
+export const PII_PARAMS = [
+  "email",
+  "phone",
+  "first_name",
+  "last_name",
+  "name",
+  "full_name",
+] as const;
+
+type QueryParams = Record<string, string | string[] | undefined>;
+
+const firstValue = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] : value;
+
+/** `?first=` as a display name, or undefined when it is not a plain name. */
+export function safeFirstName(params: QueryParams): string | undefined {
+  const value = firstValue(params.first)?.trim().slice(0, 40);
+  return value && NAME_PATTERN.test(value) ? value : undefined;
+}
+
+/**
+ * What the confirmed page forwards to the Playbook offer: the ad attribution,
+ * plus the validated first name as `first_name`. Any other name or contact
+ * field in the URL is dropped, never forwarded.
+ */
+export function confirmedPlaybookParams(params: QueryParams): QueryParams {
+  const out: QueryParams = {};
+  for (const key of ATTRIBUTION_KEYS) {
+    const value = firstValue(params[key]);
+    if (value) out[key] = value.slice(0, 200);
+  }
+  const first = safeFirstName(params);
+  if (first) out.first_name = first;
+  return out;
+}
 
 /** 60 minutes of training plus 15 of live Q&A, per the confirmation email. */
 export const MASTERCLASS_MINUTES = 75;
 
 export const masterclassHero = {
   eyebrow: "Free live masterclass with Anthony Kolodziej",
+  /** Small label over the form card. */
+  formEyebrow: "Live on Zoom",
+  /** The GHL form heading ("Secure Your Free Spot!"). */
+  formHeading: "Secure your free spot",
   headline: "Your company can replace you. Your business can't.",
   subheadline: "Learn how to build a cash-flowing vending route in 2026",
   highlight: "can't.",
   videoCue: "Watch Anthony's story",
 };
 
-export const masterclassBody =
-  "One free live hour: the three-pillar system every operator uses, real numbers from real routes, and a straight answer on whether it fits your time and budget.";
+/** The four check-mark takeaways from the GHL registration page, verbatim. */
+export const masterclassTakeaways = [
+  "The real decisions, real timeline, and real obstacles vending operators navigate to build successful routes.",
+  "The three-pillar system that makes this repeatable - the framework every operator uses, whether they're building one machine or scaling a route.",
+  "Real numbers on what's actually possible - pulled directly from Anthony and operators in the community. Not theory. Real results from real people.",
+  "Clarity on whether this is right for you - can you realistically execute this? What would success look like for YOUR situation? What's the real cost of entry?",
+] as const;
 
 export const SMS_CONSENT_TEXT =
   "By checking this box, I consent to receive marketing and promotional messages from Vendingpreneurs. Frequency may vary. Message & data rates may apply. Text HELP for assistance, reply STOP to opt out.";
@@ -76,6 +128,8 @@ export const storiesCopy = {
   body: "Tap any story to watch it here.",
   /** Stories shown before "more"; the rest open in place, never on a new page. */
   initial: 8,
+  /** Below md, fewer cards before "more", so the second CTA is not 3,000px away. */
+  initialMobile: 3,
   more: (n: number) => `Show ${n} more stories`,
 };
 
@@ -87,9 +141,14 @@ export const MASTERCLASS_DISCLAIMER =
   "Earnings may vary and are not guaranteed. Outcomes depend on effort, market, and execution.";
 
 export const fitCopy = {
+  eyebrow: "Is this for you?",
+  /** The GHL closing headline ("Your Freedom Starts Here"). */
+  heading: "Your freedom starts here",
+  highlight: "freedom",
   forTitle: "This is for you if",
   notForTitle: "Skip it if",
   cta: "Save my free seat",
+  ctaNote: "Free. Live on Zoom. Takes 20 seconds.",
 };
 
 /** Registration form errors. Never shows a raw service error. */

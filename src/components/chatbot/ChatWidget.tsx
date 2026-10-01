@@ -2,7 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { suppressesChatTeaser } from "@/lib/content/booking-funnel-routes";
+import {
+  hidesChatWidget,
+  suppressesChatTeaser,
+} from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
@@ -178,6 +181,9 @@ export function ChatWidget() {
   const panelRef = useRef<HTMLDivElement>(null);
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
+  // Admin pages and the webinar funnel never render the widget: on the
+  // funnel the launcher sat over CTAs, stats and checkout lines (round-1 QA).
+  const chatHidden = isAdminRoute || hidesChatWidget(pathname);
 
   // Booking funnels never open the conversation themselves (Adam, 2026-09-17).
   // These visitors arrive from an ad to do exactly one thing, and a bubble that
@@ -200,19 +206,19 @@ export function ChatWidget() {
   // fetch entirely there too, so admin page loads make zero chatbot
   // requests instead of fetching config just to throw it away.
   useEffect(() => {
-    if (isAdminRoute) return;
+    if (chatHidden) return;
     fetch("/api/chatbot/config")
       .then((response) => (response.ok ? response.json() : null))
       .then((data: PublicChatbotConfig | null) => setConfig(data))
       .catch(() => setConfig(null));
-  }, [isAdminRoute]);
+  }, [chatHidden]);
 
   // Session id + transcript rehydration. The conversation row is already
   // authoritative server-side (see conversation-store.ts) — this just reads
   // it back so a page navigation doesn't wipe what the visitor already said.
   // A brand-new session id 404s harmlessly (no row yet).
   useEffect(() => {
-    if (isAdminRoute) return;
+    if (chatHidden) return;
     const sessionId = readOrCreateSessionId();
     sessionIdRef.current = sessionId;
     ensureVisitorCookie();
@@ -243,9 +249,9 @@ export function ChatWidget() {
     return () => {
       cancelled = true;
     };
-  }, [isAdminRoute]);
+  }, [chatHidden]);
 
-  const enabled = Boolean(config?.enabled) && !isAdminRoute;
+  const enabled = Boolean(config?.enabled) && !chatHidden;
 
   // Teaser bubble after idleTriggerSeconds (0 disables it), unless already
   // dismissed this session or the panel is already open.

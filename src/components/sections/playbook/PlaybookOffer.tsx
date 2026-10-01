@@ -1,16 +1,21 @@
-import Image from "next/image";
 import { Highlight } from "@/components/ui/Highlight";
 import {
   BUY_CTA,
-  BUY_CTA_SHORT,
   PRICE,
   curriculum,
-  images,
   includedBonuses,
   moreBonuses,
   steps,
 } from "@/lib/content/playbook";
-import { CheckList, EYEBROW, H2, NUMERAL, PlaybookCta } from "./PlaybookCta";
+import {
+  CheckIcon,
+  CheckList,
+  EYEBROW,
+  H2,
+  NUMERAL,
+  PlaybookCta,
+  PriceTag,
+} from "./PlaybookCta";
 
 interface PlaybookOfferProps {
   checkoutHref: string;
@@ -62,21 +67,8 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
           <h2 data-reveal className={H2}>
             {curriculum.title} <Highlight>{PRICE.today}</Highlight>
           </h2>
-          <div className="bg-tint border-ink shadow-card rounded-card mt-8 border-2 p-4">
-            <Image
-              src={images.product.src}
-              alt=""
-              width={images.product.width}
-              height={images.product.height}
-              sizes="(min-width: 1024px) 460px, 100vw"
-              className="h-auto w-full"
-            />
-          </div>
-          <PlaybookCta
-            href={checkoutHref}
-            label={BUY_CTA}
-            className="mt-8 w-full sm:w-auto"
-          />
+          <PriceTag className="mt-8" />
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
         </div>
         <ol className="border-ink border-b-2">
           {curriculum.chapters.map((c, i) => (
@@ -89,8 +81,9 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
                 <span className="sr-only">Chapter </span>
                 {pad(i + 1)}
               </span>
-              <div>
-                <h3 className="text-ink pt-1 text-lg leading-tight font-black uppercase">
+              <div className="pt-1">
+                {c.lessons ? <p className={EYEBROW}>{c.lessons}</p> : null}
+                <h3 className="v2-display text-ink mt-1 text-2xl leading-[1.05] text-balance uppercase">
                   {c.title}
                 </h3>
                 <CheckList items={c.points} className="mt-4 text-[0.95rem]" />
@@ -108,11 +101,12 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
 function IncludedBonuses() {
   return (
     <div className="mx-auto mt-20 grid max-w-[1180px] gap-8 px-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-10">
-      <div>
+      <div className="lg:sticky lg:top-8 lg:self-start">
         <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
-        <h3 className="v2-display text-ink mt-3 text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] uppercase">
+        <h3 className="v2-display text-ink mt-3 text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
           {includedBonuses.title}
         </h3>
+        <PriceTag className="mt-6" />
       </div>
       <ul className="border-ink bg-ink shadow-card rounded-card grid gap-[2px] overflow-hidden border-2">
         {includedBonuses.items.map((b, i) => (
@@ -134,34 +128,77 @@ function IncludedBonuses() {
   );
 }
 
+type Bonus = (typeof moreBonuses.items)[number];
+
+const BONUS_EYEBROW =
+  "text-eyebrow block text-xs font-black tracking-[0.14em] uppercase";
+const BONUS_TITLE =
+  "v2-display text-ink text-2xl leading-[1.05] text-balance uppercase";
+
+/** md and up: every bullet, always visible. */
+function BonusCell({ bonus }: { bonus: Bonus }) {
+  return (
+    <>
+      <span className={BONUS_EYEBROW}>Bonus</span>
+      <p className={`${BONUS_TITLE} mt-2`}>{bonus.title}</p>
+      <CheckList items={bonus.points} className="mt-5 text-[0.95rem]" />
+    </>
+  );
+}
+
+/**
+ * Phones: a compact row, title and first bullet in the summary, the rest
+ * behind the disclosure. The first three start open.
+ */
+function BonusRow({ bonus, open }: { bonus: Bonus; open: boolean }) {
+  const [lead, ...rest] = bonus.points;
+  return (
+    <details open={open} className="group">
+      <summary className="flex cursor-pointer list-none gap-4 [&::-webkit-details-marker]:hidden">
+        <span className="min-w-0 flex-1">
+          <span className={BONUS_EYEBROW}>Bonus</span>
+          <span className={`${BONUS_TITLE} mt-1.5 block`}>{bonus.title}</span>
+          <span className="mt-3 flex gap-3 text-[0.95rem] leading-snug">
+            <CheckIcon className="text-brand-600 mt-0.5 size-5 shrink-0" />
+            <span>{lead}</span>
+          </span>
+        </span>
+        <span
+          aria-hidden="true"
+          className="border-ink mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border-2 text-lg leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none"
+        >
+          +
+        </span>
+      </summary>
+      <CheckList items={rest} className="mt-2.5 pr-12 text-[0.95rem]" />
+    </details>
+  );
+}
+
 /** Nine bonuses as one spec sheet: ink rules between cells, not nine cards. */
 export function PlaybookMoreBonuses({ checkoutHref }: PlaybookOfferProps) {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <div>
-            <p className={EYEBROW}>{moreBonuses.eyebrow}</p>
-            <h2 data-reveal className={`${H2} mt-2`}>
-              {moreBonuses.title}
-            </h2>
-          </div>
-          <PlaybookCta href={checkoutHref} label={BUY_CTA_SHORT} />
-        </div>
+        <p className={EYEBROW}>{moreBonuses.eyebrow}</p>
+        <h2 data-reveal className={`${H2} mt-2`}>
+          {moreBonuses.title}
+        </h2>
         <ul className="border-ink bg-ink shadow-card rounded-card mt-10 grid gap-[2px] overflow-hidden border-2 md:grid-cols-2 lg:grid-cols-3">
           {moreBonuses.items.map((b, i) => (
-            <li key={b.title} className="bg-white p-6 lg:p-8">
-              <span className={`${NUMERAL} text-[2.75rem]`}>
-                <span className="sr-only">Bonus #</span>
-                {pad(i + 1)}
-              </span>
-              <p className="v2-display text-ink mt-3 text-2xl leading-[1.05] uppercase">
-                {b.title}
-              </p>
-              <CheckList items={b.points} className="mt-5 text-[0.95rem]" />
+            <li key={b.title} className="bg-white p-5 md:p-6 lg:p-8">
+              <div className="md:hidden">
+                <BonusRow bonus={b} open={i < 3} />
+              </div>
+              <div className="hidden md:block">
+                <BonusCell bonus={b} />
+              </div>
             </li>
           ))}
         </ul>
+        <div className="mt-12 flex justify-center">
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} />
+        </div>
       </div>
     </section>
   );

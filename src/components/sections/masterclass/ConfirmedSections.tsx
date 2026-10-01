@@ -17,6 +17,7 @@ import {
   CONFIRMED_VIDEO_EMBED_ID,
   confirmedCopy,
   coverCopy,
+  MASTERCLASS_MINUTES,
   type calendarLinks,
 } from "@/lib/content/masterclass";
 
@@ -38,7 +39,7 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
         backgroundSize: "22px 22px",
       }}
     >
-      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:py-16">
+      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:pt-10 lg:pb-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
         </p>
@@ -46,31 +47,38 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
           You&apos;re in
           {first ? (
             <>
-              , <Highlight>{first}</Highlight>
+              , <Highlight>{first}.</Highlight>
             </>
-          ) : null}
-          .
+          ) : (
+            "."
+          )}
         </h1>
+        {label ? (
+          <p className="text-ink mt-4 text-xl font-black">{label}</p>
+        ) : null}
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
           title="A welcome from Anthony"
-          className="mt-8 w-full"
+          className="mt-6 w-full max-w-[780px]"
         />
-        {label ? (
-          <p className="text-ink mt-8 text-xl font-black">{label}</p>
-        ) : null}
         {startsAt ? (
-          <div className="mt-5">
-            <Countdown startsAt={startsAt} />
+          <div className="mt-6">
+            <Countdown
+              startsAt={startsAt}
+              endsAt={new Date(
+                Date.parse(startsAt) + MASTERCLASS_MINUTES * 60_000,
+              ).toISOString()}
+              expiredLabel="We are live now"
+            />
           </div>
         ) : null}
         {links ? (
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <div className="mt-6 grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
             <a
               href={links.google}
               target="_blank"
               rel="noopener noreferrer"
-              className={buttonClass({ className: "gap-2.5" })}
+              className={buttonClass({ className: "col-span-2 gap-2.5" })}
             >
               <span className="grid size-7 place-items-center rounded-md bg-white">
                 <GoogleCalendarLogo />
@@ -82,7 +90,7 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
               download="vendingpreneurs-masterclass.ics"
               className={buttonClass({
                 variant: "ghost",
-                className: "gap-2.5",
+                className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
               })}
             >
               <AppleLogo />
@@ -94,7 +102,7 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
               rel="noopener noreferrer"
               className={buttonClass({
                 variant: "ghost",
-                className: "gap-2.5",
+                className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
               })}
             >
               <OutlookLogo />
@@ -112,10 +120,11 @@ export function NextSteps() {
   const [zoom, reply] = confirmedCopy.steps;
   return (
     <section className="bg-white">
-      <div className="mx-auto grid max-w-[1080px] gap-6 px-5 py-14 md:grid-cols-2 lg:px-10">
+      <div className="mx-auto grid max-w-[1080px] gap-6 px-5 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:px-10">
         <Step n={zoom.n} title={zoom.title}>
-          It comes from <strong>{SENDER_EMAIL}</strong>. Check spam and
-          promotions, and move it to your inbox.
+          It comes from{" "}
+          <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>.
+          Check spam and promotions, and move it to your inbox.
         </Step>
         <Step n={reply.n} title={reply.title}>
           {reply.body}
@@ -132,7 +141,7 @@ export function CoverSection() {
       <div className="mx-auto grid max-w-[1080px] items-center gap-10 px-5 py-16 md:grid-cols-[0.9fr_1.1fr] lg:px-10">
         <div
           data-reveal
-          className="rounded-card border-ink shadow-card relative aspect-square overflow-hidden border-2 bg-white"
+          className="rounded-card border-ink shadow-card relative order-last aspect-[4/3] overflow-hidden border-2 bg-white md:order-none md:aspect-square"
         >
           <Image
             src="/images/newsletter/anthony-kolodziej.webp"
@@ -213,7 +222,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-card border-ink shadow-card border-2 bg-white p-6">
+    <div className="rounded-card border-ink shadow-card min-w-0 border-2 bg-white p-6">
       <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
         Step {n}
       </p>
@@ -224,11 +233,16 @@ function Step({
 }
 
 /** The low-ticket offer the GHL emails promote, offered while the visitor is here. */
-export function PlaybookBand({ first }: { first: string | undefined }) {
+export function PlaybookBand({
+  params,
+}: {
+  /** Attribution plus the validated first_name (confirmedPlaybookParams). */
+  params: Record<string, string | string[] | undefined>;
+}) {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1080px] px-5 pb-16 lg:px-10">
-        <PlaybookTeaser searchParams={first ? { first_name: first } : {}} />
+        <PlaybookTeaser searchParams={params} />
       </div>
     </section>
   );

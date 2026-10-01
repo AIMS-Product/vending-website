@@ -42,6 +42,16 @@ describe("content security policy", () => {
     }
   });
 
+  it("allows what the funnel video player and Sentry actually load", () => {
+    // Vidalytics loads player chunks from blob: and plays data: media; Sentry's
+    // US ingest is a two-label subdomain that *.ingest.sentry.io does not match.
+    expect((directive("script-src") ?? "").split(" ")).toContain("blob:");
+    expect((directive("media-src") ?? "").split(" ")).toContain("data:");
+    expect((directive("connect-src") ?? "").split(" ")).toContain(
+      "https://*.ingest.us.sentry.io",
+    );
+  });
+
   it("frames only YouTube, Calendly, and the tag fallbacks", () => {
     const frameSrc = directive("frame-src") ?? "";
     expect(frameSrc).toContain("https://www.youtube-nocookie.com");

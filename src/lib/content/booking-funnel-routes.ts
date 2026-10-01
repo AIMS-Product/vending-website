@@ -72,6 +72,13 @@ const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(
 );
 
 /**
+ * The staff walkthrough of the webinar funnel. Not a lead surface, so it is in
+ * neither list above, but it renders bare like the pages it reviews: the
+ * header's cohort banner ("1 open seat left") read as a live offer on it.
+ */
+const MASTERCLASS_REVIEW_PATH = "/masterclass-review";
+
+/**
  * True anywhere the site chrome stays off: the booking funnels and everything
  * after the form. Header, footer and the chatbot's unprompted teaser all key
  * off this. Attribution keys off `isBookingFunnelPath` instead — the two
@@ -80,6 +87,7 @@ const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(
 export function isFunnelChromePath(pathname: string): boolean {
   if (isBookingFunnelPath(pathname)) return true;
   if (POST_CONVERSION_PATH_SET.has(pathname)) return true;
+  if (pathname === MASTERCLASS_REVIEW_PATH) return true;
   // The questionnaire is one dynamic route per session token.
   return pathname.startsWith("/qualify/");
 }
@@ -102,5 +110,22 @@ export function suppressesChatTeaser(pathname: string): boolean {
     isFunnelChromePath(pathname) ||
     isLegacyLeadPath(pathname) ||
     pathname === "/pre-call-resources"
+  );
+}
+
+/**
+ * True on the webinar funnel (/masterclass, its confirmation, the replays,
+ * /playbook and the staff review page), where the chatbot does not mount at
+ * all. The launcher covered CTAs, stats and checkout lines there, and the
+ * auto-opening greeting covered the review page's footer links (round-1 QA).
+ * The other booking funnels keep the launcher; only their teaser is off.
+ */
+export function hidesChatWidget(pathname: string): boolean {
+  return (
+    pathname === "/masterclass" ||
+    pathname === "/masterclass-confirmed" ||
+    pathname === MASTERCLASS_REVIEW_PATH ||
+    pathname === "/playbook" ||
+    pathname.startsWith("/masterclass-replay-")
   );
 }

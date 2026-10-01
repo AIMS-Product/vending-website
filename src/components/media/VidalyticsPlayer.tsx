@@ -1,8 +1,10 @@
+import Image from "next/image";
 import Script from "next/script";
 import { vidalyticsContainerId } from "@/lib/tracking/vidalytics-player";
-import { ClickToLoad } from "./ClickToLoad";
+import { cn } from "@/lib/utils";
+import { AutoplayGate } from "./AutoplayGate";
+import type { PlayButtonVariant } from "./ClickToLoad";
 import { VideoEngagement } from "./VideoEngagement";
-import { WhenNearViewport } from "./WhenNearViewport";
 
 /**
  * One Vidalytics player.
@@ -21,7 +23,14 @@ import { WhenNearViewport } from "./WhenNearViewport";
  * Every player autoplays, and running all fifteen on arrival left the lower ones
  * black or stalled on phones and power-saving laptops. `loadOn="click"` goes
  * further: the snippet waits behind a play button (ClickToLoad), so a page of
- * players autoplays one video, not one per screen.
+ * players autoplays one video, not one per screen. A visitor who prefers
+ * reduced motion always gets the play button (AutoplayGate), since the snippet
+ * autoplays as soon as it runs.
+ *
+ * `poster` paints a still behind the play button so a click-to-load player is
+ * not an empty navy box; the player covers it once it renders. `framed={false}`
+ * drops the border, radius and shadow for players that sit inside a card that
+ * already has them.
  *
  * `fast.vidalytics.com` is already allowed in script-src / connect-src /
  * frame-src — see src/lib/content-security-policy.ts. There is no sitewide
@@ -36,6 +45,9 @@ export function VidalyticsPlayer({
   className = "",
   loadOn = "near",
   title,
+  framed = true,
+  poster,
+  playButton = "hero",
 }: {
   embedId: string;
   className?: string;
@@ -43,6 +55,12 @@ export function VidalyticsPlayer({
   loadOn?: "near" | "click";
   /** The video's existing on-page title; names the click-to-load button. */
   title?: string;
+  /** False drops the border, radius and shadow (the parent card has them). */
+  framed?: boolean;
+  /** A still shown behind the play button until the player renders. */
+  poster?: string;
+  /** "card" puts a small play button in the corner, clear of thumbnail text. */
+  playButton?: PlayButtonVariant;
 }) {
   const containerId = vidalyticsContainerId(embedId);
   const snippet = (
@@ -53,18 +71,36 @@ export function VidalyticsPlayer({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[12px] border-2 border-[#111111] bg-[#0b1b26] shadow-[8px_8px_0_#111111] ${className}`}
+      className={cn(
+        "relative overflow-hidden bg-[#0b1b26]",
+        framed && "rounded-card border-ink shadow-card border-2",
+        className,
+      )}
     >
-      <div id={containerId} style={{ width: "100%", paddingTop: "56.25%" }} />
+      {poster ? (
+        <Image
+          src={poster}
+          alt=""
+          fill
+          sizes="(min-width: 1024px) 800px, 100vw"
+          className="object-cover"
+        />
+      ) : null}
+      <div
+        id={containerId}
+        className="relative"
+        style={{ width: "100%", paddingTop: "56.25%" }}
+      />
       {/* Counts quarters watched against this session. Renders nothing. */}
       <VideoEngagement embedId={embedId} />
-      {loadOn === "click" ? (
-        <ClickToLoad label={title ? `Play video: ${title}` : "Play video"}>
-          {snippet}
-        </ClickToLoad>
-      ) : (
-        <WhenNearViewport targetId={containerId}>{snippet}</WhenNearViewport>
-      )}
+      <AutoplayGate
+        loadOn={loadOn}
+        targetId={containerId}
+        label={title ? `Play video: ${title}` : "Play video"}
+        variant={playButton}
+      >
+        {snippet}
+      </AutoplayGate>
     </div>
   );
 }

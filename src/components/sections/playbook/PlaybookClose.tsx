@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
+import { Wordmark } from "@/components/site/Wordmark";
+import { Highlight } from "@/components/ui/Highlight";
 import {
-  BUY_CTA_SHORT,
   DISCLAIMER,
   PRICE,
   faq,
@@ -15,7 +16,8 @@ interface PlaybookCloseProps {
   checkoutHref: string;
 }
 
-export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
+export function PlaybookHost() {
+  const [before, after] = host.title.split(host.highlight);
   return (
     <section className="bg-brand-50 border-ink border-b-2 py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] items-start gap-10 px-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16 lg:px-10">
@@ -30,19 +32,24 @@ export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
           />
         </div>
         <div>
-          <h2 data-reveal className={`${H2} text-[clamp(2rem,3.6vw,3rem)]`}>
-            {host.title}
+          <p className={EYEBROW}>{host.eyebrow}</p>
+          <h2
+            data-reveal
+            className="v2-display text-ink mt-3 text-[1.625rem] leading-[1.3] text-balance uppercase lg:text-[2.75rem]"
+          >
+            {before}
+            {/* Inline and cloned per line: the phrase is wider than the
+                column, so it wraps as two highlighted lines, not one box. */}
+            <Highlight className="my-0 inline box-decoration-clone px-[0.12em] leading-[inherit] whitespace-normal">
+              {host.highlight}
+            </Highlight>
+            {after}
           </h2>
-          <div className="mt-8 max-w-[65ch] space-y-5 text-[1.05rem] leading-relaxed">
+          <div className="mt-8 max-w-[60ch] space-y-5 text-[1.05rem] leading-relaxed">
             {host.paragraphs.map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
-          <PlaybookCta
-            href={checkoutHref}
-            label={BUY_CTA_SHORT}
-            className="mt-9 w-full sm:w-auto"
-          />
         </div>
       </div>
     </section>
@@ -53,12 +60,9 @@ export function PlaybookFaq() {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] gap-10 px-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:px-10">
-        <div>
-          <p className={EYEBROW}>{faq.eyebrow}</p>
-          <h2 data-reveal className={`${H2} mt-3`}>
-            {faq.title}
-          </h2>
-        </div>
+        <h2 data-reveal className={`${H2} self-start`}>
+          {faq.title}
+        </h2>
         <div className="space-y-3">
           {faq.items.map((item) => (
             <details
@@ -68,7 +72,7 @@ export function PlaybookFaq() {
               <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[1.05rem] font-black [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <span
-                  aria-hidden
+                  aria-hidden="true"
                   className="border-ink grid size-8 shrink-0 place-items-center rounded-full border-2 text-lg leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none"
                 >
                   +
@@ -122,7 +126,7 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
             <PlaybookCta
               href={checkoutHref}
               label={finalOffer.cta}
-              className="mt-7 w-full sm:w-auto"
+              className="mt-7"
             />
             <p className="text-ink/70 mt-4 text-xs font-bold">
               {finalOffer.secure}
@@ -131,8 +135,10 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
         </div>
       </div>
       <footer className="mx-auto mt-12 max-w-3xl px-5 text-center text-xs leading-relaxed text-slate-600">
-        <p>{DISCLAIMER}</p>
-        <p className="mt-3">
+        <Wordmark height={36} className="mx-auto" />
+        <p className="mt-4">{DISCLAIMER}</p>
+        <p className="text-ink mt-4 font-bold">© 2026 Vendingpreneurs</p>
+        <p className="mt-2">
           <Link href="/privacy" className="underline underline-offset-2">
             Privacy Policy
           </Link>

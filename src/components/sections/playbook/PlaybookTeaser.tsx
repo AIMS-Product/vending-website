@@ -3,7 +3,15 @@ import Link from "next/link";
 import { buttonClass } from "@/components/ui/Button";
 import { PRICE, hero, images, playbookHref } from "@/lib/content/playbook";
 import { cn } from "@/lib/utils";
-import { CheckList } from "./PlaybookCta";
+import { CheckIcon } from "./PlaybookCta";
+
+/** "Find it. Decide on..." -> lead "Find it." + the rest (styling only). */
+function splitLead(text: string) {
+  const end = text.indexOf(". ");
+  return end === -1
+    ? { lead: text, rest: "" }
+    : { lead: text.slice(0, end + 1), rest: text.slice(end + 1) };
+}
 
 interface PlaybookTeaserProps {
   /** The host page's searchParams; attribution and prefill carry to /playbook. */
@@ -23,24 +31,24 @@ export function PlaybookTeaser({
         className,
       )}
     >
-      <div className="bg-tint border-ink v2-dots flex items-center border-b-2 p-5 md:border-r-2 md:border-b-0">
+      <div className="bg-tint border-ink v2-dots flex items-center justify-center overflow-hidden border-b-2 p-3 md:border-r-2 md:border-b-0">
         <Image
           src={images.product.src}
           alt={images.product.alt}
           width={images.product.width}
           height={images.product.height}
-          sizes="(min-width: 768px) 460px, 100vw"
-          className="h-auto w-full scale-110"
+          sizes="(min-width: 768px) 640px, 100vw"
+          className="h-auto w-full scale-[1.12] object-contain"
         />
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {hero.eyebrow}
         </p>
-        <p className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] uppercase">
+        <p className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
           {hero.teaserHeadline}
         </p>
-        <p className="mt-4 flex items-baseline gap-3">
+        <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-ink/55 text-xl font-black line-through">
             {PRICE.anchor}
           </span>
@@ -49,7 +57,20 @@ export function PlaybookTeaser({
           </span>
           <span className="text-sm font-bold">{PRICE.save}</span>
         </p>
-        <CheckList items={hero.teaserBullets} className="mt-5 text-[0.95rem]" />
+        <ul className="mt-5 space-y-2.5 text-[0.95rem] leading-snug">
+          {hero.teaserBullets.map((b) => {
+            const { lead, rest } = splitLead(b);
+            return (
+              <li key={b} className="flex gap-3">
+                <CheckIcon className="text-brand-600 mt-0.5 size-5 shrink-0" />
+                <span>
+                  <strong className="text-ink font-black">{lead}</strong>
+                  {rest}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
         <Link
           href={playbookHref(searchParams)}
           className={buttonClass({ size: "lg", className: "mt-6 w-full" })}

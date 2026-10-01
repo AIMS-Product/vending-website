@@ -12,7 +12,7 @@ export const GHL_CHECKOUT_URL = "https://webinar.vendingpreneurs.com/checkout";
 export const PRICE = {
   anchor: "$199",
   today: "$67",
-  save: "Save $132.00 today",
+  save: "Save $132 today",
 };
 
 /** Ad-click parameters carried onto the checkout link. */
@@ -23,6 +23,9 @@ export const PLAYBOOK_ATTRIBUTION_KEYS = [
   "utm_term",
   "utm_content",
   "fbclid",
+  "gclid",
+  "gbraid",
+  "wbraid",
 ] as const;
 
 /**
@@ -63,8 +66,8 @@ export const checkoutHref = (params: SearchParams = {}) =>
 export const playbookHref = (params: SearchParams = {}) =>
   withQuery(PLAYBOOK_PATH, pickPlaybookParams(params));
 
+/** The one buy label above the final checkout card (which says "Get Instant Access"). */
 export const BUY_CTA = "Yes, I Want Mike's Playbook";
-export const BUY_CTA_SHORT = "Yes, I Want Mike's System";
 
 export const images = {
   product: {
@@ -100,6 +103,8 @@ const storyPhotos = {
     alt: "Shannon R. on a member call",
     width: 480,
     height: 270,
+    /** A 16:9 call still: zoom to the face for the square avatar. */
+    zoom: 1.7,
   },
 } as const;
 
@@ -144,7 +149,8 @@ export const curriculum = {
     "Here's Exactly What You Get Inside The Profit Machine System For Just",
   chapters: [
     {
-      title: "Introduction & Opportunity Overview (Lessons 1-3)",
+      lessons: "Lessons 1-3",
+      title: "Introduction & Opportunity Overview",
       points: [
         "Why vending looks fundamentally different in 2026 than it did a decade ago",
         "The unattended retail shift driving demand for smart machines right now",
@@ -152,7 +158,8 @@ export const curriculum = {
       ],
     },
     {
-      title: "Revenue Potential & Profit Breakdown (Lessons 4-5)",
+      lessons: "Lessons 4-5",
+      title: "Revenue Potential & Profit Breakdown",
       points: [
         "Real daily revenue examples pulled from actual machines",
         "A full breakdown of cost of goods, processing fees, and what's left as profit",
@@ -160,7 +167,8 @@ export const curriculum = {
       ],
     },
     {
-      title: "Finding Profitable Locations (Lessons 6-10)",
+      lessons: "Lessons 6-10",
+      title: "Finding Profitable Locations",
       points: [
         "Why location matters more than machine, and how that changes your entire approach",
         "The three factors - parking, availability, visibility - Mike checks before pursuing any location",
@@ -168,7 +176,8 @@ export const curriculum = {
       ],
     },
     {
-      title: "Choosing the Right Machine (Lessons 11-15)",
+      lessons: "Lessons 11-15",
+      title: "Choosing the Right Machine",
       points: [
         "What to check in a supplier contract before signing anything",
         "eVending's zero-down outdoor machines, and when they make sense",
@@ -176,14 +185,16 @@ export const curriculum = {
       ],
     },
     {
-      title: "Building a Better Business Foundation (Lessons 16-17)",
+      lessons: "Lessons 16-17",
+      title: "Building a Better Business Foundation",
       points: [
         "How to form your LLC and set up the legal foundation correctly from day one",
         "The insurance types that matter, including inland marine coverage and why it applies to vending",
       ],
     },
     {
-      title: "Inventory & Profit Optimization (Lessons 18-21)",
+      lessons: "Lessons 18-21",
+      title: "Inventory & Profit Optimization",
       points: [
         "Tracking sales data and doubling down on your bestsellers",
         "Mike's restocking strategy, including when and how to top off machines",
@@ -245,19 +256,43 @@ export const opportunity = {
       tail: "- no employees, no tenants, no 80-hour weeks.",
     },
     {
-      lead: "The same system Anthony used to go from laid off to 98k/mo with 45 locations.",
-      tail: "",
+      lead: "The same system Anthony used",
+      tail: "to go from laid off to 98k/mo with 45 locations.",
     },
     {
       lead: "Charles still teaches high school full-time",
       tail: "- his 4 machines pay him 20k/mo on the side.",
     },
     {
-      lead: "Join 1,200+ members who've placed 3,000+ locations generating 3M+ in combined revenue.",
-      tail: "",
+      lead: "Join 1,200+ members",
+      tail: "who've placed 3,000+ locations generating 3M+ in combined revenue.",
     },
   ],
 };
+
+/**
+ * The three quotes GHL showed as one flattened image (images.results), typed
+ * verbatim from it. `crop` is each face's square in that 1024x923 image, so
+ * the avatar is the same approved photo, cropped in CSS.
+ */
+export const opportunityQuotes = [
+  {
+    name: "Anthony",
+    quote: "“We have 45 locations, 77 machines, and did $98,000 last month…”…",
+    crop: { x: 57, y: 57, size: 192 },
+  },
+  {
+    name: "Shannon",
+    quote: "“With just 4 locations, I’m doing $25,000 a month in revenue…”",
+    crop: { x: 57, y: 357, size: 192 },
+  },
+  {
+    name: "Thomas",
+    quote:
+      "“In a few months, I went from zero experience to $5K profit a month!”",
+    crop: { x: 57, y: 658, size: 192 },
+  },
+] as const;
 
 export const moreBonuses = {
   eyebrow: "9 BONUSES",
@@ -387,8 +422,11 @@ export const compare = {
 };
 
 export const host = {
+  /** GHL's headline, "Meet Mike Hoffmann: From ...", split into eyebrow and title. */
+  eyebrow: "Meet Mike Hoffmann",
   title:
-    "Meet Mike Hoffmann: From 60-Hour Work Weeks Making 1,200/Month to 150+ Machines Generating 200k/Month In Just a Few Years",
+    "From 60-Hour Work Weeks Making 1,200/Month to 150+ Machines Generating 200k/Month In Just a Few Years",
+  highlight: "150+ Machines Generating 200k/Month",
   paragraphs: [
     "I grew up on a family farm in rural Iowa. I put myself through the University of Kansas, and for years I worked as a college strength and conditioning coach. My life consisted of long hours, a paycheck that never seemed to move, and a schedule that wasn't mine. The moment vending stopped being a curiosity and started being the plan is when I really started to see a change. My first machine brought in 600 a month. It wasn't life-changing, but it was proof.",
     "Today, my best location alone brings in over 22k in a single month, and I still run this business myself. Not because I have to, but because I built it to work, and I want to know it still works. Every script, template, and framework in this Playbook is what I'm using on my own route right now, not what I used to do five years ago.",
@@ -397,7 +435,6 @@ export const host = {
 };
 
 export const faq = {
-  eyebrow: "Questions?",
   title: "Frequently Asked Questions",
   items: [
     {

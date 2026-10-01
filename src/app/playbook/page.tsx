@@ -41,11 +41,11 @@ export default async function PlaybookPage({
       <PlaybookHero checkoutHref={href} />
       <PlaybookSteps />
       <PlaybookCurriculum checkoutHref={href} />
-      <PlaybookOpportunity checkoutHref={href} />
+      <PlaybookOpportunity />
       <PlaybookMoreBonuses checkoutHref={href} />
       <PlaybookStories checkoutHref={href} />
       <PlaybookCompare />
-      <PlaybookHost checkoutHref={href} />
+      <PlaybookHost />
       <PlaybookFaq />
       <PlaybookFinalOffer checkoutHref={href} />
     </main>

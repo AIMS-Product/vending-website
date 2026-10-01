@@ -43,6 +43,7 @@ const SCRIPT_HOSTS = [
 const CONNECT_HOSTS = [
   "https://*.supabase.co",
   "https://*.ingest.sentry.io",
+  "https://*.ingest.us.sentry.io", // US-region ingest; *. covers one label only
   "https://www.googletagmanager.com",
   "https://*.google-analytics.com",
   "https://*.analytics.google.com",
@@ -83,10 +84,11 @@ const DIRECTIVES: Array<[string, string[]]> = [
   ["default-src", ["'self'"]],
   // 'unsafe-inline' covers the tag bootstraps in TrackingScripts and Next's own
   // hydration inline scripts; 'unsafe-eval' is what GTM's preview mode and
-  // several of the players need. Both come out once the bootstraps are nonced.
+  // several of the players need. The Vidalytics player loads its own chunks
+  // from blob: URLs (funnel video pages). Both come out once the bootstraps are nonced.
   [
     "script-src",
-    ["'self'", "'unsafe-inline'", "'unsafe-eval'", ...SCRIPT_HOSTS],
+    ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", ...SCRIPT_HOSTS],
   ],
   // RightMessage injects a <style> element on load, and Tailwind's runtime
   // style attributes are inline by construction.
@@ -97,7 +99,8 @@ const DIRECTIVES: Array<[string, string[]]> = [
   ["font-src", ["'self'", "data:", "https://fonts.gstatic.com"]],
   ["connect-src", ["'self'", ...CONNECT_HOSTS]],
   ["frame-src", ["'self'", ...FRAME_HOSTS]],
-  ["media-src", ["'self'", "blob:", "https:"]],
+  // data: is the Vidalytics player's silent placeholder audio/video.
+  ["media-src", ["'self'", "data:", "blob:", "https:"]],
   ["worker-src", ["'self'", "blob:"]],
   ["object-src", ["'none'"]],
   ["base-uri", ["'self'"]],

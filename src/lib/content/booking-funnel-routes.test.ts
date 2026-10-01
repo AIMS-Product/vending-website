@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   BOOKING_FUNNEL_PATHS,
+  hidesChatWidget,
   isBookingFunnelPath,
   isFunnelChromePath,
   suppressesChatTeaser,
@@ -88,6 +89,39 @@ describe("booking funnel routes", () => {
     );
     expect(source).toContain("suppressesChatTeaser(pathname)");
     expect(source).toContain("if (suppressIdleTeaser) return;");
+  });
+
+  it.each([
+    "/playbook",
+    "/masterclass",
+    "/masterclass-confirmed",
+    "/masterclass-review",
+    "/masterclass-replay-dna",
+    "/masterclass-replay-adnb",
+    "/masterclass-replay-meta",
+    "/masterclass-replay-advisory",
+  ])("drops the chrome, banner and chatbot on webinar page %s", (route) => {
+    expect(isFunnelChromePath(route)).toBe(true);
+    expect(hidesChatWidget(route)).toBe(true);
+  });
+
+  it("keeps the chat launcher on the other booking funnels", () => {
+    expect(hidesChatWidget("/contact")).toBe(false);
+    expect(hidesChatWidget("/")).toBe(false);
+    expect(hidesChatWidget("/masterclass-replay")).toBe(false);
+  });
+
+  it("never renders the widget where hidesChatWidget is true", () => {
+    const source = readFileSync(
+      path.resolve(
+        __dirname,
+        "../../../",
+        "src/components/chatbot/ChatWidget.tsx",
+      ),
+      "utf8",
+    );
+    expect(source).toContain("hidesChatWidget(pathname)");
+    expect(source).toContain("!chatHidden");
   });
 
   it("keeps the teaser off the pre-call page without taking its chrome", () => {
