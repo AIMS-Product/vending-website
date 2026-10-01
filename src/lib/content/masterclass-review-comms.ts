@@ -1341,11 +1341,11 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     note: "Proves the site sign-up reaches Meta as Complete Registration.",
   },
   {
-    item: "Pass the site's step events from Google Tag Manager to GA4",
-    owner: "Adam",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "GA4 has none of vp_lead_submit, masterclass_registered or the form steps (checked Thu Oct 1). PostHog has them; the dashboard's form starts use GA4's own form_start until then.",
+    item: "Send the site's step events to GA4",
+    owner: "Site (done)",
+    due: "Thu Oct 1",
+    status: "done",
+    note: "The site sends them to GA4 itself; no Tag Manager change needed. Seen arriving from the live site.",
   },
   // ------------------------------------------------------------------ done
   {
@@ -1624,12 +1624,12 @@ export const READINESS = {
     {
       area: "Meta ads and tracking",
       status: "yellow",
-      line: "Pixel on every page and ads already optimise for Complete Registration. Still to do: one ad set to the new page with clean UTMs, domain verification, and one test sign-up seen in Events Manager.",
+      line: "Pixel on every page and ads optimise for Complete Registration, which GHL sends server-side for every sign-up (no browser duplicates). Still to do: one ad set to the new page with clean UTMs (Adam or Liana), the domain verification code from Business Manager (Adam sends it, we add it), and one test sign-up seen in Events Manager (Liana).",
     },
     {
       area: "Drop-off tracking",
-      status: "yellow",
-      line: "PostHog records every step: page views, form started, form errors, registered, intake answered, Playbook viewed, checkout clicked. GA4 sees page views and its own form start and submit only: Google Tag Manager does not pass the site's step events on yet.",
+      status: "green",
+      line: "Every step reaches PostHog and GA4: page views, form started, form errors (with the reason), registered, top-bar and sticky-bar clicks, calendar adds, Playbook clicks, checkout clicks. Checked on the live site Thu Oct 1.",
     },
     {
       area: "Webinar dashboard",
