@@ -61,11 +61,14 @@ export function ConfirmedHero({
         <h1
           className={cn(
             "v2-display text-ink mt-4 max-w-full min-w-0 leading-[1] uppercase",
-            // A long first name (up to 20 letters) steps down so it breaks
-            // less often; overflow-wrap catches the rest.
-            first && first.length > 10
-              ? "text-[clamp(2.2rem,5vw,4.75rem)]"
-              : "text-[clamp(2.8rem,6vw,4.75rem)]",
+            // A long first name (up to 40 characters) steps down so it
+            // breaks less often; the name wraps at its spaces and
+            // overflow-wrap catches one long word.
+            !first || first.length <= 10
+              ? "text-[clamp(2.8rem,6vw,4.75rem)]"
+              : first.length <= 20
+                ? "text-[clamp(2.2rem,5vw,4.75rem)]"
+                : "text-[clamp(1.9rem,4.2vw,3.75rem)]",
           )}
         >
           You&apos;re in
@@ -118,7 +121,10 @@ export function ConfirmedHero({
                   rel="noopener noreferrer"
                   className={buttonClass({ className: "col-span-2 gap-2.5" })}
                 >
-                  <span className="grid size-7 place-items-center rounded-md bg-white">
+                  <span
+                    aria-hidden="true"
+                    className="grid size-7 place-items-center rounded-md bg-white"
+                  >
                     <GoogleCalendarLogo />
                   </span>
                   Google Calendar
@@ -248,13 +254,13 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
   return (
     <section className="border-ink border-t-2 bg-white">
       <div className="mx-auto max-w-[1180px] px-5 py-14 lg:px-10">
-        <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
+        <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.storiesEyebrow}
         </p>
-        <h2 className="v2-display text-ink mt-2 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-none uppercase">
+        <h2 className="v2-display text-ink mt-2 text-[clamp(2.2rem,4vw,3.25rem)] leading-none uppercase">
           {confirmedCopy.storiesHeading}
         </h2>
-        <StoryList stories={featured} columns={3} />
+        <StoryList stories={featured} columns={3} statSize="lg" />
       </div>
     </section>
   );
@@ -270,7 +276,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-card border-ink shadow-card min-w-0 border-2 bg-white p-6">
+    <div className="rounded-card border-ink min-w-0 border-2 bg-white p-6">
       <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
         Step {n}
       </p>

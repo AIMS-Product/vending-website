@@ -114,7 +114,7 @@ export const reportCopy = {
   decisions: [
     "Playbook bonuses: the page shows a 5-item bonus stack and 9 bonuses. Which are actually delivered?",
     'Anthony\'s figures appear in several versions (locations, machines, monthly revenue) and as "120k$". Kody to approve one set and the formatting.',
-    '"Show up live" bonuses on the confirmation page: are they still offered? If yes, we add the GHL block word for word.',
+    '"Show up live" bonuses on the confirmation page: the GHL block is live word for word, except that "tonight" reads "on Tuesday" (the session\'s weekday) until the day of the session. Pending owner confirmation that the bonuses are still offered.',
     "Who hosts each replay (Mike or Anthony) for the photos and labels.",
     "GHL scoring form styling (teal button) is set in the GHL form builder.",
     'Vidalytics player settings ("Pearl VP Admin" label, unmute overlay) are set in the Vidalytics account.',

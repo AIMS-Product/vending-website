@@ -41,6 +41,17 @@ function NoBreak({ text, phrase }: { text: string; phrase: string }) {
 }
 
 /**
+ * A takeaway's lead phrase (before its first " - ", or its first sentence when
+ * it has no dash) and the rest. Render-time only: the approved string is
+ * shown whole, byte for byte.
+ */
+function splitTakeaway(text: string): [string, string] {
+  const dash = text.indexOf(" - ");
+  const at = dash >= 0 ? dash : text.indexOf(".") + 1;
+  return at > 0 ? [text.slice(0, at), text.slice(at)] : [text, ""];
+}
+
+/**
  * The registration hero: logo bar, the approved headline, the four GHL
  * takeaways and the form. Its own component (not ApplyHero) because the
  * masterclass left column is a takeaway list, not a paragraph.
@@ -95,17 +106,28 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
           <p className="text-ink mt-4 text-lg leading-snug font-bold">
             <NoBreak text={copy.subheadline} phrase="cash-flowing" />
           </p>
-          <ul className="order-3 mt-8 grid max-w-[620px] gap-3.5 lg:order-none lg:mt-6">
-            {masterclassTakeaways.map((item) => (
-              <li
-                key={item}
-                className="flex gap-3 text-[15px] leading-[1.55] font-medium text-slate-700"
-              >
-                <CheckDisc />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="order-3 mt-8 max-w-[620px] lg:order-none lg:mt-6">
+            <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+              On the call
+            </p>
+            <ul className="mt-3 space-y-3">
+              {masterclassTakeaways.map((item) => {
+                const [lead, rest] = splitTakeaway(item);
+                return (
+                  <li
+                    key={item}
+                    className="flex gap-3 text-[15px] leading-[1.55] font-medium text-slate-700"
+                  >
+                    <CheckDisc />
+                    <span>
+                      <strong className="text-ink font-bold">{lead}</strong>
+                      {rest}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
           <a
             href={`#${APPLY_VSL_ANCHOR}`}
             className="group text-ink order-3 mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:order-none"

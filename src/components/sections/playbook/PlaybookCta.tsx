@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/Button";
-import { PRICE } from "@/lib/content/playbook";
 import { cn } from "@/lib/utils";
 
 interface PlaybookCtaProps {
@@ -22,25 +21,6 @@ export function PlaybookCta({ href, label, className }: PlaybookCtaProps) {
     >
       {label}
     </Button>
-  );
-}
-
-/** $199 struck, $67, and the save line: the compact price tag. */
-export function PriceTag({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn("flex flex-wrap items-baseline gap-x-3 gap-y-1", className)}
-    >
-      <span className="text-ink/55 text-xl font-black line-through">
-        <span className="sr-only">Was </span>
-        {PRICE.anchor}
-      </span>
-      <span className="v2-display text-brand-700 text-5xl leading-none">
-        <span className="sr-only">Now </span>
-        {PRICE.today}
-      </span>
-      <span className="text-sm font-bold">{PRICE.save}</span>
-    </div>
   );
 }
 

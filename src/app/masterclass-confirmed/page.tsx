@@ -76,12 +76,13 @@ export default async function MasterclassConfirmedPage({
   // Same name rule as the form: anything else falls back to the nameless
   // greeting and no name is forwarded to the checkout.
   const first = safeFirstName(params);
+  const renderedAt = renderTime();
   const links = event.startsAt
     ? calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)))
     : null;
 
   return (
-    <main className={anton.variable}>
+    <div className={anton.variable}>
       <StripPiiParams />
       <RevealObserver />
       <ConfirmedHero
@@ -89,15 +90,15 @@ export default async function MasterclassConfirmedPage({
         label={event.label}
         startsAt={event.startsAt}
         links={links}
-        renderedAt={renderTime()}
+        renderedAt={renderedAt}
       />
       <NextSteps />
-      <ShowUpLive />
+      <ShowUpLive startsAt={event.startsAt} renderedAt={renderedAt} />
       {hasSession ? <IntakeForm /> : null}
       <PlaybookBand params={confirmedPlaybookParams(params)} />
       <CoverSection />
       <FeaturedStories stories={stories} />
       <MasterclassFooter />
-    </main>
+    </div>
   );
 }

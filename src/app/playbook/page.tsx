@@ -59,7 +59,7 @@ export default async function PlaybookPage({
 }) {
   const href = checkoutHref(await searchParams);
   return (
-    <main className={anton.variable}>
+    <div className={anton.variable}>
       <StripPiiParams />
       <RevealObserver />
       <PlaybookHero checkoutHref={href} />
@@ -72,6 +72,6 @@ export default async function PlaybookPage({
       <PlaybookHost checkoutHref={href} />
       <PlaybookFaq />
       <PlaybookFinalOffer checkoutHref={href} />
-    </main>
+    </div>
   );
 }

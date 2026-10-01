@@ -72,13 +72,13 @@ export async function renderReplayPage(
   ]);
   const attribution = buildLeadAttribution(params, variant.path);
   return (
-    <main className={anton.variable}>
+    <div className={anton.variable}>
       <StripPiiParams />
       <ReplayHero variant={variant} expiresAt={liveExpiry(event.startsAt)} />
       <ReplayBooking variant={variant} attribution={attribution} />
       <ReplayTestimonials variant={variant} />
       <MasterclassFooter />
-    </main>
+    </div>
   );
 }
 

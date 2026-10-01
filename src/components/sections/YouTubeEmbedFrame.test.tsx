@@ -62,6 +62,20 @@ describe("YouTubeEmbedFrame", () => {
     expect(card).not.toContain("bottom-3");
   });
 
+  it("moves the card button to the bottom-left when asked", () => {
+    const card = renderToStaticMarkup(
+      <YouTubeEmbedFrame
+        embed={embed}
+        title="Member story"
+        variant="card"
+        playPosition="bl"
+      />,
+    );
+    expect(card).toMatch(/absolute left-3[^"]*bottom-3/);
+    expect(card).not.toContain("right-3");
+    expect(card).not.toContain("top-3");
+  });
+
   // The iframe only mounts after a click, so it is unreachable from a server
   // render. Guard the source instead: a `sandbox` without allow-same-origin
   // gives the frame an opaque origin the YouTube player cannot run in, and it

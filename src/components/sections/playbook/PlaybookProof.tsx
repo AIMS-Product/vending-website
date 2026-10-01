@@ -139,20 +139,13 @@ export function PlaybookOpportunity() {
 
 type Story = (typeof stories.items)[number];
 
-/** Story names that also appear in the approved group image get its face. */
-const storyCrop = (name: string) =>
-  opportunityQuotes.find((q) => q.name === name)?.crop;
-
+/** One header pattern for every story: name, then the story. Faces live in the Opportunity cards. */
 function StoryCard({ story }: { story: Story }) {
-  const crop = storyCrop(story.name);
   return (
-    <Card as="figure" className="flex h-full flex-col">
-      <figcaption className="flex items-center gap-4">
-        {crop ? <QuoteAvatar crop={crop} /> : null}
-        <span className="v2-display text-ink text-3xl leading-none uppercase">
-          {story.name}
-        </span>
-      </figcaption>
+    <Card as="article" className="flex h-full flex-col">
+      <h3 className="v2-display text-ink text-3xl leading-none uppercase">
+        {story.name}
+      </h3>
       <blockquote className="mt-5 text-[1.05rem] leading-relaxed">
         {story.text}
       </blockquote>

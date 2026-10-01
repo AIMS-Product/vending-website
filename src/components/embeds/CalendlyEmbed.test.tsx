@@ -152,6 +152,21 @@ describe("CalendlyFrame height", () => {
     ).toBeNull();
   });
 
+  // hideDetails="phone": the reported height left ~120px of blank white
+  // under the month on a 390px phone, so it is trimmed but never below 520.
+  it("trims the phone date picker's height by 80px", () => {
+    expect(frame.appliedHeight(602, true)).toBe(522);
+  });
+
+  it("never shrinks the phone frame below 520px", () => {
+    expect(frame.appliedHeight(560, true)).toBe(520);
+  });
+
+  it("applies the reported height unchanged off the phone branch", () => {
+    expect(frame.appliedHeight(602, false)).toBe(602);
+    expect(frame.appliedHeight(null, true)).toBeNull();
+  });
+
   it("applies the height as an inline style, not by mutating props", () => {
     const source = readFileSync(
       new URL("./CalendlyFrame.tsx", import.meta.url),

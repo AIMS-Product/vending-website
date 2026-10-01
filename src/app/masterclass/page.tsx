@@ -67,7 +67,7 @@ export default async function MasterclassPage({
   const renderedAt = renderTime();
 
   return (
-    <main className={anton.variable}>
+    <div className={anton.variable}>
       <StripPiiParams />
       <RevealObserver />
       <MasterclassHero
@@ -89,6 +89,6 @@ export default async function MasterclassPage({
         renderedAt={renderedAt}
       />
       <MasterclassFooter />
-    </main>
+    </div>
   );
 }

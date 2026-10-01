@@ -139,7 +139,7 @@ export type ReplayVariant = {
   mainVideo: ReplayVideo;
   /** Lines under the heading. */
   sub: readonly string[];
-  /** Numbered steps shown under the video (DNA only). */
+  /** Numbered steps shown above the video (DNA only). */
   steps: readonly ReplayStep[];
   /** Replay-hero button: scrolls to the anchor named by `target`. */
   hero: { label: string; target: "video" | "cta" } | null;

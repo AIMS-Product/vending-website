@@ -4,6 +4,7 @@ import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
 import { CheckDisc } from "@/components/sections/masterclass/MasterclassHero";
 import { StoriesToggle } from "@/components/sections/masterclass/StoriesToggle";
+import type { PlayPosition } from "@/components/media/ClickToLoad";
 import { Wordmark } from "@/components/site/Wordmark";
 import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
 import { buttonClass } from "@/components/ui/Button";
@@ -112,7 +113,7 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
               ))}
             </dl>
           ) : null}
-          <p className="mt-3 text-xs text-slate-500">{hostCopy.footnote}</p>
+          <p className="mt-3 text-sm text-slate-600">{hostCopy.footnote}</p>
         </div>
       </div>
     </section>
@@ -210,17 +211,29 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
  * Thumbnails whose burned-in text reaches the bottom-right corner, where the
  * card play button sits by default; theirs moves to the top-right. Keyed by
  * YouTube id because the stories come from the CMS. Javier Zeder: "$8.5K
- * FIRST MONTH" runs to the bottom edge.
+ * FIRST MONTH" runs to the bottom edge. Tom Canterino: it touched "HOW?".
+ * Michael D's text fills the right edge (the disc clipped "Yr" in "$600K/Yr"
+ * bottom-right and touched "Over" top-right), so his sits bottom-left.
  */
-const TOP_RIGHT_PLAY = new Set(["GO6C25-1mf8"]);
+const TOP_RIGHT_PLAY = new Set(["GO6C25-1mf8", "8ih4aTXaot8"]);
+const BOTTOM_LEFT_PLAY = new Set(["U7KKbZHqBvg"]);
+
+function playPosition(youtubeId: string): PlayPosition {
+  if (TOP_RIGHT_PLAY.has(youtubeId)) return "tr";
+  if (BOTTOM_LEFT_PLAY.has(youtubeId)) return "bl";
+  return "br";
+}
 
 export function StoryList({
   stories,
   columns = 4,
   collapse,
+  statSize = "md",
 }: {
   stories: CaseStudyStory[];
   columns?: 3 | 4;
+  /** Headline stat size: "lg" for the three featured cards on /masterclass-confirmed. */
+  statSize?: "md" | "lg";
   /**
    * Cards past these counts hide until the surrounding StoriesToggle opens
    * (it sets data-expanded on its group). Mobile shows fewer.
@@ -261,9 +274,7 @@ export function StoryList({
                 title={`${story.member_name}'s story`}
                 className="aspect-video w-full"
                 variant="card"
-                playPosition={
-                  TOP_RIGHT_PLAY.has(story.youtube_video_id!) ? "tr" : "br"
-                }
+                playPosition={playPosition(story.youtube_video_id!)}
               />
             ) : null}
             <div className="flex flex-1 flex-col p-4">
@@ -279,7 +290,12 @@ export function StoryList({
                 <div className="mt-auto pt-4">
                   {first ? (
                     <p className="flex flex-col items-start gap-1">
-                      <Highlight className="v2-display px-1.5 text-2xl leading-none tabular-nums">
+                      <Highlight
+                        className={cn(
+                          "v2-display px-1.5 leading-none tabular-nums",
+                          statSize === "lg" ? "text-3xl" : "text-2xl",
+                        )}
+                      >
                         {first.value}
                       </Highlight>
                       <span className="text-eyebrow text-xs font-black tracking-[0.1em] uppercase">
@@ -337,12 +353,12 @@ export function FitSection({
               />
             </p>
           ) : null}
-          <HostCandids />
           {startsAt && endsAt ? (
-            <div className="mt-8">
+            <div className="mt-5">
               <Countdown startsAt={startsAt} endsAt={endsAt} />
             </div>
           ) : null}
+          <HostCandids />
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 md:items-start">
           <FitCard title={fitCopy.forTitle} items={fitFor} good />
@@ -375,14 +391,14 @@ function SaveSeatButton({ className }: { className?: string }) {
 }
 
 /**
- * Two candid shots of Anthony, the portrait one wider. The side tile stays
- * short enough (6:5) that its 628px-tall source is not upscaled on 2x
- * screens. Below sm only the portrait shot shows, landscape, so the closing
- * button stays near the heading.
+ * Two candid shots of Anthony, the portrait one wider. From sm the side tile
+ * stretches to the portrait's height (same top and bottom edges) and asks for
+ * the full-width source, so the cover crop is not upscaled. Below sm only the portrait shot
+ * shows, landscape, so the closing button stays near the heading.
  */
 function HostCandids() {
   return (
-    <div className="mx-auto mt-8 grid w-full max-w-[860px] grid-cols-1 items-center gap-3 sm:grid-cols-[1.2fr_1fr] sm:gap-6">
+    <div className="mx-auto mt-10 grid w-full max-w-[860px] grid-cols-1 gap-3 sm:grid-cols-[1.2fr_1fr] sm:items-stretch sm:gap-6">
       {hostCandids.map((photo, index) => {
         const main = index === 0;
         return (
@@ -392,7 +408,7 @@ function HostCandids() {
               "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white",
               main
                 ? "aspect-[4/3] sm:aspect-[4/5]"
-                : "hidden aspect-[6/5] sm:block",
+                : "hidden aspect-[6/5] sm:block sm:aspect-auto sm:h-full",
             )}
           >
             <Image
@@ -402,7 +418,9 @@ function HostCandids() {
               sizes={
                 main
                   ? "(min-width: 860px) 460px, (min-width: 640px) 52vw, 100vw"
-                  : "(min-width: 860px) 380px, 44vw"
+                  : // object-cover fills the portrait's height with a landscape
+                    // source, so the drawn width is ~1.9x the tile's.
+                    "(min-width: 860px) 1100px, 100vw"
               }
               className={cn("object-cover", photo.position)}
             />

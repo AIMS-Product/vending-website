@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { sentryPiiHooks } from "@/lib/tracking/sentry-scrub";
 import posthog from "posthog-js";
 import {
   readStoredAttributionSession,
@@ -13,6 +14,8 @@ if (dsn) {
     dsn,
     environment: process.env.NODE_ENV,
     sendDefaultPii: false,
+    // Strips email/phone/name params from URLs in breadcrumbs, requests, spans.
+    ...sentryPiiHooks,
     tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
   });
 }

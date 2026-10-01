@@ -5,10 +5,13 @@ import {
   calendarIcs,
   calendarLinks,
   confirmedPlaybookParams,
+  liveDayWord,
   masterclassLiveEnd,
   masterclassPhase,
   parseWebinarStart,
   safeFirstName,
+  showUpLiveCopy,
+  withLiveDay,
 } from "./masterclass";
 import { playbookHref } from "./playbook";
 
@@ -100,16 +103,25 @@ describe("safeFirstName", () => {
     expect(safeFirstName({ first: "O'Neil" })).toBe("O'Neil");
     expect(safeFirstName({ first: "<script>" })).toBeUndefined();
     expect(safeFirstName({ first: "evil.com" })).toBeUndefined();
-    expect(safeFirstName({ first: "a".repeat(21) })).toBeUndefined();
+    expect(safeFirstName({ first: "a".repeat(41) })).toBeUndefined();
     expect(safeFirstName({})).toBeUndefined();
   });
 
-  it("keeps only the first word, so a link cannot print a sentence", () => {
-    expect(safeFirstName({ first: "Your account is suspended call now" })).toBe(
-      "Your",
-    );
-    expect(safeFirstName({ first: "Anne-Marie O'Neil" })).toBe("Anne-Marie");
-    expect(safeFirstName({ first: "visit evil.com" })).toBe("Visit");
+  it("keeps a whole first name, as the form accepts it", () => {
+    expect(safeFirstName({ first: "Mary Jo" })).toBe("Mary Jo");
+    expect(safeFirstName({ first: "  mary   jo " })).toBe("Mary jo");
+    const hyphenated = "Bartholomew-Christopherson";
+    expect(hyphenated).toHaveLength(26);
+    expect(safeFirstName({ first: hyphenated })).toBe(hyphenated);
+    expect(safeFirstName({ first: "a".repeat(40) })).toBe(`A${"a".repeat(39)}`);
+    expect(safeFirstName({ first: "a".repeat(41) })).toBeUndefined();
+  });
+
+  it("refuses a sentence, so a link cannot print one in the H1", () => {
+    expect(
+      safeFirstName({ first: "Your account is suspended call now" }),
+    ).toBeUndefined();
+    expect(safeFirstName({ first: "visit evil.com" })).toBeUndefined();
   });
 
   it("capitalises the first letter", () => {
@@ -180,5 +192,38 @@ describe("masterclassPhase", () => {
   it("ends the countdown's live window at the same instant", () => {
     expect(masterclassLiveEnd(startsAt)).toBe("2026-10-07T02:00:00.000Z");
     expect(masterclassLiveEnd(null)).toBeNull();
+  });
+});
+
+describe("Show up live day wording", () => {
+  // Tuesday, October 6, 2026 at 7:30 PM Central.
+  const startsAt = "2026-10-07T00:30:00.000Z";
+
+  it("says tonight on the event's own day in Central time", () => {
+    // 8:00 AM Central on the 6th (13:00 UTC).
+    const day = liveDayWord(Date.parse("2026-10-06T13:00:00Z"), startsAt);
+    expect(day).toBe("tonight");
+    expect(withLiveDay(showUpLiveCopy.bodyLead, day)).toBe(
+      showUpLiveCopy.bodyLead,
+    );
+  });
+
+  it("names the weekday on any earlier day, changing only that word", () => {
+    // Thursday, October 1. Late on the 5th in Central is already the 6th in UTC.
+    for (const now of ["2026-10-01T15:00:00Z", "2026-10-06T03:00:00Z"]) {
+      const day = liveDayWord(Date.parse(now), startsAt);
+      expect(day).toBe("on Tuesday");
+      expect(withLiveDay(showUpLiveCopy.bodyLead, day)).toBe(
+        "Show up live on Tuesday and you'll walk away with ",
+      );
+      expect(withLiveDay(showUpLiveCopy.bonuses[0].body, day)).toBe(
+        "Exclusive discount — for live attendees who act on Tuesday only",
+      );
+    }
+  });
+
+  it("keeps the GHL word when the start is unknown", () => {
+    expect(liveDayWord(Date.now(), null)).toBe("tonight");
+    expect(liveDayWord(Date.now(), "not a date")).toBe("tonight");
   });
 });

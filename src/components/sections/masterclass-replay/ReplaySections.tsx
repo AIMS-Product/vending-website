@@ -62,6 +62,7 @@ export function ReplayVideoPlayer({
         framed={!bare}
         playButton={bare ? "card" : "hero"}
         playLabel={`Play ${title}`}
+        priority={!bare}
         posterSizes={
           bare
             ? "(min-width: 1024px) 400px, 100vw"
@@ -169,7 +170,7 @@ export function ReplayHero({
       {expiresAt ? <ReplayCountdownStrip expiresAt={expiresAt} /> : null}
       <div
         className={cn(
-          "mx-auto flex flex-col items-center px-5 pb-12 text-center lg:px-10",
+          "mx-auto flex flex-col items-center px-5 pb-10 text-center md:pb-12 lg:px-10",
           midHeading ? "gap-5 pt-7" : "gap-6 pt-9",
           longHeading || midHeading ? "max-w-[1120px]" : "max-w-[980px]",
         )}
@@ -189,6 +190,9 @@ export function ReplayHero({
           {variant.heading}
         </h1>
         {copyAfterVideo ? null : subCopy}
+        {/* As on GHL, the steps sit above the player, so "set up call below"
+            is on screen at load (1440x900) rather than under the fold. */}
+        {variant.steps.length ? <ReplaySteps variant={variant} /> : null}
         <div
           id={REPLAY_ANCHORS.video}
           className={cn(
@@ -216,7 +220,6 @@ export function ReplayHero({
             target={variant.hero.target}
           />
         ) : null}
-        {variant.steps.length ? <ReplaySteps variant={variant} /> : null}
       </div>
     </section>
   );
@@ -225,7 +228,7 @@ export function ReplayHero({
 function ReplaySteps({ variant }: { variant: ReplayVariant }) {
   const row = "text-ink flex items-center gap-3 text-base font-bold";
   return (
-    <ol className="mt-2 flex w-full flex-col gap-3 text-left sm:w-auto sm:flex-row sm:justify-center sm:gap-6">
+    <ol className="flex w-full flex-col gap-3 text-left sm:w-auto sm:flex-row sm:justify-center sm:gap-6">
       {variant.steps.map((step, index) => {
         const badge = (
           <span
@@ -328,7 +331,7 @@ export function ReplayBooking({
         className={cn(
           "mx-auto px-5 lg:px-10",
           calendly
-            ? "max-w-[1100px] pt-6 pb-10 md:pt-8 md:pb-14 md:[&>div]:border-0 md:[&>div]:bg-transparent md:[&>div]:shadow-none"
+            ? "max-w-[1100px] pt-6 pb-10 md:pt-0 md:pb-6 md:[&>div]:border-0 md:[&>div]:bg-transparent md:[&>div]:shadow-none"
             : "max-w-[760px] pt-8 pb-14",
         )}
       >
@@ -439,7 +442,7 @@ function Eyebrow({ children }: { children: string }) {
 export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
+      <div className="mx-auto max-w-[1180px] px-5 pt-12 pb-16 md:pt-16 lg:px-10">
         <Eyebrow>{replayTestimonialsCopy.eyebrow}</Eyebrow>
         <h2 className="v2-display text-ink mt-3 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {replayTestimonialsCopy.heading}
@@ -470,9 +473,9 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
                   <blockquote className="mt-3 text-[15px] text-slate-700">
                     &ldquo;{item.quote}&rdquo;
                   </blockquote>
-                  {/* Name and result travel together to the card foot, so a
-                      short quote leaves its space above, not inside, them. */}
-                  <div className="mt-auto pt-4">
+                  {/* Name and result sit straight under the quote; a short
+                      quote's spare height falls at the card foot. */}
+                  <div className="mt-6">
                     <p className="text-ink text-[15px] font-black whitespace-nowrap">
                       &mdash; {item.name}
                     </p>

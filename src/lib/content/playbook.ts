@@ -211,8 +211,6 @@ export const curriculum = {
 };
 
 export const includedBonuses = {
-  eyebrow: "Included with the course",
-  title: "Included Free With Mike Hoffmann's Playbook",
   items: [
     {
       title: "The Location Scorecard",
@@ -462,9 +460,9 @@ export const faq = {
 export const finalOffer = {
   badge: "EARLY BIRD SPECIAL · ACTIVATED",
   title: "Get Mike Hoffmann's Playbook Today",
-  proof: "3,000 Active Vending Locations ᐧ $3M+ Combined Revenue",
+  proof: "3,000 Active Vending Locations · $3M+ Combined Revenue",
   urgency: "Enrollment Closing Soon - Nearing Capacity",
-  price: "$67 Only",
+  price: "$67",
   line: "One machine can pay 36k per year. Your investment: $67. Plus 9 free bonuses.",
   cta: "Yes! Get Instant Access",
   secure: "100% secure 256-bit encrypted checkout",

@@ -67,16 +67,19 @@ function Slashed({ text }: { text: string }) {
   );
 }
 
-/** Body text with the sender address set as a code chip that can wrap. */
+/**
+ * Body text with the sender address set in bold on one line. Only on a
+ * 320px phone, where it is wider than the card, may it wrap.
+ */
 function WithEmail({ text }: { text: string }) {
   const at = text.indexOf(SENDER_EMAIL);
   if (at < 0) return <>{text}</>;
   return (
     <>
       {text.slice(0, at)}
-      <code className="bg-tint text-ink rounded-control px-1.5 font-mono text-[14px] [overflow-wrap:anywhere]">
+      <span className="text-ink font-semibold [overflow-wrap:anywhere] min-[360px]:whitespace-nowrap">
         {SENDER_EMAIL}
-      </code>
+      </span>
       {text.slice(at + SENDER_EMAIL.length)}
     </>
   );
@@ -133,7 +136,7 @@ const H2 =
 /** One page the team can follow to review and sign off the site funnel. */
 export function ReviewGuide() {
   return (
-    <main className={cn(anton.variable, "bg-tint min-h-screen")}>
+    <div className={cn(anton.variable, "bg-tint min-h-screen")}>
       <div className="mx-auto max-w-[860px] px-5 pt-14 pb-20">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {reviewCopy.eyebrow}
@@ -141,13 +144,13 @@ export function ReviewGuide() {
         <h1 className="v2-display text-ink mt-2 text-[clamp(2.25rem,6vw,3.5rem)] leading-none text-balance uppercase">
           {reviewCopy.heading}
         </h1>
-        <p className="mt-4 max-w-[64ch] text-[17px] leading-relaxed text-slate-700">
+        <p className="mt-4 max-w-[64ch] text-[17px] leading-relaxed text-pretty text-slate-700">
           {reviewCopy.intro}
         </p>
 
         <div
           role="note"
-          className="rounded-card border-ink border-l-brand-700 mt-6 flex gap-3 border-2 border-l-[6px] bg-white p-4"
+          className="rounded-card border-ink bg-brand-50 mt-6 flex gap-3 border-2 p-4"
         >
           <InfoIcon />
           <p className="text-ink text-[15px] leading-relaxed">
@@ -162,7 +165,11 @@ export function ReviewGuide() {
             return (
               <li
                 key={step.title}
-                className="rounded-card border-ink shadow-card flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4"
+                className={cn(
+                  "rounded-card border-ink flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4",
+                  // Only the steps with a button carry the sky shadow.
+                  cta && "shadow-card",
+                )}
               >
                 <div className="flex items-center gap-3 sm:items-start">
                   <NumberChip n={index + 1} />
@@ -203,7 +210,7 @@ export function ReviewGuide() {
                       </span>
                     ) : null}
                   </span>
-                  <span className="block text-sm break-words text-slate-500">
+                  <span className="block text-sm [overflow-wrap:anywhere] text-slate-500">
                     <Slashed text={pathOf(page.href)} />
                   </span>
                 </span>
@@ -238,6 +245,6 @@ export function ReviewGuide() {
         <ReviewReport />
       </div>
       <MasterclassFooter />
-    </main>
+    </div>
   );
 }

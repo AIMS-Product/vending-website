@@ -51,6 +51,7 @@ export function VidalyticsPlayer({
   playButton = "hero",
   playLabel,
   posterSizes = "(min-width: 1024px) 800px, 100vw",
+  priority = false,
 }: {
   embedId: string;
   className?: string;
@@ -68,6 +69,8 @@ export function VidalyticsPlayer({
   playLabel?: string;
   /** `sizes` for the poster; wider players should pass their real width. */
   posterSizes?: string;
+  /** Preload the poster: true only for an above-the-fold (LCP) player. */
+  priority?: boolean;
 }) {
   const containerId = vidalyticsContainerId(embedId);
   const snippet = (
@@ -90,6 +93,7 @@ export function VidalyticsPlayer({
           alt=""
           fill
           sizes={posterSizes}
+          priority={priority}
           className="object-cover"
         />
       ) : null}

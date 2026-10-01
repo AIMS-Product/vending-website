@@ -14,7 +14,6 @@ import {
   H2,
   NUMERAL,
   PlaybookCta,
-  PriceTag,
 } from "./PlaybookCta";
 
 interface PlaybookOfferProps {
@@ -65,41 +64,59 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] gap-12 px-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-10">
-        {/* Phones: "contents" lets the heading lead and the price + CTA
-            follow chapter 07; lg: one sticky column. */}
+        {/* Phones: "contents" lets the heading lead and the CTA follow the
+            included list; lg: one sticky column. */}
         <div className="contents lg:sticky lg:top-8 lg:block lg:self-start">
           <h2 data-reveal className={H2}>
             {curriculum.title} <Highlight>{PRICE.today}</Highlight>
           </h2>
           <div className="order-last lg:order-none">
-            <PriceTag className="lg:mt-8" />
-            <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
+            <PlaybookCta
+              href={checkoutHref}
+              label={BUY_CTA}
+              className="lg:mt-8"
+            />
           </div>
         </div>
-        <ol className="border-ink border-b-2">
-          {curriculum.chapters.map((c, i) => (
-            <li
-              key={c.title}
-              data-reveal
-              className="border-ink grid grid-cols-[3.5rem_1fr] gap-x-5 border-t-2 py-7 sm:grid-cols-[4.5rem_1fr]"
-            >
-              <span className={`${NUMERAL} text-[3rem] sm:text-[3.75rem]`}>
-                <span className="sr-only">Chapter </span>
-                {pad(i + 1)}
-              </span>
-              <div className="pt-1">
-                <p className={EYEBROW}>{c.lessons || `Chapter ${i + 1}`}</p>
-                <h3 className="v2-display text-ink mt-1 text-2xl leading-[1.05] text-balance uppercase">
-                  {c.title}
-                </h3>
-                <CheckList items={c.points} className="mt-4 text-[0.95rem]" />
-              </div>
-            </li>
-          ))}
-        </ol>
+        <div>
+          <ol className="border-ink border-b-2">
+            {curriculum.chapters.map((c, i) => (
+              <li
+                key={c.title}
+                data-reveal
+                className="border-ink grid grid-cols-[3.5rem_1fr] gap-x-5 border-t-2 py-7 sm:grid-cols-[4.5rem_1fr]"
+              >
+                <span className={`${NUMERAL} text-[3rem] sm:text-[3.75rem]`}>
+                  <span className="sr-only">Chapter </span>
+                  {pad(i + 1)}
+                </span>
+                <div className="pt-1">
+                  <p className={EYEBROW}>{c.lessons || `Chapter ${i + 1}`}</p>
+                  <h3 className="v2-display text-ink mt-1 text-2xl leading-[1.05] text-balance uppercase">
+                    {c.title}
+                  </h3>
+                  <CheckList items={c.points} className="mt-4 text-[0.95rem]" />
+                </div>
+              </li>
+            ))}
+          </ol>
+          <IncludedList />
+        </div>
       </div>
-      <IncludedBonuses checkoutHref={checkoutHref} />
     </section>
+  );
+}
+
+/** The five chapter companions: one compact bordered list under chapter 07. */
+function IncludedList() {
+  return (
+    <ul className="border-ink rounded-card divide-ink mt-8 divide-y-2 border-2 bg-white">
+      {includedBonuses.items.map((b) => (
+        <li key={b.title} className="px-5 py-4 text-[0.95rem] leading-snug">
+          <strong className="text-ink font-bold">{b.title}</strong> {b.text}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -107,43 +124,6 @@ const BONUS_EYEBROW =
   "text-eyebrow block text-xs font-black tracking-[0.14em] uppercase";
 const BONUS_TITLE =
   "v2-display text-ink text-2xl leading-[1.05] text-balance uppercase";
-
-/** Display-only: keep "Quick-Start" on one line. Stored copy is unchanged. */
-const noBreakHyphen = (title: string) =>
-  title.replace("Quick-Start", "Quick\u2011Start");
-
-/** The five chapter companions: heading row, then one full-width ruled table. */
-function IncludedBonuses({ checkoutHref }: PlaybookOfferProps) {
-  return (
-    <div className="mx-auto mt-20 max-w-[1180px] px-5 lg:px-10">
-      <div>
-        <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
-        <h3 className="v2-display text-ink mt-3 max-w-[22ch] text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
-          {includedBonuses.title}
-        </h3>
-      </div>
-      <ul className="border-ink bg-ink shadow-card rounded-card mt-8 grid gap-[2px] overflow-hidden border-2">
-        {includedBonuses.items.map((b, i) => (
-          <li
-            key={b.title}
-            className="bg-tint grid gap-x-8 gap-y-1 p-5 sm:grid-cols-[32%_1fr] lg:px-7"
-          >
-            <div>
-              <span className={BONUS_EYEBROW}>Included {i + 1}</span>
-              <p className={`${BONUS_TITLE} mt-1.5`}>
-                {noBreakHyphen(b.title)}
-              </p>
-            </div>
-            <p className="text-[0.95rem] leading-snug sm:pt-6">{b.text}</p>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-8 flex justify-center">
-        <PlaybookCta href={checkoutHref} label={BUY_CTA} />
-      </div>
-    </div>
-  );
-}
 
 type Bonus = (typeof moreBonuses.items)[number];
 
@@ -160,7 +140,7 @@ function BonusCell({ bonus, index }: { bonus: Bonus; index: number }) {
 
 /**
  * Phones: a compact row, title and first bullet in the summary, the rest
- * behind the disclosure. The first three start open.
+ * behind the disclosure. Only the first starts open.
  */
 function BonusRow({
   bonus,
@@ -219,7 +199,7 @@ export function PlaybookMoreBonuses({ checkoutHref }: PlaybookOfferProps) {
           {moreBonuses.items.map((b, i) => (
             <li key={b.title} className="bg-white p-5 md:p-6 lg:p-8">
               <div className="md:hidden">
-                <BonusRow bonus={b} index={i} open={i < 3} />
+                <BonusRow bonus={b} index={i} open={i === 0} />
               </div>
               <div className="hidden md:block">
                 <BonusCell bonus={b} index={i} />

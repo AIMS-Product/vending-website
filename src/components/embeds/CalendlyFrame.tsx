@@ -56,6 +56,20 @@ function schedulerHeight(event: CalendlyMessage): number | null {
     : null;
 }
 
+/** The phone frame's pre-load height (h-[520px] at the call sites). */
+const PHONE_MIN_HEIGHT = 520;
+/**
+ * Calendly's phone date picker reports ~80px more than it paints, which left
+ * ~120px of blank white in the card. Six-row months still fit at -80.
+ */
+const PHONE_HEIGHT_TRIM = 80;
+
+/** The height applied to the iframe: phone date picker clamped, else as reported. */
+function appliedHeight(reported: number | null, phoneBranch: boolean) {
+  if (reported === null || !phoneBranch) return reported;
+  return Math.max(PHONE_MIN_HEIGHT, reported - PHONE_HEIGHT_TRIM);
+}
+
 /** True once a message shows the scheduler has painted. */
 function isCalendlyMessage(event: CalendlyMessage) {
   return (
@@ -102,12 +116,16 @@ export function CalendlyFrame({
           ? phoneSrc
           : src;
   const [loaded, setLoaded] = useState(false);
-  const [height, setHeight] = useState<number | null>(null);
+  const [reported, setReported] = useState<number | null>(null);
+  const height = appliedHeight(
+    reported,
+    phoneSrc !== undefined && phone === true,
+  );
 
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       const measured = schedulerHeight(event);
-      if (measured !== null) setHeight(measured);
+      if (measured !== null) setReported(measured);
       if (isCalendlyMessage(event)) setLoaded(true);
     };
     window.addEventListener("message", onMessage);
@@ -165,6 +183,7 @@ export function CalendlyFrame({
 }
 
 export const __testing = {
+  appliedHeight,
   isCalendlyMessage,
   schedulerHeight,
   LOADING_LAYER_MAX_MS,

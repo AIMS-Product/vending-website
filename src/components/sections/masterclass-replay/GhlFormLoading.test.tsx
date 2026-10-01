@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  armStallWatch,
   FormAction,
   GHL_FORM_STALL_MS,
   GhlFormLoading,
@@ -30,6 +31,52 @@ describe("watchForStall", () => {
     const cancel = watchForStall(onStall);
     vi.advanceTimersByTime(GHL_FORM_STALL_MS - 1000);
     cancel();
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS * 2);
+    expect(onStall).not.toHaveBeenCalled();
+  });
+});
+
+describe("armStallWatch", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("offers no fallback while the iframe has not mounted, however long", () => {
+    const onStall = vi.fn();
+    const cancel = armStallWatch({ loaded: false, mounted: false, onStall });
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS * 4);
+    expect(cancel).toBeUndefined();
+    expect(onStall).not.toHaveBeenCalled();
+    // Not mounted means no stall, so the action stays the spinner.
+    const html = renderToStaticMarkup(
+      createElement(FormAction, {
+        stalled: onStall.mock.calls.length > 0,
+        href: HREF,
+      }),
+    );
+    expect(html).not.toContain("Open the application");
+  });
+
+  it("still offers the fallback once a mounted iframe stalls", () => {
+    const onStall = vi.fn();
+    armStallWatch({ loaded: false, mounted: true, onStall });
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS - 1);
+    expect(onStall).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onStall).toHaveBeenCalledTimes(1);
+    const html = renderToStaticMarkup(
+      createElement(FormAction, {
+        stalled: onStall.mock.calls.length > 0,
+        href: HREF,
+      }),
+    );
+    expect(html).toContain("Open the application");
+  });
+
+  it("never arms once the form has loaded", () => {
+    const onStall = vi.fn();
+    expect(
+      armStallWatch({ loaded: true, mounted: true, onStall }),
+    ).toBeUndefined();
     vi.advanceTimersByTime(GHL_FORM_STALL_MS * 2);
     expect(onStall).not.toHaveBeenCalled();
   });

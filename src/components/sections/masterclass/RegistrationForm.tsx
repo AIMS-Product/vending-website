@@ -203,14 +203,14 @@ export function RegistrationForm({
         <span className="whitespace-nowrap">
           <Link
             href="/privacy"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 items-center px-1 underline underline-offset-2"
           >
             Privacy
           </Link>{" "}
           ·{" "}
           <Link
             href="/terms"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 items-center px-1 underline underline-offset-2"
           >
             Terms
           </Link>

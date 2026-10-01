@@ -18,7 +18,8 @@ export function ReviewReport() {
             key={item.step}
             className="flex gap-4 border-b border-slate-200 p-4 last:border-b-0"
           >
-            <span className="bg-brand-700 grid size-9 shrink-0 place-items-center rounded-md text-sm font-black text-white">
+            {/* Outlined: a system flow to read, not steps to do. */}
+            <span className="border-ink text-ink grid size-7 shrink-0 place-items-center rounded-md border-2 bg-white text-sm font-black tabular-nums">
               {index + 1}
             </span>
             <div className="min-w-0">
@@ -103,11 +104,13 @@ export function ReviewReport() {
       <h2 className={H2}>{reportCopy.swapHeading}</h2>
       <ol className="mt-5 grid gap-3">
         {reportCopy.swap.map((line, index) => (
-          <li key={line} className={`${CARD} flex gap-4 p-4`}>
+          <li key={line} className={`${CARD} flex items-center gap-4 p-4`}>
             <span className="bg-brand-700 grid size-8 shrink-0 place-items-center rounded-md text-sm font-black text-white">
               {index + 1}
             </span>
-            <span className="text-[15px] text-slate-700">{line}</span>
+            <span className="min-w-0 text-[15px] [overflow-wrap:anywhere] text-slate-700">
+              {line}
+            </span>
           </li>
         ))}
       </ol>

@@ -41,15 +41,15 @@ export function PlaybookTeaser({
           className="mx-auto h-auto w-full max-w-[520px] object-contain"
         />
       </div>
-      <div className="p-6 md:grid md:grid-cols-2 md:items-start md:gap-8 lg:p-8">
-        <div className="md:flex md:h-full md:flex-col">
+      <div className="p-6 md:grid md:grid-cols-2 md:items-center md:gap-8 lg:p-8">
+        <div>
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {hero.eyebrow}
           </p>
           <h2 className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
             {hero.teaserHeadline}
           </h2>
-          <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1 md:mt-auto md:pt-4">
+          <p className="mt-6 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="text-ink/55 text-xl font-black line-through">
               {PRICE.anchor}
             </span>

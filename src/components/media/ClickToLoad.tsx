@@ -73,9 +73,10 @@ export type PlayButtonVariant = "hero" | "card";
 /**
  * Corner of the small "card" disc. Member thumbnails burn their result text
  * into the left and bottom-left ("$22K/MONTH", "HOW?"), so the disc sits
- * bottom-right; "tr" is for a thumbnail whose text reaches that corner too.
+ * bottom-right; "tr" is for a thumbnail whose text reaches that corner too,
+ * and "bl" for one whose text fills the whole right edge.
  */
-export type PlayPosition = "br" | "tr";
+export type PlayPosition = "br" | "tr" | "bl";
 
 /** The visible play mark inside a click-to-play facade. Decorative. */
 export function PlayGlyph({
@@ -90,8 +91,9 @@ export function PlayGlyph({
       <span
         aria-hidden
         className={cn(
-          "border-ink group-hover:bg-tint absolute right-3 grid size-10 place-items-center rounded-full border-2 bg-white transition group-focus-visible:ring-4 group-focus-visible:ring-[#55b8e8] motion-reduce:transition-none",
+          position === "bl" ? "absolute left-3" : "absolute right-3",
           position === "tr" ? "top-3" : "bottom-3",
+          "border-ink group-hover:bg-tint grid size-10 place-items-center rounded-full border-2 bg-white transition group-focus-visible:ring-4 group-focus-visible:ring-[#55b8e8] motion-reduce:transition-none",
         )}
       >
         <span className="ml-0.5 size-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-[#111111]" />

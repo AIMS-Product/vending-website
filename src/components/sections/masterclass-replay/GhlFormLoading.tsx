@@ -20,6 +20,27 @@ export function watchForStall(onStall: () => void, ms = GHL_FORM_STALL_MS) {
   return () => clearTimeout(timer);
 }
 
+/**
+ * Arms the stall clock only while the iframe exists and has not loaded; until
+ * then there is nothing to wait for, so no fallback can appear. Returns the
+ * cancel, or undefined when nothing was armed. The component's effect is a
+ * thin call to this, so the rule is testable without a DOM.
+ */
+export function armStallWatch({
+  loaded,
+  mounted,
+  onStall,
+  ms = GHL_FORM_STALL_MS,
+}: {
+  loaded: boolean;
+  mounted: boolean;
+  onStall: () => void;
+  ms?: number;
+}) {
+  if (loaded || !mounted) return undefined;
+  return watchForStall(onStall, ms);
+}
+
 /** Grey label / field / text bars; the submit bar carries the button blue. */
 const bar = "rounded-control bg-slate-100";
 const label = `${bar} h-4 w-40 self-start`;
@@ -33,7 +54,7 @@ const field = `${bar} h-[42px] w-full`;
  * covers it either way, so a missed event only leaves it hidden underneath.
  *
  * If form_embed.js or the iframe is blocked (ad blockers, strict networks),
- * neither ever happens. After GHL_FORM_STALL_MS the spinner label becomes a
+ * neither ever happens. GHL_FORM_STALL_MS after the iframe mounts, the spinner label becomes a
  * link to the same form on GHL (same UTM params) and the layer rises over the
  * iframe so the link can be clicked; a late load still fades it away.
  */
@@ -48,11 +69,15 @@ export function GhlFormLoading({
   const layer = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [stalled, setStalled] = useState(false);
+  // The iframe mounts only near the viewport, so the stall clock starts when
+  // it exists: a visitor who watches the replay first never scrolls down to a
+  // fallback for a form that had no chance to load.
+  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    if (loaded) return;
-    return watchForStall(() => setStalled(true));
-  }, [loaded]);
+  useEffect(
+    () => armStallWatch({ loaded, mounted, onStall: () => setStalled(true) }),
+    [loaded, mounted],
+  );
 
   useEffect(() => {
     const slot = layer.current?.parentElement;
@@ -84,6 +109,7 @@ export function GhlFormLoading({
       if (!(found instanceof HTMLIFrameElement) || found === frame) return;
       frame = found;
       frame.addEventListener("load", onLoad, { once: true });
+      setMounted(true);
     };
 
     // The iframe mounts later (within 200px of the viewport).

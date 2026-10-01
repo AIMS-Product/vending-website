@@ -57,18 +57,23 @@ type QueryParams = Record<string, string | string[] | undefined>;
 const firstValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
-/** One given name: letters, apostrophes, hyphens; no spaces, at most 20. */
-const FIRST_NAME_TOKEN = /^[\p{L}'-]{1,20}$/u;
+/**
+ * The registration form's first-name rule (letters, spaces, apostrophes,
+ * hyphens, at most 40), so "Mary Jo" and long hyphenated names survive. At
+ * most three words: no real first name is longer, and a crafted link cannot
+ * print a sentence in the H1.
+ */
+const FIRST_NAME = /^(?=.{1,40}$)[\p{L}'-]+(?: [\p{L}'-]+){0,2}$/u;
 
 /**
- * `?first=` as a display name, or undefined when it is not a plain name. Only
- * the first word is kept, so a crafted link cannot print a sentence in the H1,
- * and its first letter is capitalised ("adam" reads "Adam").
+ * `?first=` as a display name, or undefined when it is not a plain name.
+ * Spaces are collapsed and its first letter is capitalised ("adam" reads
+ * "Adam").
  */
 export function safeFirstName(params: QueryParams): string | undefined {
-  const [token] = (firstValue(params.first) ?? "").trim().split(/\s+/u);
-  if (!token || !FIRST_NAME_TOKEN.test(token)) return undefined;
-  return token.charAt(0).toLocaleUpperCase("en-US") + token.slice(1);
+  const name = (firstValue(params.first) ?? "").trim().replace(/\s+/gu, " ");
+  if (!name || !FIRST_NAME.test(name)) return undefined;
+  return name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1);
 }
 
 /**
@@ -202,7 +207,7 @@ export const storiesCopy = {
   eyebrow: "Real operators. Real routes.",
   heading: "People with jobs like yours",
   highlight: "jobs like yours",
-  body: "Tap any story to watch it here.",
+  body: "Play any story to watch it here.",
   /** Stories shown before "more"; the rest open in place, never on a new page. */
   initial: 8,
   /** Below md, fewer cards before "more", so the second CTA is not 3,000px away. */
@@ -290,6 +295,35 @@ export const showUpLiveCopy = {
   closing: "These won't be in the replay.",
 } as const;
 
+const chicagoDay = (date: Date) =>
+  new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+
+/**
+ * The GHL block says "tonight", which is only true on the day itself. Any
+ * earlier day reads "on {Weekday}" from the event start, in the event's time
+ * zone. An unknown start keeps the GHL word.
+ */
+export function liveDayWord(now: number, startsAt: string | null): string {
+  const start = startsAt ? new Date(startsAt) : null;
+  if (!start || Number.isNaN(start.getTime())) return "tonight";
+  if (chicagoDay(start) === chicagoDay(new Date(now))) return "tonight";
+  const weekday = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Chicago",
+    weekday: "long",
+  }).format(start);
+  return `on ${weekday}`;
+}
+
+/** `text` with its one "tonight" swapped for `liveDayWord`; nothing else changes. */
+export function withLiveDay(text: string, day: string): string {
+  return text.replace("tonight", day);
+}
+
 /**
  * Shown by both masterclass forms when the limiter refuses. It also refuses
  * during a limiter outage (fail closed), so it must not say "too many".
@@ -365,7 +399,8 @@ export const coverCopy = {
   ],
   quote:
     "I'm not trying to convince you vending is for everyone. I just want to give you enough to decide for yourself.",
-  signoff: "Anthony",
+  /** The host label, so the quote is not credited to a bare first name. */
+  signoff: hostCopy.eyebrow,
   photoAlt: "Anthony Kolodziej with his son",
 };
 

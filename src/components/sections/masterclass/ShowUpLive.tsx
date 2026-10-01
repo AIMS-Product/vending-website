@@ -1,6 +1,10 @@
 import { Fragment } from "react";
 import { Highlight } from "@/components/ui/Highlight";
-import { showUpLiveCopy } from "@/lib/content/masterclass";
+import {
+  liveDayWord,
+  showUpLiveCopy,
+  withLiveDay,
+} from "@/lib/content/masterclass";
 
 /*
  * Lucide icons (ISC) inlined: lucide-react is not a dependency of this app,
@@ -49,8 +53,16 @@ function BookOpen() {
 const ICONS = [BadgePercent, Lock, BookOpen];
 
 /** GHL's reason to attend live: three bonuses that are not in the replay. */
-export function ShowUpLive() {
+export function ShowUpLive({
+  startsAt,
+  renderedAt,
+}: {
+  startsAt: string | null;
+  /** Server render time (ms): "tonight" only on the event's own day. */
+  renderedAt: number;
+}) {
   const copy = showUpLiveCopy;
+  const day = liveDayWord(renderedAt, startsAt);
   return (
     <section className="bg-tint border-ink border-y-2">
       <div className="mx-auto grid max-w-[1080px] items-center gap-10 px-5 py-14 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14 lg:px-10 lg:py-16">
@@ -69,7 +81,7 @@ export function ShowUpLive() {
             ))}
           </h2>
           <p className="mt-5 max-w-[46ch] text-[17px] leading-relaxed text-slate-700">
-            {copy.bodyLead}
+            {withLiveDay(copy.bodyLead, day)}
             <strong className="text-ink font-black">{copy.bodyStrong}</strong>
             {copy.bodyTail}
           </p>
@@ -81,7 +93,7 @@ export function ShowUpLive() {
               return (
                 <li
                   key={bonus.title}
-                  className="rounded-card border-ink shadow-card flex items-center gap-4 border-2 bg-white p-5"
+                  className="rounded-card border-ink flex items-center gap-4 border-2 bg-white p-5"
                 >
                   <span
                     aria-hidden
@@ -94,7 +106,7 @@ export function ShowUpLive() {
                       {bonus.title}
                     </span>
                     <span className="mt-1.5 block text-[15px] leading-snug text-slate-600">
-                      {bonus.body}
+                      {withLiveDay(bonus.body, day)}
                     </span>
                   </span>
                 </li>
