@@ -1,4 +1,7 @@
 import { reportCopy } from "@/lib/content/masterclass-review-report";
+import { ReviewChecklist } from "./ReviewChecklist";
+import { ReviewMessages } from "./ReviewMessages";
+import { ReviewSwapMap } from "./ReviewSwapMap";
 
 const H2 =
   "v2-display text-ink mt-14 text-[2rem] leading-none text-balance uppercase";
@@ -43,6 +46,9 @@ export function ReviewReport() {
           </li>
         ))}
       </ol>
+
+      <ReviewMessages />
+      <ReviewSwapMap />
 
       <h2 className={H2}>{reportCopy.testedHeading}</h2>
       <ul className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -144,6 +150,7 @@ export function ReviewReport() {
           </li>
         ))}
       </ol>
+      <ReviewChecklist />
     </>
   );
 }

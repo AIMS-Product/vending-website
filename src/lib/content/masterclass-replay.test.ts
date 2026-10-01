@@ -151,26 +151,26 @@ describe("masterclass replay content", () => {
     });
   });
 
-  it("expires the Sunday before the event at 23:00 America/Chicago", () => {
-    // Oct 6 2026 7:30 PM CDT (Tuesday) -> Sun Oct 4 23:00 CDT.
+  it("expires the Sunday before the event at 9 PM America/Chicago", () => {
+    // Oct 6 2026 7:30 PM CDT (Tuesday) -> Sun Oct 4 21:00 CDT.
     expect(replayExpiry("2026-10-07T00:30:00.000Z")).toBe(
-      "2026-10-05T04:00:00.000Z",
+      "2026-10-05T02:00:00.000Z",
     );
-    // Across the Nov 1 DST end: Tue Nov 3 -> Sun Nov 1 23:00 CST (UTC-6).
+    // Across the Nov 1 DST end: Tue Nov 3 -> Sun Nov 1 21:00 CST (UTC-6).
     expect(replayExpiry("2026-11-04T01:30:00.000Z")).toBe(
-      "2026-11-02T05:00:00.000Z",
+      "2026-11-02T03:00:00.000Z",
     );
-    // Just before the change: Tue Oct 27 -> Sun Oct 25 23:00 CDT (UTC-5).
+    // Just before the change: Tue Oct 27 -> Sun Oct 25 21:00 CDT (UTC-5).
     expect(replayExpiry("2026-10-28T00:30:00.000Z")).toBe(
-      "2026-10-26T04:00:00.000Z",
+      "2026-10-26T02:00:00.000Z",
     );
-    // After: Tue Nov 10 -> Sun Nov 8 23:00 CST.
+    // After: Tue Nov 10 -> Sun Nov 8 21:00 CST.
     expect(replayExpiry("2026-11-11T01:30:00.000Z")).toBe(
-      "2026-11-09T05:00:00.000Z",
+      "2026-11-09T03:00:00.000Z",
     );
     // Sunday event -> the prior Sunday. Mar 2027 spring forward: Tue Mar 16.
     expect(replayExpiry("2027-03-17T00:30:00.000Z")).toBe(
-      "2027-03-15T04:00:00.000Z",
+      "2027-03-15T02:00:00.000Z",
     );
   });
 

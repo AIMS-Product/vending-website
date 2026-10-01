@@ -1,3 +1,4 @@
+import { COMMS_COPY } from "@/lib/content/masterclass-review-comms";
 import { ReviewReport } from "@/components/sections/masterclass/ReviewReport";
 import Link from "next/link";
 import { Fragment } from "react";
@@ -157,6 +158,18 @@ export function ReviewGuide() {
             {reviewCopy.note}
           </p>
         </div>
+
+        <nav aria-label="On this page" className="mt-6 flex flex-wrap gap-2">
+          {COMMS_COPY.jumpLinks.map(({ href, label }) => (
+            <a
+              key={href}
+              href={href}
+              className="border-ink rounded-control text-ink hover:bg-tint border-2 bg-white px-3 py-1.5 text-sm font-black"
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
 
         <h2 className={H2}>{reviewCopy.stepsHeading}</h2>
         <ol className="mt-5 grid gap-4">

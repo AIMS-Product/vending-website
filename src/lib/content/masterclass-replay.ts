@@ -26,13 +26,17 @@ export const REPLAY_PATHS: Record<ReplayVariantKey, `/${string}`> = {
 };
 
 /**
- * GHL hand-edits a fixed countdown weekly. The observed rule: the replay
- * expires the Sunday BEFORE the next webinar at 23:00 America/Chicago (Oct 4
- * 23:00 CT for the Oct 6 room). Derived here from the next event start, which
+ * The replay expires the Sunday BEFORE the next webinar at 9:00 PM
+ * America/Chicago (Oct 4, 9 PM CT for the Oct 6 room): the time every replay
+ * email and text already states. GHL's own page countdown ran to 11 PM; the
+ * messages are what people read, so the page follows them (2026-10-01). Derived here from the next event start, which
  * masterclass-event.ts reads from the GHL "Webinar Date n Time" value.
  * Returns null when there is no usable start, so the page hides the countdown
  * rather than showing a wrong one.
  */
+/** 9 PM Central, as the replay emails and texts say. */
+const EXPIRY_HOUR = 21;
+
 export function replayExpiry(startsAt: string | null): string | null {
   const start = startsAt ? new Date(startsAt) : null;
   if (!start || Number.isNaN(start.getTime())) return null;
@@ -65,10 +69,10 @@ export function replayExpiry(startsAt: string | null): string | null {
         sunday.getUTCFullYear(),
         sunday.getUTCMonth(),
         sunday.getUTCDate(),
-        23 + offsetHours,
+        EXPIRY_HOUR + offsetHours,
       ),
     );
-    if (chicagoHour(candidate) === 23) return candidate.toISOString();
+    if (chicagoHour(candidate) === EXPIRY_HOUR) return candidate.toISOString();
   }
   return null;
 }
