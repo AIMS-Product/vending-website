@@ -114,8 +114,32 @@ export const reviewCopy = {
     { label: "Replay: Meta retargeting", href: "/masterclass-replay-meta" },
     { label: "Replay: advisory team", href: "/masterclass-replay-advisory" },
     {
-      label: "Current GHL registration page",
+      label: "GHL original: registration",
       href: "https://webinar.vendingpreneurs.com/home",
+    },
+    {
+      label: "GHL original: confirmation",
+      href: "https://webinar.vendingpreneurs.com/masterclass-thankyou-confirmation",
+    },
+    {
+      label: "GHL original: Playbook offer",
+      href: "https://webinar.vendingpreneurs.com/playbook",
+    },
+    {
+      label: "GHL original: replay, did not attend",
+      href: "https://webinar.vendingpreneurs.com/masterclass-replay-dna",
+    },
+    {
+      label: "GHL original: replay, did not book",
+      href: "https://webinar.vendingpreneurs.com/masterclass-replay-adnb",
+    },
+    {
+      label: "GHL original: replay, Meta",
+      href: "https://webinar.vendingpreneurs.com/masterclass-replay-meta",
+    },
+    {
+      label: "GHL original: replay, advisory",
+      href: "https://webinar.vendingpreneurs.com/masterclass-replay-advisory-team-798452",
     },
   ],
   note: "Your registration is real: you are in the next live masterclass with everyone else and will get the normal reminders. Team-review registrations are removed from Close and the reports after sign-off.",

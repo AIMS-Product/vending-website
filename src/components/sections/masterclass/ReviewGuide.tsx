@@ -1,3 +1,4 @@
+import { ReviewReport } from "@/components/sections/masterclass/ReviewReport";
 import Link from "next/link";
 import { Fragment } from "react";
 import { anton } from "@/app/fonts";
@@ -187,26 +188,6 @@ export function ReviewGuide() {
           })}
         </ol>
 
-        <h2 className={H2}>{reviewCopy.flowHeading}</h2>
-        <ol className="rounded-card border-ink mt-5 border-2 bg-white">
-          {reviewCopy.flow.map((item, index) => (
-            <li
-              key={item.step}
-              className="flex items-start gap-4 border-b border-slate-200 p-4 last:border-b-0"
-            >
-              <NumberChip n={index + 1} />
-              <div className="min-w-0 break-words">
-                <p className="text-ink text-[15px] font-black">
-                  <Slashed text={item.step} />
-                </p>
-                <p className="text-sm text-slate-600">
-                  <Slashed text={item.detail} />
-                </p>
-              </div>
-            </li>
-          ))}
-        </ol>
-
         <h2 className={H2}>{reviewCopy.pagesHeading}</h2>
         <ul className="rounded-card border-ink mt-5 grid overflow-hidden border-2 bg-white sm:grid-cols-2">
           {reviewCopy.pages.map((page) => {
@@ -254,6 +235,7 @@ export function ReviewGuide() {
             );
           })}
         </ul>
+        <ReviewReport />
       </div>
       <MasterclassFooter />
     </main>
