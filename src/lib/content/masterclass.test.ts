@@ -8,8 +8,10 @@ import {
   liveDayWord,
   masterclassLiveEnd,
   masterclassPhase,
+  isSafeFirstName,
   parseWebinarStart,
   safeFirstName,
+  stripPiiFromUrl,
   showUpLiveCopy,
   withLiveDay,
 } from "./masterclass";
@@ -127,6 +129,27 @@ describe("safeFirstName", () => {
   it("capitalises the first letter", () => {
     expect(safeFirstName({ first: "adam" })).toBe("Adam");
     expect(safeFirstName({ first: "élodie" })).toBe("Élodie");
+  });
+});
+
+describe("stripPiiFromUrl", () => {
+  const base = "https://www.vendingpreneurs.com/masterclass-confirmed";
+
+  it("removes a first value that is an email or a phone number", () => {
+    expect(isSafeFirstName("a@b.com")).toBe(false);
+    expect(isSafeFirstName("4155551234")).toBe(false);
+    expect(stripPiiFromUrl(`${base}?first=a@b.com&utm_source=fb`)).toBe(
+      `${base}?utm_source=fb`,
+    );
+    expect(stripPiiFromUrl(`${base}?first=4155551234`)).toBe(base);
+  });
+
+  it("keeps a plain first name", () => {
+    expect(isSafeFirstName("Jane")).toBe(true);
+    expect(stripPiiFromUrl(`${base}?first=Jane`)).toBeNull();
+    expect(stripPiiFromUrl(`${base}?first=Jane&email=j@x.com`)).toBe(
+      `${base}?first=Jane`,
+    );
   });
 });
 

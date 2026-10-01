@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
 import { CheckDisc } from "@/components/sections/masterclass/MasterclassHero";
+import { SaveSeatLink } from "@/components/sections/masterclass/SaveSeatLink";
 import { StoriesToggle } from "@/components/sections/masterclass/StoriesToggle";
 import type { PlayPosition } from "@/components/media/ClickToLoad";
 import { Wordmark } from "@/components/site/Wordmark";
@@ -168,9 +169,19 @@ export function ResultsTicker({ stories }: { stories: CaseStudyStory[] }) {
  * native disclosure, not a new page.
  */
 export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
-  const members = stories.filter(
-    (s) => s.youtube_video_id && s.youtube_video_id !== ANTHONY_VIDEO_ID,
-  );
+  // Stories with a "Was:" line first (stable), so a card without one never
+  // leaves a hole in the first row.
+  const members = stories
+    .filter(
+      (s) => s.youtube_video_id && s.youtube_video_id !== ANTHONY_VIDEO_ID,
+    )
+    .map((story, index) => ({ story, index }))
+    .sort(
+      (a, b) =>
+        Number(!a.story.prior_occupation) - Number(!b.story.prior_occupation) ||
+        a.index - b.index,
+    )
+    .map(({ story }) => story);
   if (!members.length) return null;
   return (
     <section className="bg-white">
@@ -360,7 +371,7 @@ export function FitSection({
           ) : null}
           <HostCandids />
         </div>
-        <div className="mt-12 grid gap-6 md:grid-cols-2 md:items-start">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 md:items-stretch">
           <FitCard title={fitCopy.forTitle} items={fitFor} good />
           <FitCard title={fitCopy.notForTitle} items={notFitFor} />
         </div>
@@ -378,7 +389,7 @@ export function FitSection({
 /** The one CTA back to the form in the hero. */
 function SaveSeatButton({ className }: { className?: string }) {
   return (
-    <a
+    <SaveSeatLink
       href={`#${APPLY_QUIZ_ANCHOR}`}
       className={buttonClass({
         size: "lg",
@@ -386,7 +397,7 @@ function SaveSeatButton({ className }: { className?: string }) {
       })}
     >
       {fitCopy.cta}
-    </a>
+    </SaveSeatLink>
   );
 }
 
@@ -405,9 +416,9 @@ function HostCandids() {
           <div
             key={photo.src}
             className={cn(
-              "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white",
+              "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white max-sm:shadow-none",
               main
-                ? "aspect-[4/3] sm:aspect-[4/5]"
+                ? "aspect-[4/3] sm:aspect-square"
                 : "hidden aspect-[6/5] sm:block sm:aspect-auto sm:h-full",
             )}
           >
@@ -443,7 +454,10 @@ function FitCard({
   return (
     <div
       data-reveal
-      className="rounded-card border-ink shadow-card border-2 bg-white p-6"
+      className={cn(
+        "rounded-card border-ink border-2 bg-white p-6",
+        good && "shadow-card",
+      )}
     >
       <h3 className="v2-display text-ink text-[clamp(1.6rem,2.6vw,2rem)] leading-none uppercase">
         {title}

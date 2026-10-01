@@ -133,7 +133,10 @@ export type ReplayStep = { label: string; target?: "video" | "cta" };
 export type ReplayVariant = {
   key: ReplayVariantKey;
   path: `/${string}`;
-  /** Tab title; the root layout appends " | Vendingpreneurs". */
+  /**
+   * Tab title; the root layout appends " | Vendingpreneurs". The same on every
+   * variant: the audience key never shows in a tab or share preview.
+   */
   metaTitle: string;
   heading: string;
   mainVideo: ReplayVideo;
@@ -154,6 +157,11 @@ export type ReplayVariant = {
   /** Repeat button after the testimonials. */
   closing: { label: string; target: "video" | "cta" } | null;
   testimonialVideos: readonly ReplayVideo[];
+  /**
+   * Card order as indexes into replayTestimonials (and testimonialVideos);
+   * defaults to their own order.
+   */
+  testimonialOrder?: readonly number[];
 };
 
 const youtube = (id: string): ReplayVideo => ({ kind: "youtube", id });
@@ -211,11 +219,14 @@ const READY_TO_BUILD = {
   action: { kind: "ghl-form" },
 } as const;
 
+/** Every variant's tab and share title. */
+export const REPLAY_META_TITLE = "Masterclass Replay";
+
 export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   dna: {
     key: "dna",
     path: REPLAY_PATHS.dna,
-    metaTitle: "Masterclass Replay (DNA)",
+    metaTitle: REPLAY_META_TITLE,
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "If you want an income stream you're in control of, watch this.",
     sub: [
@@ -236,7 +247,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   adnb: {
     key: "adnb",
     path: REPLAY_PATHS.adnb,
-    metaTitle: "Masterclass Replay (ADNB)",
+    metaTitle: REPLAY_META_TITLE,
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "Miss Something?",
     sub: [
@@ -279,7 +290,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   meta: {
     key: "meta",
     path: REPLAY_PATHS.meta,
-    metaTitle: "Masterclass Replay (Meta)",
+    metaTitle: REPLAY_META_TITLE,
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See why professionals, entrepreneurs, and families are choosing vending over other business opportunities.",
@@ -295,7 +306,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   advisory: {
     key: "advisory",
     path: REPLAY_PATHS.advisory,
-    metaTitle: "Masterclass Replay (Advisory)",
+    metaTitle: REPLAY_META_TITLE,
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See How Professionals Are Building an Additional Income Stream With Vending",
@@ -305,6 +316,10 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     cta: null,
     closing: { label: "Watch the Replay", target: "video" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
+    // Its wider page sets the cards so Mallorie's one-liner beside Katie +
+    // Graham's long quote left an empty band; she moves to the top row:
+    // Michael, Joe, Mallorie / Shannon, Katie + Graham.
+    testimonialOrder: [0, 1, 3, 2, 4],
   },
 };
 
@@ -325,7 +340,6 @@ export function replayDescription(variant: ReplayVariant): string {
 export const replayExpiresLabel = "Replay Expires";
 
 export const replayTestimonialsCopy = {
-  eyebrow: "TESTIMONIALS",
   heading: "What Others Are Saying",
 } as const;
 
@@ -377,3 +391,16 @@ export const replayTestimonials: readonly ReplayTestimonial[] = [
     result: "16 machines | ~$36K/mo",
   },
 ];
+
+/**
+ * The variant's testimonial cards in display order, each with its member
+ * video (index-matched to replayTestimonials before reordering).
+ */
+export function replayTestimonialCards(variant: ReplayVariant) {
+  const order =
+    variant.testimonialOrder ?? replayTestimonials.map((_, index) => index);
+  return order.map((index) => ({
+    item: replayTestimonials[index],
+    video: variant.testimonialVideos[index] as ReplayVideo | undefined,
+  }));
+}

@@ -6,6 +6,8 @@ import {
   FormAction,
   GHL_FORM_STALL_MS,
   GhlFormLoading,
+  isGhlOrigin,
+  trackGhlForm,
   watchForStall,
 } from "./GhlFormLoading";
 
@@ -79,6 +81,116 @@ describe("armStallWatch", () => {
     ).toBeUndefined();
     vi.advanceTimersByTime(GHL_FORM_STALL_MS * 2);
     expect(onStall).not.toHaveBeenCalled();
+  });
+});
+
+describe("trackGhlForm", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  // A stand-in iframe (an EventTarget with a style) and page window.
+  const setup = (shown = true) => {
+    const frame = Object.assign(new EventTarget(), { style: { height: "" } });
+    const messages = new EventTarget();
+    const onLoaded = vi.fn();
+    const onStall = vi.fn();
+    const stop = trackGhlForm({
+      frame,
+      messages,
+      isShown: () => shown,
+      onLoaded,
+      onStall,
+    });
+    return { frame, messages, onLoaded, onStall, stop };
+  };
+  const ghlMessage = (origin = "https://api.leadconnectorhq.com") =>
+    new MessageEvent("message", { origin, data: "[iFrameResizerChild]Ready" });
+
+  it("treats a blocked iframe's bare `load` as no form: the fallback still comes", () => {
+    const { frame, onLoaded, onStall } = setup();
+    // GHL blocked: the aborted navigation fires `load` over a blank frame.
+    frame.dispatchEvent(new Event("load"));
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS - 1);
+    expect(onStall).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onStall).toHaveBeenCalledTimes(1);
+    expect(onLoaded).not.toHaveBeenCalled();
+    const html = renderToStaticMarkup(
+      createElement(FormAction, { stalled: true, href: HREF }),
+    );
+    expect(html).toContain("Open the application");
+  });
+
+  it("marks the form loaded on a GHL message, and never offers the fallback", () => {
+    const { frame, messages, onLoaded, onStall } = setup();
+    frame.dispatchEvent(new Event("load"));
+    messages.dispatchEvent(ghlMessage());
+    vi.advanceTimersByTime(150);
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS * 2);
+    expect(onStall).not.toHaveBeenCalled();
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+  });
+
+  it("counts form_embed.js sizing the iframe as loaded", () => {
+    const { frame, onLoaded, onStall } = setup();
+    frame.style.height = "787px";
+    vi.advanceTimersByTime(150);
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS);
+    expect(onStall).not.toHaveBeenCalled();
+  });
+
+  it("ignores messages from other origins", () => {
+    const { messages, onLoaded, onStall } = setup();
+    messages.dispatchEvent(ghlMessage("https://challenges.cloudflare.com"));
+    messages.dispatchEvent(ghlMessage("null"));
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS);
+    expect(onLoaded).not.toHaveBeenCalled();
+    expect(onStall).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits for the reveal before fading, and a late form still clears the fallback", () => {
+    let shown = false;
+    const frame = { style: { height: "" } };
+    const messages = new EventTarget();
+    const onLoaded = vi.fn();
+    const onStall = vi.fn();
+    trackGhlForm({
+      frame,
+      messages,
+      isShown: () => shown,
+      onLoaded,
+      onStall,
+    });
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS);
+    expect(onStall).toHaveBeenCalledTimes(1);
+    messages.dispatchEvent(ghlMessage());
+    vi.advanceTimersByTime(600);
+    expect(onLoaded).not.toHaveBeenCalled();
+    shown = true;
+    vi.advanceTimersByTime(150);
+    expect(onLoaded).toHaveBeenCalledTimes(1);
+  });
+
+  it("stops listening once cleaned up (unmount)", () => {
+    const { messages, onLoaded, onStall, stop } = setup();
+    stop();
+    messages.dispatchEvent(ghlMessage());
+    vi.advanceTimersByTime(GHL_FORM_STALL_MS * 2);
+    expect(onLoaded).not.toHaveBeenCalled();
+    expect(onStall).not.toHaveBeenCalled();
+  });
+});
+
+describe("isGhlOrigin", () => {
+  it("accepts GHL's form hosts only", () => {
+    expect(isGhlOrigin("https://api.leadconnectorhq.com")).toBe(true);
+    expect(isGhlOrigin("https://link.msgsndr.com")).toBe(true);
+    expect(isGhlOrigin("https://leadconnectorhq.com.evil.example")).toBe(false);
+    expect(isGhlOrigin("https://evilleadconnectorhq.com")).toBe(false);
+    expect(isGhlOrigin("http://api.leadconnectorhq.com")).toBe(false);
+    expect(isGhlOrigin("null")).toBe(false);
   });
 });
 

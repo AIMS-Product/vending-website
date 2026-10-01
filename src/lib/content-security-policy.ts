@@ -37,6 +37,7 @@ const SCRIPT_HOSTS = [
   "https://wisepops.net", // Wisepops
   "https://assets.calendly.com", // Calendly embed
   "https://link.msgsndr.com", // GHL form_embed.js (replay pages)
+  "https://va.vercel-scripts.com", // Vercel Analytics / Speed Insights debug scripts
 ] as const;
 
 /** Where the tags above report back to, plus our own Supabase and Sentry. */

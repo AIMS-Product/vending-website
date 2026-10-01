@@ -2,7 +2,10 @@ import { reportCopy } from "@/lib/content/masterclass-review-report";
 
 const H2 =
   "v2-display text-ink mt-14 text-[2rem] leading-none text-balance uppercase";
-const CARD = "rounded-card border-ink shadow-card border-2 bg-white";
+/** Flow lists and tables: bordered, flat. */
+const CARD = "rounded-card border-ink border-2 bg-white";
+/** The four "How it was tested" stat cards: the only raised boxes here. */
+const CARD_RAISED = "rounded-card border-ink shadow-card border-2 bg-white";
 
 /** The briefing half of /masterclass-review: journey, testing, decisions, swap plan. */
 export function ReviewReport() {
@@ -44,7 +47,7 @@ export function ReviewReport() {
       <h2 className={H2}>{reportCopy.testedHeading}</h2>
       <ul className="mt-5 grid gap-4 sm:grid-cols-2">
         {reportCopy.tested.map((item) => (
-          <li key={item.label} className={`${CARD} p-5`}>
+          <li key={item.label} className={`${CARD_RAISED} p-5`}>
             <p className="v2-display text-brand-700 text-4xl leading-none">
               {item.figure}
             </p>
@@ -72,12 +75,9 @@ export function ReviewReport() {
       </dl>
 
       <h2 className={H2}>{reportCopy.betterHeading}</h2>
-      <ul className="mt-5 grid gap-3">
+      <ul className="mt-5 grid gap-2.5">
         {reportCopy.better.map((line) => (
-          <li
-            key={line}
-            className="bg-tint rounded-card flex gap-3 p-4 text-[15px] text-slate-700"
-          >
+          <li key={line} className="flex gap-3 py-1 text-[15px] text-slate-700">
             <span aria-hidden className="text-brand-700 font-black">
               +
             </span>
@@ -102,13 +102,18 @@ export function ReviewReport() {
       </ol>
 
       <h2 className={H2}>{reportCopy.swapHeading}</h2>
-      <ol className="mt-5 grid gap-3">
+      {/* One flat list with outlined numbers: a plan to read, not the
+          action steps (those keep the solid badges). */}
+      <ol className="rounded-card border-ink mt-5 border-2 bg-white">
         {reportCopy.swap.map((line, index) => (
-          <li key={line} className={`${CARD} flex items-center gap-4 p-4`}>
-            <span className="bg-brand-700 grid size-8 shrink-0 place-items-center rounded-md text-sm font-black text-white">
+          <li
+            key={line}
+            className="flex gap-4 border-b border-slate-200 p-4 last:border-b-0"
+          >
+            <span className="border-ink text-ink grid size-7 shrink-0 place-items-center rounded-md border-2 bg-white text-sm font-black tabular-nums">
               {index + 1}
             </span>
-            <span className="min-w-0 text-[15px] [overflow-wrap:anywhere] text-slate-700">
+            <span className="min-w-0 pt-[3px] text-[15px] [overflow-wrap:anywhere] text-slate-700">
               {line}
             </span>
           </li>

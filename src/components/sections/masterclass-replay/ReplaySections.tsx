@@ -12,6 +12,7 @@ import {
   REPLAY_GHL_FORM_SCRIPT,
   REPLAY_GHL_FORM_SRC,
   REPLAY_BOOKING_EYEBROW,
+  replayTestimonialCards,
   replayTestimonials,
   replayTestimonialsCopy,
   type ReplayCtaParagraph,
@@ -23,6 +24,7 @@ import type { LeadAttribution } from "@/lib/lead-attribution";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import { cn } from "@/lib/utils";
 import { GhlFormLoading } from "./GhlFormLoading";
+import { ReplayAnchorLink } from "./ReplayAnchorLink";
 import { ReplayCountdownStrip } from "./ReplayCountdownStrip";
 import replayHostStill from "./replay-host-still.jpg";
 
@@ -92,6 +94,11 @@ export function ReplayVideoPlayer({
 
 const anchorHref = (target: "video" | "cta") => `#${REPLAY_ANCHORS[target]}`;
 
+/** The booking heading; in-page CTAs move focus to it after the scroll. */
+const BOOKING_HEADING_ID = `${REPLAY_ANCHORS.cta}-heading`;
+const focusIdFor = (target: "video" | "cta") =>
+  target === "cta" ? BOOKING_HEADING_ID : undefined;
+
 function AnchorButton({
   label,
   target,
@@ -100,8 +107,9 @@ function AnchorButton({
   target: "video" | "cta";
 }) {
   return (
-    <a
+    <ReplayAnchorLink
       href={anchorHref(target)}
+      focusId={focusIdFor(target)}
       className={buttonClass({
         size: "lg",
         className:
@@ -109,25 +117,21 @@ function AnchorButton({
       })}
     >
       <span className="text-center leading-tight">{label}</span>
-    </a>
+    </ReplayAnchorLink>
   );
 }
 
 /**
  * The slim, unlinked brand bar /masterclass opens with. The wordmark PNG is
  * ~47% transparent margin, so height 52 draws a ~28px mark with ~15px of
- * air above and below it. Narrow, its column is the 840px framed player's
- * (840 + 2x40 gutter), so the mark lines up with the player's left edge.
+ * air above and below it. Its column is the 840px framed player's (840 +
+ * 2x40 gutter) on every variant, so the mark sits at the same x on all four
+ * replays whatever the variant's player width.
  */
-function ReplayLogoBar({ wide }: { wide: boolean }) {
+function ReplayLogoBar() {
   return (
     <div className="border-ink border-b-2 bg-white">
-      <div
-        className={cn(
-          "mx-auto flex items-center px-5 py-0.5 lg:px-10",
-          wide ? "max-w-[1120px]" : "max-w-[920px]",
-        )}
-      >
+      <div className="mx-auto flex max-w-[920px] items-center px-5 py-0.5 lg:px-10">
         <Wordmark height={52} eager />
       </div>
     </div>
@@ -166,7 +170,7 @@ export function ReplayHero({
   ));
   return (
     <section className="border-ink border-b-2 bg-white">
-      <ReplayLogoBar wide={midHeading} />
+      <ReplayLogoBar />
       {expiresAt ? <ReplayCountdownStrip expiresAt={expiresAt} /> : null}
       <div
         className={cn(
@@ -241,8 +245,9 @@ function ReplaySteps({ variant }: { variant: ReplayVariant }) {
         return (
           <li key={step.label}>
             {step.target ? (
-              <a
+              <ReplayAnchorLink
                 href={anchorHref(step.target)}
+                focusId={focusIdFor(step.target)}
                 className={cn(
                   row,
                   "group rounded-control focus-visible:ring-sky focus-visible:ring-2 focus-visible:outline-none",
@@ -252,7 +257,7 @@ function ReplaySteps({ variant }: { variant: ReplayVariant }) {
                 <span className="decoration-brand-600 underline decoration-2 underline-offset-4 group-hover:decoration-[3px]">
                   {step.label}
                 </span>
-              </a>
+              </ReplayAnchorLink>
             ) : (
               <span className={row}>
                 {badge}
@@ -292,8 +297,10 @@ export function ReplayBooking({
       <div className="mx-auto max-w-[760px] px-5 pt-14 lg:px-10">
         {calendly ? <Eyebrow>{REPLAY_BOOKING_EYEBROW}</Eyebrow> : null}
         <h2
+          id={BOOKING_HEADING_ID}
+          tabIndex={-1}
           className={cn(
-            "v2-display text-ink text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase",
+            "v2-display text-ink text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] text-balance uppercase focus:outline-none",
             calendly && "mt-3",
           )}
         >
@@ -443,14 +450,13 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1180px] px-5 pt-12 pb-16 md:pt-16 lg:px-10">
-        <Eyebrow>{replayTestimonialsCopy.eyebrow}</Eyebrow>
-        <h2 className="v2-display text-ink mt-3 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
+        {/* No eyebrow: "Testimonials" over this heading only repeated it. */}
+        <h2 className="v2-display text-ink text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {replayTestimonialsCopy.heading}
         </h2>
         {/* Below md a scroll-snap rail (next card peeking); a grid above. */}
-        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 items-stretch gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
-          {replayTestimonials.map((item, index) => {
-            const video = variant.testimonialVideos[index];
+        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 items-start gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:items-stretch md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+          {replayTestimonialCards(variant).map(({ item, video }) => {
             return (
               <li
                 key={item.name}

@@ -41,6 +41,69 @@ export function armStallWatch({
   return watchForStall(onStall, ms);
 }
 
+/** The GHL form's own origins: api.leadconnectorhq.com, *.msgsndr.com. */
+const GHL_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*(leadconnectorhq|msgsndr)\.com$/i;
+
+export function isGhlOrigin(origin: string) {
+  return GHL_ORIGIN.test(origin);
+}
+
+/** What the tracker needs of the iframe; an HTMLIFrameElement satisfies it. */
+type GhlFrame = { style: { height: string } };
+
+/**
+ * Watches a mounted GHL iframe until the form has really arrived, and offers
+ * the fallback if it has not within `stallMs`.
+ *
+ * The iframe's own `load` is deliberately not a signal: when GHL is blocked
+ * the aborted navigation still fires it, over a blank frame. The form counts
+ * as arrived only once its page has spoken: a postMessage from a GHL origin
+ * (iFrameResizer's "Ready"/size message, "iframeLoaded"), or form_embed.js
+ * giving the iframe an explicit height. It is then shown once `isShown()`
+ * (form_embed.js hides the frame until it has sized it), so the skeleton
+ * never fades to a blank card. A form that arrives after the stall still
+ * calls `onLoaded`, which hides the fallback. Returns the cleanup.
+ */
+export function trackGhlForm({
+  frame,
+  messages,
+  isShown,
+  onLoaded,
+  onStall,
+  stallMs = GHL_FORM_STALL_MS,
+  pollMs = 150,
+}: {
+  frame: GhlFrame;
+  /** Where the form's postMessages land: the page's window. */
+  messages: EventTarget;
+  isShown: () => boolean;
+  onLoaded: () => void;
+  onStall: () => void;
+  stallMs?: number;
+  pollMs?: number;
+}) {
+  let spoke = false;
+  const onMessage = (event: Event) => {
+    if (event instanceof MessageEvent && isGhlOrigin(event.origin)) {
+      spoke = true;
+    }
+  };
+  const cancelStall = watchForStall(onStall, stallMs);
+  const poll = setInterval(() => {
+    if ((spoke || frame.style.height !== "") && isShown()) {
+      cleanup();
+      onLoaded();
+    }
+  }, pollMs);
+  messages.addEventListener("message", onMessage);
+  function cleanup() {
+    cancelStall();
+    clearInterval(poll);
+    messages.removeEventListener("message", onMessage);
+  }
+  return cleanup;
+}
+
 /** Grey label / field / text bars; the submit bar carries the button blue. */
 const bar = "rounded-control bg-slate-100";
 const label = `${bar} h-4 w-40 self-start`;
@@ -49,14 +112,16 @@ const field = `${bar} h-[42px] w-full`;
 /**
  * Sits under the GHL iframe (z-0 under its z-10) and fills the slot's
  * reserved height with the loaded form's shape, so the card is never a blank
- * screen while form_embed.js loads (2-12s). It stays until the iframe has
- * fired `load` AND form_embed.js has revealed it, then fades; a white form
- * covers it either way, so a missed event only leaves it hidden underneath.
+ * screen while form_embed.js loads (2-12s). It stays until the form inside
+ * the iframe has messaged the page (see trackGhlForm) and the iframe is
+ * revealed, then fades; a white form covers it either way, so a missed event
+ * only leaves it hidden underneath.
  *
- * If form_embed.js or the iframe is blocked (ad blockers, strict networks),
- * neither ever happens. GHL_FORM_STALL_MS after the iframe mounts, the spinner label becomes a
- * link to the same form on GHL (same UTM params) and the layer rises over the
- * iframe so the link can be clicked; a late load still fades it away.
+ * If GHL is blocked (ad blockers, strict networks) no message ever comes,
+ * even though the aborted iframe still fires `load`. GHL_FORM_STALL_MS after
+ * the iframe mounts, the spinner label becomes a link to the same form on GHL
+ * (same UTM params) and the layer rises over the iframe so the link can be
+ * clicked; a late form still fades it away.
  */
 export function GhlFormLoading({
   iframeId,
@@ -69,21 +134,12 @@ export function GhlFormLoading({
   const layer = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [stalled, setStalled] = useState(false);
-  // The iframe mounts only near the viewport, so the stall clock starts when
-  // it exists: a visitor who watches the replay first never scrolls down to a
-  // fallback for a form that had no chance to load.
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(
-    () => armStallWatch({ loaded, mounted, onStall: () => setStalled(true) }),
-    [loaded, mounted],
-  );
 
   useEffect(() => {
     const slot = layer.current?.parentElement;
     if (!slot) return;
-    let poll: ReturnType<typeof setInterval> | undefined;
     let frame: HTMLIFrameElement | null = null;
+    let stopTracking: (() => void) | undefined;
 
     const shown = (el: HTMLElement) => {
       const style = getComputedStyle(el);
@@ -94,32 +150,30 @@ export function GhlFormLoading({
         el.offsetHeight > 0
       );
     };
-    // form_embed.js hides the iframe until it has sized it, which can be a
-    // beat after `load`; wait for the reveal so the slot never shows blank.
-    const onLoad = () => {
-      poll = setInterval(() => {
-        if (frame && shown(frame)) {
-          clearInterval(poll);
-          setLoaded(true);
-        }
-      }, 150);
-    };
+    // The iframe mounts only near the viewport, so the stall clock starts
+    // when it exists: a visitor who watches the replay first never scrolls
+    // down to a fallback for a form that had no chance to load.
     const attach = () => {
       const found = document.getElementById(iframeId);
       if (!(found instanceof HTMLIFrameElement) || found === frame) return;
       frame = found;
-      frame.addEventListener("load", onLoad, { once: true });
-      setMounted(true);
+      const current = found;
+      stopTracking?.();
+      stopTracking = trackGhlForm({
+        frame: current,
+        messages: window,
+        isShown: () => shown(current),
+        onLoaded: () => setLoaded(true),
+        onStall: () => setStalled(true),
+      });
     };
 
-    // The iframe mounts later (within 200px of the viewport).
     attach();
     const observer = new MutationObserver(attach);
     observer.observe(slot, { childList: true, subtree: true });
     return () => {
       observer.disconnect();
-      clearInterval(poll);
-      frame?.removeEventListener("load", onLoad);
+      stopTracking?.();
     };
   }, [iframeId]);
 

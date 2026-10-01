@@ -57,4 +57,14 @@ describe("playbook offer", () => {
     );
     expect(playbookHref()).toBe("/playbook");
   });
+
+  it("drops a name that is really an email or phone", () => {
+    const name = (full_name: string) =>
+      new URL(checkoutHref({ full_name })).searchParams.get("full_name");
+    expect(name("a@b.com")).toBeNull();
+    expect(name("4155551234")).toBeNull();
+    expect(name("x".repeat(81))).toBeNull();
+    expect(name("Bob")).toBe("Bob");
+    expect(name("Mary-Jo O'Neil")).toBe("Mary-Jo O'Neil");
+  });
 });

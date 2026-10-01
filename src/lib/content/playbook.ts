@@ -40,6 +40,14 @@ type SearchParams = Record<string, string | string[] | undefined>;
 const first = (value: string | string[] | undefined) =>
   (Array.isArray(value) ? value[0] : value)?.trim().slice(0, 200) || undefined;
 
+/**
+ * Only a plausible person name reaches the checkout URL: letters, spaces,
+ * apostrophes and hyphens, at most 80 chars. An email or phone pasted into a
+ * name field is dropped rather than leaked into logs and referrers.
+ */
+const NAME_PATTERN = /^[\p{L}\p{M}' \-]{1,80}$/u;
+export const isSafeName = (value: string) => NAME_PATTERN.test(value);
+
 /** The allowed attribution and prefill params, in a stable order. */
 export function pickPlaybookParams(params: SearchParams): URLSearchParams {
   const out = new URLSearchParams();
@@ -53,7 +61,7 @@ export function pickPlaybookParams(params: SearchParams): URLSearchParams {
     [first(params.first_name), first(params.last_name)]
       .filter(Boolean)
       .join(" ");
-  if (fullName) out.set("full_name", fullName);
+  if (fullName && isSafeName(fullName)) out.set("full_name", fullName);
   return out;
 }
 
@@ -292,6 +300,8 @@ export const opportunityQuotes = [
 ] as const;
 
 export const moreBonuses = {
+  /** GHL's label above the bonus grid. */
+  eyebrow: "9 Bonuses",
   title: "Plus: Add 9 Powerful Bonuses",
   items: [
     {
@@ -432,6 +442,8 @@ export const host = {
 };
 
 export const faq = {
+  /** GHL's label above the FAQ. */
+  eyebrow: "Questions?",
   title: "Frequently Asked Questions",
   items: [
     {

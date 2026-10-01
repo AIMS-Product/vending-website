@@ -8,6 +8,7 @@ import {
   REPLAY_PATHS,
   replayCountdownLive,
   replayDescription,
+  replayTestimonialCards,
   replayTestimonials,
   replayVariants,
   type ReplayVariantKey,
@@ -96,6 +97,28 @@ describe("masterclass replay content", () => {
     ]);
   });
 
+  it("orders advisory's cards Michael, Joe, Mallorie / Shannon, Katie + Graham, videos following", () => {
+    const names = (key: ReplayVariantKey) =>
+      replayTestimonialCards(replayVariants[key]).map((c) => c.item.name);
+    expect(names("advisory")).toEqual([
+      "Michael",
+      "Joe",
+      "Mallorie",
+      "Shannon",
+      "Katie + Graham",
+    ]);
+    for (const key of ["dna", "adnb", "meta"] as const) {
+      expect(names(key)).toEqual(replayTestimonials.map((t) => t.name));
+    }
+    // Each card keeps its own member's video after the reorder.
+    const advisory = replayTestimonialCards(replayVariants.advisory);
+    const dna = replayTestimonialCards(replayVariants.dna);
+    for (const card of advisory) {
+      const same = dna.find((c) => c.item.name === card.item.name);
+      expect(card.video).toEqual(same?.video);
+    }
+  });
+
   it("gives every Vidalytics testimonial a poster: the same member's full-size YouTube thumbnail", () => {
     const youtubeIds = replayVariants.dna.testimonialVideos.map((v) =>
       v.kind === "youtube" ? v.id : null,
@@ -161,10 +184,12 @@ describe("masterclass replay content", () => {
     expect(replayCountdownLive("not a date", at)).toBe(false);
   });
 
-  it("gives each variant its own title and a description from its page copy", () => {
-    const titles = KEYS.map((key) => replayVariants[key].metaTitle);
-    expect(new Set(titles).size).toBe(KEYS.length);
-    expect(replayVariants.meta.metaTitle).toBe("Masterclass Replay (Meta)");
+  it("titles every variant 'Masterclass Replay' and describes it from its page copy", () => {
+    // The audience key (DNA, ADNB, Meta, Advisory) never reaches a tab or a
+    // share preview.
+    for (const key of KEYS) {
+      expect(replayVariants[key].metaTitle).toBe("Masterclass Replay");
+    }
     for (const key of KEYS) {
       const variant = replayVariants[key];
       const description = replayDescription(variant);

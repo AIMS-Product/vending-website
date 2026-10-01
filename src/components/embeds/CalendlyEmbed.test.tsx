@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The redirect is a client component with an effect; server rendering it
 // produces nothing, so stub it with a marker to prove CalendlyEmbed mounts it.
@@ -103,8 +103,9 @@ describe("CalendlyFrame loading layer", () => {
     expect(frame.isCalendlyMessage(msg(origin, data))).toBe(false);
   });
 
-  it("keeps a fallback long enough to outlast Calendly's redirect", () => {
-    expect(frame.LOADING_LAYER_MAX_MS).toBeGreaterThanOrEqual(12_000);
+  it("waits long enough to outlast Calendly's redirect before stalling", () => {
+    expect(frame.CALENDLY_STALL_MS).toBeGreaterThanOrEqual(12_000);
+    expect(frame.CALENDLY_STALL_MS).toBeLessThanOrEqual(20_000);
   });
 
   it("no longer clears the layer on the iframe's load event", () => {
@@ -175,5 +176,90 @@ describe("CalendlyFrame height", () => {
     expect(source).toMatch(
       /style=\{height === null \? undefined : \{ height: `\$\{height\}px` \}\}/,
     );
+  });
+});
+
+// When Calendly is blocked, the loading layer was the page's only booking
+// path and spun forever. With no Calendly message, a new-tab link appears.
+describe("CalendlyFrame stall fallback", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const setup = () => {
+    vi.useFakeTimers();
+    const source = new EventTarget();
+    const calls = { loaded: 0, stalled: 0, heights: [] as number[] };
+    const stop = frame.watchCalendly({
+      source: source as unknown as Window,
+      onHeight: (h) => calls.heights.push(h),
+      onLoaded: () => calls.loaded++,
+      onStall: () => calls.stalled++,
+      stallMs: 15_000,
+    });
+    const post = (origin: string, data: unknown) =>
+      source.dispatchEvent(new MessageEvent("message", { origin, data }));
+    return { calls, stop, post, source };
+  };
+
+  it("offers the fallback when no Calendly message arrives", () => {
+    const { calls } = setup();
+    vi.advanceTimersByTime(14_999);
+    expect(calls.stalled).toBe(0);
+    vi.advanceTimersByTime(1);
+    expect(calls.stalled).toBe(1);
+    expect(calls.loaded).toBe(0);
+  });
+
+  it("does not stall once Calendly reports the scheduler", () => {
+    const { calls, post } = setup();
+    vi.advanceTimersByTime(5_000);
+    post("https://calendly.com", { event: "calendly.event_type_viewed" });
+    vi.advanceTimersByTime(30_000);
+    expect(calls.loaded).toBe(1);
+    expect(calls.stalled).toBe(0);
+  });
+
+  it("still loads when Calendly reports in after the stall", () => {
+    const { calls, post } = setup();
+    vi.advanceTimersByTime(15_000);
+    post("https://calendly.com", {
+      event: "calendly.page_height",
+      payload: { height: "602px" },
+    });
+    expect(calls.stalled).toBe(1);
+    expect(calls.loaded).toBe(1);
+    expect(calls.heights).toEqual([602]);
+  });
+
+  it("ignores the redirect page's height and other origins", () => {
+    const { calls, post } = setup();
+    post("https://calendly.com", {
+      event: "calendly.page_height",
+      payload: { height: "26px" },
+    });
+    post("https://evil.test", { event: "calendly.event_type_viewed" });
+    vi.advanceTimersByTime(15_000);
+    expect(calls.loaded).toBe(0);
+    expect(calls.stalled).toBe(1);
+  });
+
+  it("stops the clock and the listener on cleanup", () => {
+    const { calls, post, stop } = setup();
+    stop();
+    vi.advanceTimersByTime(30_000);
+    post("https://calendly.com", { event: "calendly.event_type_viewed" });
+    expect(calls.stalled).toBe(0);
+    expect(calls.loaded).toBe(0);
+  });
+
+  it("hides the iframe until loaded so only our skeleton shows", () => {
+    const html = renderToStaticMarkup(
+      createElement(CalendlyEmbed, {
+        url: "https://calendly.com/d/cvsd-wxt-cvb/vendingpreneurs-quick-discovery",
+      }),
+    );
+    expect(html).toMatch(/<iframe[^>]+class="[^"]*opacity-0/);
+    expect(html).not.toContain(frame.CALENDLY_FALLBACK);
   });
 });

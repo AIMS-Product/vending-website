@@ -4,6 +4,7 @@ import { ReviewGuide } from "@/components/sections/masterclass/ReviewGuide";
 
 export const metadata: Metadata = {
   title: "Team review | Webinar funnel",
+  description: "Internal review of the rebuilt webinar funnel",
   robots: { index: false, follow: false },
 };
 

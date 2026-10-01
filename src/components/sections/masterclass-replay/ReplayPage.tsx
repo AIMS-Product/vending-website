@@ -26,13 +26,14 @@ import {
 
 /**
  * Replay pages are sent by email, SMS, and ads; never indexed. Each variant
- * still carries its own title, description and share card (the hero's host
- * still), so a link pasted into a text or DM previews as this replay rather
- * than the homepage.
+ * still carries its own description and share card (the hero's host still),
+ * so a link pasted into a text or DM previews as this replay rather than the
+ * homepage. The title is the same "Masterclass Replay" on all four: the
+ * variant key is an internal audience code and stays out of tabs and shares.
  */
 export function replayMetadata(key: ReplayVariantKey): Metadata {
   const variant = replayVariants[key];
-  const title = `${variant.metaTitle} | Vendingpreneurs`;
+  const title = variant.metaTitle;
   const description = replayDescription(variant);
   const image = {
     url: replayHostStill.src,

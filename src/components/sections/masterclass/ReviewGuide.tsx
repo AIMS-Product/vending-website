@@ -165,11 +165,8 @@ export function ReviewGuide() {
             return (
               <li
                 key={step.title}
-                className={cn(
-                  "rounded-card border-ink flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4",
-                  // Only the steps with a button carry the sky shadow.
-                  cta && "shadow-card",
-                )}
+                // Every action step carries the sky shadow, button or not.
+                className="rounded-card border-ink shadow-card flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4"
               >
                 <div className="flex items-center gap-3 sm:items-start">
                   <NumberChip n={index + 1} />
@@ -204,13 +201,15 @@ export function ReviewGuide() {
                 <span className="min-w-0 flex-1">
                   <span className="text-ink block font-black">
                     {page.label}
+                  </span>
+                  {/* Below sm a long URL may break anywhere; from sm only at
+                      the "/" points Slashed marks. */}
+                  <span className="block text-sm [overflow-wrap:anywhere] text-slate-500 sm:[overflow-wrap:normal]">
                     {external ? (
-                      <span className="border-ink rounded-control ml-2 inline-block border px-1.5 align-middle text-[11px] font-black tracking-wide uppercase">
+                      <span className="border-ink rounded-control text-ink mr-1.5 inline-block border px-1.5 align-[1px] text-[11px] font-black tracking-wide uppercase">
                         external
                       </span>
                     ) : null}
-                  </span>
-                  <span className="block text-sm [overflow-wrap:anywhere] text-slate-500">
                     <Slashed text={pathOf(page.href)} />
                   </span>
                 </span>

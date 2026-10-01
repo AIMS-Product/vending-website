@@ -154,7 +154,7 @@ export function RegistrationForm({
           defaultChecked={values?.smsConsent}
           aria-invalid={errors.smsConsent ? true : undefined}
           aria-describedby={errors.smsConsent ? "smsConsent-error" : undefined}
-          className="size-5 shrink-0 cursor-pointer accent-[#1f72a5]"
+          className="size-5 shrink-0 cursor-pointer accent-[#1f72a5] aria-[invalid=true]:outline-2 aria-[invalid=true]:outline-offset-2 aria-[invalid=true]:outline-red-600 aria-[invalid=true]:focus-visible:outline-red-600!"
         />
         <span>{SMS_CONSENT_TEXT}</span>
       </label>
@@ -247,7 +247,12 @@ function Field({
         name={name}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn(fieldClass, error && fieldErrorClass)}
+        className={cn(
+          fieldClass,
+          error && fieldErrorClass,
+          // Focused after a failed submit: stay red, not the blue focus ring.
+          "aria-[invalid=true]:focus:border-red-600 aria-[invalid=true]:focus:ring-red-200 aria-[invalid=true]:focus-visible:outline-red-600!",
+        )}
         {...input}
       />
       {error ? (

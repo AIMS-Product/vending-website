@@ -91,8 +91,10 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
                   {pad(i + 1)}
                 </span>
                 <div className="pt-1">
-                  <p className={EYEBROW}>{c.lessons || `Chapter ${i + 1}`}</p>
-                  <h3 className="v2-display text-ink mt-1 text-2xl leading-[1.05] text-balance uppercase">
+                  {c.lessons ? (
+                    <p className={`${EYEBROW} mb-1`}>{c.lessons}</p>
+                  ) : null}
+                  <h3 className="v2-display text-ink text-2xl leading-[1.05] text-balance uppercase">
                     {c.title}
                   </h3>
                   <CheckList items={c.points} className="mt-4 text-[0.95rem]" />
@@ -110,13 +112,19 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
 /** The five chapter companions: one compact bordered list under chapter 07. */
 function IncludedList() {
   return (
-    <ul className="border-ink rounded-card divide-ink mt-8 divide-y-2 border-2 bg-white">
-      {includedBonuses.items.map((b) => (
-        <li key={b.title} className="px-5 py-4 text-[0.95rem] leading-snug">
-          <strong className="text-ink font-bold">{b.title}</strong> {b.text}
-        </li>
-      ))}
-    </ul>
+    <>
+      <p className="text-eyebrow mt-8 text-xs font-black tracking-[0.14em] uppercase">
+        Included with the course
+      </p>
+      <ul className="border-ink rounded-card divide-ink mt-3 divide-y-2 border-2 bg-white">
+        {includedBonuses.items.map((b) => (
+          <li key={b.title} className="px-5 py-4 text-[0.95rem] leading-snug">
+            <strong className="text-ink block font-bold">{b.title}</strong>{" "}
+            {b.text}
+          </li>
+        ))}
+      </ul>
+    </>
   );
 }
 
@@ -132,7 +140,7 @@ function BonusCell({ bonus, index }: { bonus: Bonus; index: number }) {
   return (
     <>
       <span className={BONUS_EYEBROW}>{`Bonus #${index + 1}`}</span>
-      <p className={`${BONUS_TITLE} mt-2`}>{bonus.title}</p>
+      <h3 className={`${BONUS_TITLE} mt-2`}>{bonus.title}</h3>
       <CheckList items={bonus.points} className="mt-5 text-[0.95rem]" />
     </>
   );
@@ -155,14 +163,14 @@ function BonusRow({
   return (
     <details open={open} className="group">
       <summary className="flex cursor-pointer list-none gap-4 [&::-webkit-details-marker]:hidden">
-        <span className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1">
           <span className={BONUS_EYEBROW}>{`Bonus #${index + 1}`}</span>
-          <span className={`${BONUS_TITLE} mt-1.5 block`}>{bonus.title}</span>
+          <h3 className={`${BONUS_TITLE} mt-1.5`}>{bonus.title}</h3>
           <span className="mt-3 flex gap-3 text-[0.95rem] leading-snug">
             <CheckIcon className="text-brand-600 mt-0.5 size-5 shrink-0" />
             <span>{lead}</span>
           </span>
-        </span>
+        </div>
         <span
           aria-hidden="true"
           className="border-ink mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border-2"
@@ -192,6 +200,7 @@ export function PlaybookMoreBonuses({ checkoutHref }: PlaybookOfferProps) {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
+        <p className={`${EYEBROW} mb-3`}>{moreBonuses.eyebrow}</p>
         <h2 data-reveal className={H2}>
           {moreBonuses.title}
         </h2>

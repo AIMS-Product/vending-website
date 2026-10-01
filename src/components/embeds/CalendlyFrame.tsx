@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { buttonClass } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 /**
@@ -16,15 +17,20 @@ import { cn } from "@/lib/utils";
  * `calendly.*` message works either: the redirect page posts page_height
  * "26px" / "2px" 1-2s before the calendar paints. So the layer clears on
  * `calendly.event_type_viewed`, or on a page_height tall enough to be the
- * scheduler. A timer clears it regardless, in case those never arrive. The
- * timer is long (30s): at 12s it fired before Calendly painted in slow loads
- * (~18s in dev) and left the card blank white in between.
+ * scheduler. The iframe stays transparent until then, so Calendly's own
+ * loading dots never show on top of ours.
+ *
+ * If no such message arrives within CALENDLY_STALL_MS (Calendly blocked by an
+ * extension or network), the layer offers "Open the calendar in a new tab" to
+ * the same src, UTMs included, so the page's only booking path never dead-ends.
+ * A Calendly message that arrives after the stall still clears the layer.
  *
  * The same real page_height also sizes the iframe, so the card hugs
  * Calendly's month view instead of leaving dead tint under it.
  * `heightClassName` stays as the pre-load minimum.
  */
-const LOADING_LAYER_MAX_MS = 30_000;
+const CALENDLY_STALL_MS = 15_000;
+const CALENDLY_FALLBACK = "Open the calendar in a new tab";
 const CALENDLY_ORIGIN = "https://calendly.com";
 /** Anything shorter is Calendly's redirect page, not the scheduler. */
 const MIN_SCHEDULER_HEIGHT = 300;
@@ -78,6 +84,48 @@ function isCalendlyMessage(event: CalendlyMessage) {
   );
 }
 
+/** What the watcher needs of window; a Window satisfies it. */
+type MessageSource = Pick<Window, "addEventListener" | "removeEventListener">;
+
+/**
+ * Listens for Calendly's messages: every scheduler height goes to `onHeight`,
+ * the first painted-scheduler message calls `onLoaded`, and `onStall` fires
+ * once if none has arrived within `stallMs`. Only the Calendly postMessage
+ * counts as loaded, never the iframe's load event. Returns the cleanup. Kept
+ * outside the component so the timing is testable without a DOM.
+ */
+function watchCalendly({
+  source,
+  onHeight,
+  onLoaded,
+  onStall,
+  stallMs = CALENDLY_STALL_MS,
+}: {
+  source: MessageSource;
+  onHeight: (height: number) => void;
+  onLoaded: () => void;
+  onStall: () => void;
+  stallMs?: number;
+}) {
+  let timer: ReturnType<typeof setTimeout> | undefined = setTimeout(() => {
+    timer = undefined;
+    onStall();
+  }, stallMs);
+  const onMessage = (event: MessageEvent) => {
+    const measured = schedulerHeight(event);
+    if (measured !== null) onHeight(measured);
+    if (!isCalendlyMessage(event)) return;
+    clearTimeout(timer);
+    timer = undefined;
+    onLoaded();
+  };
+  source.addEventListener("message", onMessage);
+  return () => {
+    clearTimeout(timer);
+    source.removeEventListener("message", onMessage);
+  };
+}
+
 /** A 7x5 month grid for the loading layer's calendar skeleton. */
 const SKELETON_DAYS = Array.from({ length: 35 }, (_, i) => i);
 
@@ -122,28 +170,28 @@ export function CalendlyFrame({
     phoneSrc !== undefined && phone === true,
   );
 
-  useEffect(() => {
-    const onMessage = (event: MessageEvent) => {
-      const measured = schedulerHeight(event);
-      if (measured !== null) setReported(measured);
-      if (isCalendlyMessage(event)) setLoaded(true);
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, []);
+  const [stalled, setStalled] = useState(false);
 
-  useEffect(() => {
-    if (loaded) return;
-    const timer = setTimeout(() => setLoaded(true), LOADING_LAYER_MAX_MS);
-    return () => clearTimeout(timer);
-  }, [loaded]);
+  useEffect(
+    () =>
+      watchCalendly({
+        source: window,
+        onHeight: setReported,
+        onLoaded: () => setLoaded(true),
+        onStall: () => setStalled(true),
+      }),
+    [],
+  );
 
   return (
     <>
       {loaded ? null : (
         <div
-          aria-hidden
-          className="bg-tint absolute inset-0 z-0 flex flex-col items-center justify-start gap-3 pt-16"
+          aria-hidden={stalled ? undefined : true}
+          className={cn(
+            "bg-tint absolute inset-0 flex flex-col items-center justify-start gap-3 pt-16",
+            stalled ? "z-20" : "z-0",
+          )}
         >
           <svg
             aria-hidden
@@ -160,6 +208,16 @@ export function CalendlyFrame({
           <p className="text-sm font-semibold text-slate-600">
             Loading available times…
           </p>
+          {stalled && frameSrc !== null ? (
+            <a
+              href={frameSrc}
+              target="_blank"
+              rel="noopener"
+              className={buttonClass({ size: "md", className: "px-5" })}
+            >
+              {CALENDLY_FALLBACK}
+            </a>
+          ) : null}
           <div className="mt-3 grid w-full max-w-[360px] grid-cols-7 justify-items-center gap-2 px-4">
             {SKELETON_DAYS.map((day) => (
               <span key={day} className="size-9 rounded-full bg-slate-100" />
@@ -171,7 +229,12 @@ export function CalendlyFrame({
         <div aria-hidden className={cn("w-full", heightClassName)} />
       ) : (
         <iframe
-          className={cn("relative z-10 block w-full border-0", heightClassName)}
+          className={cn(
+            "relative z-10 block w-full border-0",
+            loaded ? "opacity-100" : "opacity-0",
+            "motion-safe:transition-opacity",
+            heightClassName,
+          )}
           style={height === null ? undefined : { height: `${height}px` }}
           loading="eager"
           src={frameSrc}
@@ -186,5 +249,7 @@ export const __testing = {
   appliedHeight,
   isCalendlyMessage,
   schedulerHeight,
-  LOADING_LAYER_MAX_MS,
+  watchCalendly,
+  CALENDLY_FALLBACK,
+  CALENDLY_STALL_MS,
 };

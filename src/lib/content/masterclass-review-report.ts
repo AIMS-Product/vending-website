@@ -113,7 +113,7 @@ export const reportCopy = {
   decisionsHeading: "Decisions before we swap",
   decisions: [
     "Playbook bonuses: the page shows a 5-item bonus stack and 9 bonuses. Which are actually delivered?",
-    'Anthony\'s figures appear in several versions (locations, machines, monthly revenue) and as "120k$". Kody to approve one set and the formatting.',
+    'Member figures conflict across pages. Anthony\'s appear in several versions (locations, machines, monthly revenue) and as "120k$". Michael D: "$650K Annual Revenue" and "18 machines" on his /masterclass card (the ticker reads "$650K annual revenue"), "$600K/Yr" burned into his video thumbnail, and "18 locations | ~$54K/mo" on the replay pages. Joe: "15+ Machines" in his video thumbnail, "$5,500 Monthly Revenue" and "15 locations" on his /masterclass card, "15 locations | ~$5.5K/mo" on the replay pages. Matt Morrison: "$43K Monthly Revenue" on his /masterclass card and in the ticker, "$7K/MO" in his video thumbnail. Kody and legal to approve one set per member and the formatting.',
     '"Show up live" bonuses on the confirmation page: the GHL block is live word for word, except that "tonight" reads "on Tuesday" (the session\'s weekday) until the day of the session. Pending owner confirmation that the bonuses are still offered.',
     "Who hosts each replay (Mike or Anthony) for the photos and labels.",
     "GHL scoring form styling (teal button) is set in the GHL form builder.",

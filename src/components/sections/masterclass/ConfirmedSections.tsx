@@ -11,6 +11,7 @@ import {
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
 import Image from "next/image";
+import { Wordmark } from "@/components/site/Wordmark";
 import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
@@ -54,6 +55,12 @@ export function ConfirmedHero({
         backgroundSize: "22px 22px",
       }}
     >
+      {/* The same logo bar as the registration hero. */}
+      <div className="border-ink relative border-b-2 bg-white">
+        <div className="mx-auto flex max-w-[1180px] items-center px-5 py-3 lg:px-10">
+          <Wordmark height={44} eager />
+        </div>
+      </div>
       <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:pt-10 lg:pb-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
@@ -190,10 +197,12 @@ export function NextSteps() {
 export function CoverSection() {
   return (
     <section className="border-ink bg-tint border-t-2">
-      <div className="mx-auto grid max-w-[1080px] items-center gap-10 px-5 py-16 md:grid-cols-[0.9fr_1.1fr] lg:px-10">
+      {/* Below md the copy column dissolves (contents) so the photo can sit
+          between the topics and the quote. */}
+      <div className="mx-auto grid max-w-[1080px] items-center px-5 py-16 md:grid-cols-[0.9fr_1.1fr] md:gap-10 lg:px-10">
         <div
           data-reveal
-          className="rounded-card border-ink shadow-card relative order-last aspect-[4/3] overflow-hidden border-2 bg-white md:order-none md:aspect-square"
+          className="rounded-card border-ink relative order-1 mt-7 aspect-[4/3] overflow-hidden border-2 bg-white md:order-none md:mt-0 md:aspect-square"
         >
           <Image
             src="/images/newsletter/anthony-kolodziej.webp"
@@ -203,7 +212,7 @@ export function CoverSection() {
             className="object-cover"
           />
         </div>
-        <div data-reveal>
+        <div data-reveal className="contents md:block">
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {coverCopy.eyebrow}
           </p>
@@ -225,7 +234,7 @@ export function CoverSection() {
               </li>
             ))}
           </ol>
-          <blockquote className="mt-7 text-[17px] text-slate-700 italic">
+          <blockquote className="order-2 mt-7 text-[17px] text-slate-700 italic md:order-none">
             <span
               aria-hidden
               className="v2-display text-brand-600 block text-5xl leading-[0.6] not-italic"
@@ -253,7 +262,7 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
   if (!featured.length) return null;
   return (
     <section className="border-ink border-t-2 bg-white">
-      <div className="mx-auto max-w-[1180px] px-5 py-14 lg:px-10">
+      <div className="mx-auto max-w-[1080px] px-5 py-14 lg:px-10">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.storiesEyebrow}
         </p>

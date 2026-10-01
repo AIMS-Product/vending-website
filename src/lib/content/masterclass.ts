@@ -65,15 +65,50 @@ const firstValue = (value: string | string[] | undefined) =>
  */
 const FIRST_NAME = /^(?=.{1,40}$)[\p{L}'-]+(?: [\p{L}'-]+){0,2}$/u;
 
+/** `first` collapsed to single spaces and trimmed. */
+function normalizeFirst(value: string): string {
+  return value.trim().replace(/\s+/gu, " ");
+}
+
+/**
+ * Whether a raw `?first=` value is a plain name (the rule safeFirstName
+ * uses). Anything else, like an email or a phone number, is PII to strip.
+ */
+export function isSafeFirstName(value: string): boolean {
+  const name = normalizeFirst(value);
+  return name !== "" && FIRST_NAME.test(name);
+}
+
 /**
  * `?first=` as a display name, or undefined when it is not a plain name.
  * Spaces are collapsed and its first letter is capitalised ("adam" reads
  * "Adam").
  */
 export function safeFirstName(params: QueryParams): string | undefined {
-  const name = (firstValue(params.first) ?? "").trim().replace(/\s+/gu, " ");
-  if (!name || !FIRST_NAME.test(name)) return undefined;
+  const name = normalizeFirst(firstValue(params.first) ?? "");
+  if (!isSafeFirstName(name)) return undefined;
   return name.charAt(0).toLocaleUpperCase("en-US") + name.slice(1);
+}
+
+/**
+ * `href` without contact params (PII_PARAMS, plus `first` when it is not a
+ * plain name), or null when there is nothing to remove.
+ */
+export function stripPiiFromUrl(href: string): string | null {
+  const url = new URL(href);
+  let changed = false;
+  for (const key of PII_PARAMS) {
+    if (url.searchParams.has(key)) {
+      url.searchParams.delete(key);
+      changed = true;
+    }
+  }
+  const first = url.searchParams.getAll("first");
+  if (first.length && !first.every(isSafeFirstName)) {
+    url.searchParams.delete("first");
+    changed = true;
+  }
+  return changed ? url.href : null;
 }
 
 /**
@@ -196,7 +231,7 @@ export const hostCandids = [
   },
   {
     src: "/images/masterclass/anthony-three-machines.jpg",
-    alt: "Anthony, arms crossed, in front of three stocked vending machines",
+    alt: "Anthony, arms crossed, in front of a stocked vending machine",
     width: 1200,
     height: 628,
     position: "object-center",

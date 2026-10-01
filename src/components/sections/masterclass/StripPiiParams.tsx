@@ -1,25 +1,18 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useRef } from "react";
-import { PII_PARAMS } from "@/lib/content/masterclass";
+import { stripPiiFromUrl } from "@/lib/content/masterclass";
 
 /** The current URL without contact params, or null when it has none. */
 function strippedUrl(): string | null {
-  const url = new URL(window.location.href);
-  let changed = false;
-  for (const key of PII_PARAMS) {
-    if (url.searchParams.has(key)) {
-      url.searchParams.delete(key);
-      changed = true;
-    }
-  }
-  return changed ? url.href : null;
+  return stripPiiFromUrl(window.location.href);
 }
 
 /**
  * Removes contact details (email, phone, names) from the address bar on
  * arrival, so they are not kept in history or read by analytics page views.
- * `first` stays: the page greets the visitor with it.
+ * `first` stays only when it is a plain name: the page greets the visitor
+ * with it. An email or number passed as `first` is removed too.
  *
  * Two passes. The layout effect runs before the analytics effects of later
  * components see the URL, but it keeps Next's history state, so the app router

@@ -186,40 +186,39 @@ export function PlaybookStories({ checkoutHref }: PlaybookProofProps) {
 export function PlaybookCompare() {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
-      <div className="mx-auto grid max-w-[1180px] gap-10 px-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-center lg:gap-16 lg:px-10">
+      <div className="mx-auto grid max-w-[1180px] gap-10 px-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:items-start lg:gap-16 lg:px-10">
         <div>
           <h2 data-reveal className={H2}>
             {compare.title}
           </h2>
           <p className="mt-5 text-lg leading-relaxed">{compare.intro}</p>
         </div>
-        {/* Phones: one stacked block per row; the table from sm up. */}
+        {/* Phones: one compact row each, Mike's answer on the label line and
+            the two alternatives in one quiet line under it; the table from sm up. */}
         <ul className="border-ink bg-ink shadow-card rounded-card grid gap-[2px] overflow-hidden border-2 sm:hidden">
+          <li
+            aria-hidden="true"
+            className="bg-brand-700 px-4 py-2 text-right text-xs font-black tracking-[0.14em] text-white uppercase"
+          >
+            {compare.columns[0]}
+          </li>
           {compare.rows.map(([label, ours, ...others]) => (
-            <li key={label} className="bg-white p-5">
-              <h3 className="text-ink leading-snug font-black">{label}</h3>
-              <div className="bg-tint text-ink rounded-control mt-3 px-3 py-2">
-                <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-                  {compare.columns[0]}
-                </p>
-                <p className="mt-0.5 flex items-start gap-2 font-black">
+            <li key={label} className="bg-white px-4 py-3">
+              <p className="flex items-start justify-between gap-3 leading-snug">
+                <span className="text-ink font-bold">{label}</span>
+                <span className="text-ink flex shrink-0 items-start gap-1.5 font-black">
                   <CheckIcon className="text-brand-600 mt-0.5 size-4 shrink-0" />
+                  <span className="sr-only">{compare.columns[0]}: </span>
                   {ours}
-                </p>
-              </div>
-              <dl className="text-ink/70 mt-3 grid grid-cols-2 grid-rows-[auto_auto] gap-x-3 gap-y-0.5 text-sm">
+                </span>
+              </p>
+              <p className="text-ink/60 mt-1 grid grid-cols-2 gap-x-3 text-[0.8125rem] leading-snug">
                 {others.map((c, i) => (
-                  <div
-                    key={compare.columns[i + 1]}
-                    className="row-span-2 grid grid-rows-subgrid"
-                  >
-                    <dt className="text-xs font-black tracking-[0.1em] uppercase">
-                      {compare.columns[i + 1]}
-                    </dt>
-                    <dd>{c}</dd>
-                  </div>
+                  <span key={compare.columns[i + 1]}>
+                    {`${compare.columns[i + 1]}: ${c}`}
+                  </span>
                 ))}
-              </dl>
+              </p>
             </li>
           ))}
         </ul>

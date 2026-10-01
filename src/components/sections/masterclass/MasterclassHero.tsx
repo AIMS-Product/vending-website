@@ -41,14 +41,13 @@ function NoBreak({ text, phrase }: { text: string; phrase: string }) {
 }
 
 /**
- * A takeaway's lead phrase (before its first " - ", or its first sentence when
- * it has no dash) and the rest. Render-time only: the approved string is
- * shown whole, byte for byte.
+ * A takeaway's lead phrase (before its first " - ") and the rest. With no
+ * dash nothing is bold: the whole item reads as regular text. Render-time
+ * only: the approved string is shown whole, byte for byte.
  */
 function splitTakeaway(text: string): [string, string] {
   const dash = text.indexOf(" - ");
-  const at = dash >= 0 ? dash : text.indexOf(".") + 1;
-  return at > 0 ? [text.slice(0, at), text.slice(at)] : [text, ""];
+  return dash > 0 ? [text.slice(0, dash), text.slice(dash)] : ["", text];
 }
 
 /**
@@ -76,77 +75,80 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
           <Wordmark height={44} eager />
         </div>
       </div>
-      {/* Below lg the left column dissolves (contents) so the form can sit
-          right under the subhead and the takeaways follow it. */}
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-center gap-x-14 px-5 py-12 lg:grid-cols-[1fr_minmax(0,440px)] lg:px-10 lg:py-14">
-        <div className="contents lg:block lg:max-w-[620px] lg:min-w-0">
-          <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase">
-            {copy.eyebrow}
-          </p>
-          <h1 className="v2-display text-ink mt-5 max-w-[20ch] text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.14] uppercase">
-            {sentences.map((sentence, index) => {
-              const text = sentence.trim();
-              const at = text.indexOf(copy.highlight);
-              return (
-                <span key={text} className="block">
-                  {index > 0 ? <span className="sr-only"> </span> : null}
-                  {at < 0 ? (
-                    text
-                  ) : (
-                    <>
-                      {text.slice(0, at)}
-                      <Highlight>{copy.highlight}</Highlight>
-                      {text.slice(at + copy.highlight.length)}
-                    </>
-                  )}
-                </span>
-              );
-            })}
-          </h1>
-          <p className="text-ink mt-4 text-lg leading-snug font-bold">
-            <NoBreak text={copy.subheadline} phrase="cash-flowing" />
-          </p>
-          <div className="order-3 mt-8 max-w-[620px] lg:order-none lg:mt-6">
-            <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-              On the call
-            </p>
-            <ul className="mt-3 space-y-3">
-              {masterclassTakeaways.map((item) => {
-                const [lead, rest] = splitTakeaway(item);
-                return (
-                  <li
-                    key={item}
-                    className="flex gap-3 text-[15px] leading-[1.55] font-medium text-slate-700"
-                  >
-                    <CheckDisc />
-                    <span>
-                      <strong className="text-ink font-bold">{lead}</strong>
-                      {rest}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <a
-            href={`#${APPLY_VSL_ANCHOR}`}
-            className="group text-ink order-3 mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:order-none"
-          >
-            <span className="bg-brand-600 flex size-11 items-center justify-center rounded-full text-white shadow-[3px_3px_0_#111111] transition-transform group-hover:translate-y-0.5">
-              <PlayIcon className="size-4 translate-x-px" />
-            </span>
-            <span className="decoration-brand-600 flex items-center gap-1.5 underline decoration-2 underline-offset-4">
-              {copy.videoCue}
-              <ChevronDownIcon className="text-eyebrow size-4 motion-safe:animate-bounce" />
-            </span>
-          </a>
-        </div>
+      {/* One grid, in reading order: headline, subhead, form, takeaways,
+          video link. So keyboard focus reaches the form right after the
+          headline. From lg the copy sits in column 1 between two flexible
+          spacer rows (vertically centred against the form) and the form
+          spans every row of column 2. */}
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[1fr_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
+        <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase lg:col-start-1 lg:row-start-2 lg:max-w-[620px]">
+          {copy.eyebrow}
+        </p>
+        <h1 className="v2-display text-ink mt-5 max-w-[20ch] text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.14] uppercase lg:col-start-1 lg:row-start-3">
+          {sentences.map((sentence, index) => {
+            const text = sentence.trim();
+            const at = text.indexOf(copy.highlight);
+            return (
+              <span key={text} className="block">
+                {index > 0 ? <span className="sr-only"> </span> : null}
+                {at < 0 ? (
+                  text
+                ) : (
+                  <>
+                    {text.slice(0, at)}
+                    <Highlight>{copy.highlight}</Highlight>
+                    {text.slice(at + copy.highlight.length)}
+                  </>
+                )}
+              </span>
+            );
+          })}
+        </h1>
+        <p className="text-ink mt-4 text-lg leading-snug font-bold lg:col-start-1 lg:row-start-4 lg:max-w-[620px]">
+          <NoBreak text={copy.subheadline} phrase="cash-flowing" />
+        </p>
         <div
           id={APPLY_QUIZ_ANCHOR}
-          className="order-2 mt-6 w-full min-w-0 scroll-mt-6 lg:order-none lg:mt-0"
+          className="mt-6 w-full min-w-0 scroll-mt-6 self-center lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
         >
           {aside}
         </div>
+        <div className="mt-8 max-w-[620px] lg:col-start-1 lg:row-start-5 lg:mt-6">
+          <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+            On the call
+          </p>
+          <ul className="mt-3 space-y-3">
+            {masterclassTakeaways.map((item) => {
+              const [lead, rest] = splitTakeaway(item);
+              return (
+                <li
+                  key={item}
+                  className="flex gap-3 text-[15px] leading-[1.55] font-medium text-slate-700"
+                >
+                  <CheckDisc />
+                  <span>
+                    {lead ? (
+                      <strong className="text-ink font-bold">{lead}</strong>
+                    ) : null}
+                    {rest}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+        <a
+          href={`#${APPLY_VSL_ANCHOR}`}
+          className="group text-ink mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:col-start-1 lg:row-start-6"
+        >
+          <span className="bg-brand-600 flex size-11 items-center justify-center rounded-full text-white shadow-[3px_3px_0_#111111] transition-transform group-hover:translate-y-0.5">
+            <PlayIcon className="size-4 translate-x-px" />
+          </span>
+          <span className="decoration-brand-600 flex items-center gap-1.5 underline decoration-2 underline-offset-4">
+            {copy.videoCue}
+            <ChevronDownIcon className="text-eyebrow size-4 motion-safe:animate-bounce" />
+          </span>
+        </a>
       </div>
     </section>
   );
