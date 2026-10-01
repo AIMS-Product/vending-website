@@ -330,6 +330,8 @@ export const CONFIRMED_VIDEO_POSTER =
 
 export const confirmedCopy = {
   eyebrow: "Seat confirmed",
+  /** Every site registrant ticked SMS consent; GHL texts the link at T-15m and T-0. */
+  zoomTextLine: "We'll also text it to you before we go live.",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
   steps: [
     { n: "01", title: "Find your Zoom link" },

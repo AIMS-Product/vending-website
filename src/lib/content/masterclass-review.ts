@@ -16,7 +16,7 @@ export const reviewCopy = {
   steps: [
     {
       title: "Register",
-      body: "Open the registration page and sign up with your real name, email and mobile. Use the button below, so your test is labelled as a team review.",
+      body: "Open the registration page on your phone and sign up with your real name, email and mobile. Use the button below, so your test is labelled as a team review. Before you sign up, check: the Save my free seat button is on the first screen, the form shows a live countdown and the time in your own time zone, and a Save my free seat bar with a countdown follows you once you scroll past the form.",
       cta: {
         label: "Open the registration page",
         href: `/masterclass?${REVIEW_UTM}`,
@@ -24,7 +24,7 @@ export const reviewCopy = {
     },
     {
       title: "Check the confirmation page",
-      body: "You land on your confirmation page: your name, the live countdown, add-to-calendar buttons (try one), what the call covers and member stories that play in place.",
+      body: "You land on your confirmation page: your name, the start in your own time zone, the live countdown, add-to-calendar buttons (try one), what the call covers and member stories that play in place.",
     },
     {
       title: "Answer the 3 questions",
@@ -32,7 +32,7 @@ export const reviewCopy = {
     },
     {
       title: "Open the Playbook offer",
-      body: "Click through the $67 Playbook offer to the checkout. Your name carries into the checkout. Do not complete the purchase unless you mean it: it is a real card charge.",
+      body: "Click through the $67 Playbook offer to the checkout. Once you scroll past the top, a buy bar stays at the bottom of the screen. Your name carries into the checkout. Do not complete the purchase unless you mean it: it is a real card charge.",
       cta: { label: "Open the Playbook page", href: `/playbook?${REVIEW_UTM}` },
     },
     {

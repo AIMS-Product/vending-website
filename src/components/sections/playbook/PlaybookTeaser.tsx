@@ -75,6 +75,8 @@ export function PlaybookTeaser({
             })}
           </ul>
           <Link
+            data-track="playbook_clicked"
+            data-track-detail="confirmed"
             href={playbookHref(searchParams)}
             className={buttonClass({ size: "lg", className: "mt-6 w-full" })}
           >

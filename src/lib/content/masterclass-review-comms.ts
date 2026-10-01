@@ -1353,7 +1353,7 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     owner: "Site (done)",
     due: "Thu Oct 1",
     status: "done",
-    note: "Save-my-seat button on the first phone screen, sticky save-my-seat bar, countdown and the visitor's own time in the form, a line on why we ask for the phone.",
+    note: "Save-my-seat button on the first phone screen, sticky save-my-seat bar with a live countdown, countdown and the visitor's own time in the form, a line on why we ask for the phone. Playbook page: sticky buy bar. Calendar adds and Playbook clicks are tracked.",
   },
   {
     item: "16 review findings fixed and shipped",

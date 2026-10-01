@@ -29,7 +29,7 @@ export const reportCopy = {
       who: "Site",
       step: "Registers",
       detail:
-        "Name, email, US/Canada mobile, text consent. Bots and repeat spam are blocked.",
+        "Name, email, US/Canada mobile, text consent. Sign-up button on the first phone screen, live countdown, the visitor's own time, a sticky save-my-seat bar. Bots and repeat spam are blocked.",
     },
     {
       who: "GHL",
@@ -47,13 +47,13 @@ export const reportCopy = {
       who: "Site",
       step: "Confirmation page",
       detail:
-        "Countdown, add-to-calendar, 3 intake questions saved to the contact, the Playbook offer, member stories.",
+        "Countdown, the visitor's own time, add-to-calendar (tracked), 3 intake questions saved to the contact, the Playbook offer, member stories.",
     },
     {
       who: "Site",
       step: "Playbook offer ($67)",
       detail:
-        "Offer page on our site; checkout and payment stay in GHL (Stripe), name prefilled.",
+        "Offer page on our site with a sticky buy bar; checkout and payment stay in GHL (Stripe), name prefilled.",
     },
     {
       who: "GHL",

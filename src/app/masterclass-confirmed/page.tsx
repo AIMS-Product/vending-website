@@ -1,3 +1,4 @@
+import { TrackedClicks } from "@/components/tracking/TrackedClicks";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import "../home-v2.css";
@@ -88,6 +89,7 @@ export default async function MasterclassConfirmedPage({
 
   return (
     <div className={anton.variable}>
+      <TrackedClicks />
       <StripPiiParams />
       <RegisteredTracker justRegistered={registeredAs !== undefined} />
       <RevealObserver />

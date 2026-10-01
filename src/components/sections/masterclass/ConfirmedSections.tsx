@@ -135,6 +135,8 @@ export function ConfirmedHero({
               </p>
               <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
                 <a
+                  data-track="calendar_added"
+                  data-track-detail="google"
                   href={links.google}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -149,6 +151,8 @@ export function ConfirmedHero({
                   Google Calendar
                 </a>
                 <a
+                  data-track="calendar_added"
+                  data-track-detail="apple"
                   href={links.ics}
                   className={buttonClass({
                     variant: "ghost",
@@ -160,6 +164,8 @@ export function ConfirmedHero({
                   Apple / iCal
                 </a>
                 <a
+                  data-track="calendar_added"
+                  data-track-detail="outlook"
                   href={links.outlook}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -194,7 +200,8 @@ export function NextSteps() {
           <Step n={zoom.n} title={zoom.title}>
             Your Zoom link is in the email from{" "}
             <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
-            (check spam and promotions, then move it to your inbox).
+            (check spam and promotions, then move it to your inbox).{" "}
+            {confirmedCopy.zoomTextLine}
           </Step>
           <Step n={reply.n} title={reply.title}>
             {reply.body}

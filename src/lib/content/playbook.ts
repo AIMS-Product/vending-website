@@ -79,6 +79,12 @@ export const playbookHref = (params: SearchParams = {}) =>
 /** The one buy label above the final checkout card (which says "Get Instant Access"). */
 export const BUY_CTA = "Yes, I Want Mike's Playbook";
 
+/** Sticky buy bar once the hero has scrolled away (CRO audit #17). */
+export const stickyBuy = {
+  text: "Mike Hoffmann's Vending Playbook",
+  cta: `Yes, I want it · ${PRICE.today}`,
+} as const;
+
 export const images = {
   product: {
     src: "/images/playbook/hero-mockup.png",

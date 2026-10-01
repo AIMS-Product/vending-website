@@ -3,6 +3,7 @@ import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import {
   checkoutClickEvents,
   scrollCtaEvents,
+  trackedClickEvents,
   claimOnce,
   pickUtms,
   registeredEvents,
@@ -106,5 +107,23 @@ describe("scrollCtaEvents", () => {
       },
       dataLayer: { event: "vp_cta_click", location: "sticky" },
     });
+  });
+});
+
+describe("trackedClickEvents", () => {
+  it("maps a known click to PostHog and the dataLayer, detail only", () => {
+    expect(trackedClickEvents("calendar_added", "google")).toEqual({
+      posthog: { name: "calendar_added", properties: { detail: "google" } },
+      dataLayer: { event: "vp_calendar_add", detail: "google" },
+    });
+    expect(trackedClickEvents("playbook_clicked", undefined)).toEqual({
+      posthog: { name: "playbook_clicked", properties: {} },
+      dataLayer: { event: "vp_playbook_click" },
+    });
+  });
+  it("ignores unknown names", () => {
+    expect(trackedClickEvents("anything_else", "x")).toBeNull();
+    expect(trackedClickEvents("toString", undefined)).toBeNull();
+    expect(trackedClickEvents("constructor", undefined)).toBeNull();
   });
 });

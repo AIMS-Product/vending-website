@@ -14,6 +14,7 @@ import {
 } from "@/components/sections/playbook/PlaybookClose";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { PlaybookHero } from "@/components/sections/playbook/PlaybookHero";
+import { PlaybookStickyBuy } from "@/components/sections/playbook/PlaybookStickyBuy";
 import {
   PlaybookCurriculum,
   PlaybookMoreBonuses,
@@ -72,6 +73,7 @@ export default async function PlaybookPage({
       <PlaybookHost checkoutHref={href} />
       <PlaybookFaq />
       <PlaybookFinalOffer checkoutHref={href} />
+      <PlaybookStickyBuy href={href} />
     </div>
   );
 }

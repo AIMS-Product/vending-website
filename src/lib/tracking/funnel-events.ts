@@ -121,3 +121,29 @@ export function trackCtaClick(location: string) {
   captureEvent(events.posthog.name, events.posthog.properties, SEND_NOW);
   pushDataLayerEvent(events.dataLayer);
 }
+
+/** Clicks the page marks with data-track (calendar adds, the Playbook card). */
+const TRACKED_CLICKS = {
+  calendar_added: "vp_calendar_add",
+  playbook_clicked: "vp_playbook_click",
+} as const;
+type TrackedClick = keyof typeof TRACKED_CLICKS;
+const isTrackedClick = (name: string): name is TrackedClick =>
+  Object.hasOwn(TRACKED_CLICKS, name);
+
+/** PostHog + dataLayer payloads for a data-track click; null for an unknown name. */
+export function trackedClickEvents(name: string, detail: string | undefined) {
+  if (!isTrackedClick(name)) return null;
+  const properties = detail ? { detail } : {};
+  return {
+    posthog: { name, properties },
+    dataLayer: { event: TRACKED_CLICKS[name], ...properties },
+  };
+}
+
+export function trackClick(name: string, detail: string | undefined) {
+  const events = trackedClickEvents(name, detail);
+  if (!events) return;
+  captureEvent(events.posthog.name, events.posthog.properties, SEND_NOW);
+  pushDataLayerEvent(events.dataLayer);
+}
