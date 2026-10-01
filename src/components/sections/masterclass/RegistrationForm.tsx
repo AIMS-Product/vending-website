@@ -14,8 +14,11 @@ import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
 import {
   MASTERCLASS_FORM_ID,
+  masterclassFormErrorEvent,
+  masterclassFormStartEvent,
   registrationFailure,
 } from "@/lib/tracking/funnel-events";
+import { pushDataLayerEvent } from "@/lib/tracking/lead-events";
 import { setFormInFlight, trackFormResult } from "@/lib/tracking/form-tracking";
 import {
   HONEYPOT_FIELD,
@@ -57,6 +60,13 @@ export function RegistrationForm({
     setEdits({ result: state, fields: new Set([...edited, name]) });
   };
   const formRef = useRef<HTMLFormElement>(null);
+  // GA4 drop-off: the first field a visitor touches (PostHog has its own).
+  const started = useRef(false);
+  const markStarted = () => {
+    if (started.current) return;
+    started.current = true;
+    pushDataLayerEvent(masterclassFormStartEvent());
+  };
 
   // After a failed submit, move focus to the first field that needs fixing so
   // keyboard and screen-reader users land on the problem, not on <body>.
@@ -82,6 +92,7 @@ export function RegistrationForm({
     if (!state.errors) return;
     const { reason, errorKeys } = registrationFailure(state.errors);
     setFormInFlight(MASTERCLASS_FORM_ID, false);
+    pushDataLayerEvent(masterclassFormErrorEvent(reason, errorKeys));
     trackFormResult({
       formId: MASTERCLASS_FORM_ID,
       ok: false,
@@ -97,6 +108,7 @@ export function RegistrationForm({
       data-form-step="1"
       action={action}
       onChange={markEdited}
+      onFocus={markStarted}
       noValidate
       className="rounded-card border-ink shadow-card border-2 bg-white p-4 sm:p-7"
     >

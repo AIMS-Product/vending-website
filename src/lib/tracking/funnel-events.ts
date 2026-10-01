@@ -147,3 +147,21 @@ export function trackClick(name: string, detail: string | undefined) {
   captureEvent(events.posthog.name, events.posthog.properties, SEND_NOW);
   pushDataLayerEvent(events.dataLayer);
 }
+
+/** dataLayer form start / failure for the masterclass form (GA4 drop-off). */
+export function masterclassFormStartEvent() {
+  return { event: "vp_form_start", intent: "masterclass", form_step: 1 };
+}
+
+export function masterclassFormErrorEvent(
+  reason: RegistrationFailureReason,
+  errorKeys: string[],
+) {
+  return {
+    event: "vp_lead_submit_error",
+    intent: "masterclass",
+    form_step: 1,
+    reason,
+    error_keys: errorKeys,
+  };
+}

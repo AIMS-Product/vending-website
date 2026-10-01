@@ -1,3 +1,4 @@
+import { forwardToGa4 } from "@/lib/tracking/ga4-forward";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import type { LeadIntent } from "@/app/lead-action-state";
 import type { ThankYouStateKey } from "@/lib/qualification/scoring";
@@ -133,6 +134,7 @@ export function pushDataLayerEvent(event: Record<string, unknown>) {
   if (typeof window === "undefined") return;
   window.dataLayer = window.dataLayer || [];
   window.dataLayer.push(event);
+  forwardToGa4(event);
 }
 
 declare global {

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import {
   checkoutClickEvents,
+  masterclassFormErrorEvent,
+  masterclassFormStartEvent,
   scrollCtaEvents,
   trackedClickEvents,
   claimOnce,
@@ -125,5 +127,22 @@ describe("trackedClickEvents", () => {
     expect(trackedClickEvents("anything_else", "x")).toBeNull();
     expect(trackedClickEvents("toString", undefined)).toBeNull();
     expect(trackedClickEvents("constructor", undefined)).toBeNull();
+  });
+});
+
+describe("masterclass GA4 form events", () => {
+  it("carry names, reasons and field keys only", () => {
+    expect(masterclassFormStartEvent()).toEqual({
+      event: "vp_form_start",
+      intent: "masterclass",
+      form_step: 1,
+    });
+    expect(masterclassFormErrorEvent("validation", ["email"])).toEqual({
+      event: "vp_lead_submit_error",
+      intent: "masterclass",
+      form_step: 1,
+      reason: "validation",
+      error_keys: ["email"],
+    });
   });
 });
