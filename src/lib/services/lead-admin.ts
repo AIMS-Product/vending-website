@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NON_CLOSE_EVENT_TYPES } from "@/lib/close/event-types";
 import { CLOSE_LEAD_MISSING } from "@/lib/services/close-booking-reconcile";
 import {
   jsonObjectAt as objectAt,
@@ -196,7 +197,9 @@ export async function adminListLeads(
     listCloseSyncEventsForLeads(client, leadIds),
   ]);
   const latestSessionByLead = firstByLeadId(sessions);
-  const latestEventByLead = firstByLeadId(events);
+  const latestEventByLead = firstByLeadId(
+    events.filter((event) => !NON_CLOSE_EVENT_TYPES.has(event.event_type)),
+  );
 
   return leads.map((lead) =>
     mapLeadListItem(
@@ -269,7 +272,10 @@ export async function adminRetryCloseSyncEvent(
     synced_at: null,
   });
 
-  if (event.lead_submission_id) {
+  if (
+    event.lead_submission_id &&
+    !NON_CLOSE_EVENT_TYPES.has(event.event_type)
+  ) {
     await updateLead(client, event.lead_submission_id, {
       close_sync_status: "pending",
       close_sync_next_retry_at: nowIso,
