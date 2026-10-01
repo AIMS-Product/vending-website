@@ -11,6 +11,7 @@ import {
   ResultsTicker,
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
+import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { ATTRIBUTION_KEYS } from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
@@ -47,6 +48,7 @@ export default async function MasterclassPage({
 
   return (
     <main className={anton.variable}>
+      <StripPiiParams />
       <RevealObserver />
       <MasterclassHero
         aside={

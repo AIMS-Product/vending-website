@@ -61,7 +61,7 @@ export function Countdown({
       {parts.map(({ label, short, value }) => (
         <div
           key={label}
-          className="rounded-control border-ink shadow-card flex w-16 flex-col items-center border-2 bg-white py-2.5 sm:w-20"
+          className="rounded-control border-ink shadow-card flex w-16 flex-col items-center border-2 bg-white py-2.5 sm:w-24"
         >
           <span className="text-ink text-3xl font-black tabular-nums">
             {String(value).padStart(2, "0")}

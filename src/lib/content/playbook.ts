@@ -98,14 +98,6 @@ const storyPhotos = {
     width: 720,
     height: 720,
   },
-  shannon: {
-    src: "/apply/stories/shannon-r.jpg",
-    alt: "Shannon R. on a member call",
-    width: 480,
-    height: 270,
-    /** A 16:9 call still: zoom to the face for the square avatar. */
-    zoom: 1.7,
-  },
 } as const;
 
 export const hero = {
@@ -296,7 +288,7 @@ export const opportunityQuotes = [
 
 export const moreBonuses = {
   eyebrow: "9 BONUSES",
-  title: "Plus: Add 9 Powerful Bonus",
+  title: "Plus: Add 9 Powerful Bonuses",
   items: [
     {
       title: "Sales Closing Framework",
@@ -392,7 +384,6 @@ export const stories = {
     },
     {
       name: "Shannon",
-      photo: storyPhotos.shannon,
       text: "Using the same location-scoring process taught in Mike's Playbook, Shannon picked one Seattle micro market that became her 22,000 - 25,000/mo unicorn location on her first try.",
     },
     {
@@ -426,7 +417,7 @@ export const host = {
   eyebrow: "Meet Mike Hoffmann",
   title:
     "From 60-Hour Work Weeks Making 1,200/Month to 150+ Machines Generating 200k/Month In Just a Few Years",
-  highlight: "150+ Machines Generating 200k/Month",
+  highlight: "200k/Month",
   paragraphs: [
     "I grew up on a family farm in rural Iowa. I put myself through the University of Kansas, and for years I worked as a college strength and conditioning coach. My life consisted of long hours, a paycheck that never seemed to move, and a schedule that wasn't mine. The moment vending stopped being a curiosity and started being the plan is when I really started to see a change. My first machine brought in 600 a month. It wasn't life-changing, but it was proof.",
     "Today, my best location alone brings in over 22k in a single month, and I still run this business myself. Not because I have to, but because I built it to work, and I want to know it still works. Every script, template, and framework in this Playbook is what I'm using on my own route right now, not what I used to do five years ago.",

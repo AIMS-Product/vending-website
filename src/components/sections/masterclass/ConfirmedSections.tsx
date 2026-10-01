@@ -4,6 +4,7 @@ import {
   OutlookLogo,
 } from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { EventLabel } from "@/components/sections/masterclass/EventLabel";
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
 import Image from "next/image";
@@ -54,7 +55,9 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
           )}
         </h1>
         {label ? (
-          <p className="text-ink mt-4 text-xl font-black">{label}</p>
+          <p className="text-ink mt-4 text-xl font-black">
+            <EventLabel label={label} />
+          </p>
         ) : null}
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
@@ -87,7 +90,6 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
             </a>
             <a
               href={links.ics}
-              download="vendingpreneurs-masterclass.ics"
               className={buttonClass({
                 variant: "ghost",
                 className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
@@ -226,7 +228,9 @@ function Step({
       <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
         Step {n}
       </p>
-      <p className="text-ink mt-2 text-xl font-black uppercase">{title}</p>
+      <h3 className="v2-display text-ink mt-2 text-2xl leading-none uppercase">
+        {title}
+      </h3>
       <p className="mt-2 text-[15px] text-slate-600">{children}</p>
     </div>
   );

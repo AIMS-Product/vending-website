@@ -15,11 +15,9 @@ import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { config } from "@/lib/config";
 import {
-  MASTERCLASS_MINUTES,
-  SENDER_EMAIL,
   calendarLinks,
-  confirmedCopy,
   confirmedPlaybookParams,
+  masterclassCalendarEvent,
   safeFirstName,
 } from "@/lib/content/masterclass";
 import {
@@ -59,12 +57,7 @@ export default async function MasterclassConfirmedPage({
   // greeting and no name is forwarded to the checkout.
   const first = safeFirstName(params);
   const links = event.startsAt
-    ? calendarLinks({
-        title: confirmedCopy.calendarTitle,
-        details: `Your personal Zoom link is in your confirmation email from ${SENDER_EMAIL}.`,
-        start: new Date(event.startsAt),
-        minutes: MASTERCLASS_MINUTES,
-      })
+    ? calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)))
     : null;
 
   return (

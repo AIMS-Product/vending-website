@@ -12,6 +12,7 @@ import {
   PlaybookFinalOffer,
   PlaybookHost,
 } from "@/components/sections/playbook/PlaybookClose";
+import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { PlaybookHero } from "@/components/sections/playbook/PlaybookHero";
 import {
   PlaybookCurriculum,
@@ -37,6 +38,7 @@ export default async function PlaybookPage({
   const href = checkoutHref(await searchParams);
   return (
     <main className={anton.variable}>
+      <StripPiiParams />
       <RevealObserver />
       <PlaybookHero checkoutHref={href} />
       <PlaybookSteps />

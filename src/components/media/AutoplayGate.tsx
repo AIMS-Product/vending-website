@@ -13,7 +13,11 @@ function subscribe(onChange: () => void) {
 }
 
 const prefersReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
-const serverSnapshot = () => false;
+// Unknown on the server. Treating it as "no preference" let the autoplaying
+// snippet mount during hydration, before the client value arrived, so a
+// reduced-motion visitor could still get a muted autoplay. Nothing loads
+// until the browser has answered.
+const serverSnapshot = () => null;
 
 /**
  * Decides when a player's embed snippet runs. "near" loads it as the player
@@ -34,12 +38,13 @@ export function AutoplayGate({
   variant: PlayButtonVariant;
   children: ReactNode;
 }) {
-  const reduced = useSyncExternalStore(
+  const reduced = useSyncExternalStore<boolean | null>(
     subscribe,
     prefersReducedMotion,
     serverSnapshot,
   );
 
+  if (loadOn === "near" && reduced === null) return null;
   if (loadOn === "click" || reduced) {
     return (
       <ClickToLoad label={label} variant={variant}>

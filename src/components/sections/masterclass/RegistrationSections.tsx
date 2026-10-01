@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { EventLabel } from "@/components/sections/masterclass/EventLabel";
 import { CheckDisc } from "@/components/sections/masterclass/MasterclassHero";
 import { StoriesToggle } from "@/components/sections/masterclass/StoriesToggle";
 import { Wordmark } from "@/components/site/Wordmark";
@@ -201,6 +202,14 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
   );
 }
 
+/**
+ * Thumbnails whose burned-in text reaches the bottom-right corner, where the
+ * card play button sits by default; theirs moves to the top-right. Keyed by
+ * YouTube id because the stories come from the CMS. Javier Zeder: "$8.5K
+ * FIRST MONTH" runs to the bottom edge.
+ */
+const TOP_RIGHT_PLAY = new Set(["GO6C25-1mf8"]);
+
 export function StoryList({
   stories,
   columns = 4,
@@ -228,11 +237,12 @@ export function StoryList({
           <li
             key={story.slug}
             data-reveal
+            data-story-index={index}
             style={
               { "--v2-delay": `${(index % 4) * 0.07}s` } as React.CSSProperties
             }
             className={cn(
-              "rounded-card border-ink shadow-card hover:shadow-card-hover flex flex-col overflow-hidden border-2 bg-white transition hover:-translate-y-1",
+              "rounded-card border-ink shadow-card hover:shadow-card-hover outline-brand-700 flex flex-col overflow-hidden border-2 bg-white outline-offset-4 transition hover:-translate-y-1 has-[button:focus-visible]:outline-3 data-[revealed]:has-[button:focus]:outline-3",
               collapse &&
                 index >= collapse.desktop &&
                 "group-data-[expanded=false]/stories:hidden",
@@ -247,15 +257,20 @@ export function StoryList({
                 title={`${story.member_name}'s story`}
                 className="aspect-video w-full"
                 variant="card"
+                playPosition={
+                  TOP_RIGHT_PLAY.has(story.youtube_video_id!) ? "tr" : "br"
+                }
               />
             ) : null}
             <div className="flex flex-1 flex-col p-4">
               <p className="text-ink font-black uppercase">
                 {story.member_name}
               </p>
-              <p className="text-ink/70 line-clamp-2 min-h-[2lh] text-[14px] leading-snug font-semibold">
-                {story.prior_occupation ? `Was: ${story.prior_occupation}` : ""}
-              </p>
+              {story.prior_occupation ? (
+                <p className="text-ink/70 text-[14px] leading-snug font-semibold sm:min-h-[3lh]">
+                  Was: {story.prior_occupation}
+                </p>
+              ) : null}
               {first || second ? (
                 <div className="mt-auto pt-4">
                   {first ? (
@@ -303,14 +318,13 @@ export function FitSection({
     <section className="border-ink bg-tint border-t-2">
       <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
         <div data-reveal className="flex flex-col items-center text-center">
-          <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-            {fitCopy.eyebrow}
-          </p>
-          <h2 className={cn(SECTION_HEADING, "mt-3 text-balance")}>
+          <h2 className={cn(SECTION_HEADING, "text-balance")}>
             <Emphasis text={fitCopy.heading} phrase={fitCopy.highlight} />
           </h2>
           {label ? (
-            <p className="text-ink mt-4 text-lg font-bold">{label}</p>
+            <p className="text-ink mt-4 text-lg font-bold">
+              <EventLabel label={label} />
+            </p>
           ) : null}
           {startsAt && endsAt ? (
             <div className="mt-5">
@@ -387,7 +401,7 @@ export function MasterclassFooter() {
   return (
     <footer className="border-ink border-t-2 bg-white">
       <div className="mx-auto flex max-w-[860px] flex-col items-center gap-3 px-5 py-10 text-center">
-        <Wordmark height={38} />
+        <Wordmark height={56} className="mb-2" />
         <p className="text-[13px] text-slate-500">{MASTERCLASS_DISCLAIMER}</p>
         <p className="text-[13px] text-slate-500">
           <Link

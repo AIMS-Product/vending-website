@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   ATTRIBUTION_KEYS,
+  MASTERCLASS_ICS_PATH,
+  calendarIcs,
   calendarLinks,
   confirmedPlaybookParams,
   parseWebinarStart,
@@ -49,7 +51,29 @@ describe("calendarLinks", () => {
     expect(new URL(links.google).searchParams.get("dates")).toBe(
       "20261007T003000Z/20261007T014500Z",
     );
-    expect(decodeURIComponent(links.ics)).toContain("DTSTART:20261007T003000Z");
+    expect(links.ics).toBe(MASTERCLASS_ICS_PATH);
+  });
+});
+
+describe("calendarIcs", () => {
+  const event = {
+    title: "Masterclass",
+    details: "Zoom link in your email, from Anthony; see you there",
+    start: new Date("2026-10-07T00:30:00.000Z"),
+    minutes: 75,
+  };
+
+  it("stamps the file with the time it was made, not the start", () => {
+    const ics = calendarIcs(event, new Date("2026-09-30T15:04:05.678Z"));
+    expect(ics).toContain("DTSTAMP:20260930T150405Z\r\n");
+    expect(ics).toContain("DTSTART:20261007T003000Z\r\n");
+    expect(ics).toContain("DTEND:20261007T014500Z\r\n");
+  });
+
+  it("escapes commas and semicolons in text fields", () => {
+    expect(calendarIcs(event)).toContain(
+      "DESCRIPTION:Zoom link in your email\\, from Anthony\\; see you there",
+    );
   });
 });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { cn } from "@/lib/utils";
 
 /**
  * A play button laid over a player's box that renders `children` (the
@@ -15,16 +16,19 @@ import { useState, type ReactNode } from "react";
 export function ClickToLoad({
   label,
   variant = "hero",
+  playPosition = "br",
   children,
 }: {
   /** Accessible name of the play button. */
   label: string;
   /**
-   * "hero": a large disc centred on the player. "card": a small square in
-   * the bottom-left corner, so the burned-in result text on a member's
-   * thumbnail ("$90K/MO") stays readable. The whole box is clickable either way.
+   * "hero": a large disc centred on the player. "card": a small disc in a
+   * corner, so the burned-in result text on a member's thumbnail ("$90K/MO")
+   * stays readable. The whole box is clickable either way.
    */
   variant?: PlayButtonVariant;
+  /** Corner for the "card" disc: bottom-right (default) or top-right. */
+  playPosition?: PlayPosition;
   children: ReactNode;
 }) {
   const [loaded, setLoaded] = useState(false);
@@ -38,22 +42,37 @@ export function ClickToLoad({
       aria-label={label}
       className="group absolute inset-0 z-10 grid cursor-pointer place-items-center focus-visible:outline-none"
     >
-      <PlayGlyph variant={variant} />
+      <PlayGlyph variant={variant} position={playPosition} />
     </button>
   );
 }
 
 export type PlayButtonVariant = "hero" | "card";
+/**
+ * Corner of the small "card" disc. Member thumbnails burn their result text
+ * into the left and bottom-left ("$22K/MONTH", "HOW?"), so the disc sits
+ * bottom-right; "tr" is for a thumbnail whose text reaches that corner too.
+ */
+export type PlayPosition = "br" | "tr";
 
 /** The visible play mark inside a click-to-play facade. Decorative. */
-export function PlayGlyph({ variant }: { variant: PlayButtonVariant }) {
+export function PlayGlyph({
+  variant,
+  position = "br",
+}: {
+  variant: PlayButtonVariant;
+  position?: PlayPosition;
+}) {
   if (variant === "card") {
     return (
       <span
         aria-hidden
-        className="border-ink group-hover:bg-tint absolute bottom-3 left-3 grid size-12 place-items-center rounded-full border-2 bg-white transition group-focus-visible:ring-4 group-focus-visible:ring-[#55b8e8]"
+        className={cn(
+          "border-ink group-hover:bg-tint absolute right-3 grid size-10 place-items-center rounded-full border-2 bg-white transition group-focus-visible:ring-4 group-focus-visible:ring-[#55b8e8] motion-reduce:transition-none",
+          position === "tr" ? "top-3" : "bottom-3",
+        )}
       >
-        <span className="ml-1 size-0 border-y-[9px] border-l-[14px] border-y-transparent border-l-[#111111]" />
+        <span className="ml-0.5 size-0 border-y-[7px] border-l-[11px] border-y-transparent border-l-[#111111]" />
       </span>
     );
   }

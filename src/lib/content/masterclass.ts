@@ -141,7 +141,6 @@ export const MASTERCLASS_DISCLAIMER =
   "Earnings may vary and are not guaranteed. Outcomes depend on effort, market, and execution.";
 
 export const fitCopy = {
-  eyebrow: "Is this for you?",
   /** The GHL closing headline ("Your Freedom Starts Here"). */
   heading: "Your freedom starts here",
   highlight: "freedom",
@@ -335,6 +334,40 @@ const stamp = (date: Date) =>
     .replace(/[-:]/g, "")
     .replace(/\.\d{3}/, "");
 
+/** Where the Apple / iCal button points: a real text/calendar response, not a data: URI. */
+export const MASTERCLASS_ICS_PATH = "/masterclass/event.ics";
+
+/** RFC 5545 TEXT escaping: backslash, semicolon, comma and newlines. */
+const icsText = (text: string) =>
+  text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
+
+/**
+ * The event as an .ics file. DTSTAMP is when the file was made (`now`), as
+ * RFC 5545 requires, not the start time.
+ */
+export function calendarIcs(
+  { title, details, start, minutes }: CalendarEvent,
+  now: Date = new Date(),
+) {
+  const end = new Date(start.getTime() + minutes * 60_000);
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Vendingpreneurs//Masterclass//EN",
+    "METHOD:PUBLISH",
+    "BEGIN:VEVENT",
+    `UID:masterclass-${stamp(start)}@vendingpreneurs.com`,
+    `DTSTAMP:${stamp(now)}`,
+    `DTSTART:${stamp(start)}`,
+    `DTEND:${stamp(end)}`,
+    `SUMMARY:${icsText(title)}`,
+    `DESCRIPTION:${icsText(details)}`,
+    "END:VEVENT",
+    "END:VCALENDAR",
+    "",
+  ].join("\r\n");
+}
+
 /** Free add-to-calendar links, replacing the paid AddEvent embed. */
 export function calendarLinks({
   title,
@@ -361,23 +394,13 @@ export function calendarLinks({
       rru: "addevent",
     },
   )}`;
-  const ics = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Vendingpreneurs//Masterclass//EN",
-    "BEGIN:VEVENT",
-    `UID:masterclass-${stamp(start)}@vendingpreneurs.com`,
-    `DTSTAMP:${stamp(start)}`,
-    `DTSTART:${stamp(start)}`,
-    `DTEND:${stamp(end)}`,
-    `SUMMARY:${title}`,
-    `DESCRIPTION:${details.replace(/\n/g, "\\n")}`,
-    "END:VEVENT",
-    "END:VCALENDAR",
-  ].join("\r\n");
-  return {
-    google,
-    outlook,
-    ics: `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`,
-  };
+  return { google, outlook, ics: MASTERCLASS_ICS_PATH };
 }
+
+/** The confirmation-page event, shared by the calendar links and the .ics route. */
+export const masterclassCalendarEvent = (start: Date): CalendarEvent => ({
+  title: confirmedCopy.calendarTitle,
+  details: `Your personal Zoom link is in your confirmation email from ${SENDER_EMAIL}.`,
+  start,
+  minutes: MASTERCLASS_MINUTES,
+});

@@ -58,20 +58,20 @@ describe("masterclass replay content", () => {
       replayVariants[key].testimonialVideos.map((v) =>
         v.kind === "youtube" ? v.id : v.embedId,
       );
-    // Same order as replayTestimonials: Michael, Joe, Mallorie, Shannon,
+    // Same order as replayTestimonials: Michael, Joe, Shannon, Mallorie,
     // Katie + Graham.
     expect(replayTestimonials.map((t) => t.name)).toEqual([
       "Michael",
       "Joe",
-      "Mallorie",
       "Shannon",
+      "Mallorie",
       "Katie + Graham",
     ]);
     expect(ids("dna")).toEqual([
       "U7KKbZHqBvg",
       "gvvz2nMax0w",
-      "io1Jkei-yFs",
       "yP4Y_BBAvq4",
+      "io1Jkei-yFs",
       "heSbv_uG734",
     ]);
     expect(ids("adnb")).toEqual(ids("dna"));
@@ -79,8 +79,8 @@ describe("masterclass replay content", () => {
     expect(ids("meta")).toEqual([
       "JcjYb4jILP6zsniI",
       "U1unfH4Jvr6TjBrS",
-      "5IT3tUDRQOJfSJ2m",
       "OHz6S1sB3ahBvu8D",
+      "5IT3tUDRQOJfSJ2m",
       "LchE9_kgP012adAZ",
     ]);
   });

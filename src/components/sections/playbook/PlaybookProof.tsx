@@ -16,13 +16,39 @@ interface PlaybookProofProps {
   checkoutHref: string;
 }
 
-function Emphasis({ text, phrase }: { text: string; phrase: string }) {
+/** Words kept on one line inside a headline, e.g. "Step-By-Step?". */
+function NoWrap({ text, phrase }: { text: string; phrase?: string }) {
+  if (!phrase || !text.includes(phrase)) return <>{text}</>;
   const [before, after] = text.split(phrase);
   return (
     <>
       {before}
-      <Highlight>{phrase}</Highlight>
+      <span className="whitespace-nowrap">{phrase}</span>
       {after}
+    </>
+  );
+}
+
+function Emphasis({
+  text,
+  phrase,
+  nowrap,
+}: {
+  text: string;
+  phrase: string;
+  nowrap?: string;
+}) {
+  const [before, after] = text.split(phrase);
+  // Punctuation right after the block rides with it, never opens a line.
+  const punct = /^[,.;:!?]+/.exec(after)?.[0] ?? "";
+  return (
+    <>
+      <NoWrap text={before} phrase={nowrap} />
+      <span className="whitespace-nowrap">
+        <Highlight>{phrase}</Highlight>
+        {punct}
+      </span>
+      <NoWrap text={after.slice(punct.length)} phrase={nowrap} />
     </>
   );
 }
@@ -118,7 +144,6 @@ function StoryAvatar({ story }: { story: Story }) {
   const box =
     "border-ink rounded-control block size-16 shrink-0 overflow-hidden border-2";
   if ("photo" in story && story.photo) {
-    const zoom = "zoom" in story.photo ? story.photo.zoom : 1;
     return (
       <span aria-hidden="true" className={box}>
         <Image
@@ -128,7 +153,6 @@ function StoryAvatar({ story }: { story: Story }) {
           height={story.photo.height}
           sizes="128px"
           className="size-full object-cover object-[50%_30%]"
-          style={zoom === 1 ? undefined : { transform: `scale(${zoom})` }}
         />
       </span>
     );
@@ -167,8 +191,12 @@ export function PlaybookStories({ checkoutHref }: PlaybookProofProps) {
     <section className="bg-brand-50 border-ink border-b-2 py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
         <p className={EYEBROW}>{stories.eyebrow}</p>
-        <h2 data-reveal className={`${H2} mt-3 max-w-4xl`}>
-          <Emphasis text={stories.title} phrase={stories.highlight} />
+        <h2 data-reveal className={`${H2} mt-3 max-w-4xl text-balance`}>
+          <Emphasis
+            text={stories.title}
+            phrase={stories.highlight}
+            nowrap="Step-By-Step?"
+          />
         </h2>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed">
           {stories.intro}

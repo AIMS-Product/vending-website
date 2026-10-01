@@ -20,19 +20,33 @@ describe("YouTubeEmbedFrame", () => {
       <YouTubeEmbedFrame embed={embed} title="Host video" />,
     );
     expect(hero).toContain("-translate-x-1/2");
-    expect(hero).not.toContain("bottom-3 left-3");
+    expect(hero).not.toContain("right-3");
 
     const card = renderToStaticMarkup(
       <YouTubeEmbedFrame embed={embed} title="Member story" variant="card" />,
     );
     // Clear of the burned-in result text, and no centring translate.
-    expect(card).toContain("bottom-3 left-3");
-    expect(card).toContain("size-12");
+    expect(card).toMatch(/absolute right-3[^"]*bottom-3/);
+    expect(card).not.toContain("left-3");
+    expect(card).toContain("size-10");
     expect(card).toContain("border-ink");
     expect(card).not.toContain("-translate-x-1/2");
     // The whole thumbnail is still the one labelled button.
     expect(card).toContain('aria-label="Play Member story"');
     expect(card.match(/<button/g)).toHaveLength(1);
+  });
+
+  it("moves the card button to the top-right when asked", () => {
+    const card = renderToStaticMarkup(
+      <YouTubeEmbedFrame
+        embed={embed}
+        title="Member story"
+        variant="card"
+        playPosition="tr"
+      />,
+    );
+    expect(card).toMatch(/absolute right-3[^"]*top-3/);
+    expect(card).not.toContain("bottom-3");
   });
 
   // The iframe only mounts after a click, so it is unreachable from a server

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import "../home-v2.css";
 import { ReviewGuide } from "@/components/sections/masterclass/ReviewGuide";
 
 export const metadata: Metadata = {

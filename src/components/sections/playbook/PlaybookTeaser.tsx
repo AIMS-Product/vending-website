@@ -31,23 +31,23 @@ export function PlaybookTeaser({
         className,
       )}
     >
-      <div className="bg-tint border-ink v2-dots flex items-center justify-center overflow-hidden border-b-2 p-3 md:border-r-2 md:border-b-0">
+      <div className="bg-tint border-ink v2-dots flex items-center justify-center overflow-hidden border-b-2 p-6 md:items-center md:border-r-2 md:border-b-0 lg:p-8">
         <Image
           src={images.product.src}
           alt={images.product.alt}
           width={images.product.width}
           height={images.product.height}
           sizes="(min-width: 768px) 640px, 100vw"
-          className="h-auto w-full scale-[1.12] object-contain"
+          className="h-auto w-[92%] max-w-none object-contain"
         />
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {hero.eyebrow}
         </p>
-        <p className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
+        <h2 className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
           {hero.teaserHeadline}
-        </p>
+        </h2>
         <p className="mt-4 flex flex-wrap items-baseline gap-x-3 gap-y-1">
           <span className="text-ink/55 text-xl font-black line-through">
             {PRICE.anchor}

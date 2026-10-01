@@ -84,7 +84,7 @@ export const reviewCopy = {
     {
       step: "Playbook offer",
       detail:
-        "The $67 offer page on our site; checkout and payment stay on the GHL checkout (Stripe), prefilled.",
+        "The $67 offer page on our site; checkout and payment stay on the GHL checkout (Stripe); name prefilled; email and phone entered at checkout.",
     },
     {
       step: "Meta",

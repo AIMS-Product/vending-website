@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { storiesCopy } from "@/lib/content/masterclass";
 import { cn } from "@/lib/utils";
@@ -27,6 +27,27 @@ export function StoriesToggle({
 }: StoriesToggleProps) {
   const [expanded, setExpanded] = useState(false);
   const id = useId();
+  const groupRef = useRef<HTMLDivElement>(null);
+
+  // The "more" button unmounts on click; hand focus to the first card it
+  // revealed instead of letting it drop to <body>. data-revealed keeps the
+  // outline visible even when the click came from a pointer.
+  useEffect(() => {
+    if (!expanded) return;
+    const first = window.matchMedia("(min-width: 768px)").matches
+      ? desktop
+      : mobile;
+    const card = groupRef.current?.querySelector<HTMLElement>(
+      `[data-story-index="${first}"]`,
+    );
+    const play = card?.querySelector<HTMLElement>("button");
+    if (!card || !play) return;
+    card.dataset.revealed = "";
+    play.addEventListener("blur", () => delete card.dataset.revealed, {
+      once: true,
+    });
+    play.focus({ preventScroll: false });
+  }, [expanded, desktop, mobile]);
   const hiddenMobile = total - mobile;
   const hiddenDesktop = total - desktop;
   const button = (count: number, className: string) => (
@@ -45,7 +66,12 @@ export function StoriesToggle({
     </button>
   );
   return (
-    <div id={id} className="group/stories" data-expanded={expanded}>
+    <div
+      ref={groupRef}
+      id={id}
+      className="group/stories"
+      data-expanded={expanded}
+    >
       {children}
       {!expanded && hiddenMobile > 0
         ? button(hiddenMobile, "flex md:hidden")

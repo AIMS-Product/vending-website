@@ -48,6 +48,8 @@ export function VidalyticsPlayer({
   framed = true,
   poster,
   playButton = "hero",
+  playLabel,
+  posterSizes = "(min-width: 1024px) 800px, 100vw",
 }: {
   embedId: string;
   className?: string;
@@ -61,6 +63,10 @@ export function VidalyticsPlayer({
   poster?: string;
   /** "card" puts a small play button in the corner, clear of thumbnail text. */
   playButton?: PlayButtonVariant;
+  /** Accessible name of the play button. Defaults to "Play video: {title}". */
+  playLabel?: string;
+  /** `sizes` for the poster; wider players should pass their real width. */
+  posterSizes?: string;
 }) {
   const containerId = vidalyticsContainerId(embedId);
   const snippet = (
@@ -82,7 +88,7 @@ export function VidalyticsPlayer({
           src={poster}
           alt=""
           fill
-          sizes="(min-width: 1024px) 800px, 100vw"
+          sizes={posterSizes}
           className="object-cover"
         />
       ) : null}
@@ -96,7 +102,7 @@ export function VidalyticsPlayer({
       <AutoplayGate
         loadOn={loadOn}
         targetId={containerId}
-        label={title ? `Play video: ${title}` : "Play video"}
+        label={playLabel ?? (title ? `Play video: ${title}` : "Play video")}
         variant={playButton}
       >
         {snippet}

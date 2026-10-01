@@ -21,28 +21,25 @@ export function PlaybookHost() {
   return (
     <section className="bg-brand-50 border-ink border-b-2 py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] items-start gap-10 px-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)] lg:gap-16 lg:px-10">
-        <div className="lg:sticky lg:top-8">
+        {/* Phones: the story leads and the photo follows it. */}
+        <div className="order-last lg:sticky lg:top-[120px] lg:order-none lg:self-start">
           <Image
             src={images.mike.src}
             alt={images.mike.alt}
             width={images.mike.width}
             height={images.mike.height}
             sizes="(min-width: 1024px) 420px, 90vw"
-            className="border-ink shadow-card rounded-card mx-auto h-auto w-full max-w-[420px] border-2"
+            className="border-ink shadow-card rounded-card mx-auto aspect-[4/3] h-auto w-full max-w-[420px] border-2 object-cover object-[50%_22%] lg:aspect-auto"
           />
         </div>
         <div>
           <p className={EYEBROW}>{host.eyebrow}</p>
           <h2
             data-reveal
-            className="v2-display text-ink mt-3 text-[1.625rem] leading-[1.3] text-balance uppercase lg:text-[2.75rem]"
+            className="v2-display text-ink mt-3 text-[1.625rem] leading-[1.15] text-balance uppercase lg:max-w-[18ch] lg:text-[2.75rem]"
           >
             {before}
-            {/* Inline and cloned per line: the phrase is wider than the
-                column, so it wraps as two highlighted lines, not one box. */}
-            <Highlight className="my-0 inline box-decoration-clone px-[0.12em] leading-[inherit] whitespace-normal">
-              {host.highlight}
-            </Highlight>
+            <Highlight>{host.highlight}</Highlight>
             {after}
           </h2>
           <div className="mt-8 max-w-[60ch] space-y-5 text-[1.05rem] leading-relaxed">
@@ -60,7 +57,7 @@ export function PlaybookFaq() {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] gap-10 px-5 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-16 lg:px-10">
-        <h2 data-reveal className={`${H2} self-start`}>
+        <h2 data-reveal className={`${H2} self-start lg:self-center`}>
           {faq.title}
         </h2>
         <div className="space-y-3">
@@ -139,11 +136,17 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
         <p className="mt-4">{DISCLAIMER}</p>
         <p className="text-ink mt-4 font-bold">© 2026 Vendingpreneurs</p>
         <p className="mt-2">
-          <Link href="/privacy" className="underline underline-offset-2">
+          <Link
+            href="/privacy"
+            className="inline-block py-2 underline underline-offset-2"
+          >
             Privacy Policy
           </Link>
           {" · "}
-          <Link href="/terms" className="underline underline-offset-2">
+          <Link
+            href="/terms"
+            className="inline-block py-2 underline underline-offset-2"
+          >
             Terms
           </Link>
         </p>

@@ -6,6 +6,7 @@ import {
   registerForMasterclass,
   type RegistrationState,
 } from "@/app/masterclass/actions";
+import { EventLabel } from "@/components/sections/masterclass/EventLabel";
 import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
@@ -32,11 +33,14 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
 
   // After a failed submit, move focus to the first field that needs fixing so
   // keyboard and screen-reader users land on the problem, not on <body>.
+  // A form-level error (no field to fix) takes focus on its own message.
   useEffect(() => {
     if (!state.errors) return;
-    formRef.current
-      ?.querySelector<HTMLElement>('[aria-invalid="true"]')
-      ?.focus();
+    const form = formRef.current;
+    const field = form?.querySelector<HTMLElement>('[aria-invalid="true"]');
+    if (field) field.focus();
+    else if (state.errors.form)
+      form?.querySelector<HTMLElement>("#mc-form-error")?.focus();
   }, [state.errors]);
 
   return (
@@ -54,7 +58,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
       </p>
       {eventLabel ? (
         <p className="mt-1 text-[15px] font-semibold text-slate-600">
-          {eventLabel}
+          <EventLabel label={eventLabel} />
         </p>
       ) : null}
 
@@ -70,7 +74,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
         <input key={key} type="hidden" name={key} value={value} />
       ))}
 
-      <div className="mt-5 grid grid-cols-2 gap-3">
+      <div className="mt-5 grid grid-cols-1 items-end gap-3 min-[360px]:grid-cols-2">
         <Field
           name="firstName"
           label="First name"
@@ -144,13 +148,15 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
           className: "mt-5 w-full disabled:opacity-60",
         })}
       >
-        {pending ? "Saving your seat…" : "Save my seat"}
+        {pending ? "Saving your seat…" : "Save my free seat"}
       </button>
 
       {errors.form ? (
         <p
+          id="mc-form-error"
           role="alert"
-          className="mt-3 text-center text-sm font-semibold text-red-600"
+          tabIndex={-1}
+          className="mt-3 rounded-sm text-center text-sm font-semibold text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
         >
           {errors.form}
         </p>
@@ -158,19 +164,21 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
 
       <p className="mt-2 text-center text-xs text-slate-500">
         Free. Takes 20 seconds.{" "}
-        <Link
-          href="/privacy"
-          className="inline-block py-2 underline underline-offset-2"
-        >
-          Privacy
-        </Link>{" "}
-        ·{" "}
-        <Link
-          href="/terms"
-          className="inline-block py-2 underline underline-offset-2"
-        >
-          Terms
-        </Link>
+        <span className="whitespace-nowrap">
+          <Link
+            href="/privacy"
+            className="inline-block py-2 underline underline-offset-2"
+          >
+            Privacy
+          </Link>{" "}
+          ·{" "}
+          <Link
+            href="/terms"
+            className="inline-block py-2 underline underline-offset-2"
+          >
+            Terms
+          </Link>
+        </span>
       </p>
     </form>
   );

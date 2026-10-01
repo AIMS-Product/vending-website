@@ -1,4 +1,7 @@
 import Link from "next/link";
+import { Fragment } from "react";
+import { anton } from "@/app/fonts";
+import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import { buttonClass } from "@/components/ui/Button";
 import { SENDER_EMAIL } from "@/lib/content/masterclass";
 import { reviewCopy } from "@/lib/content/masterclass-review";
@@ -14,12 +17,19 @@ function pathOf(href: string) {
     : `${url.pathname}${url.searchParams.has("first") ? url.search : ""}`;
 }
 
-/** Step CTA: wraps on a phone instead of pushing the card wider. */
+/**
+ * Step CTA: wraps on a phone instead of pushing the card wider. No button
+ * shadow: the card already carries the sky shadow, so hover is colour only.
+ */
 function StepCta({ href, children }: { href: string; children: string }) {
   const className = (variant: "primary" | "ghost") =>
     buttonClass({
       variant,
-      className: "h-auto min-h-12 w-full py-3 whitespace-normal sm:w-auto",
+      className: cn(
+        "h-auto min-h-12 w-full py-3 whitespace-normal shadow-none hover:translate-y-0 hover:shadow-none active:shadow-none sm:w-auto",
+        variant === "primary" && "hover:bg-[#185b84] active:bg-[#14496a]",
+        variant === "ghost" && "active:bg-brand-100",
+      ),
     });
   return isExternal(href) ? (
     <a
@@ -34,6 +44,25 @@ function StepCta({ href, children }: { href: string; children: string }) {
     <Link href={href} className={className("primary")}>
       {children}
     </Link>
+  );
+}
+
+/** A path or URL with a break opportunity after each "/", never mid-word. */
+function Slashed({ text }: { text: string }) {
+  const parts = text.split("/");
+  return (
+    <>
+      {parts.map((part, index) => (
+        <Fragment key={index}>
+          {part}
+          {index < parts.length - 1 ? (
+            <>
+              /<wbr />
+            </>
+          ) : null}
+        </Fragment>
+      ))}
+    </>
   );
 }
 
@@ -70,7 +99,7 @@ function InfoIcon() {
       strokeWidth="2.5"
       strokeLinecap="round"
       strokeLinejoin="round"
-      className="size-5"
+      className="text-brand-700 mt-0.5 size-5 shrink-0"
     >
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4" />
@@ -97,17 +126,18 @@ function ArrowRightIcon() {
   );
 }
 
-const H2 = "text-ink mt-12 text-2xl font-black text-balance uppercase";
+const H2 =
+  "v2-display text-ink mt-12 text-[2rem] leading-none text-balance uppercase";
 
 /** One page the team can follow to review and sign off the site funnel. */
 export function ReviewGuide() {
   return (
-    <main className="bg-tint min-h-screen">
-      <div className="mx-auto max-w-[860px] px-5 py-14">
+    <main className={cn(anton.variable, "bg-tint min-h-screen")}>
+      <div className="mx-auto max-w-[860px] px-5 pt-14 pb-20">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {reviewCopy.eyebrow}
         </p>
-        <h1 className="text-ink mt-2 text-[clamp(2rem,5vw,3rem)] leading-none font-black text-balance uppercase">
+        <h1 className="v2-display text-ink mt-2 text-[clamp(2.25rem,6vw,3.5rem)] leading-none text-balance uppercase">
           {reviewCopy.heading}
         </h1>
         <p className="mt-4 text-[17px] leading-relaxed text-slate-700">
@@ -116,12 +146,10 @@ export function ReviewGuide() {
 
         <div
           role="note"
-          className="rounded-card border-ink mt-6 flex overflow-hidden border-2 bg-white"
+          className="rounded-card border-ink border-l-brand-700 mt-6 flex gap-3 border-2 border-l-[6px] bg-white p-4"
         >
-          <span className="bg-brand-700 border-ink grid w-12 shrink-0 place-items-center border-r-2 text-white">
-            <InfoIcon />
-          </span>
-          <p className="text-ink p-4 text-[15px] leading-relaxed">
+          <InfoIcon />
+          <p className="text-ink text-[15px] leading-relaxed">
             {reviewCopy.note}
           </p>
         </div>
@@ -167,15 +195,15 @@ export function ReviewGuide() {
           {reviewCopy.flow.map((item, index) => (
             <li
               key={item.step}
-              className="flex gap-4 border-b border-slate-200 p-4 last:border-b-0"
+              className="flex items-center gap-4 border-b border-slate-200 p-4 last:border-b-0"
             >
               <NumberChip n={index + 1} />
-              <div className="min-w-0 [overflow-wrap:anywhere]">
-                <p className="text-ink font-black [overflow-wrap:anywhere]">
-                  {item.step}
+              <div className="min-w-0 break-words">
+                <p className="text-ink text-[15px] font-black">
+                  <Slashed text={item.step} />
                 </p>
-                <p className="text-sm [overflow-wrap:anywhere] text-slate-600">
-                  {item.detail}
+                <p className="text-sm text-slate-600">
+                  <Slashed text={item.detail} />
                 </p>
               </div>
             </li>
@@ -191,10 +219,14 @@ export function ReviewGuide() {
                 <span className="min-w-0 flex-1">
                   <span className="text-ink block font-black">
                     {page.label}
+                    {external ? (
+                      <span className="border-ink ml-2 inline-block rounded-[4px] border px-1.5 align-middle text-[11px] font-black tracking-wide uppercase">
+                        external
+                      </span>
+                    ) : null}
                   </span>
-                  <span className="block text-sm [overflow-wrap:anywhere] text-slate-500">
-                    {external ? "external · " : ""}
-                    {pathOf(page.href)}
+                  <span className="block text-sm break-words text-slate-500">
+                    <Slashed text={pathOf(page.href)} />
                   </span>
                 </span>
                 <ArrowRightIcon />
@@ -226,6 +258,7 @@ export function ReviewGuide() {
           })}
         </ul>
       </div>
+      <MasterclassFooter />
     </main>
   );
 }

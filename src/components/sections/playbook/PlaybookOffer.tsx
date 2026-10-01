@@ -46,8 +46,10 @@ export function PlaybookSteps() {
               style={{ "--v2-delay": `${i * 0.08}s` } as React.CSSProperties}
               className="border-ink border-t-2 pt-5"
             >
-              <span className={`${NUMERAL} text-[3.5rem]`}>{pad(i + 1)}</span>
-              <p className="v2-display text-ink mt-3 text-2xl uppercase">
+              <span className="bg-brand-700 rounded-control v2-display grid size-8 place-items-center text-base leading-none text-white tabular-nums">
+                {i + 1}
+              </span>
+              <p className="v2-display text-ink mt-4 text-2xl uppercase">
                 {s.label}
               </p>
               <p className="mt-2 leading-relaxed">{s.text}</p>
@@ -63,12 +65,16 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto grid max-w-[1180px] gap-12 px-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-10">
-        <div className="lg:sticky lg:top-8 lg:self-start">
+        {/* Phones: "contents" lets the heading lead and the price + CTA
+            follow chapter 07; lg: one sticky column. */}
+        <div className="contents lg:sticky lg:top-8 lg:block lg:self-start">
           <h2 data-reveal className={H2}>
             {curriculum.title} <Highlight>{PRICE.today}</Highlight>
           </h2>
-          <PriceTag className="mt-8" />
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
+          <div className="order-last lg:order-none">
+            <PriceTag className="lg:mt-8" />
+            <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
+          </div>
         </div>
         <ol className="border-ink border-b-2">
           {curriculum.chapters.map((c, i) => (
@@ -97,28 +103,34 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
   );
 }
 
-/** The five chapter companions: one ruled list beside its heading. */
+/** Display-only: keep "Quick-Start" on one line. Stored copy is unchanged. */
+const noBreakHyphen = (title: string) =>
+  title.replace("Quick-Start", "Quick\u2011Start");
+
+/** The five chapter companions: heading row, then one full-width ruled table. */
 function IncludedBonuses() {
   return (
-    <div className="mx-auto mt-20 grid max-w-[1180px] gap-8 px-5 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-16 lg:px-10">
-      <div className="lg:sticky lg:top-8 lg:self-start">
-        <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
-        <h3 className="v2-display text-ink mt-3 text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
-          {includedBonuses.title}
-        </h3>
-        <PriceTag className="mt-6" />
+    <div className="mx-auto mt-20 max-w-[1180px] px-5 lg:px-10">
+      <div className="lg:flex lg:items-end lg:justify-between lg:gap-16">
+        <div>
+          <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
+          <h3 className="v2-display text-ink mt-3 max-w-[22ch] text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
+            {includedBonuses.title}
+          </h3>
+        </div>
+        <PriceTag className="hidden shrink-0 lg:flex" />
       </div>
-      <ul className="border-ink bg-ink shadow-card rounded-card grid gap-[2px] overflow-hidden border-2">
+      <ul className="border-ink bg-ink shadow-card rounded-card mt-8 grid gap-[2px] overflow-hidden border-2">
         {includedBonuses.items.map((b, i) => (
           <li
             key={b.title}
-            className="bg-tint grid gap-x-6 gap-y-1 p-5 sm:grid-cols-[minmax(0,13rem)_1fr]"
+            className="bg-tint grid gap-x-8 gap-y-1 p-5 sm:grid-cols-[32%_1fr] lg:px-7"
           >
-            <p className="text-ink leading-tight font-black uppercase">
+            <p className="text-ink leading-tight font-black text-balance uppercase">
               <span className="text-eyebrow mb-1 block text-xs tracking-[0.14em]">
                 Bonus {i + 1}
               </span>
-              {b.title}
+              {noBreakHyphen(b.title)}
             </p>
             <p className="text-[0.95rem] leading-snug sm:pt-5">{b.text}</p>
           </li>

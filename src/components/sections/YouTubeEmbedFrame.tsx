@@ -4,6 +4,7 @@ import { useState, type CSSProperties } from "react";
 import {
   PlayGlyph,
   type PlayButtonVariant,
+  type PlayPosition,
 } from "@/components/media/ClickToLoad";
 import { cn } from "@/lib/utils";
 import {
@@ -18,10 +19,12 @@ type YouTubeEmbedFrameProps = {
   thumbnailUrl?: string;
   /**
    * "hero" (default): a large disc in the middle. "card": a small button in
-   * the bottom-left corner, so a member thumbnail's burned-in result text
-   * ("$600K/Yr") stays readable. The whole thumbnail is the button either way.
+   * a corner, so a member thumbnail's burned-in result text ("$600K/Yr")
+   * stays readable. The whole thumbnail is the button either way.
    */
   variant?: PlayButtonVariant;
+  /** Corner for the "card" button: bottom-right (default) or top-right. */
+  playPosition?: PlayPosition;
 };
 
 export function YouTubeEmbedFrame({
@@ -30,6 +33,7 @@ export function YouTubeEmbedFrame({
   className,
   thumbnailUrl,
   variant = "hero",
+  playPosition = "br",
 }: YouTubeEmbedFrameProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const previewThumbnailUrl = thumbnailUrl || embed.thumbnailUrl;
@@ -67,7 +71,7 @@ export function YouTubeEmbedFrame({
       )}
     >
       {variant === "card" ? (
-        <PlayGlyph variant="card" />
+        <PlayGlyph variant="card" position={playPosition} />
       ) : (
         <span
           aria-hidden

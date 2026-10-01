@@ -148,20 +148,20 @@ const vidalytics = (embedId: string, posterOf: string): ReplayVideo => ({
 });
 
 // Same five member videos as GHL, in the order of the five testimonials below
-// (Michael, Joe, Mallorie, Shannon, Katie + Graham).
+// (Michael, Joe, Shannon, Mallorie, Katie + Graham).
 const YOUTUBE_TESTIMONIAL_VIDEOS = [
   youtube("U7KKbZHqBvg"),
   youtube("gvvz2nMax0w"),
-  youtube("io1Jkei-yFs"),
   youtube("yP4Y_BBAvq4"),
+  youtube("io1Jkei-yFs"),
   youtube("heSbv_uG734"),
 ] as const;
 
 const META_TESTIMONIAL_VIDEOS = [
   vidalytics("JcjYb4jILP6zsniI", "U7KKbZHqBvg"),
   vidalytics("U1unfH4Jvr6TjBrS", "gvvz2nMax0w"),
-  vidalytics("5IT3tUDRQOJfSJ2m", "io1Jkei-yFs"),
   vidalytics("OHz6S1sB3ahBvu8D", "yP4Y_BBAvq4"),
+  vidalytics("5IT3tUDRQOJfSJ2m", "io1Jkei-yFs"),
   vidalytics("LchE9_kgP012adAZ", "heSbv_uG734"),
 ] as const;
 
@@ -290,9 +290,9 @@ export type ReplayTestimonial = {
   result: string;
 };
 
-// GHL's five, reordered (wording untouched) so the two-card second row on
-// desktop pairs the two longest quotes and Mallorie's one-liner sits with the
-// two shortest.
+// GHL's five, reordered (wording untouched): on desktop the first row is
+// three full-length quotes and the second row pairs Mallorie's one-liner
+// with Katie + Graham.
 export const replayTestimonials: readonly ReplayTestimonial[] = [
   {
     tag: "Scaling With a W2",
@@ -309,18 +309,18 @@ export const replayTestimonials: readonly ReplayTestimonial[] = [
     result: "15 locations | ~$5.5K/mo",
   },
   {
-    tag: "Just Getting Started",
-    quote:
-      "This community has been crucial in us building our business properly.",
-    name: "Mallorie",
-    result: "6 locations | ~$4K/mo",
-  },
-  {
     tag: "Scaling With a W2",
     quote:
       "I was really lucky to have Mike kind of walk me through a bunch of different areas and different steps — what does it really look like? How do you start your own business from the ground up?",
     name: "Shannon",
     result: "4 locations | ~$25K/mo",
+  },
+  {
+    tag: "Just Getting Started",
+    quote:
+      "This community has been crucial in us building our business properly.",
+    name: "Mallorie",
+    result: "6 locations | ~$4K/mo",
   },
   {
     tag: "Scaling Up Couple",
