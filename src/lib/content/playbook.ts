@@ -12,7 +12,9 @@ export const GHL_CHECKOUT_URL = "https://webinar.vendingpreneurs.com/checkout";
 export const PRICE = {
   anchor: "$199",
   today: "$67",
-  save: "Save $132 today",
+  // Verbatim from the GHL hero. GHL's closing block says "Save $130.00 today",
+  // which is its own arithmetic slip ($199 - $67 = $132); the hero figure is used for both.
+  save: "Save $132.00 today",
 };
 
 /** Ad-click parameters carried onto the checkout link. */
@@ -477,7 +479,7 @@ export const finalOffer = {
   highlight: "Mike Hoffmann's Playbook",
   proof: "3,000 Active Vending Locations · $3M+ Combined Revenue",
   urgency: "Enrollment Closing Soon - Nearing Capacity",
-  price: "$67",
+  price: "$67 Only",
   line: "One machine can pay 36k per year. Your investment: $67. Plus 9 free bonuses.",
   cta: "Yes! Get Instant Access",
   secure: "100% secure 256-bit encrypted checkout",

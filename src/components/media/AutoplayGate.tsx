@@ -6,13 +6,12 @@ import { WhenNearViewport } from "./WhenNearViewport";
 
 const REDUCED_MOTION = "(prefers-reduced-motion: reduce)";
 
-function subscribe(onChange: () => void) {
-  const query = window.matchMedia(REDUCED_MOTION);
-  query.addEventListener("change", onChange);
-  return () => query.removeEventListener("change", onChange);
-}
-
-const prefersReducedMotion = () => window.matchMedia(REDUCED_MOTION).matches;
+// Read once per page load and latched: re-deciding on a preference change
+// would swap a playing embed for a play button and tear the video down.
+let decided: boolean | null = null;
+const subscribe = () => () => {};
+const prefersReducedMotion = () =>
+  (decided ??= window.matchMedia(REDUCED_MOTION).matches);
 // Unknown on the server. Treating it as "no preference" let the autoplaying
 // snippet mount during hydration, before the client value arrived, so a
 // reduced-motion visitor could still get a muted autoplay. Nothing loads

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { claim, nowPlaying, subscribe } from "./nowPlaying";
+import { claim, subscribe } from "./nowPlaying";
 
 describe("nowPlaying channel", () => {
   it("tells every subscriber which player claimed", () => {
@@ -12,7 +12,6 @@ describe("nowPlaying channel", () => {
 
     expect(a).toHaveBeenCalledWith("player-1");
     expect(b).toHaveBeenCalledWith("player-1");
-    expect(nowPlaying()).toBe("player-1");
     offA();
     offB();
   });
@@ -25,7 +24,6 @@ describe("nowPlaying channel", () => {
     claim("player-2");
 
     expect(listener).not.toHaveBeenCalled();
-    expect(nowPlaying()).toBe("player-2");
   });
 
   it("lets a listener unsubscribe while a claim is being delivered", () => {

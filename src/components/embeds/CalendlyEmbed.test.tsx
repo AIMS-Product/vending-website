@@ -181,6 +181,36 @@ describe("CalendlyFrame height", () => {
 
 // When Calendly is blocked, the loading layer was the page's only booking
 // path and spun forever. With no Calendly message, a new-tab link appears.
+describe("CalendlyFrame message source", () => {
+  it("ignores messages from a window other than the iframe's", () => {
+    const frameWin = {} as Window;
+    const source = new EventTarget();
+    let loaded = 0;
+    const stop = frame.watchCalendly({
+      source: source as unknown as Window,
+      frameWindow: () => frameWin,
+      onHeight: () => {},
+      onLoaded: () => loaded++,
+      onStall: () => {},
+    });
+    const data = { event: "calendly.event_type_viewed" };
+    const send = (from: unknown) =>
+      source.dispatchEvent(
+        Object.assign(new Event("message"), {
+          origin: "https://calendly.com",
+          data,
+          source: from,
+        }),
+      );
+    send({});
+    send(null);
+    expect(loaded).toBe(0);
+    send(frameWin);
+    expect(loaded).toBe(1);
+    stop();
+  });
+});
+
 describe("CalendlyFrame stall fallback", () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -323,26 +353,37 @@ describe("CalendlyFrame stall fallback", () => {
     expect(stalled).toBe(1);
   });
 
-  it("drops the spinner and skeleton once stalled", () => {
-    const src = "https://calendly.com/d/x";
-    const loading = renderToStaticMarkup(
-      createElement(frame.LoadingLayer, { stalled: false, frameSrc: src }),
+  const view = (loaded: boolean, stalled: boolean) =>
+    renderToStaticMarkup(
+      createElement(frame.FrameView, {
+        loaded,
+        stalled,
+        frameSrc: "https://calendly.com/d/x",
+        title: "t",
+        heightClassName: "h-[520px]",
+        height: null,
+      }),
     );
-    expect(loading).toContain("Loading available times…");
-    expect(loading).toContain("<svg");
-    expect(loading).not.toContain(frame.CALENDLY_FALLBACK);
 
-    const stalled = renderToStaticMarkup(
-      createElement(frame.LoadingLayer, { stalled: true, frameSrc: src }),
+  it("shows the skeleton while loading, with no fallback", () => {
+    const html = view(false, false);
+    expect(html).toContain("Loading available times…");
+    expect(html).toContain("<svg");
+    expect(html).not.toContain(frame.CALENDLY_FALLBACK);
+  });
+
+  it("on stall keeps the iframe visible and the fallback outside it", () => {
+    const html = view(false, true);
+    const iframe = html.match(/<iframe[^>]*>/)?.[0] ?? "";
+    expect(iframe).not.toContain("opacity-0");
+    expect(iframe).toContain("opacity-100");
+    expect(html).not.toContain("Loading available times…");
+    expect(html).not.toContain("inset-0");
+    expect(html).not.toContain("absolute");
+    expect(html).toContain(frame.CALENDLY_FALLBACK);
+    expect(html.indexOf(frame.CALENDLY_FALLBACK)).toBeGreaterThan(
+      html.indexOf("</iframe>"),
     );
-    expect(stalled).not.toContain("Loading available times…");
-    expect(stalled).not.toContain("<svg");
-    expect(stalled).not.toContain("rounded-full bg-slate-100");
-    expect(stalled).toContain("justify-center");
-    expect(stalled).toContain(
-      frame.CALENDLY_STALLED_LINE.replace("'", "&#x27;"),
-    );
-    expect(stalled).toContain(frame.CALENDLY_FALLBACK);
   });
 
   it("hides the iframe until loaded so only our skeleton shows", () => {

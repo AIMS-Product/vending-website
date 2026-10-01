@@ -9,6 +9,7 @@ import {
 } from "react";
 import { buttonClass } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
+import { isCalendlyOrigin } from "./calendly-origin";
 
 /**
  * The Calendly iframe plus a light "Loading available times…" layer behind
@@ -27,9 +28,10 @@ import { cn } from "@/lib/utils";
  * loading dots never show on top of ours.
  *
  * If no such message arrives within CALENDLY_STALL_MS (Calendly blocked by an
- * extension or network), the layer offers "Open the calendar in a new tab" to
- * the same src, UTMs included, so the page's only booking path never dead-ends.
- * A Calendly message that arrives after the stall still clears the layer.
+ * extension or network), the skeleton is dropped, the iframe is shown anyway
+ * (a working scheduler whose message was late or missing must never be hidden)
+ * and a strip below it offers "Open the calendar in a new tab" to the same
+ * src, UTMs included. The strip never overlays the iframe.
  *
  * The same real page_height also sizes the iframe, so the card hugs
  * Calendly's month view instead of leaving dead tint under it.
@@ -37,14 +39,13 @@ import { cn } from "@/lib/utils";
  */
 const CALENDLY_STALL_MS = 15_000;
 const CALENDLY_FALLBACK = "Open the calendar in a new tab";
-const CALENDLY_ORIGIN = "https://calendly.com";
 /** Anything shorter is Calendly's redirect page, not the scheduler. */
 const MIN_SCHEDULER_HEIGHT = 300;
 
 type CalendlyMessage = Pick<MessageEvent, "origin" | "data">;
 
 function calendlyEventName(event: CalendlyMessage): string | null {
-  if (event.origin !== CALENDLY_ORIGIN) return null;
+  if (!isCalendlyOrigin(event.origin)) return null;
   const data: unknown = event.data;
   if (typeof data !== "object" || data === null) return null;
   const name = (data as { event?: unknown }).event;
@@ -119,6 +120,7 @@ function watchCalendly({
   onHeight,
   onLoaded,
   onStall,
+  frameWindow,
   stallMs = CALENDLY_STALL_MS,
   target = null,
   Observer = typeof IntersectionObserver === "undefined"
@@ -129,6 +131,8 @@ function watchCalendly({
   onHeight: (height: number) => void;
   onLoaded: () => void;
   onStall: () => void;
+  /** When set, only messages from this window count (the iframe's own). */
+  frameWindow?: () => Window | null;
   stallMs?: number;
   target?: Element | null;
   Observer?: ObserverCtor;
@@ -147,6 +151,10 @@ function watchCalendly({
     }, stallMs);
   };
   const onMessage = (event: MessageEvent) => {
+    if (frameWindow) {
+      const win = frameWindow();
+      if (win === null || event.source !== win) return;
+    }
     const measured = schedulerHeight(event);
     if (measured !== null) onHeight(measured);
     if (!isCalendlyMessage(event)) return;
@@ -182,70 +190,101 @@ const SKELETON_DAYS = Array.from({ length: 35 }, (_, i) => i);
 
 const CALENDLY_STALLED_LINE = "The calendar didn't load here.";
 
-/**
- * The layer behind the iframe. While loading: spinner, label and a month
- * skeleton. Once stalled, only a static line and the new-tab fallback, centred,
- * so the card never says "wait" and "give up" at once.
- */
-function LoadingLayer({
-  ref,
-  stalled,
-  frameSrc,
-}: {
-  ref?: Ref<HTMLDivElement>;
-  stalled: boolean;
-  frameSrc: string | null;
-}) {
+/** The skeleton behind the iframe while loading. Never rendered once stalled. */
+function LoadingLayer({ ref }: { ref?: Ref<HTMLDivElement> }) {
   return (
     <div
       ref={ref}
-      aria-hidden={stalled ? undefined : true}
-      className={cn(
-        "bg-tint absolute inset-0 flex flex-col items-center gap-3",
-        stalled ? "z-20 justify-center px-4" : "z-0 justify-start pt-16",
-      )}
+      aria-hidden
+      className="bg-tint absolute inset-0 z-0 flex flex-col items-center justify-start gap-3 pt-16"
     >
-      {stalled ? (
-        <>
-          <p className="text-center text-sm font-semibold text-slate-600">
-            {CALENDLY_STALLED_LINE}
-          </p>
-          {frameSrc !== null ? (
-            <a
-              href={frameSrc}
-              target="_blank"
-              rel="noopener"
-              className={buttonClass({ size: "md", className: "px-5" })}
-            >
-              {CALENDLY_FALLBACK}
-            </a>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <svg
-            aria-hidden
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="size-6 text-[var(--brand-700)] motion-safe:animate-spin"
-          >
-            <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-          </svg>
-          <p className="text-sm font-semibold text-slate-600">
-            Loading available times…
-          </p>
-          <div className="mt-3 grid w-full max-w-[360px] grid-cols-7 justify-items-center gap-2 px-4">
-            {SKELETON_DAYS.map((day) => (
-              <span key={day} className="size-9 rounded-full bg-slate-100" />
-            ))}
-          </div>
-        </>
-      )}
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="size-6 text-[var(--brand-700)] motion-safe:animate-spin"
+      >
+        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+      </svg>
+      <p className="text-sm font-semibold text-slate-600">
+        Loading available times…
+      </p>
+      <div className="mt-3 grid w-full max-w-[360px] grid-cols-7 justify-items-center gap-2 px-4">
+        {SKELETON_DAYS.map((day) => (
+          <span key={day} className="size-9 rounded-full bg-slate-100" />
+        ))}
+      </div>
     </div>
+  );
+}
+
+/** In normal flow below the iframe, so it can never cover a working scheduler. */
+function StalledStrip({ frameSrc }: { frameSrc: string }) {
+  return (
+    <div className="bg-tint flex flex-wrap items-center justify-center gap-3 px-4 py-3">
+      <p className="text-sm font-semibold text-slate-600">
+        {CALENDLY_STALLED_LINE}
+      </p>
+      <a
+        href={frameSrc}
+        target="_blank"
+        rel="noopener"
+        className={buttonClass({ size: "md", className: "px-5" })}
+      >
+        {CALENDLY_FALLBACK}
+      </a>
+    </div>
+  );
+}
+
+function FrameView({
+  loaded,
+  stalled,
+  frameSrc,
+  title,
+  heightClassName,
+  height,
+  layerRef,
+  iframeRef,
+}: {
+  loaded: boolean;
+  stalled: boolean;
+  frameSrc: string | null;
+  title: string;
+  heightClassName: string;
+  height: number | null;
+  layerRef?: Ref<HTMLDivElement>;
+  iframeRef?: Ref<HTMLIFrameElement>;
+}) {
+  const showSkeleton = !loaded && !stalled;
+  return (
+    <>
+      {showSkeleton ? <LoadingLayer ref={layerRef} /> : null}
+      {frameSrc === null ? (
+        <div aria-hidden className={cn("w-full", heightClassName)} />
+      ) : (
+        <iframe
+          ref={iframeRef}
+          className={cn(
+            "relative z-10 block w-full border-0",
+            showSkeleton ? "opacity-0" : "opacity-100",
+            "motion-safe:transition-opacity",
+            heightClassName,
+          )}
+          style={height === null ? undefined : { height: `${height}px` }}
+          loading="eager"
+          src={frameSrc}
+          title={title}
+        />
+      )}
+      {!loaded && stalled && frameSrc !== null ? (
+        <StalledStrip frameSrc={frameSrc} />
+      ) : null}
+    </>
   );
 }
 
@@ -292,12 +331,14 @@ export function CalendlyFrame({
 
   const [stalled, setStalled] = useState(false);
   const layerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
   useEffect(
     () =>
       watchCalendly({
         source: window,
         target: layerRef.current,
+        frameWindow: () => iframeRef.current?.contentWindow ?? null,
         onHeight: setReported,
         onLoaded: () => setLoaded(true),
         onStall: () => setStalled(true),
@@ -306,33 +347,22 @@ export function CalendlyFrame({
   );
 
   return (
-    <>
-      {loaded ? null : (
-        <LoadingLayer ref={layerRef} stalled={stalled} frameSrc={frameSrc} />
-      )}
-      {frameSrc === null ? (
-        <div aria-hidden className={cn("w-full", heightClassName)} />
-      ) : (
-        <iframe
-          className={cn(
-            "relative z-10 block w-full border-0",
-            loaded ? "opacity-100" : "opacity-0",
-            "motion-safe:transition-opacity",
-            heightClassName,
-          )}
-          style={height === null ? undefined : { height: `${height}px` }}
-          loading="eager"
-          src={frameSrc}
-          title={title}
-        />
-      )}
-    </>
+    <FrameView
+      loaded={loaded}
+      stalled={stalled}
+      frameSrc={frameSrc}
+      title={title}
+      heightClassName={heightClassName}
+      height={height}
+      layerRef={layerRef}
+      iframeRef={iframeRef}
+    />
   );
 }
 
 export const __testing = {
   appliedHeight,
-  LoadingLayer,
+  FrameView,
   CALENDLY_STALLED_LINE,
   isCalendlyMessage,
   schedulerHeight,

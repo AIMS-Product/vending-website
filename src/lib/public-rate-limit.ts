@@ -161,27 +161,68 @@ export async function checkPublicRateLimit(
 
 type RateLimitSubject = { ip: string | null; email?: string | null };
 
+export type RateLimitReservation = {
+  allowed: boolean;
+  /** Delete this reservation's own row. Never throws; a failure is logged. */
+  release: () => Promise<void>;
+};
+
 /**
- * Report whether one more attempt would be allowed, WITHOUT spending budget.
- * Pair it with `recordPublicRateLimitHit` after the guarded work succeeds, for
- * budgets that should only count real outcomes (a failed upstream write must
- * not use up a registrant's daily allowance). Same fail-open/closed rules as
- * `checkPublicRateLimit`.
+ * Reserve one unit of budget so parallel requests can never over-admit:
+ * insert our hit row FIRST, then count the window (our row included). Over the
+ * budget means we delete our own row and are refused. Under a race every
+ * contender may see the others' rows and all back off, so this can over-reject
+ * but never over-admit. Call `release` to refund after the guarded work fails.
+ *
+ * Always fails CLOSED (logged): an unmetered success is what it prevents.
  */
-export async function peekPublicRateLimit(
+export async function reservePublicRateLimit(
   action: PublicRateLimitAction,
   { ip, email }: RateLimitSubject,
-  deps: PublicRateLimitDeps = {},
-): Promise<boolean> {
+  deps: Pick<PublicRateLimitDeps, "client" | "now"> = {},
+): Promise<RateLimitReservation> {
   const emailHash = hashEmail(email);
-  if (!ip && !emailHash) return true;
+  const noop = async () => {};
+  if (!ip && !emailHash) return { allowed: true, release: noop };
 
   const { windowMs, max } = LIMITS[action];
   const now = deps.now?.() ?? new Date();
   const since = new Date(now.getTime() - windowMs).toISOString();
+  let client: RateLimitClient | null = null;
+  let id: number | null = null;
+
+  const release = async () => {
+    if (id === null || !client) return;
+    const rowId = id;
+    id = null;
+    try {
+      const { error } = await client
+        .from("public_request_hits")
+        .delete()
+        .eq("id", rowId);
+      if (error) throw new Error(error.message);
+    } catch (error) {
+      console.error("public rate limit release failed", {
+        action,
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+    }
+  };
 
   try {
-    const client = deps.client ?? createAdminClient();
+    client = deps.client ?? createAdminClient();
+    const inserted = await client
+      .from("public_request_hits")
+      .insert({
+        action,
+        ip,
+        email_hash: emailHash,
+        occurred_at: now.toISOString(),
+      })
+      .select("id")
+      .single();
+    if (inserted.error) throw new Error(inserted.error.message);
+    id = inserted.data.id;
     const { count, error } = await client
       .from("public_request_hits")
       .select("id", { count: "exact", head: true })
@@ -189,44 +230,18 @@ export async function peekPublicRateLimit(
       .gte("occurred_at", since)
       .or(subjectFilter(ip, emailHash));
     if (error) throw new Error(error.message);
-    return (count ?? 0) < max;
+    if ((count ?? 0) > max) {
+      await release();
+      return { allowed: false, release: noop };
+    }
+    return { allowed: true, release };
   } catch (error) {
-    const failClosed = deps.failClosed ?? false;
-    console.warn(
-      `public rate limit peek failed ${failClosed ? "closed" : "open"}`,
-      {
-        action,
-        error: error instanceof Error ? error.message : "unknown error",
-      },
-    );
-    return !failClosed;
-  }
-}
-
-/**
- * Spend one unit of budget for an attempt that already succeeded (see
- * `peekPublicRateLimit`). Throws on a database error so the caller decides
- * what a lost hit means; it never silently drops one.
- */
-export async function recordPublicRateLimitHit(
-  action: PublicRateLimitAction,
-  { ip, email }: RateLimitSubject,
-  deps: Pick<PublicRateLimitDeps, "client" | "now"> = {},
-): Promise<void> {
-  const emailHash = hashEmail(email);
-  if (!ip && !emailHash) return;
-  const now = deps.now?.() ?? new Date();
-  const client = deps.client ?? createAdminClient();
-  const { error } = await client.from("public_request_hits").insert({
-    action,
-    ip,
-    email_hash: emailHash,
-    occurred_at: now.toISOString(),
-  });
-  if (error) {
-    throw new Error(
-      `public rate limit record failed (${action}): ${error.message}`,
-    );
+    console.error("public rate limit reserve failed closed", {
+      action,
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+    await release();
+    return { allowed: false, release: noop };
   }
 }
 

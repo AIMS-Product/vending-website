@@ -6,6 +6,10 @@ import {
   refreshStoredSession,
 } from "@/lib/attribution-client";
 import { eventContext } from "@/lib/tracking/event-context";
+import {
+  POSTHOG_PII_PARAMS,
+  scrubPostHogEvent,
+} from "@/lib/tracking/posthog-scrub";
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
@@ -55,8 +59,18 @@ if (posthogKey && !window.location.pathname.startsWith("/admin")) {
       // our tables on the vp_session_id property, not on a person profile.
       person_profiles: "identified_only",
       capture_dead_clicks: true,
-      before_send: (event) => {
-        if (!event || event.event === "$snapshot") return event;
+      // Belt and braces with before_send: also mask these params natively.
+      mask_personal_data_properties: true,
+      custom_personal_data_properties: POSTHOG_PII_PARAMS,
+      // Not stripped from the address bar before init: Next's router adopts
+      // the URL at hydration and StripPiiParams already strips it safely
+      // afterwards (no page reads these params client-side). before_send
+      // scrubs every property, including the first $pageview, so nothing
+      // PII-bearing leaves the browser either way.
+      before_send: (raw) => {
+        if (!raw) return raw;
+        const event = scrubPostHogEvent(raw);
+        if (event.event === "$snapshot") return event;
         const current = event.properties.$current_url;
         const url = new URL(
           typeof current === "string" ? current : window.location.href,

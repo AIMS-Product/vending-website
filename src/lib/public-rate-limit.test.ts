@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   checkPublicRateLimit,
-  peekPublicRateLimit,
   prunePublicRequestHits,
-  recordPublicRateLimitHit,
   requestIp,
   type PublicRateLimitDeps,
 } from "./public-rate-limit";
@@ -307,82 +305,5 @@ describe("requestIp", () => {
       requestIp(new Headers({ "x-forwarded-for": "203.0.113.9, 70.0.0.1" })),
     ).toBe("203.0.113.9");
     expect(requestIp(new Headers())).toBeNull();
-  });
-});
-
-describe("peekPublicRateLimit + recordPublicRateLimitHit", () => {
-  const phone = { ip: null, email: "phone:+15415550123" };
-
-  it("peeks without spending budget", async () => {
-    const fake = fakeClient();
-    for (let i = 0; i < 10; i++) {
-      expect(
-        await peekPublicRateLimit("masterclass_register_phone", phone, {
-          client: fake.client,
-          now,
-        }),
-      ).toBe(true);
-    }
-    expect(fake.state.inserts).toHaveLength(0);
-  });
-
-  it("allows a 4th and 5th successful phone registration in 24h, then refuses", async () => {
-    const fake = fakeClient();
-    const deps = { client: fake.client, now };
-    for (let i = 0; i < 5; i++) {
-      expect(
-        await peekPublicRateLimit("masterclass_register_phone", phone, deps),
-      ).toBe(true);
-      await recordPublicRateLimitHit("masterclass_register_phone", phone, deps);
-    }
-    expect(fake.state.inserts).toHaveLength(5);
-    expect(
-      await peekPublicRateLimit("masterclass_register_phone", phone, deps),
-    ).toBe(false);
-  });
-
-  it("leaves the budget untouched when the guarded write fails (no record)", async () => {
-    const fake = fakeClient();
-    const deps = { client: fake.client, now };
-    // Three attempts whose GHL write failed: peeked, never recorded.
-    for (let i = 0; i < 3; i++) {
-      await peekPublicRateLimit("masterclass_register_phone", phone, deps);
-    }
-    expect(fake.state.inserts).toHaveLength(0);
-    expect(
-      await peekPublicRateLimit("masterclass_register_phone", phone, deps),
-    ).toBe(true);
-  });
-
-  it("fails closed on a peek error when asked to", async () => {
-    vi.spyOn(console, "warn").mockImplementation(() => {});
-    const client = {
-      from() {
-        throw new Error("db down");
-      },
-    } as unknown as RateLimitClient;
-    expect(
-      await peekPublicRateLimit("masterclass_register_phone", phone, {
-        client,
-        now,
-        failClosed: true,
-      }),
-    ).toBe(false);
-  });
-
-  it("throws when the hit cannot be recorded", async () => {
-    const client = {
-      from() {
-        return {
-          insert: () => Promise.resolve({ error: { message: "nope" } }),
-        };
-      },
-    } as unknown as RateLimitClient;
-    await expect(
-      recordPublicRateLimitHit("masterclass_register_phone", phone, {
-        client,
-        now,
-      }),
-    ).rejects.toThrow("nope");
   });
 });

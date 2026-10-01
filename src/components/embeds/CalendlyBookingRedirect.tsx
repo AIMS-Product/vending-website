@@ -9,6 +9,7 @@ import {
   emitAttributionEvent,
   readStoredAttributionSession,
 } from "@/lib/attribution-client";
+import { isCalendlyOrigin } from "./calendly-origin";
 import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
 
 /**
@@ -30,8 +31,6 @@ import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
  * The navigation itself lives in lib/booking/post-booking-redirect, shared with
  * the chat widget's calendar so both surfaces send bookers to the same place.
  */
-
-const CALENDLY_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*calendly\.com$/;
 
 /**
  * The invitee URI Calendly puts on a confirmed booking, or null.
@@ -62,7 +61,7 @@ function linkBookingToSession(inviteeUri: string | null): void {
 }
 
 function isEventScheduled(event: MessageEvent): boolean {
-  if (!CALENDLY_ORIGIN.test(event.origin)) return false;
+  if (!isCalendlyOrigin(event.origin)) return false;
   const data: unknown = event.data;
   return (
     typeof data === "object" &&

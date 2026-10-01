@@ -96,6 +96,7 @@ const MAX_RATE_LIMIT_WAIT_MS = 3000;
 
 const contactShape = z.object({
   id: z.string().min(1),
+  email: z.string().nullish(),
   tags: z.array(z.string()).nullish(),
   firstName: z.string().nullish(),
   lastName: z.string().nullish(),
@@ -184,7 +185,29 @@ export type WebinarRegistrationResult = {
   outcome: "registered" | "already-registered";
   /** The GHL contact this registration landed on. */
   contactId: string;
+  /**
+   * True when it is safe to hand this browser an intake session for the
+   * contact: created by this request, or an existing contact whose stored email
+   * AND phone both match the submitted ones. Anyone can submit a known email.
+   */
+  ownsContact: boolean;
 };
+
+const phoneDigits = (value: string | null | undefined) =>
+  (value ?? "").replace(/\D/g, "").replace(/^1(?=\d{10}$)/, "");
+
+function matchesSubmitted(
+  existing: { email?: string | null; phone?: string | null },
+  person: Pick<WebinarRegistration, "email" | "phone">,
+) {
+  const phone = phoneDigits(existing.phone);
+  return (
+    !!existing.email?.trim() &&
+    existing.email.trim().toLowerCase() === person.email.trim().toLowerCase() &&
+    phone !== "" &&
+    phone === phoneDigits(person.phone)
+  );
+}
 
 export async function registerWebinarContact(
   person: WebinarRegistration,
@@ -202,7 +225,11 @@ export async function registerWebinarContact(
   if (!found.success) throw new WebinarRegistrationError("lookup", 200);
   const existing = found.data.contact;
   if (person.eventTag && existing?.tags?.includes(person.eventTag)) {
-    return { outcome: "already-registered", contactId: existing.id };
+    return {
+      outcome: "already-registered",
+      contactId: existing.id,
+      ownsContact: matchesSubmitted(existing, person),
+    };
   }
 
   // A public form must not rewrite a known contact: someone who knows a lead's
@@ -254,7 +281,11 @@ export async function registerWebinarContact(
   // Removing a tag the contact lacks is a no-op.
   await call("remove-tag", "DELETE", tagPath, tagBody);
   await call("add-tag", "POST", tagPath, tagBody);
-  return { outcome: "registered", contactId: contact.id };
+  return {
+    outcome: "registered",
+    contactId: contact.id,
+    ownsContact: !existing || matchesSubmitted(existing, person),
+  };
 }
 
 /**

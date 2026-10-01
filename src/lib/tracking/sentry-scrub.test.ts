@@ -154,3 +154,33 @@ describe("scrubEvent", () => {
     expect(scrubEvent(event)).toEqual(event);
   });
 });
+
+describe("scrubEvent, every field", () => {
+  const dirty =
+    "https://x.test/p?email=a%40b.com&phone=5415550101&utm_source=x";
+  const event: Event = {
+    message: `failed at ${dirty}`,
+    logentry: { message: "bad %s", params: [dirty] },
+    exception: { values: [{ type: "Error", value: `GET ${dirty} 500` }] },
+    extra: { list: [{ url: dirty }, [dirty]], deep: { a: { b: dirty } } },
+    tags: { page: dirty },
+    contexts: { app: { url: dirty } },
+    breadcrumbs: [{ message: dirty, data: { to: dirty, arr: [dirty] } }],
+    request: { url: dirty, headers: { Referer: dirty } },
+  };
+
+  it("leaves no PII in any field and does not mutate the input", () => {
+    const before = JSON.stringify(event);
+    const out = scrubEvent(event);
+    const json = JSON.stringify(out);
+    for (const p of ["a%40b.com", "5415550101"]) expect(json).not.toContain(p);
+    expect(json).toContain("utm_source=x");
+    expect(JSON.stringify(event)).toBe(before);
+  });
+
+  it("scrubs encoded and nested-url variants", () => {
+    expect(scrubUrl("/r?next=%2Fm%3Femail%3Da%40b.com%26utm_source%3Dx")).toBe(
+      "/r?next=%2Fm%3Femail%3D[Filtered]%26utm_source%3Dx",
+    );
+  });
+});

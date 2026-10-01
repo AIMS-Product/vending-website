@@ -87,6 +87,9 @@ const DIRECTIVES: Array<[string, string[]]> = [
   // hydration inline scripts; 'unsafe-eval' is what GTM's preview mode and
   // several of the players need. The Vidalytics player loads its own chunks
   // from blob: URLs (funnel video pages). Both come out once the bootstraps are nonced.
+  // ponytail: blob: is site-wide, not per route. This policy ships as
+  // Report-Only (security-headers.ts), so it widens nothing that is enforced;
+  // scope it to the Vidalytics routes when the policy is enforced with nonces.
   [
     "script-src",
     ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", ...SCRIPT_HOSTS],

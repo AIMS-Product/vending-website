@@ -13,11 +13,9 @@
 type Listener = (playingId: string) => void;
 
 const listeners = new Set<Listener>();
-let current: string | null = null;
 
 /** Marks `id` as the one playing source and tells every listener. */
 export function claim(id: string): void {
-  current = id;
   // Copy first: a listener may unsubscribe (unmount) while we iterate.
   for (const listener of [...listeners]) listener(id);
 }
@@ -31,9 +29,4 @@ export function subscribe(listener: Listener): () => void {
   return () => {
     listeners.delete(listener);
   };
-}
-
-/** The id that claimed last, or null. */
-export function nowPlaying(): string | null {
-  return current;
 }

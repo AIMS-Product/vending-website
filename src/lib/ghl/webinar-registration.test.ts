@@ -93,7 +93,11 @@ describe("registerWebinarContact", () => {
     const { calls, fetchImpl } = ghl({});
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "registered",
+      contactId: "c1",
+      ownsContact: true,
+    });
 
     expect(calls.map((c) => `${c.method} ${c.url.split("?")[0]}`)).toEqual([
       "GET https://services.leadconnectorhq.com/contacts/search/duplicate",
@@ -120,6 +124,33 @@ describe("registerWebinarContact", () => {
     ]);
     expect(calls[3].body).toEqual({ tags: [SITE_REGISTRATION_TAG] });
   });
+
+  it.each([
+    [
+      "email and phone both match",
+      { email: "Mary@Example.com", phone: "(541) 555-0123" },
+      true,
+    ],
+    [
+      "phone only differs",
+      { email: "mary@example.com", phone: "+15415550000" },
+      false,
+    ],
+    ["stored phone blank", { email: "mary@example.com", phone: "" }, false],
+    ["stored email missing", { phone: "+15415550123" }, false],
+  ])(
+    "owns an existing contact only if email AND phone match: %s",
+    async (_l, stored, owns) => {
+      for (const tags of [["webinar-oct6"], []]) {
+        const { fetchImpl } = ghl({ duplicate: { id: "c1", tags, ...stored } });
+        const result = await registerWebinarContact(person, {
+          ...auth,
+          fetchImpl,
+        });
+        expect(result.ownsContact).toBe(owns);
+      }
+    },
+  );
 
   it("never rewrites a returning contact's source, name or phone", async () => {
     const { calls, fetchImpl } = ghl({
@@ -193,7 +224,11 @@ describe("registerWebinarContact", () => {
     const { fetchImpl } = ghl({ rawBody: { "DELETE tags": "" } });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "registered",
+      contactId: "c1",
+      ownsContact: true,
+    });
   });
 
   it("does not re-trigger someone already registered for this event", async () => {
@@ -202,7 +237,11 @@ describe("registerWebinarContact", () => {
     });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toEqual({ outcome: "already-registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "already-registered",
+      contactId: "c1",
+      ownsContact: false,
+    });
     expect(calls).toHaveLength(1);
   });
 
@@ -215,7 +254,11 @@ describe("registerWebinarContact", () => {
         { ...person, eventTag: null },
         { ...auth, fetchImpl },
       ),
-    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "registered",
+      contactId: "c1",
+      ownsContact: false,
+    });
     expect(calls).toHaveLength(4);
   });
 
@@ -223,7 +266,11 @@ describe("registerWebinarContact", () => {
     const { calls, fetchImpl } = ghl({ status: { upsert: [502] } });
     await expect(
       registerWebinarContact(person, { ...auth, fetchImpl }),
-    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "registered",
+      contactId: "c1",
+      ownsContact: true,
+    });
     expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(2);
   });
 
@@ -238,7 +285,11 @@ describe("registerWebinarContact", () => {
           waits.push(ms);
         },
       }),
-    ).resolves.toEqual({ outcome: "registered", contactId: "c1" });
+    ).resolves.toEqual({
+      outcome: "registered",
+      contactId: "c1",
+      ownsContact: true,
+    });
     expect(calls.filter((c) => c.url.endsWith("/upsert"))).toHaveLength(3);
     expect(waits).toEqual([1500, 1500]);
   });

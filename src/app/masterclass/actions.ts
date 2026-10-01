@@ -20,10 +20,9 @@ import {
   WebinarRegistrationError,
 } from "@/lib/ghl/webinar-registration";
 import {
-  checkPublicRateLimit,
-  peekPublicRateLimit,
-  recordPublicRateLimitHit,
+  reservePublicRateLimit,
   requestIp,
+  type RateLimitReservation,
 } from "@/lib/public-rate-limit";
 import {
   SESSION_COOKIE,
@@ -148,36 +147,40 @@ export async function registerForMasterclass(
   });
 
   // Fail closed: every accepted registration texts a phone number, so a
-  // limiter outage must not uncap it. The phone gets its own budget, so
-  // rotating emails and IPs cannot keep texting one person. The IP budget is
-  // spent up front (it throttles floods); the email and phone budgets are
-  // only peeked here and spent once GHL has accepted the contact, so a GHL
-  // failure never locks a real registrant out for the day.
+  // limiter outage must not uncap it. Each budget is RESERVED first (row
+  // inserted, then counted), so parallel submits can never all slip past a
+  // check; a refused or failed registration refunds its email and phone rows
+  // so a GHL outage never locks a real registrant out. The IP row is kept: it
+  // throttles floods. The phone gets its own budget, so rotating emails and
+  // IPs cannot keep texting one person.
   const ip = requestIp(await headers());
-  const personBudgets = [
-    { action: "masterclass_register", ip: null, email: parsed.data.email },
-    {
-      action: "masterclass_register_phone",
-      ip: null,
-      email: `phone:${parsed.data.phone}`,
-    },
+  const personReservations: RateLimitReservation[] = [];
+  const refundPerson = () =>
+    Promise.all(personReservations.map((r) => r.release()));
+  const budgets = [
+    ["masterclass_register_ip", { ip, email: null }, false],
+    ["masterclass_register", { ip: null, email: parsed.data.email }, true],
+    [
+      "masterclass_register_phone",
+      { ip: null, email: `phone:${parsed.data.phone}` },
+      true,
+    ],
   ] as const;
-  let allowed = await checkPublicRateLimit(
-    "masterclass_register_ip",
-    { ip, email: null },
-    { failClosed: true },
-  );
-  for (const { action, ...subject } of personBudgets) {
-    if (!allowed) break;
-    allowed = await peekPublicRateLimit(action, subject, { failClosed: true });
+  for (const [action, subject, refundable] of budgets) {
+    const reservation = await reservePublicRateLimit(action, subject);
+    if (refundable) personReservations.push(reservation);
+    if (!reservation.allowed) {
+      await refundPerson();
+      // Also refused when the limiter is down, so the copy never says "too many".
+      return { errors: { form: MASTERCLASS_BUSY_MESSAGE }, values };
+    }
   }
-  // Also false when the limiter is down, so the copy never says "too many".
-  if (!allowed) return { errors: { form: MASTERCLASS_BUSY_MESSAGE }, values };
 
   if (!config.GHL_WRITE_TOKEN) {
     console.error(
       "masterclass: GHL_WRITE_TOKEN is not set; refusing to register",
     );
+    await refundPerson();
     return { errors: { form: registrationErrorCopy.failed }, values };
   }
 
@@ -198,8 +201,9 @@ export async function registerForMasterclass(
     );
   }
   let contactId: string;
+  let ownsContact: boolean;
   try {
-    ({ contactId } = await registerWebinarContact(
+    ({ contactId, ownsContact } = await registerWebinarContact(
       { ...parsed.data, eventTag },
       {
         token: config.GHL_WRITE_TOKEN,
@@ -207,6 +211,7 @@ export async function registerForMasterclass(
       },
     ));
   } catch (error) {
+    await refundPerson();
     console.error("masterclass: registration not saved", {
       step: error instanceof WebinarRegistrationError ? error.step : "unknown",
       status: error instanceof WebinarRegistrationError ? error.status : null,
@@ -215,31 +220,21 @@ export async function registerForMasterclass(
     return { errors: { form: registrationErrorCopy.failed }, values };
   }
 
-  // GHL accepted the contact: now spend the email and phone budgets.
-  for (const { action, ...subject } of personBudgets) {
-    try {
-      await recordPublicRateLimitHit(action, subject);
-    } catch (error) {
-      // Logged, not rethrown: the person IS registered, and an error page
-      // would send them to register again. A lost hit only loosens the
-      // budget by one, and the IP budget was already spent.
-      console.error("masterclass: rate limit hit not recorded", {
-        action,
-        error: error instanceof Error ? error.message : "unknown error",
-      });
-    }
-  }
-
   // No confirmation page for a room that is over: say the next date is coming.
   if (stale) return { notice: registrationErrorCopy.nextDatePending };
 
   // Lets the confirmation page write intake answers to this contact. Optional:
-  // without the secret the page simply shows no intake form.
-  const session = signMasterclassSession(
-    contactId,
-    config.MASTERCLASS_SESSION_SECRET,
-  );
-  if (session) {
+  // without a session the page simply shows no intake form. Only issued for a
+  // contact this request created or whose stored email AND phone both match,
+  // so knowing a registrant's email never opens their intake.
+  const session = ownsContact
+    ? signMasterclassSession(contactId, config.MASTERCLASS_SESSION_SECRET)
+    : null;
+  if (!ownsContact) {
+    console.warn(
+      "masterclass: existing contact not verified, no intake session",
+    );
+  } else if (session) {
     cookieStore.set(SESSION_COOKIE, session, {
       ...SESSION_COOKIE_OPTIONS,
       maxAge: SESSION_TTL_MS / 1000,

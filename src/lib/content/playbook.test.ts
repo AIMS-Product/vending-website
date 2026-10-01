@@ -5,6 +5,7 @@ import {
   checkoutHref,
   finalOffer,
   host,
+  opportunityQuotes,
   playbookHref,
   stories,
 } from "./playbook";
@@ -50,8 +51,15 @@ describe("playbook offer", () => {
     expect(url.searchParams.get("wbraid")).toBe("w1");
   });
 
-  it("states the saving in whole dollars", () => {
-    expect(PRICE.save).toBe("Save $132 today");
+  it("keeps the price and income copy verbatim from GHL (legal copy)", () => {
+    expect(PRICE.anchor).toBe("$199");
+    expect(PRICE.save).toBe("Save $132.00 today");
+    expect(finalOffer.price).toBe("$67 Only");
+    expect(opportunityQuotes.map((q) => q.quote)).toEqual([
+      "“We have 45 locations, 77 machines, and did $98,000 last month…”",
+      "“With just 4 locations, I’m doing $25,000 a month in revenue…”",
+      "“In a few months, I went from zero experience to $5K profit a month!”",
+    ]);
   });
 
   it("teaser link keeps the query on /playbook", () => {

@@ -17,9 +17,8 @@ const mocks = vi.hoisted(() => ({
   redirect: vi.fn((url: string) => {
     throw new Error(`REDIRECT ${url}`);
   }),
-  checkPublicRateLimit: vi.fn(),
-  peekPublicRateLimit: vi.fn(),
-  recordPublicRateLimitHit: vi.fn(),
+  reserve: vi.fn(),
+  createAdminClient: vi.fn(),
   registerWebinarContact: vi.fn(),
   getMasterclassEvent: vi.fn(),
   config: {
@@ -41,9 +40,10 @@ vi.mock("@/lib/public-rate-limit", async () => ({
   ...(await vi.importActual<typeof import("@/lib/public-rate-limit")>(
     "@/lib/public-rate-limit",
   )),
-  checkPublicRateLimit: mocks.checkPublicRateLimit,
-  peekPublicRateLimit: mocks.peekPublicRateLimit,
-  recordPublicRateLimitHit: mocks.recordPublicRateLimitHit,
+  reservePublicRateLimit: mocks.reserve,
+}));
+vi.mock("@/lib/supabase/admin", () => ({
+  createAdminClient: mocks.createAdminClient,
 }));
 vi.mock("@/lib/ghl/webinar-registration", async () => ({
   ...(await vi.importActual<typeof import("@/lib/ghl/webinar-registration")>(
@@ -54,6 +54,87 @@ vi.mock("@/lib/ghl/webinar-registration", async () => ({
 vi.mock("@/lib/services/masterclass-event", () => ({
   getMasterclassEvent: mocks.getMasterclassEvent,
 }));
+
+type Row = {
+  id: number;
+  action: string;
+  ip: string | null;
+  email_hash: string | null;
+  occurred_at: string;
+};
+
+/**
+ * In-memory public_request_hits. Every call yields a macrotask, so concurrent
+ * submits advance in lockstep: all inserts land before any count runs, the
+ * worst interleaving for a check-then-insert limiter.
+ */
+function fakeStore() {
+  const rows: Row[] = [];
+  let nextId = 1;
+  const failures = { insert: false };
+  const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
+  const matches = (
+    filters: { action?: string; since?: string; or?: string },
+    r: Row,
+  ) => {
+    const terms = (filters.or ?? "").split(",").map((t) => t.split(".eq."));
+    return (
+      r.action === filters.action &&
+      r.occurred_at >= (filters.since ?? "") &&
+      terms.some(
+        ([col, val]) => (r as unknown as Record<string, unknown>)[col] === val,
+      )
+    );
+  };
+  const client = {
+    from: () => ({
+      insert: (row: Omit<Row, "id">) => ({
+        select: () => ({
+          single: async () => {
+            await tick();
+            if (failures.insert) {
+              return { data: null, error: { message: "insert denied" } };
+            }
+            const inserted = { ...row, id: nextId++ };
+            rows.push(inserted);
+            return { data: { id: inserted.id }, error: null };
+          },
+        }),
+      }),
+      select: () => {
+        const filters: { action?: string; since?: string; or?: string } = {};
+        const builder = {
+          eq: (_c: string, v: string) => ((filters.action = v), builder),
+          gte: (_c: string, v: string) => ((filters.since = v), builder),
+          or: (v: string) => ((filters.or = v), builder),
+          then: (resolve: (v: unknown) => unknown) =>
+            tick().then(() =>
+              resolve({
+                count: rows.filter((r) => matches(filters, r)).length,
+                error: null,
+              }),
+            ),
+        };
+        return builder;
+      },
+      delete: () => ({
+        eq: async (_c: string, id: number) => {
+          await tick();
+          const at = rows.findIndex((r) => r.id === id);
+          if (at >= 0) rows.splice(at, 1);
+          return { error: null };
+        },
+      }),
+    }),
+  };
+  return { rows, failures, client };
+}
+let store: ReturnType<typeof fakeStore>;
+
+function refuse() {
+  mocks.reserve.mockResolvedValueOnce({ allowed: false, release: vi.fn() });
+}
+const reservation = () => ({ allowed: true, release: vi.fn(async () => {}) });
 
 function form(overrides: Record<string, string | null> = {}) {
   const fields: Record<string, string | null> = {
@@ -73,17 +154,21 @@ function form(overrides: Record<string, string | null> = {}) {
   return data;
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
   mocks.config.GHL_WRITE_TOKEN = "pit-test";
   mocks.config.MASTERCLASS_SESSION_SECRET = "k".repeat(32);
   mocks.headers.mockResolvedValue(new Headers({ "x-real-ip": "1.2.3.4" }));
-  mocks.checkPublicRateLimit.mockResolvedValue(true);
-  mocks.peekPublicRateLimit.mockResolvedValue(true);
-  mocks.recordPublicRateLimitHit.mockResolvedValue(undefined);
+  store = fakeStore();
+  mocks.createAdminClient.mockReturnValue(store.client);
+  const real = await vi.importActual<typeof import("@/lib/public-rate-limit")>(
+    "@/lib/public-rate-limit",
+  );
+  mocks.reserve.mockImplementation(real.reservePublicRateLimit);
   mocks.registerWebinarContact.mockResolvedValue({
     outcome: "registered",
     contactId: "c1",
+    ownsContact: true,
   });
   mocks.getMasterclassEvent.mockResolvedValue({
     label: "October 6, 2026 at 7:30 PM CDT",
@@ -154,82 +239,101 @@ describe("registerForMasterclass", () => {
   });
 
   it("stops at the rate limit", async () => {
-    mocks.checkPublicRateLimit.mockResolvedValue(false);
+    refuse();
     const state = await registerForMasterclass({}, form());
     // The limiter also refuses during an outage, so never "too many".
     expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
     // Stops at the first refusal.
-    expect(mocks.checkPublicRateLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.reserve).toHaveBeenCalledTimes(1);
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
   });
 
-  it("spends the IP budget up front and only peeks the email and phone budgets, all fail closed", async () => {
+  it("reserves the IP, email and phone budgets before GHL is called", async () => {
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
       "REDIRECT",
     );
-    expect(mocks.checkPublicRateLimit.mock.calls).toEqual([
-      [
-        "masterclass_register_ip",
-        { ip: "1.2.3.4", email: null },
-        { failClosed: true },
-      ],
-    ]);
-    expect(mocks.peekPublicRateLimit.mock.calls).toEqual([
-      [
-        "masterclass_register",
-        { ip: null, email: "mary@example.com" },
-        { failClosed: true },
-      ],
-      [
-        "masterclass_register_phone",
-        { ip: null, email: "phone:+15415550123" },
-        { failClosed: true },
-      ],
-    ]);
-    // Spent only after GHL accepted the contact.
-    expect(mocks.recordPublicRateLimitHit.mock.calls).toEqual([
+    expect(mocks.reserve.mock.calls).toEqual([
+      ["masterclass_register_ip", { ip: "1.2.3.4", email: null }],
       ["masterclass_register", { ip: null, email: "mary@example.com" }],
       ["masterclass_register_phone", { ip: null, email: "phone:+15415550123" }],
     ]);
-    expect(
+    expect(store.rows).toHaveLength(3);
+    expect(mocks.reserve.mock.invocationCallOrder[2]).toBeLessThan(
       mocks.registerWebinarContact.mock.invocationCallOrder[0],
-    ).toBeLessThan(mocks.recordPublicRateLimitHit.mock.invocationCallOrder[0]);
+    );
   });
 
-  it("gives each phone its own budget, fail closed", async () => {
-    mocks.peekPublicRateLimit
-      .mockResolvedValueOnce(true)
-      .mockResolvedValueOnce(false);
+  it("refunds the email and phone reservations when the phone budget refuses", async () => {
+    const ip = reservation();
+    const email = reservation();
+    mocks.reserve
+      .mockResolvedValueOnce(ip)
+      .mockResolvedValueOnce(email)
+      .mockResolvedValueOnce({ allowed: false, release: vi.fn() });
     const state = await registerForMasterclass({}, form());
     expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
-    expect(mocks.peekPublicRateLimit).toHaveBeenLastCalledWith(
-      "masterclass_register_phone",
-      { ip: null, email: "phone:+15415550123" },
-      { failClosed: true },
-    );
+    expect(email.release).toHaveBeenCalledTimes(1);
+    expect(ip.release).not.toHaveBeenCalled();
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
-    expect(mocks.recordPublicRateLimitHit).not.toHaveBeenCalled();
   });
 
-  it("does not spend the email or phone budget when GHL fails", async () => {
+  it("refunds the email and phone rows (not the IP row) when GHL fails", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     mocks.registerWebinarContact.mockRejectedValue(new Error("GHL down"));
     const state = await registerForMasterclass({}, form());
     expect(state.errors?.form).toBe(registrationErrorCopy.failed);
-    expect(mocks.peekPublicRateLimit).toHaveBeenCalledTimes(2);
-    expect(mocks.recordPublicRateLimitHit).not.toHaveBeenCalled();
+    // Only the IP row survives: the person budgets were refunded.
+    expect(store.rows.map((r) => r.action)).toEqual([
+      "masterclass_register_ip",
+    ]);
   });
 
-  it("still confirms a registration whose budget hit could not be recorded", async () => {
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
-    mocks.recordPublicRateLimitHit.mockRejectedValue(new Error("db down"));
+  it("keeps the email and phone rows after a successful registration", async () => {
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed",
+      "REDIRECT",
     );
+    expect(store.rows.map((r) => r.action).sort()).toEqual([
+      "masterclass_register",
+      "masterclass_register_ip",
+      "masterclass_register_phone",
+    ]);
+  });
+
+  it("fails closed, logged, when the reservation cannot be written", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    store.failures.insert = true;
+    const state = await registerForMasterclass({}, form());
+    expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
+    expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
     expect(error).toHaveBeenCalledWith(
-      "masterclass: rate limit hit not recorded",
-      expect.objectContaining({ action: "masterclass_register" }),
+      "public rate limit reserve failed closed",
+      expect.objectContaining({ error: "insert denied" }),
     );
+  });
+
+  it("admits at most the phone budget (5) from N+3 concurrent submits for one phone", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const attempt = (i: number) =>
+      registerForMasterclass(
+        {},
+        form({ email: `victim${i}@example.com` }),
+      ).then(
+        (state) => (state.errors?.form ? "refused" : "admitted"),
+        () => "admitted", // redirect
+      );
+    const outcomes = await Promise.all(
+      Array.from({ length: 8 }, (_, i) => attempt(i)),
+    );
+    const admitted = outcomes.filter((o) => o === "admitted").length;
+    expect(admitted).toBeLessThanOrEqual(5);
+    expect(mocks.registerWebinarContact).toHaveBeenCalledTimes(admitted);
+    // Lockstep interleaving over-rejects, so also prove sequential use still
+    // admits a full budget.
+    store = fakeStore();
+    mocks.createAdminClient.mockReturnValue(store.client);
+    const sequential: string[] = [];
+    for (let i = 0; i < 8; i++) sequential.push(await attempt(i));
+    expect(sequential.filter((o) => o === "admitted")).toHaveLength(5);
   });
 
   it("does not promise a time window in the busy message", () => {
@@ -288,7 +392,7 @@ describe("registerForMasterclass", () => {
       registerForMasterclass({}, form({ [HONEYPOT_FIELD]: "spam.example" })),
     ).rejects.toThrow("REDIRECT");
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
-    expect(mocks.checkPublicRateLimit).not.toHaveBeenCalled();
+    expect(mocks.reserve).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledWith("masterclass: honeypot tripped");
     warn.mockRestore();
   });
@@ -311,6 +415,7 @@ describe("registerForMasterclass", () => {
       mocks.registerWebinarContact.mockResolvedValue({
         outcome,
         contactId: "c1",
+        ownsContact: true,
       });
       await expect(registerForMasterclass({}, form())).rejects.toThrow(
         "REDIRECT",
@@ -333,6 +438,22 @@ describe("registerForMasterclass", () => {
       });
     },
   );
+
+  it("registers but signs no session for an existing contact that does not match both email and phone", async () => {
+    mocks.registerWebinarContact.mockResolvedValue({
+      outcome: "already-registered",
+      contactId: "c9",
+      ownsContact: false,
+    });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?first=Mary",
+    );
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    // The earlier session was still cleared up front.
+    expect(mocks.cookieDelete).toHaveBeenCalled();
+    warn.mockRestore();
+  });
 
   it("registers exactly as before, with no cookie, when the secret is missing", async () => {
     mocks.config.MASTERCLASS_SESSION_SECRET = undefined;
@@ -361,7 +482,7 @@ describe("registerForMasterclass", () => {
       "GHL fails",
       () => mocks.registerWebinarContact.mockRejectedValue(new Error("x")),
     ],
-    ["rate limited", () => mocks.checkPublicRateLimit.mockResolvedValue(false)],
+    ["rate limited", () => refuse()],
     ["no write token", () => (mocks.config.GHL_WRITE_TOKEN = undefined)],
   ])(
     "drops an earlier registration's session when this one does not land (%s)",
@@ -382,6 +503,7 @@ describe("registerForMasterclass", () => {
     mocks.registerWebinarContact.mockResolvedValue({
       outcome: "registered",
       contactId: "c2",
+      ownsContact: true,
     });
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
       "REDIRECT",
