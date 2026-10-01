@@ -54,14 +54,15 @@ const TWO_SEGMENT_DYNAMIC_EXISTS: Record<
 
 /**
  * Two-segment families with their own routes whose existence the proxy
- * cannot (or need not) check here: qualification sessions are tokens the
- * page validates; the builder prefixes, /news, /admin and /auth are decided
+ * cannot (or need not) check here: qualification sessions and client portals
+ * are tokens the page validates; the builder prefixes, /news, /admin and /auth are decided
  * by an earlier branch.
  */
 const TWO_SEGMENT_ROUTED_ELSEWHERE = new Set<string>([
   // Route handlers such as /api/csp-report match the two-segment matcher.
   "api",
   "qualify",
+  "portal",
   "news",
   "admin",
   "auth",

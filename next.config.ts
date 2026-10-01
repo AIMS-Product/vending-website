@@ -258,6 +258,11 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "media2-production.mightynetworks.com",
       },
+      // The feed's author avatars (client portal wins module).
+      {
+        protocol: "https",
+        hostname: "media1-production-mightynetworks.imgix.net",
+      },
       // GHL-hosted Playbook offer art (/playbook): the filesafe CDN and the
       // GHL funnel-ai bucket, scoped to that bucket only.
       {

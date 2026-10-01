@@ -80,8 +80,8 @@ const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(
 export function isFunnelChromePath(pathname: string): boolean {
   if (isBookingFunnelPath(pathname)) return true;
   if (POST_CONVERSION_PATH_SET.has(pathname)) return true;
-  // The questionnaire is one dynamic route per session token.
-  return pathname.startsWith("/qualify/");
+  // The questionnaire and the client portal are one dynamic route per token.
+  return pathname.startsWith("/qualify/") || pathname.startsWith("/portal/");
 }
 
 /**
