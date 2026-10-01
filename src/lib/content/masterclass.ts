@@ -185,7 +185,41 @@ export const masterclassHero = {
   subheadline: "Learn how to build a cash-flowing vending route in 2026",
   highlight: "can't.",
   videoCue: "Watch Anthony's story",
+  /** Under the phone field. True to the GHL texts: link at T-15m and T-0. */
+  phoneHint: "We text your Zoom link and a 15-minute reminder.",
+  /** Sticky bottom bar (phones and desktop, once past the hero). */
+  stickyCta: "Save my free seat",
 };
+
+const STICKY_DATE = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/Chicago",
+  weekday: "short",
+  month: "short",
+  day: "numeric",
+  hour: "numeric",
+  minute: "2-digit",
+});
+
+/**
+ * The sticky bar's line: "Tue Oct 6 · 7:30 PM CT · Free" before the start,
+ * "Free live masterclass" once it has passed or with no date. `short` is
+ * the two-line phone form ("Tue Oct 6\n7:30 PM CT").
+ */
+export function stickyEventLine(
+  startsAt: string | null | undefined,
+  now: number,
+  short = false,
+): string {
+  const time = startsAt ? Date.parse(startsAt) : NaN;
+  if (Number.isNaN(time) || time <= now)
+    return short ? "Free live\nmasterclass" : "Free live masterclass";
+  const part = (type: string) =>
+    STICKY_DATE.formatToParts(time).find((p) => p.type === type)?.value ?? "";
+  const clock = `${part("hour")}:${part("minute")} ${part("dayPeriod")}`;
+  const day = `${part("weekday")} ${part("month")} ${part("day")}`;
+  // Phones: two short lines beside the button.
+  return short ? `${day}\n${clock} CT` : `${day} · ${clock} CT · Free`;
+}
 
 /** The four check-mark takeaways from the GHL registration page, verbatim. */
 export const masterclassTakeaways = [

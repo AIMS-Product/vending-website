@@ -12,14 +12,17 @@ export function ApplyCtaButton({
   children,
   size = "lg",
   className,
+  onClick,
 }: {
   children: React.ReactNode;
   size?: Size;
   className?: string;
+  onClick?: () => void;
 }) {
   return (
     <a
       href={`#${APPLY_QUIZ_ANCHOR}`}
+      onClick={onClick}
       className={buttonClass({ size, className })}
     >
       <span>{children}</span>

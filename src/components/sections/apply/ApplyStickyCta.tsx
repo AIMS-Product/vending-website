@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { APPLY_QUIZ_ANCHOR, applySticky } from "@/lib/content/apply-page";
+import { trackCtaClick } from "@/lib/tracking/funnel-events";
 import { ApplyCtaButton } from "./ApplyCtaButton";
 
 // Read by the chat launcher so it sits above the bar instead of on its button.
@@ -17,8 +18,15 @@ const OFFSET_VAR = "--sticky-cta-offset";
 // were already in.
 export function ApplyStickyCta({
   ctaLabel = applySticky.ctaLabel,
+  text = applySticky.text,
+  mobileText = "Launch your route in 90 days.",
+  trackAs,
 }: {
   ctaLabel?: string;
+  text?: string;
+  mobileText?: string;
+  /** When set, a click sends cta_clicked with this location. */
+  trackAs?: string;
 } = {}) {
   const [scrolled, setScrolled] = useState(false);
   const [formInView, setFormInView] = useState(false);
@@ -65,12 +73,16 @@ export function ApplyStickyCta({
     >
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-3.5 lg:px-10">
         <span className="text-[15px] font-black text-[#111111] max-sm:hidden">
-          {applySticky.text}
+          {text}
         </span>
-        <span className="text-[15px] font-black text-[#111111] sm:hidden">
-          Launch your route in 90 days.
+        <span className="text-[15px] leading-tight font-black whitespace-pre-line text-[#111111] sm:hidden">
+          {mobileText}
         </span>
-        <ApplyCtaButton size="md" className="shrink-0">
+        <ApplyCtaButton
+          size="md"
+          className="shrink-0"
+          onClick={trackAs ? () => trackCtaClick(trackAs) : undefined}
+        >
           {ctaLabel}
         </ApplyCtaButton>
       </div>

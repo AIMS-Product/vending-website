@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import {
   checkoutClickEvents,
+  scrollCtaEvents,
   claimOnce,
   pickUtms,
   registeredEvents,
@@ -93,5 +94,17 @@ describe("checkoutClickEvents", () => {
       placement: "hero",
     });
     expect(JSON.stringify(events)).not.toMatch(PII);
+  });
+});
+
+describe("scrollCtaEvents", () => {
+  it("names the location only, under its own event name", () => {
+    expect(scrollCtaEvents("sticky")).toEqual({
+      posthog: {
+        name: "scroll_cta_clicked",
+        properties: { location: "sticky" },
+      },
+      dataLayer: { event: "vp_cta_click", location: "sticky" },
+    });
   });
 });

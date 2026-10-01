@@ -73,8 +73,8 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
         }}
       />
       <div className="border-ink relative border-b-2 bg-white">
-        <div className="mx-auto flex max-w-[1180px] items-center px-5 py-3 lg:px-10">
-          <Wordmark height={44} eager />
+        <div className="mx-auto flex max-w-[1180px] items-center px-5 py-2 lg:px-10 lg:py-3">
+          <Wordmark height={36} eager className="lg:h-11! lg:w-[146px]!" />
         </div>
       </div>
       {/* One grid, in reading order: headline, subhead, form, takeaways,
@@ -82,11 +82,11 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
           headline. From lg the copy is top-anchored in column 1 (a fixed top
           row, a flexible bottom one) so form validation growing column 2
           never moves it, and the form spans every row of column 2. */}
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 pt-4 pb-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase lg:col-start-1 lg:row-start-2 lg:max-w-[620px]">
           {copy.eyebrow}
         </p>
-        <h1 className="v2-display text-ink mt-5 max-w-[20ch] text-[clamp(2.2rem,4.4vw,3.6rem)] leading-[1.14] uppercase lg:col-start-1 lg:row-start-3">
+        <h1 className="v2-display text-ink mt-2 max-w-[20ch] text-[clamp(1.8rem,4.4vw,3.6rem)] leading-[1.06] uppercase lg:col-start-1 lg:row-start-3 lg:mt-5 lg:leading-[1.14]">
           {sentences.map((sentence, index) => {
             const text = sentence.trim();
             const at = text.indexOf(copy.highlight);
@@ -106,12 +106,12 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
             );
           })}
         </h1>
-        <p className="text-ink mt-4 text-lg leading-snug font-bold lg:col-start-1 lg:row-start-4 lg:max-w-[620px]">
+        <p className="text-ink mt-3 text-base leading-snug font-bold sm:text-lg lg:col-start-1 lg:row-start-4 lg:mt-4 lg:max-w-[620px]">
           <NoBreak text={copy.subheadline} phrase="cash-flowing" />
         </p>
         <div
           id={APPLY_QUIZ_ANCHOR}
-          className="mt-6 w-full min-w-0 scroll-mt-6 self-start lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
+          className="mt-3 w-full min-w-0 scroll-mt-6 self-start lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
         >
           {aside}
         </div>

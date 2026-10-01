@@ -104,3 +104,20 @@ export function trackCheckoutClick(placement: string, href: string) {
   captureEvent("checkout_clicked", events.posthog, SEND_NOW);
   pushDataLayerEvent(events.dataLayer);
 }
+
+/**
+ * A scroll-to-form CTA click (e.g. the sticky bar). Not "cta_clicked": that
+ * name belongs to the attribution tracker's link clicks, a different schema.
+ */
+export function scrollCtaEvents(location: string) {
+  return {
+    posthog: { name: "scroll_cta_clicked", properties: { location } },
+    dataLayer: { event: "vp_cta_click", location },
+  };
+}
+
+export function trackCtaClick(location: string) {
+  const events = scrollCtaEvents(location);
+  captureEvent(events.posthog.name, events.posthog.properties, SEND_NOW);
+  pushDataLayerEvent(events.dataLayer);
+}

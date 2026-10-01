@@ -4,6 +4,7 @@ import {
   OutlookLogo,
 } from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
+import { LocalTimeLine } from "@/components/sections/masterclass/EventTiming";
 import {
   EventDateLine,
   UntilEnded,
@@ -99,6 +100,12 @@ export function ConfirmedHero({
               renderedAt={renderedAt}
             />
           </p>
+        ) : null}
+        {startsAt ? (
+          <LocalTimeLine
+            startsAt={startsAt}
+            className="mt-1 text-[15px] font-semibold text-slate-600"
+          />
         ) : null}
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}

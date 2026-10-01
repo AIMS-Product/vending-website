@@ -7,6 +7,10 @@ import {
   type RegistrationState,
 } from "@/app/masterclass/actions";
 import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
+import {
+  CompactCountdown,
+  LocalTimeLine,
+} from "@/components/sections/masterclass/EventTiming";
 import { liveErrors } from "@/components/sections/masterclass/field-errors";
 import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
@@ -97,12 +101,14 @@ export function RegistrationForm({
       action={action}
       onChange={markEdited}
       noValidate
-      className="rounded-card border-ink shadow-card border-2 bg-white p-6 sm:p-7"
+      className="rounded-card border-ink shadow-card border-2 bg-white p-4 sm:p-7"
     >
-      <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+      {/* Phones: dropped so the button fits the first screen; the phone
+          hint below still names Zoom. */}
+      <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase max-lg:hidden">
         {masterclassHero.formEyebrow}
       </p>
-      <p className="v2-display text-ink mt-2 text-[2rem] leading-none uppercase">
+      <p className="v2-display text-ink text-[1.75rem] leading-none uppercase lg:mt-2 lg:text-[2rem]">
         {masterclassHero.formHeading}
       </p>
       {eventLabel ? (
@@ -113,6 +119,12 @@ export function RegistrationForm({
             renderedAt={renderedAt}
           />
         </p>
+      ) : null}
+      {eventStartsAt ? (
+        <div className="mt-1 flex flex-wrap gap-x-3 text-sm text-slate-600">
+          <CompactCountdown startsAt={eventStartsAt} />
+          <LocalTimeLine startsAt={eventStartsAt} />
+        </div>
       ) : null}
 
       <input
@@ -129,7 +141,7 @@ export function RegistrationForm({
         <input key={key} type="hidden" name={key} value={value} />
       ))}
 
-      <div className="mt-5 grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-2">
+      <div className="mt-3 grid grid-cols-1 items-start gap-2.5 min-[360px]:grid-cols-2 lg:mt-4 lg:gap-3">
         <Field
           name="firstName"
           label="First name"
@@ -148,7 +160,7 @@ export function RegistrationForm({
           error={errors.lastName}
         />
       </div>
-      <div className="mt-3 grid gap-3">
+      <div className="mt-2.5 grid gap-2.5 lg:mt-3 lg:gap-3">
         <Field
           name="email"
           label="Email"
@@ -166,12 +178,13 @@ export function RegistrationForm({
           autoComplete="tel"
           defaultValue={values?.phone}
           error={errors.phone}
+          hint={masterclassHero.phoneHint}
         />
       </div>
 
       <label
         htmlFor="mc-smsConsent"
-        className="mt-4 flex cursor-pointer items-start gap-3 py-1 text-xs leading-relaxed text-slate-600"
+        className="mt-3 flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-slate-600 lg:mt-4 lg:py-1 lg:leading-relaxed"
       >
         <input
           id="mc-smsConsent"
@@ -200,7 +213,7 @@ export function RegistrationForm({
         disabled={pending}
         className={buttonClass({
           size: "lg",
-          className: "mt-5 w-full disabled:opacity-60",
+          className: "mt-4 w-full disabled:opacity-60 lg:mt-5",
         })}
       >
         {pending ? "Saving your seat…" : "Save my free seat"}
@@ -258,12 +271,15 @@ function Field({
   name,
   label,
   error,
+  hint,
   required = false,
   ...input
 }: {
   name: string;
   label: string;
   error?: string;
+  /** Why we ask; shown under the field, read with it. */
+  hint?: string;
   required?: boolean;
   type?: string;
   autoComplete?: string;
@@ -271,16 +287,23 @@ function Field({
   maxLength?: number;
 }) {
   const id = `mc-${name}`;
+  const describedBy =
+    [error && `${id}-error`, hint && `${id}-hint`].filter(Boolean).join(" ") ||
+    undefined;
   return (
     <div>
-      <FieldLabel htmlFor={id} required={required} className="mb-1.5 block">
+      <FieldLabel
+        htmlFor={id}
+        required={required}
+        className="mb-1 block lg:mb-1.5"
+      >
         {label}
       </FieldLabel>
       <input
         id={id}
         name={name}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? `${id}-error` : undefined}
+        aria-describedby={describedBy}
         className={cn(
           fieldClass,
           error && fieldErrorClass,
@@ -296,6 +319,11 @@ function Field({
           className="mt-1 text-xs font-semibold text-red-600"
         >
           {error}
+        </p>
+      ) : null}
+      {hint ? (
+        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
+          {hint}
         </p>
       ) : null}
     </div>

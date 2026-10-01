@@ -1340,7 +1340,21 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     status: "open",
     note: "Proves the site sign-up reaches Meta as Complete Registration.",
   },
+  {
+    item: "Pass the site's step events from Google Tag Manager to GA4",
+    owner: "Adam",
+    due: "Mon Oct 5",
+    status: "open",
+    note: "GA4 has none of vp_lead_submit, masterclass_registered or the form steps (checked Thu Oct 1). PostHog has them; the dashboard's form starts use GA4's own form_start until then.",
+  },
   // ------------------------------------------------------------------ done
+  {
+    item: "Sign-up page tuned for phones",
+    owner: "Site (done)",
+    due: "Thu Oct 1",
+    status: "done",
+    note: "Save-my-seat button on the first phone screen, sticky save-my-seat bar, countdown and the visitor's own time in the form, a line on why we ask for the phone.",
+  },
   {
     item: "16 review findings fixed and shipped",
     owner: "Site (done)",
@@ -1614,8 +1628,8 @@ export const READINESS = {
     },
     {
       area: "Drop-off tracking",
-      status: "green",
-      line: "Every step is recorded: page views, form started, form errors, registered, intake answered, Playbook viewed, checkout clicked (GA4 and PostHog).",
+      status: "yellow",
+      line: "PostHog records every step: page views, form started, form errors, registered, intake answered, Playbook viewed, checkout clicked. GA4 sees page views and its own form start and submit only: Google Tag Manager does not pass the site's step events on yet.",
     },
     {
       area: "Webinar dashboard",

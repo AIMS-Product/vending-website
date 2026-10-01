@@ -3,6 +3,7 @@ import "../home-v2.css";
 import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassHero } from "@/components/sections/masterclass/MasterclassHero";
+import { MasterclassStickyCta } from "@/components/sections/masterclass/MasterclassStickyCta";
 import { RegistrationForm } from "@/components/sections/masterclass/RegistrationForm";
 import {
   FitSection,
@@ -89,6 +90,7 @@ export default async function MasterclassPage({
         renderedAt={renderedAt}
       />
       <MasterclassFooter />
+      <MasterclassStickyCta startsAt={event.startsAt} renderedAt={renderedAt} />
     </div>
   );
 }

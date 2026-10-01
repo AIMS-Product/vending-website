@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ATTRIBUTION_KEYS,
+  stickyEventLine,
   MASTERCLASS_ICS_PATH,
   calendarIcs,
   calendarLinks,
@@ -254,5 +255,23 @@ describe("Show up live day wording", () => {
   it("keeps the GHL word when the start is unknown", () => {
     expect(liveDayWord(Date.now(), null)).toBe("tonight");
     expect(liveDayWord(Date.now(), "not a date")).toBe("tonight");
+  });
+});
+
+describe("stickyEventLine", () => {
+  const start = "2026-10-07T00:30:00.000Z"; // Tue Oct 6, 7:30 PM CDT
+  it("names the Central-time day and time before the start", () => {
+    expect(stickyEventLine(start, Date.parse(start) - 1)).toBe(
+      "Tue Oct 6 · 7:30 PM CT · Free",
+    );
+    expect(stickyEventLine(start, Date.parse(start) - 1, true)).toBe(
+      "Tue Oct 6\n7:30 PM CT",
+    );
+  });
+  it("drops the date once it has passed or is missing", () => {
+    expect(stickyEventLine(start, Date.parse(start))).toBe(
+      "Free live masterclass",
+    );
+    expect(stickyEventLine(null, 0)).toBe("Free live masterclass");
   });
 });
