@@ -24,6 +24,8 @@ import {
   GHL_FORWARD_EVENT_TYPE,
   type GhlForwardEnv,
 } from "@/lib/ghl/forward";
+import { NON_CLOSE_EVENT_TYPES } from "@/lib/close/event-types";
+import { KIT_SUBSCRIBE_EVENT_TYPE, subscribeToKit } from "@/lib/kit/subscribe";
 import { getLeadForwardSettings } from "@/lib/services/lead-forward-settings";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
@@ -389,19 +391,6 @@ function writesLeadSyncState(event: CloseSyncEventRow): boolean {
   return !NON_CLOSE_EVENT_TYPES.has(event.event_type);
 }
 
-/**
- * Event types that do not touch Close, so their outcome is not this lead's
- * Close sync state. `ghl_forward` pushes the lead to a partner's GoHighLevel:
- * an outage there must not mark leads `failed`, light up the /admin/leads
- * failed-sync banner, or overwrite a real Close diagnosis in
- * close_sync_last_error. The event row still records its own status, retries
- * and errors.
- */
-const NON_CLOSE_EVENT_TYPES = new Set<string>([
-  "warm_reply_activity",
-  GHL_FORWARD_EVENT_TYPE,
-]);
-
 async function dispatchCloseEvent(
   event: CloseSyncEventRow,
   {
@@ -452,6 +441,15 @@ async function dispatchCloseEvent(
   }
   if (event.event_type === GHL_FORWARD_EVENT_TYPE) {
     return syncGhlForward(event, { client, fetchImpl, ghlEnv });
+  }
+  if (event.event_type === KIT_SUBSCRIBE_EVENT_TYPE) {
+    if (!lead) throw new Error("Kit subscribe event has no lead.");
+    await subscribeToKit(
+      { email: lead.email, fullName: lead.full_name },
+      config,
+      fetchImpl,
+    );
+    return { leadId: event.close_lead_id, contactId: event.close_contact_id };
   }
   throw new Error(`Unsupported Close sync event type: ${event.event_type}`);
 }

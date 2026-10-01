@@ -109,6 +109,8 @@ const envSchema = z.object({
    * custom field id, used only on the token path. All absent means no forward
    * is queued at all, so nothing accumulates before they send credentials.
    */
+  /** Kit (MrPassive account) v4 key. Absent = newsletter signups are not pushed to Kit. */
+  KIT_API_KEY: optionalTrimmedOptionalEnv,
   WESCALE_GHL_WEBHOOK_URL: optionalTrimmedOptionalEnv,
   WESCALE_GHL_TOKEN: optionalTrimmedOptionalEnv,
   WESCALE_GHL_LOCATION_ID: optionalTrimmedOptionalEnv,
@@ -261,6 +263,7 @@ const parsed = envSchema.safeParse({
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   GHL_WRITE_TOKEN: process.env.GHL_WRITE_TOKEN,
   MASTERCLASS_SESSION_SECRET: process.env.MASTERCLASS_SESSION_SECRET,
+  KIT_API_KEY: process.env.KIT_API_KEY,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
   WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,
   WESCALE_GHL_LOCATION_ID: process.env.WESCALE_GHL_LOCATION_ID,

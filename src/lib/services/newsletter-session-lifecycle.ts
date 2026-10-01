@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isDuplicateDedupeError } from "@/lib/close/dedupe";
+import { queueKitSubscribe } from "@/lib/kit/subscribe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import {
@@ -74,6 +75,10 @@ export async function markNewsletterSubscription(
     normalized,
     nowIso,
     phase: "subscribed",
+  });
+  await queueKitSubscribe(client, {
+    leadSubmissionId: context.session.lead_submission_id,
+    nowIso,
   });
 
   return {

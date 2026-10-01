@@ -545,6 +545,22 @@ describe("adminRetryCloseSyncEvent", () => {
 
     expect(fake.state.updates).toEqual([]);
   });
+
+  it("does not reset the lead's Close status when retrying a non-Close event", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ event_type: "kit_subscribe" })],
+    });
+
+    await adminRetryCloseSyncEvent(
+      { eventId: "event_1" },
+      { client: fake.client },
+    );
+
+    expect(fake.state.events[0]).toMatchObject({ status: "pending" });
+    expect(
+      fake.state.updates.filter((u) => u.table === "lead_submissions"),
+    ).toEqual([]);
+  });
 });
 
 describe("adminDeleteLead", () => {

@@ -14,6 +14,7 @@ import {
   requiredText,
   type LeadSourceInputFields,
 } from "@/lib/services/lead-source-fields";
+import { queueKitSubscribe } from "@/lib/kit/subscribe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
 import { assignInvestVariant } from "@/lib/qualification/scoring";
@@ -199,6 +200,12 @@ export async function createQualificationIntakeSession(
     formVersion,
     nowIso,
   });
+
+  // Same check that set newsletter_subscribed_at above: a roadmap download is a
+  // subscription, so it goes to Kit too. Fail-soft and deduped per lead.
+  if (newsletterNoticeForPath(intake.landingPath)) {
+    await queueKitSubscribe(client, { leadSubmissionId: lead.id, nowIso });
+  }
 
   // Same follow-up SLA as the contact form, but only for a form that is
   // actually asking for a call. A newsletter signup reaches this same function

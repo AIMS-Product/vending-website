@@ -221,3 +221,28 @@ never overwrites a frozen value).
 Also paste `20260930121000_seo_ai_checks.sql` (AI Mode, ChatGPT, YouTube and
 LLM Mentions checks). Until it exists the AI visibility job logs
 `skipped: table missing`.
+
+## 10. Kit newsletter sync (20261001120000)
+
+Without it website newsletter signups save but never reach Kit (the queue
+insert is rejected and logged). Set `KIT_API_KEY` in Vercel too.
+
+```sql
+alter table public.close_sync_events
+  drop constraint if exists close_sync_events_event_type_check;
+
+alter table public.close_sync_events
+  add constraint close_sync_events_event_type_check
+  check (
+    event_type in (
+      'lead_create_or_update',
+      'qualification_enrichment',
+      'newsletter_enrichment',
+      'stale_follow_up_task',
+      'manual_retry',
+      'warm_reply_activity',
+      'ghl_forward',
+      'kit_subscribe'
+    )
+  );
+```
