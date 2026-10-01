@@ -1283,6 +1283,63 @@ export const SWAP_ROWS: readonly SwapRow[] = [
 ];
 
 export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
+  {
+    item: "Custom values checked for Oct 6: all correct except the Anthony Q&A date",
+    owner: "Site (done)",
+    due: "Thu Oct 1",
+    status: "done",
+    note: "Read live from GHL; Q&A fix is on Ivan's list.",
+  },
+  {
+    item: "Calendly > GHL zap: point it at the Oct 6 pipeline (bookings are going to Sept 29 right now)",
+    owner: "Ivan",
+    due: "Fri Oct 2",
+    status: "open",
+    note: "6 Oct-6-era bookings already landed in the Sept 29 pipeline since Sept 30.",
+  },
+  {
+    item: "Particpate > GHL zap: roll to the Oct 6 Zoom webinar (89802270705)",
+    owner: "Ivan",
+    due: "Mon Oct 5",
+    status: "open",
+    note: "Without it, Oct 6 attendance never reaches GHL and the attended / missed-it messages do not split.",
+  },
+  {
+    item: "Check the other zaps (GHL to Close lead, Attended, RDNA) and GHL workflow triggers for hard-coded Sept 29 ids or form-only triggers",
+    owner: "Ivan",
+    due: "Mon Oct 5",
+    status: "open",
+    note: "Not visible by API; a human has to open each one.",
+  },
+  {
+    item: "Set Anthony Q&A custom value to Thursday Oct 8 and its Zoom registration link",
+    owner: "Ivan",
+    due: "Wed Oct 7",
+    status: "open",
+    note: "Today it says Thursday, October 1; the text goes out the morning after the room.",
+  },
+
+  {
+    item: "Verify vendingpreneurs.com in Meta Business Settings (DNS TXT at ClouDNS) and keep Complete Registration as the top event",
+    owner: "Adam",
+    due: "Fri Oct 2",
+    status: "open",
+    note: "Domain is not verified today.",
+  },
+  {
+    item: "Duplicate one ad set to vendingpreneurs.com/masterclass with clean UTMs",
+    owner: "Adam",
+    due: "Mon Oct 5",
+    status: "open",
+    note: "utm_source=meta&utm_medium={{adset.id}}&utm_campaign=VP-Masterclass&utm_content={{ad.id}}; suggested ad set LLA 1%.",
+  },
+  {
+    item: "One test sign-up on the new page while watching Meta Events Manager (Test Events)",
+    owner: "Adam",
+    due: "Mon Oct 5",
+    status: "open",
+    note: "Proves the site sign-up reaches Meta as Complete Registration.",
+  },
   // ------------------------------------------------------------------ done
   {
     item: "16 review findings fixed and shipped",
@@ -1328,27 +1385,7 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     status: "decision",
     note: "Transcript-verified. If no answer by Mon Oct 5, ship GHL-verbatim wording unchanged.",
   },
-  {
-    item: "Verify Oct 6 custom values (Webinar Time, Upcoming webinar, Anthony Q&A, AddEvent) with a read-only pull",
-    owner: "Adam",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Oct 1 live check was OK except Anthony Q&A and Q&A Link; re-check Monday.",
-  },
-  {
-    item: "Roll Particpate > GHL and Calendly > GHL zaps to the Oct 6 Zoom webinar and pipeline",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Otherwise attendance and bookings land on the wrong event.",
-  },
-  {
-    item: "Check Meta Events Manager for Complete Registration from a site sign-up",
-    owner: "Team",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Needed before any ad points to /masterclass; GHL is signed out in Chrome so it needs a person.",
-  },
+
   {
     item: "Team review and sign-off, including a real iPhone and Android pass",
     owner: "Adam",
@@ -1400,13 +1437,7 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     status: "open",
     note: "Text at 15 minutes before and the booked email both say three; the booked email lists two.",
   },
-  {
-    item: "Replay expiry: Sunday 9 PM CT everywhere (recommended) or 11:59 PM",
-    owner: "Adam",
-    due: "Fri Oct 2",
-    status: "decision",
-    note: "Messages already say 9 PM; site constant is now 9 PM; the video-host gate must match.",
-  },
+
   {
     item: "Re-prove the Zoom registrar and Close zap after Ivan's Monday roll with one test registration",
     owner: "Ivan",
@@ -1548,12 +1579,50 @@ export const COMMS_COPY = {
   swapHeading: "What changes at the swap",
   swapIntro:
     "Step by step: what runs today, what runs after the swap, and who makes the change. The GoHighLevel pages stay up as the fallback until two webinars run clean.",
-  checklistHeading: "Launch checklist",
+  checklistHeading: "Who does what before Oct 6",
   checklistIntro:
-    "Nothing goes live until every line above \u201cDone\u201d is closed. Each line has one owner and a date.",
+    "Your decisions first, then one short list per person, soonest first. Nothing switches until the red lines in \u201cCan we switch this week?\u201d are closed.",
   jumpLinks: [
+    { href: "#readiness-heading", label: "Can we switch?" },
+    { href: "#checklist-heading", label: "Who does what" },
     { href: "#messages-heading", label: "Every message" },
     { href: "#swap-map-heading", label: "What changes" },
-    { href: "#checklist-heading", label: "Launch checklist" },
   ],
 } as const;
+
+/** Health check 2026-10-01 (read-only audits of live systems). */
+export const READINESS = {
+  heading: "Can we switch this week?",
+  verdict:
+    "Yes, as a split test: one Meta ad set on the new page, the rest on GoHighLevel. Full switch after two clean webinars. The red rows below must be closed first.",
+  checkedOn: "Checked against the live systems on Thu Oct 1",
+  rows: [
+    {
+      area: "Registration to GHL, Zoom, Close",
+      status: "green",
+      line: "All 65 Oct 6 registrants have a Zoom link, a Zoom registration, an opportunity and a Close lead. A site test reached Zoom and Close within seconds.",
+    },
+    {
+      area: "Zapier",
+      status: "red",
+      line: "Calendly > GHL is filing bookings under Sept 29 right now, and Particpate > GHL still points at the Sept 29 Zoom room. Ivan, by Mon Oct 5 (Calendly first).",
+    },
+    {
+      area: "Meta ads and tracking",
+      status: "yellow",
+      line: "Pixel on every page and ads already optimise for Complete Registration. Still to do: one ad set to the new page with clean UTMs, domain verification, and one test sign-up seen in Events Manager.",
+    },
+    {
+      area: "Drop-off tracking",
+      status: "green",
+      line: "Every step is recorded: page views, form started, form errors, registered, intake answered, Playbook viewed, checkout clicked (GA4 and PostHog).",
+    },
+    {
+      area: "Webinar dashboard",
+      status: "green",
+      line: "Publishing again after the key rotation. Shows site vs GHL-page sign-ups, all three intake answers and Playbook views.",
+    },
+  ],
+} as const;
+
+export type ReadinessStatus = "green" | "yellow" | "red";

@@ -1,3 +1,4 @@
+import { ReviewReadiness } from "./ReviewReadiness";
 import { COMMS_COPY } from "@/lib/content/masterclass-review-comms";
 import { ReviewReport } from "@/components/sections/masterclass/ReviewReport";
 import Link from "next/link";
@@ -170,6 +171,8 @@ export function ReviewGuide() {
             </a>
           ))}
         </nav>
+
+        <ReviewReadiness />
 
         <h2 className={H2}>{reviewCopy.stepsHeading}</h2>
         <ol className="mt-5 grid gap-4">
