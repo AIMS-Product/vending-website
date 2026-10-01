@@ -204,7 +204,7 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
             />
           </h2>
           <p className="mt-2 text-[15px] text-slate-600">
-            {members.length} members, in their own words. {storiesCopy.body}
+            {members.length} {storiesCopy.body}
           </p>
         </div>
         <StoriesToggle
@@ -214,6 +214,7 @@ export function StoriesGrid({ stories }: { stories: CaseStudyStory[] }) {
         >
           <StoryList
             stories={members}
+            media="image"
             collapse={{
               mobile: storiesCopy.initialMobile,
               desktop: storiesCopy.initial,
@@ -247,8 +248,14 @@ export function StoryList({
   columns = 4,
   collapse,
   statSize = "md",
+  media = "video",
 }: {
   stories: CaseStudyStory[];
+  /**
+   * "image" shows the thumbnail only, no player: on the sign-up page a video
+   * pulls people away from the form (Marc-Anthony, 2026-10-01).
+   */
+  media?: "video" | "image";
   columns?: 3 | 4;
   /** Headline stat size: "lg" for the three featured cards on /masterclass-confirmed. */
   statSize?: "md" | "lg";
@@ -277,7 +284,10 @@ export function StoryList({
               { "--v2-delay": `${(index % 4) * 0.07}s` } as React.CSSProperties
             }
             className={cn(
-              "rounded-card border-ink shadow-card hover:shadow-card-hover outline-brand-700 flex flex-col overflow-hidden border-2 bg-white outline-offset-4 transition hover:-translate-y-1 has-[button:focus-visible]:outline-3 data-[revealed]:has-[button:focus]:outline-3",
+              "rounded-card border-ink shadow-card outline-brand-700 flex flex-col overflow-hidden border-2 bg-white outline-offset-4 transition has-[button:focus-visible]:outline-3 data-[revealed]:has-[button:focus]:outline-3",
+              // Only a playable card lifts on hover; an image card is not a control.
+              media === "video" &&
+                "hover:shadow-card-hover hover:-translate-y-1",
               collapse &&
                 index >= collapse.desktop &&
                 "group-data-[expanded=false]/stories:hidden",
@@ -286,7 +296,17 @@ export function StoryList({
                 "max-md:group-data-[expanded=false]/stories:hidden",
             )}
           >
-            {embed ? (
+            {embed && media === "image" ? (
+              <div className="relative aspect-video w-full">
+                <Image
+                  src={`https://i.ytimg.com/vi/${story.youtube_video_id}/hqdefault.jpg`}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 280px, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              </div>
+            ) : embed ? (
               <YouTubeEmbedFrame
                 embed={embed}
                 title={`${story.member_name}'s story`}

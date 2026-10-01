@@ -289,7 +289,8 @@ export const storiesCopy = {
   eyebrow: "Real operators. Real routes.",
   heading: "People with jobs like yours",
   highlight: "jobs like yours",
-  body: "Play any story to watch it here.",
+  /** After the member count; the cards are images only (no player). */
+  body: "members, in their own words.",
   /** Stories shown before "more"; the rest open in place, never on a new page. */
   initial: 8,
   /** Below md, fewer cards before "more", so the second CTA is not 3,000px away. */
