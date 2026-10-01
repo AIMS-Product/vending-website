@@ -204,13 +204,13 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
         <h2 className="v2-display text-ink mt-3 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {replayTestimonialsCopy.heading}
         </h2>
-        <ul className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-10 flex flex-wrap justify-center gap-6">
           {replayTestimonials.map((item, index) => {
             const video = variant.testimonialVideos[index];
             return (
               <li
                 key={item.name}
-                className="rounded-card border-ink shadow-card flex flex-col overflow-hidden border-2 bg-white"
+                className="rounded-card border-ink shadow-card flex w-full flex-col overflow-hidden border-2 bg-white md:w-[calc(50%-0.75rem)] lg:w-[calc((100%-3rem)/3)]"
               >
                 {video ? (
                   <ReplayVideoPlayer
