@@ -83,10 +83,10 @@ export const reportCopy = {
         "Two on the live site. Each one checked in GHL, Zoom, Close, the Google Sheet, Meta and the inbox, then deleted everywhere.",
     },
     {
-      figure: "110",
-      label: "AI design inspectors, 5 rounds",
+      figure: "176",
+      label: "AI design inspectors and fixers, 8 rounds",
       detail:
-        "Every page on desktop and phone, side by side with the GHL original, plus a QA tester trying to break every link, form and embed. 152 findings in round one, fixed round by round (45, 21, 20, 17, 10 serious ones), then a final re-check of everything.",
+        "Every page on desktop and phone, side by side with the GHL original, plus a QA tester trying to break every link, form and embed in each round. 152 findings in the first round; every serious one was fixed and re-checked the next round, then three more full passes re-inspected everything from scratch.",
     },
     {
       figure: "2",
@@ -95,7 +95,7 @@ export const reportCopy = {
         "Independent reviewers on every change that writes to GoHighLevel. 23 confirmed issues (6 of them high severity), all fixed before launch.",
     },
     {
-      figure: "3,500+",
+      figure: "3,600+",
       label: "automated checks passing",
       detail:
         "Run on every change: type checks, linting and the full test suite of the site.",
