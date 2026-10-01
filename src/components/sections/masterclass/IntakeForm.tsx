@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
 import {
   saveMasterclassIntake,
   type IntakeState,
@@ -8,6 +8,8 @@ import {
 import { buttonClass } from "@/components/ui/Button";
 import { intakeCopy } from "@/lib/content/masterclass";
 import { cn } from "@/lib/utils";
+import { INTAKE_FORM_ID } from "@/lib/tracking/funnel-events";
+import { trackFormResult } from "@/lib/tracking/form-tracking";
 
 /**
  * The GHL thank-you page's three intake questions, written to the contact that
@@ -19,6 +21,27 @@ export function IntakeForm() {
     {},
   );
   const errors = state.errors ?? {};
+
+  // The answers are fixed radio options (no PII), so they ride as properties.
+  useEffect(() => {
+    if (state.saved) {
+      const answers = state.values ?? {};
+      trackFormResult({
+        formId: INTAKE_FORM_ID,
+        ok: true,
+        properties: {
+          ...answers,
+          questions_answered: Object.keys(answers).join(","),
+        },
+      });
+    } else if (state.errors) {
+      trackFormResult({
+        formId: INTAKE_FORM_ID,
+        ok: false,
+        errorKeys: Object.keys(state.errors),
+      });
+    }
+  }, [state]);
 
   return (
     // Sits under the bordered ShowUpLive band; PlaybookBand's top padding
@@ -42,7 +65,13 @@ export function IntakeForm() {
               {intakeCopy.saved}
             </p>
           ) : (
-            <form action={action} noValidate className="mt-6 grid gap-6">
+            <form
+              id={INTAKE_FORM_ID}
+              data-form-step="1"
+              action={action}
+              noValidate
+              className="mt-6 grid gap-6"
+            >
               {intakeCopy.questions.map((question, index) => {
                 const error = errors[question.name];
                 const errorId = `intake-${question.name}-error`;

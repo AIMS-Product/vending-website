@@ -127,6 +127,17 @@ export function isFormResolved(formId: string) {
   return resolvedForms.has(formId);
 }
 
+/**
+ * For forms whose success navigates away (a server action that redirects):
+ * mark the form resolved while its submit is in flight, so the route-change
+ * flush never counts a successful registrant as an abandonment; clear it again
+ * when the submit comes back with errors.
+ */
+export function setFormInFlight(formId: string, inFlight: boolean) {
+  if (inFlight) resolvedForms.add(formId);
+  else resolvedForms.delete(formId);
+}
+
 export function resetResolvedForms() {
   resolvedForms.clear();
 }

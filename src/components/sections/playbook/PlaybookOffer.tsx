@@ -74,6 +74,7 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
             <PlaybookCta
               href={checkoutHref}
               label={BUY_CTA}
+              placement="offer"
               className="lg:mt-8"
             />
           </div>
@@ -217,7 +218,7 @@ export function PlaybookMoreBonuses({ checkoutHref }: PlaybookOfferProps) {
           ))}
         </ul>
         <div className="mt-12 flex justify-center">
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} />
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} placement="offer" />
         </div>
       </div>
     </section>

@@ -40,7 +40,12 @@ export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
               </span>
             </p>
           </div>
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
+          <PlaybookCta
+            href={checkoutHref}
+            label={BUY_CTA}
+            placement="hero"
+            className="mt-6"
+          />
           <dl className="border-ink mt-9 grid max-w-lg grid-cols-3 gap-x-5 border-t-2 pt-4 sm:grid-cols-[repeat(3,auto)] sm:justify-between sm:gap-x-3">
             {stats.map((s) => (
               <div key={s.label}>

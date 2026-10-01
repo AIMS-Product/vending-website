@@ -14,6 +14,7 @@ import {
 import { ShowUpLive } from "@/components/sections/masterclass/ShowUpLive";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
+import { RegisteredTracker } from "@/components/sections/masterclass/RegisteredTracker";
 import { config } from "@/lib/config";
 import {
   calendarLinks,
@@ -84,6 +85,7 @@ export default async function MasterclassConfirmedPage({
   return (
     <div className={anton.variable}>
       <StripPiiParams />
+      <RegisteredTracker />
       <RevealObserver />
       <ConfirmedHero
         first={first}

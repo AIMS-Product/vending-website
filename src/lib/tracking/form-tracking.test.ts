@@ -7,6 +7,7 @@ vi.mock("@/lib/tracking/posthog", () => ({
 }));
 
 import {
+  setFormInFlight,
   abandonmentProperties,
   formIdentity,
   isFormResolved,
@@ -128,5 +129,14 @@ describe("trackFormResult", () => {
       },
       undefined,
     );
+  });
+});
+
+describe("setFormInFlight", () => {
+  it("keeps a redirecting submit from counting as abandoned, until it fails", () => {
+    setFormInFlight("masterclass-step-1", true);
+    expect(isFormResolved("masterclass-step-1")).toBe(true);
+    setFormInFlight("masterclass-step-1", false);
+    expect(isFormResolved("masterclass-step-1")).toBe(false);
   });
 });

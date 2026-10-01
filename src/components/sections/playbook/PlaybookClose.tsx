@@ -48,7 +48,12 @@ export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-8" />
+          <PlaybookCta
+            href={checkoutHref}
+            label={BUY_CTA}
+            placement="close"
+            className="mt-8"
+          />
         </div>
       </div>
     </section>
@@ -161,6 +166,7 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
             <PlaybookCta
               href={checkoutHref}
               label={finalOffer.cta}
+              placement="close"
               className="mt-7"
             />
             <p className="text-ink/70 mt-4 text-xs font-bold">

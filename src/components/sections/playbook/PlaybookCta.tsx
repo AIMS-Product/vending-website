@@ -1,9 +1,11 @@
-import { Button } from "@/components/ui/Button";
+import { CheckoutLink } from "./CheckoutLink";
 import { cn } from "@/lib/utils";
 
 interface PlaybookCtaProps {
   href: string;
   label: string;
+  /** Where on the page the button sits, for the checkout_clicked event. */
+  placement: "hero" | "offer" | "proof" | "close";
   className?: string;
 }
 
@@ -11,16 +13,20 @@ interface PlaybookCtaProps {
  * Every buy button on /playbook: one link to the GHL order form. Full width
  * below sm so every phone CTA is the same 56px bar.
  */
-export function PlaybookCta({ href, label, className }: PlaybookCtaProps) {
+export function PlaybookCta({
+  href,
+  label,
+  placement,
+  className,
+}: PlaybookCtaProps) {
   return (
-    <Button
+    <CheckoutLink
       href={href}
-      size="lg"
-      showArrow
+      placement={placement}
       className={cn("min-h-14 w-full sm:w-auto", className)}
     >
       {label}
-    </Button>
+    </CheckoutLink>
   );
 }
 

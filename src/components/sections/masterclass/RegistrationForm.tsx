@@ -12,6 +12,11 @@ import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
 import {
+  MASTERCLASS_FORM_ID,
+  registrationFailure,
+} from "@/lib/tracking/funnel-events";
+import { setFormInFlight, trackFormResult } from "@/lib/tracking/form-tracking";
+import {
   HONEYPOT_FIELD,
   SMS_CONSENT_TEXT,
   masterclassHero,
@@ -64,9 +69,31 @@ export function RegistrationForm({
       form?.querySelector<HTMLElement>("#mc-form-error")?.focus();
   }, [state.errors]);
 
+  // Success redirects to /masterclass-confirmed, which unmounts this form and
+  // flushes abandonment; an in-flight submit must not read as abandoned.
+  useEffect(() => {
+    if (pending) setFormInFlight(MASTERCLASS_FORM_ID, true);
+  }, [pending]);
+
+  // Reports why a submit failed (field names and a reason, never values). The
+  // success path redirects, so its event fires on /masterclass-confirmed.
+  useEffect(() => {
+    if (!state.errors) return;
+    const { reason, errorKeys } = registrationFailure(state.errors);
+    setFormInFlight(MASTERCLASS_FORM_ID, false);
+    trackFormResult({
+      formId: MASTERCLASS_FORM_ID,
+      ok: false,
+      errorKeys,
+      properties: { reason },
+    });
+  }, [state.errors]);
+
   return (
     <form
       ref={formRef}
+      id={MASTERCLASS_FORM_ID}
+      data-form-step="1"
       action={action}
       onChange={markEdited}
       noValidate

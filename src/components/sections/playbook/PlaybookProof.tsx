@@ -178,7 +178,7 @@ export function PlaybookStories({ checkoutHref }: PlaybookProofProps) {
           ))}
         </ul>
         <div className="mt-12 flex justify-center">
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} />
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} placement="proof" />
         </div>
       </div>
     </section>
