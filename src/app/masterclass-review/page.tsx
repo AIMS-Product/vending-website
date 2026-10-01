@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { redirect } from "next/navigation";
 import "../home-v2.css";
 import { ReviewGuide } from "@/components/sections/masterclass/ReviewGuide";
 import { getAuthorizedAdmin } from "@/lib/supabase/auth";
@@ -17,10 +17,11 @@ export const dynamic = "force-dynamic";
  * Internal briefing (conflicting member figures, process notes). The proxy's
  * /admin gate does not cover this path, so the page gates itself: signed in
  * and on the `app_users` allowlist (any role, so the shared team login can
- * read it), otherwise a plain 404 that does not reveal the route exists.
+ * read it). Anyone else goes to the admin login, which brings them back here:
+ * the team is sent this link directly, and a 404 read as a broken link.
  */
 export default async function MasterclassReviewPage() {
   const admin = await getAuthorizedAdmin();
-  if (!admin) notFound();
+  if (!admin) redirect("/admin/login?next=%2Fmasterclass-review");
   return <ReviewGuide />;
 }

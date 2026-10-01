@@ -215,15 +215,23 @@ export async function registerWebinarContact(
 ): Promise<WebinarRegistrationResult> {
   const call = ghlCaller(options);
 
-  const found = duplicateResponse.safeParse(
-    await call(
-      "lookup",
-      "GET",
-      `/contacts/search/duplicate?${new URLSearchParams({ locationId, email: person.email })}`,
-    ),
-  );
-  if (!found.success) throw new WebinarRegistrationError("lookup", 200);
-  const existing = found.data.contact;
+  const lookup = async (by: { email: string } | { number: string }) => {
+    const found = duplicateResponse.safeParse(
+      await call(
+        "lookup",
+        "GET",
+        `/contacts/search/duplicate?${new URLSearchParams({ locationId, ...by })}`,
+      ),
+    );
+    if (!found.success) throw new WebinarRegistrationError("lookup", 200);
+    return found.data.contact ?? null;
+  };
+  const existing = await lookup({ email: person.email });
+  // A new email with a number another contact already holds: GHL's upsert can
+  // dedupe on phone and land on (and rewrite) that contact, handing this
+  // browser its intake session. Register the email on its own contact instead,
+  // without the number.
+  const phoneOwner = existing ? null : await lookup({ number: person.phone });
   if (person.eventTag && existing?.tags?.includes(person.eventTag)) {
     return {
       outcome: "already-registered",
@@ -239,7 +247,7 @@ export async function registerWebinarContact(
   const profile = {
     firstName: cell(person.firstName),
     lastName: cell(person.lastName),
-    phone: person.phone,
+    phone: phoneOwner ? "" : person.phone,
   };
   const fields = Object.fromEntries(
     Object.entries(profile).filter(
@@ -270,7 +278,10 @@ export async function registerWebinarContact(
   const contact = saved.data.contact;
   // The upsert follows the location's duplicate rules; it must land on the
   // contact the email lookup found, or the checks above judged someone else.
-  if (existing && existing.id !== contact.id) {
+  if (
+    (existing && existing.id !== contact.id) ||
+    (phoneOwner && phoneOwner.id === contact.id)
+  ) {
     throw new WebinarRegistrationError("upsert", 409);
   }
 

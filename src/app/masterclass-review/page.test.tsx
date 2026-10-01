@@ -4,8 +4,8 @@ import { reportCopy } from "@/lib/content/masterclass-review-report";
 
 const mocks = vi.hoisted(() => ({
   getAuthorizedAdmin: vi.fn(),
-  notFound: vi.fn(() => {
-    throw new Error("NEXT_NOT_FOUND");
+  redirect: vi.fn((to: string) => {
+    throw new Error(`NEXT_REDIRECT ${to}`);
   }),
 }));
 
@@ -14,7 +14,7 @@ vi.mock("@/lib/supabase/auth", () => ({
 }));
 
 vi.mock("next/navigation", () => ({
-  notFound: mocks.notFound,
+  redirect: mocks.redirect,
 }));
 
 import MasterclassReviewPage from "./page";
@@ -22,18 +22,20 @@ import MasterclassReviewPage from "./page";
 describe("/masterclass-review", () => {
   beforeEach(() => {
     mocks.getAuthorizedAdmin.mockReset();
-    mocks.notFound.mockClear();
+    mocks.redirect.mockClear();
   });
 
-  it("404s an anonymous request and never renders the decisions", async () => {
+  it("sends an anonymous request to the login and never renders the decisions", async () => {
     mocks.getAuthorizedAdmin.mockResolvedValue(null);
     let html = "";
     await expect(
       (async () => {
         html = renderToStaticMarkup(await MasterclassReviewPage());
       })(),
-    ).rejects.toThrow("NEXT_NOT_FOUND");
-    expect(mocks.notFound).toHaveBeenCalledTimes(1);
+    ).rejects.toThrow("NEXT_REDIRECT");
+    expect(mocks.redirect).toHaveBeenCalledWith(
+      "/admin/login?next=%2Fmasterclass-review",
+    );
     expect(html).not.toContain(reportCopy.decisionsHeading);
   });
 
@@ -43,7 +45,7 @@ describe("/masterclass-review", () => {
       role: "viewer",
     });
     const html = renderToStaticMarkup(await MasterclassReviewPage());
-    expect(mocks.notFound).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
     expect(html).toContain(reportCopy.decisionsHeading);
   });
 });

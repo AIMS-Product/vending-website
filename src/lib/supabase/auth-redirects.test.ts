@@ -64,6 +64,13 @@ describe("admin auth redirects", () => {
   it("keeps post-login redirects inside admin routes", () => {
     expect(normalizeAdminNextPath("/admin/pages")).toBe("/admin/pages");
     expect(normalizeAdminNextPath("/admin/news/123")).toBe("/admin/news/123");
+    expect(normalizeAdminNextPath("/masterclass-review")).toBe(
+      "/masterclass-review",
+    );
+    expect(normalizeAdminNextPath("/masterclass-review/x")).toBe(
+      ADMIN_AFTER_LOGIN_PATH,
+    );
+    expect(normalizeAdminNextPath("/masterclass")).toBe(ADMIN_AFTER_LOGIN_PATH);
     expect(normalizeAdminNextPath("/admin/login")).toBe(ADMIN_AFTER_LOGIN_PATH);
     expect(normalizeAdminNextPath(ADMIN_RESET_PASSWORD_PATH)).toBe(
       ADMIN_AFTER_LOGIN_PATH,

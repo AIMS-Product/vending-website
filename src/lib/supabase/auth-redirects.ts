@@ -4,7 +4,9 @@ export const ADMIN_FORGOT_PASSWORD_PATH = "/admin/forgot-password";
 export const ADMIN_RESET_PASSWORD_PATH = "/admin/reset-password";
 export const AUTH_CALLBACK_PATH = "/auth/callback";
 
-const safeAdminPathPattern = /^\/admin(\/|$)/;
+// /masterclass-review gates itself on the same admin session (its page.tsx),
+// so a teammate sent there by the login returns to it after signing in.
+const safeAdminPathPattern = /^\/(admin(\/|$)|masterclass-review$)/;
 const emailParamPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const expiredLinkErrorMessagePattern = /\b(invalid|expired)\b/;
 

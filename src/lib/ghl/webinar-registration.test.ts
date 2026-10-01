@@ -39,6 +39,8 @@ type Call = { method: string; url: string; body: unknown };
 /** Scripted GHL: each route answers from the map; every call is recorded. */
 function ghl(routes: {
   duplicate?: unknown;
+  /** Answer to the by-phone lookup (made only when the email finds nobody). */
+  duplicateByPhone?: unknown;
   upsert?: unknown;
   rawBody?: Partial<Record<string, string>>;
   status?: Partial<Record<string, number[]>>;
@@ -50,7 +52,9 @@ function ghl(routes: {
   const fetchImpl = vi.fn(async (url: string, init: RequestInit) => {
     const method = init.method ?? "GET";
     const route = url.includes("/search/duplicate")
-      ? "duplicate"
+      ? url.includes("number=")
+        ? "duplicate-phone"
+        : "duplicate"
       : url.endsWith("/contacts/upsert")
         ? "upsert"
         : `${method} tags`;
@@ -65,13 +69,21 @@ function ghl(routes: {
     const json =
       route === "duplicate"
         ? { contact: routes.duplicate ?? null }
-        : route === "upsert"
-          ? (routes.upsert ?? { new: true, contact: { id: "c1", tags: [] } })
-          : { tags: [] };
+        : route === "duplicate-phone"
+          ? { contact: routes.duplicateByPhone ?? null }
+          : route === "upsert"
+            ? (routes.upsert ?? { new: true, contact: { id: "c1", tags: [] } })
+            : { tags: [] };
     return new Response(JSON.stringify(json), { status });
   });
   return { calls, fetchImpl: fetchImpl as unknown as typeof fetch };
 }
+
+const upsertBody = (calls: Call[]) =>
+  calls.find((c) => c.url.endsWith("/contacts/upsert"))?.body as Record<
+    string,
+    unknown
+  >;
 
 describe("webinarEventTag", () => {
   it("matches the tags on record, not zero-padded, roller month keys", () => {
@@ -101,11 +113,12 @@ describe("registerWebinarContact", () => {
 
     expect(calls.map((c) => `${c.method} ${c.url.split("?")[0]}`)).toEqual([
       "GET https://services.leadconnectorhq.com/contacts/search/duplicate",
+      "GET https://services.leadconnectorhq.com/contacts/search/duplicate",
       "POST https://services.leadconnectorhq.com/contacts/upsert",
       "DELETE https://services.leadconnectorhq.com/contacts/c1/tags",
       "POST https://services.leadconnectorhq.com/contacts/c1/tags",
     ]);
-    const upsert = calls[1].body as Record<string, unknown>;
+    const upsert = upsertBody(calls) as Record<string, unknown>;
     expect(upsert).toMatchObject({
       locationId: "loc1",
       firstName: "Mary",
@@ -122,7 +135,7 @@ describe("registerWebinarContact", () => {
       { id: UTM_FIELD_IDS.utm_content, field_value: "120251367443830338" },
       CONSENT,
     ]);
-    expect(calls[3].body).toEqual({ tags: [SITE_REGISTRATION_TAG] });
+    expect(calls.at(-1)?.body).toEqual({ tags: [SITE_REGISTRATION_TAG] });
   });
 
   it.each([
@@ -177,7 +190,7 @@ describe("registerWebinarContact", () => {
       { ...person, lastName: "" },
       { ...auth, fetchImpl },
     );
-    expect(calls[1].body).not.toHaveProperty("lastName");
+    expect(upsertBody(calls)).not.toHaveProperty("lastName");
   });
 
   it("strips spreadsheet formula prefixes", async () => {
@@ -187,7 +200,7 @@ describe("registerWebinarContact", () => {
       { ...auth, fetchImpl },
     );
     expect(
-      (calls[1].body as { customFields: unknown[] }).customFields[0],
+      (upsertBody(calls) as { customFields: unknown[] }).customFields[0],
     ).toEqual({ id: UTM_FIELD_IDS.utm_campaign, field_value: "HYPERLINK(1)" });
   });
 
@@ -443,5 +456,48 @@ describe("saveWebinarIntake", () => {
       saveWebinarIntake("c1", answers, { ...auth, fetchImpl }),
     ).rejects.toBeInstanceOf(WebinarRegistrationError);
     expect(puts(calls)).toHaveLength(3);
+  });
+});
+
+describe("registerWebinarContact: a number another contact holds", () => {
+  const victim = {
+    id: "victim",
+    email: "victim@example.com",
+    phone: "+15415550123",
+    tags: [],
+  };
+
+  it("registers the new email without the number and grants its own session", async () => {
+    const { calls, fetchImpl } = ghl({
+      duplicate: null,
+      duplicateByPhone: victim,
+      upsert: { new: true, contact: { id: "fresh", tags: [] } },
+    });
+    const result = await registerWebinarContact(person, { ...auth, fetchImpl });
+    const upsert = calls.find((c) => c.url.endsWith("/contacts/upsert"));
+    expect(upsert?.body).not.toHaveProperty("phone");
+    expect(result).toMatchObject({ contactId: "fresh", ownsContact: true });
+  });
+
+  it("refuses when the upsert still lands on the number's owner", async () => {
+    const { calls, fetchImpl } = ghl({
+      duplicate: null,
+      duplicateByPhone: victim,
+      upsert: { new: false, contact: victim },
+    });
+    await expect(
+      registerWebinarContact(person, { ...auth, fetchImpl }),
+    ).rejects.toBeInstanceOf(WebinarRegistrationError);
+    expect(calls.some((c) => c.url.includes("/tags"))).toBe(false);
+  });
+
+  it("does not look the number up when the email already matched", async () => {
+    const mary = { ...victim, email: person.email };
+    const { calls, fetchImpl } = ghl({
+      duplicate: mary,
+      upsert: { new: false, contact: mary },
+    });
+    await registerWebinarContact(person, { ...auth, fetchImpl });
+    expect(calls.some((c) => c.url.includes("number="))).toBe(false);
   });
 });
