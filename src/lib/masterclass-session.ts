@@ -15,6 +15,14 @@ export const SESSION_TTL_MS = 2 * 60 * 60 * 1000;
 export const SESSION_COOKIE_PATH = "/masterclass-confirmed";
 
 /** Every write of the cookie (set, overwrite, expire) uses these. */
+/**
+ * Set only by a real registration (never the honeypot path): carries the first
+ * name for the greeting so it stays out of the URL (and out of GA4's page
+ * location), and tells the confirmed page to count one conversion.
+ */
+export const REGISTERED_COOKIE = "mc_reg";
+export const REGISTERED_TTL_S = 600;
+
 export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true,
   secure: true,

@@ -24,6 +24,7 @@ import {
   safeFirstName,
 } from "@/lib/content/masterclass";
 import {
+  REGISTERED_COOKIE,
   SESSION_COOKIE,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
@@ -76,7 +77,10 @@ export default async function MasterclassConfirmedPage({
   );
   // Same name rule as the form: anything else falls back to the nameless
   // greeting and no name is forwarded to the checkout.
-  const first = safeFirstName(params);
+  // A real registration leaves the name in a short-lived cookie (never the
+  // URL); team-review and older links still carry ?first=.
+  const registeredAs = cookieStore.get(REGISTERED_COOKIE)?.value;
+  const first = safeFirstName({ first: registeredAs ?? params.first });
   const renderedAt = renderTime();
   const links = event.startsAt
     ? calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)))
@@ -85,7 +89,7 @@ export default async function MasterclassConfirmedPage({
   return (
     <div className={anton.variable}>
       <StripPiiParams />
-      <RegisteredTracker />
+      <RegisteredTracker justRegistered={registeredAs !== undefined} />
       <RevealObserver />
       <ConfirmedHero
         first={first}

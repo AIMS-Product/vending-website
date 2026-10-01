@@ -27,6 +27,8 @@ import {
 import {
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
+  REGISTERED_COOKIE,
+  REGISTERED_TTL_S,
   SESSION_TTL_MS,
   signMasterclassSession,
 } from "@/lib/masterclass-session";
@@ -126,7 +128,7 @@ export async function registerForMasterclass(
 
   // The ad attribution rides along, so the confirmation page can hand it on
   // to the Playbook checkout. Whitelisted and capped by the schema above.
-  const next = new URLSearchParams({ first: parsed.data.firstName });
+  const next = new URLSearchParams();
   for (const key of ATTRIBUTION_KEYS) {
     const value = parsed.data.attribution[key];
     if (value) next.set(key, value.slice(0, 200));
@@ -245,5 +247,9 @@ export async function registerForMasterclass(
     );
   }
 
+  cookieStore.set(REGISTERED_COOKIE, parsed.data.firstName, {
+    ...SESSION_COOKIE_OPTIONS,
+    maxAge: REGISTERED_TTL_S,
+  });
   redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
 }

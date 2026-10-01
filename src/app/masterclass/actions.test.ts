@@ -177,12 +177,16 @@ beforeEach(async () => {
   });
 });
 
+/** Writes of the intake session cookie (the registered cookie is separate). */
+const sessionSets = () =>
+  mocks.cookieSet.mock.calls.filter(([name]) => name === "mc_session");
+
 describe("registerForMasterclass", () => {
   it("carries the ad attribution into the confirmation redirect", async () => {
     await expect(
       registerForMasterclass({}, form({ gclid: "g-1" })),
     ).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary&utm_source=meta&utm_content=120251367443830338&gclid=g-1",
+      "REDIRECT /masterclass-confirmed?utm_source=meta&utm_content=120251367443830338&gclid=g-1",
     );
   });
 
@@ -196,7 +200,7 @@ describe("registerForMasterclass", () => {
 
   it("registers through GHL with this room's tag, then confirms", async () => {
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary",
+      "REDIRECT /masterclass-confirmed?",
     );
     expect(mocks.registerWebinarContact).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -420,8 +424,15 @@ describe("registerForMasterclass", () => {
       await expect(registerForMasterclass({}, form())).rejects.toThrow(
         "REDIRECT",
       );
-      expect(mocks.cookieSet).toHaveBeenCalledTimes(1);
-      const [name, value, options] = mocks.cookieSet.mock.calls[0];
+      expect(sessionSets()).toHaveLength(1);
+      // The greeting name rides in a short-lived registered cookie, never the URL.
+      const registered = mocks.cookieSet.mock.calls.filter(
+        ([cookie]) => cookie === "mc_reg",
+      );
+      expect(registered).toHaveLength(1);
+      expect(registered[0][1]).toBe("Mary");
+      expect(registered[0][2]).toMatchObject({ httpOnly: true, maxAge: 600 });
+      const [name, value, options] = sessionSets()[0];
       expect(name).toBe(SESSION_COOKIE);
       expect(
         verifyMasterclassSession(
@@ -447,9 +458,9 @@ describe("registerForMasterclass", () => {
     });
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary",
+      "REDIRECT /masterclass-confirmed?",
     );
-    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(sessionSets()).toHaveLength(0);
     // The earlier session was still cleared up front.
     expect(mocks.cookieDelete).toHaveBeenCalled();
     warn.mockRestore();
@@ -459,10 +470,10 @@ describe("registerForMasterclass", () => {
     mocks.config.MASTERCLASS_SESSION_SECRET = undefined;
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary",
+      "REDIRECT /masterclass-confirmed?",
     );
     expect(mocks.registerWebinarContact).toHaveBeenCalledTimes(1);
-    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(sessionSets()).toHaveLength(0);
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
@@ -495,7 +506,7 @@ describe("registerForMasterclass", () => {
         name: SESSION_COOKIE,
         path: "/masterclass-confirmed",
       });
-      expect(mocks.cookieSet).not.toHaveBeenCalled();
+      expect(sessionSets()).toHaveLength(0);
     },
   );
 
@@ -540,7 +551,7 @@ describe("registerForMasterclass around the event date", () => {
   it("tags and confirms before the start", async () => {
     vi.setSystemTime(new Date("2026-10-06T12:00:00Z"));
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary",
+      "REDIRECT /masterclass-confirmed?",
     );
     expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBe(
       "webinar-oct6",
@@ -550,7 +561,7 @@ describe("registerForMasterclass around the event date", () => {
   it("still tags and confirms inside the 90-minute live window", async () => {
     vi.setSystemTime(new Date("2026-10-07T01:59:00Z"));
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
-      "REDIRECT /masterclass-confirmed?first=Mary",
+      "REDIRECT /masterclass-confirmed?",
     );
     expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBe(
       "webinar-oct6",
@@ -565,7 +576,7 @@ describe("registerForMasterclass around the event date", () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
     expect(mocks.registerWebinarContact).toHaveBeenCalledTimes(1);
     expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBeNull();
-    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(sessionSets()).toHaveLength(0);
     expect(warn).toHaveBeenCalledWith(
       "masterclass: event date is stale, registering untagged",
       expect.objectContaining({ startsAt }),
