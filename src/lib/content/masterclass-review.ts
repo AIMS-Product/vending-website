@@ -16,7 +16,7 @@ export const reviewCopy = {
   steps: [
     {
       title: "Register",
-      body: "Open the registration page on your phone and sign up with your real name, email and mobile. Use the button below, so your test is labelled as a team review. Before you sign up, check: the Save my free seat button is on the first screen, the form shows a live countdown and the time in your own time zone, and a Save my free seat bar with a countdown follows you once you scroll past the form.",
+      body: "Open the registration page on your phone and sign up with your real name, email and mobile. Use the button below, so your test is labelled as a team review. Before you sign up, check: the Save my free seat button is on the first screen, a black bar at the top counts down to the start, the form shows the time in your own time zone, and a Save my free seat bar with a countdown follows you once you scroll past the form.",
       cta: {
         label: "Open the registration page",
         href: `/masterclass?${REVIEW_UTM}`,

@@ -93,25 +93,3 @@ export function LocalTimeLine({
   if (now == null || now >= Date.parse(startsAt)) return null;
   return text ? <p className={className}>{text}</p> : null;
 }
-
-/** One-line "Starts in 5d 06h 32m", computed from the GHL start. */
-export function CompactCountdown({
-  startsAt,
-  className,
-}: {
-  startsAt: string;
-  className?: string;
-}) {
-  const now = useNow();
-  if (now == null) return null;
-  const left = Date.parse(startsAt) - now;
-  if (!(left > 0)) return null;
-  return (
-    <p className={className} role="timer" aria-live="off">
-      Starts in{" "}
-      <span className="text-ink font-black tabular-nums">
-        {compactLeft(left)}
-      </span>
-    </p>
-  );
-}

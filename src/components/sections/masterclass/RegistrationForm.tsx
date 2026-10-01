@@ -7,10 +7,7 @@ import {
   type RegistrationState,
 } from "@/app/masterclass/actions";
 import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
-import {
-  CompactCountdown,
-  LocalTimeLine,
-} from "@/components/sections/masterclass/EventTiming";
+import { LocalTimeLine } from "@/components/sections/masterclass/EventTiming";
 import { liveErrors } from "@/components/sections/masterclass/field-errors";
 import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
@@ -121,10 +118,12 @@ export function RegistrationForm({
         </p>
       ) : null}
       {eventStartsAt ? (
-        <div className="mt-1 flex flex-wrap gap-x-3 text-sm text-slate-600">
-          <CompactCountdown startsAt={eventStartsAt} />
-          <LocalTimeLine startsAt={eventStartsAt} />
-        </div>
+        // The countdown lives in the black top bar; the card keeps the
+        // visitor's own time.
+        <LocalTimeLine
+          startsAt={eventStartsAt}
+          className="mt-1 text-sm text-slate-600"
+        />
       ) : null}
 
       <input
@@ -184,7 +183,7 @@ export function RegistrationForm({
 
       <label
         htmlFor="mc-smsConsent"
-        className="mt-3 flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-slate-600 lg:mt-4 lg:py-1 lg:leading-relaxed"
+        className="mt-2 flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-slate-600 lg:mt-4 lg:py-1 lg:leading-relaxed"
       >
         <input
           id="mc-smsConsent"
@@ -322,7 +321,7 @@ function Field({
         </p>
       ) : null}
       {hint ? (
-        <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
+        <p id={`${id}-hint`} className="mt-0.5 text-xs text-slate-500">
           {hint}
         </p>
       ) : null}

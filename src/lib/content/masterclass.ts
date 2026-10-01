@@ -192,6 +192,12 @@ export const masterclassHero = {
   stickyCta: "Save my free seat",
 };
 
+/** Black top bar, the homepage CohortBanner's look (Adam, 2026-10-01). */
+export const countdownBanner = {
+  lead: "Live masterclass starts in",
+  cta: "Save your seat",
+};
+
 const STICKY_DATE = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/Chicago",
   weekday: "short",

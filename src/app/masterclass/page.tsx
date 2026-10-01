@@ -3,6 +3,7 @@ import "../home-v2.css";
 import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassHero } from "@/components/sections/masterclass/MasterclassHero";
+import { CountdownBanner } from "@/components/sections/masterclass/CountdownBanner";
 import { MasterclassStickyCta } from "@/components/sections/masterclass/MasterclassStickyCta";
 import { RegistrationForm } from "@/components/sections/masterclass/RegistrationForm";
 import {
@@ -71,6 +72,7 @@ export default async function MasterclassPage({
     <div className={anton.variable}>
       <StripPiiParams />
       <RevealObserver />
+      <CountdownBanner startsAt={event.startsAt} renderedAt={renderedAt} />
       <MasterclassHero
         aside={
           <RegistrationForm

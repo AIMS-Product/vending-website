@@ -29,7 +29,7 @@ export const reportCopy = {
       who: "Site",
       step: "Registers",
       detail:
-        "Name, email, US/Canada mobile, text consent. Sign-up button on the first phone screen, live countdown, the visitor's own time, a sticky save-my-seat bar. Bots and repeat spam are blocked.",
+        "Name, email, US/Canada mobile, text consent. Sign-up button on the first phone screen, a black countdown bar at the top, the visitor's own time, a sticky save-my-seat bar. Bots and repeat spam are blocked.",
     },
     {
       who: "GHL",
