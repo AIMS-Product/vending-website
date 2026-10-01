@@ -71,7 +71,7 @@ export const BUY_CTA = "Yes, I Want Mike's Playbook";
 
 export const images = {
   product: {
-    src: "https://assets.cdn.filesafe.space/Qxw5m2PoOz2MCr6m2v0M/media/6a5aba531097b81195fe6361.png",
+    src: "/images/playbook/hero-mockup.png",
     alt: "Mike Hoffmann's Playbook and its bonus kits",
     width: 1200,
     height: 630,
@@ -84,13 +84,13 @@ export const images = {
     height: 514,
   },
   mike: {
-    src: "https://storage.googleapis.com/funnel-ai-production/cloned/ugsZYdqKsLoW0wAXmnl9/Osj0NNWjQdzZbtGtF3GC/img_13",
+    src: "/images/playbook/mike-family.webp",
     alt: "Mike Hoffmann",
     width: 800,
     height: 1074,
   },
   results: {
-    src: "https://storage.googleapis.com/funnel-ai-production/chat/Qxw5m2PoOz2MCr6m2v0M/Testimonial-group.png",
+    src: "/images/playbook/testimonial-avatars.png",
     alt: "Anthony, Shannon and Thomas share their results",
     width: 1024,
     height: 923,
@@ -384,10 +384,8 @@ export const stories = {
   intro:
     "A food truck owner, a stay-at-home mom, a former real estate agent, and a first-time micro market operator - four different starting points, the same process, all profitable routes.",
   items: [
-    {
-      name: "Jesse",
-      text: "Jesse had three locations signed within his first 30 days. He credits the speed to having ready-made scripts and a process to follow instead of guessing alone.",
-    },
+    // Members with a face in the approved group image lead, so the two
+    // photo cards share a row.
     {
       name: "Shannon",
       text: "Using the same location-scoring process taught in Mike's Playbook, Shannon picked one Seattle micro market that became her 22,000 - 25,000/mo unicorn location on her first try.",
@@ -396,6 +394,10 @@ export const stories = {
       name: "Anthony",
       photo: storyPhotos.anthony,
       text: "Former real estate entrepreneur, Anthony, followed this same process to scale to 45 locations and 79 machines, generating over 100k in revenue in one month.",
+    },
+    {
+      name: "Jesse",
+      text: "Jesse had three locations signed within his first 30 days. He credits the speed to having ready-made scripts and a process to follow instead of guessing alone.",
     },
     {
       name: "Madison",

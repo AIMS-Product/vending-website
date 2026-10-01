@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useId, useRef, useState, type CSSProperties } from "react";
 import {
   PlayGlyph,
   type PlayButtonVariant,
   type PlayPosition,
 } from "@/components/media/ClickToLoad";
+import { claim, subscribe } from "@/components/media/nowPlaying";
 import { cn } from "@/lib/utils";
 import {
   createVideoEmbedAutoplayUrl,
@@ -36,6 +37,15 @@ export function YouTubeEmbedFrame({
   playPosition = "br",
 }: YouTubeEmbedFrameProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const playerId = useId();
+  // Another player started: drop back to the poster facade, which unloads
+  // the iframe and stops its sound. No YouTube JS API needed.
+  useEffect(() => {
+    if (!isPlaying) return;
+    return subscribe((claimed) => {
+      if (claimed !== playerId) setIsPlaying(false);
+    });
+  }, [isPlaying, playerId]);
   const playerRef = useRef<HTMLIFrameElement>(null);
   // isPlaying only turns true from a press. The button unmounts, so move
   // focus to the player rather than letting it fall back to <body>.
@@ -43,8 +53,14 @@ export function YouTubeEmbedFrame({
     if (isPlaying) playerRef.current?.focus({ preventScroll: true });
   }, [isPlaying]);
   const previewThumbnailUrl = thumbnailUrl || embed.thumbnailUrl;
+  // Cards keep a light scrim: the corner button needs no contrast help, and a
+  // heavy one made the thumbnails read dim next to the white card bodies.
+  const scrim =
+    variant === "hero"
+      ? "rgba(0,0,0,0.08), rgba(0,0,0,0.35)"
+      : "rgba(0,0,0,0), rgba(0,0,0,0.15)";
   const thumbnailStyle: CSSProperties = {
-    backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${previewThumbnailUrl}")`,
+    backgroundImage: `linear-gradient(180deg, ${scrim}), url("${previewThumbnailUrl}")`,
   };
 
   if (isPlaying) {
@@ -69,6 +85,7 @@ export function YouTubeEmbedFrame({
       onPointerDown={(event) => event.stopPropagation()}
       onClick={(event) => {
         event.stopPropagation();
+        claim(playerId);
         setIsPlaying(true);
       }}
       style={thumbnailStyle}

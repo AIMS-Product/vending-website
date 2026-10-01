@@ -4,7 +4,10 @@ import {
   OutlookLogo,
 } from "@/components/sections/masterclass/CalendarLogos";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
-import { EventLabel } from "@/components/sections/masterclass/EventLabel";
+import {
+  EventDateLine,
+  UntilEnded,
+} from "@/components/sections/masterclass/EventDateLine";
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { StoryList } from "@/components/sections/masterclass/RegistrationSections";
 import Image from "next/image";
@@ -20,7 +23,7 @@ import {
   CONFIRMED_VIDEO_POSTER,
   confirmedCopy,
   coverCopy,
-  MASTERCLASS_MINUTES,
+  masterclassLiveEnd,
   type calendarLinks,
 } from "@/lib/content/masterclass";
 
@@ -29,10 +32,19 @@ type Props = {
   label: string | null;
   startsAt: string | null;
   links: ReturnType<typeof calendarLinks> | null;
+  /** Server render time (ms), so the date line hydrates in the same phase. */
+  renderedAt: number;
 };
 
 /** Name, Anthony's welcome video, date, live countdown and add-to-calendar buttons. */
-export function ConfirmedHero({ first, label, startsAt, links }: Props) {
+export function ConfirmedHero({
+  first,
+  label,
+  startsAt,
+  links,
+  renderedAt,
+}: Props) {
+  const endsAt = masterclassLiveEnd(startsAt);
   return (
     <section
       className="border-ink relative isolate border-b-2 bg-[#eaf6ff]"
@@ -70,70 +82,74 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
         </h1>
         {label ? (
           <p className="text-ink mt-4 text-xl font-black">
-            <EventLabel label={label} startsAt={startsAt} />
+            <EventDateLine
+              label={label}
+              startsAt={startsAt}
+              renderedAt={renderedAt}
+            />
           </p>
         ) : null}
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
           title="A welcome from Anthony"
-          className="mt-6 w-full max-w-[780px]"
+          className="mt-6 w-full max-w-[700px]"
           loadOn="click"
           poster={CONFIRMED_VIDEO_POSTER}
           playLabel="Play Anthony's welcome"
-          posterSizes="(min-width: 1024px) 780px, 100vw"
+          posterSizes="(min-width: 1024px) 700px, 100vw"
         />
-        {startsAt ? (
-          <div className="mt-6">
-            <Countdown
-              startsAt={startsAt}
-              endsAt={new Date(
-                Date.parse(startsAt) + MASTERCLASS_MINUTES * 60_000,
-              ).toISOString()}
-              expiredLabel="We are live now"
-            />
+        {/* Live, the date line says so; after that, nothing counts down. */}
+        {startsAt && endsAt ? (
+          <div className="mt-5">
+            <Countdown startsAt={startsAt} endsAt={endsAt} />
           </div>
         ) : null}
         {links ? (
-          <div className="mt-5 flex w-full flex-col items-center">
-            <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
-              Add it to your calendar now
-            </p>
-            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
-              <a
-                href={links.google}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonClass({ className: "col-span-2 gap-2.5" })}
-              >
-                <span className="grid size-7 place-items-center rounded-md bg-white">
-                  <GoogleCalendarLogo />
-                </span>
-                Google Calendar
-              </a>
-              <a
-                href={links.ics}
-                className={buttonClass({
-                  variant: "ghost",
-                  className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
-                })}
-              >
-                <AppleLogo />
-                Apple / iCal
-              </a>
-              <a
-                href={links.outlook}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={buttonClass({
-                  variant: "ghost",
-                  className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
-                })}
-              >
-                <OutlookLogo />
-                Outlook
-              </a>
+          // A finished session is not worth a calendar slot.
+          <UntilEnded startsAt={startsAt} renderedAt={renderedAt}>
+            <div className="mt-5 flex w-full flex-col items-center">
+              <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
+                Add it to your calendar now
+              </p>
+              <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
+                <a
+                  href={links.google}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonClass({ className: "col-span-2 gap-2.5" })}
+                >
+                  <span className="grid size-7 place-items-center rounded-md bg-white">
+                    <GoogleCalendarLogo />
+                  </span>
+                  Google Calendar
+                </a>
+                <a
+                  href={links.ics}
+                  className={buttonClass({
+                    variant: "ghost",
+                    className:
+                      "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                  })}
+                >
+                  <AppleLogo />
+                  Apple / iCal
+                </a>
+                <a
+                  href={links.outlook}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={buttonClass({
+                    variant: "ghost",
+                    className:
+                      "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                  })}
+                >
+                  <OutlookLogo />
+                  Outlook
+                </a>
+              </div>
             </div>
-          </div>
+          </UntilEnded>
         ) : null}
       </div>
     </section>
@@ -145,15 +161,20 @@ export function NextSteps() {
   const [zoom, reply] = confirmedCopy.steps;
   return (
     <section className="bg-white">
-      <div className="mx-auto grid max-w-[1080px] gap-6 px-5 py-14 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:px-10">
-        <Step n={zoom.n} title={zoom.title}>
-          It comes from{" "}
-          <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>.
-          Check spam and promotions, and move it to your inbox.
-        </Step>
-        <Step n={reply.n} title={reply.title}>
-          {reply.body}
-        </Step>
+      <div className="mx-auto max-w-[1080px] px-5 pt-8 pb-14 sm:pt-14 lg:px-10">
+        <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+          Before the call
+        </p>
+        <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <Step n={zoom.n} title={zoom.title}>
+            It comes from{" "}
+            <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>
+            . Check spam and promotions, and move it to your inbox.
+          </Step>
+          <Step n={reply.n} title={reply.title}>
+            {reply.body}
+          </Step>
+        </div>
       </div>
     </section>
   );
@@ -192,7 +213,9 @@ export function CoverSection() {
                 <span className="bg-brand-700 grid size-10 shrink-0 place-items-center rounded-md text-sm font-black text-white">
                   0{index + 1}
                 </span>
-                <span className="text-ink text-[17px] font-bold">{topic}</span>
+                <span className="v2-display text-ink text-xl leading-[1.05] uppercase">
+                  {topic}
+                </span>
               </li>
             ))}
           </ol>

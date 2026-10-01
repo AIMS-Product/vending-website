@@ -103,7 +103,7 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
     <section className="bg-brand-50 py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
         <div className="border-ink shadow-card rounded-card overflow-hidden border-2 bg-white">
-          <div className="bg-tint border-ink v2-dots flex justify-center overflow-hidden border-b-2 px-6 pt-8 pb-6 lg:px-16 lg:pt-12 lg:pb-8">
+          <div className="bg-tint border-ink v2-dots flex justify-center overflow-hidden border-b-2 px-3 pt-5 pb-4 sm:px-6 sm:pt-8 sm:pb-6 lg:px-16 lg:pt-12 lg:pb-8">
             <Image
               src={images.productTrimmed.src}
               alt={images.productTrimmed.alt}
@@ -152,14 +152,14 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
         <p className="mt-2">
           <Link
             href="/privacy"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
           >
             Privacy Policy
           </Link>
           {" · "}
           <Link
             href="/terms"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 underline underline-offset-2"
           >
             Terms
           </Link>

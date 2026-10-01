@@ -1,5 +1,9 @@
-/** "7:30 PM CDT" at the end of the GHL date text, kept on one line. */
-const TIME_AND_ZONE = /\d{1,2}(?::\d{2})?\s*[AP]M(?:\s+[A-Z]{2,4})?\s*$/i;
+/**
+ * "at 7:30 PM CDT" at the end of the GHL date text, kept on one line so a
+ * narrow card never leaves "at" dangling at the end of the date.
+ */
+export const TIME_AND_ZONE =
+  /(?:at\s+)?\d{1,2}(?::\d{2})?\s*[AP]M(?:\s+[A-Z]{2,4})?\s*$/i;
 
 const WEEKDAY = new Intl.DateTimeFormat("en-US", {
   weekday: "long",

@@ -4,6 +4,7 @@ import { vidalyticsContainerId } from "@/lib/tracking/vidalytics-player";
 import { cn } from "@/lib/utils";
 import { AutoplayGate } from "./AutoplayGate";
 import type { PlayButtonVariant } from "./ClickToLoad";
+import { VidalyticsNowPlaying } from "./VidalyticsNowPlaying";
 import { VideoEngagement } from "./VideoEngagement";
 
 /**
@@ -103,6 +104,8 @@ export function VidalyticsPlayer({
       />
       {/* Counts quarters watched against this session. Renders nothing. */}
       <VideoEngagement embedId={embedId} />
+      {/* Pauses this player when another one starts. Renders nothing. */}
+      <VidalyticsNowPlaying containerId={containerId} />
       <AutoplayGate
         loadOn={loadOn}
         targetId={containerId}

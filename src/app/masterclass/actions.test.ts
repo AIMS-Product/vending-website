@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   SESSION_COOKIE,
   verifyMasterclassSession,
@@ -6,6 +6,7 @@ import {
 import {
   HONEYPOT_FIELD,
   MASTERCLASS_BUSY_MESSAGE,
+  registrationErrorCopy,
 } from "@/lib/content/masterclass";
 import { registerForMasterclass } from "./actions";
 
@@ -198,6 +199,9 @@ describe("registerForMasterclass", () => {
     ["+44 20 7946 0958", "phone"],
     ["555-0123", "phone"],
     ["1 (041) 555-0123", "phone"],
+    ["5555555555", "phone"],
+    ["2115551234", "phone"],
+    ["541-411-0123", "phone"],
   ])("refuses a non US/Canada phone %s", async (phone, field) => {
     const state = await registerForMasterclass({}, form({ phone }));
     expect(state.errors?.[field as "phone"]).toMatch(/US or Canada/);
@@ -351,5 +355,60 @@ describe("registerForMasterclass", () => {
         mocks.config.MASTERCLASS_SESSION_SECRET,
       ),
     ).toBe("c2");
+  });
+});
+
+describe("registerForMasterclass around the event date", () => {
+  // "October 6, 2026 at 7:30 PM CDT"
+  const startsAt = "2026-10-07T00:30:00.000Z";
+
+  beforeEach(() => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    mocks.getMasterclassEvent.mockResolvedValue({
+      label: "October 6, 2026 at 7:30 PM CDT",
+      startsAt,
+      anthony: null,
+    });
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("tags and confirms before the start", async () => {
+    vi.setSystemTime(new Date("2026-10-06T12:00:00Z"));
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?first=Mary",
+    );
+    expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBe(
+      "webinar-oct6",
+    );
+  });
+
+  it("still tags and confirms inside the 90-minute live window", async () => {
+    vi.setSystemTime(new Date("2026-10-07T01:59:00Z"));
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?first=Mary",
+    );
+    expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBe(
+      "webinar-oct6",
+    );
+  });
+
+  it("keeps the lead untagged and says the next date is coming once stale", async () => {
+    vi.setSystemTime(new Date("2026-10-08T12:00:00Z"));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const state = await registerForMasterclass({}, form());
+    expect(state).toEqual({ notice: registrationErrorCopy.nextDatePending });
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(mocks.registerWebinarContact).toHaveBeenCalledTimes(1);
+    expect(mocks.registerWebinarContact.mock.calls[0][0].eventTag).toBeNull();
+    expect(mocks.cookieSet).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith(
+      "masterclass: event date is stale, registering untagged",
+      expect.objectContaining({ startsAt }),
+    );
+    // The log carries no email or phone.
+    expect(JSON.stringify(warn.mock.calls)).not.toMatch(/mary|555/i);
+    warn.mockRestore();
   });
 });

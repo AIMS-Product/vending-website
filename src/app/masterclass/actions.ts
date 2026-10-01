@@ -11,6 +11,7 @@ import {
   MASTERCLASS_BUSY_MESSAGE,
   MASTERCLASS_CONFIRMED_PATH,
   NAME_PATTERN,
+  masterclassPhase,
   registrationErrorCopy,
 } from "@/lib/content/masterclass";
 import {
@@ -28,6 +29,8 @@ import {
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 export type RegistrationState = {
+  /** A non-error outcome shown in place of the redirect (stale event date). */
+  notice?: string;
   errors?: Partial<
     Record<
       "firstName" | "lastName" | "email" | "phone" | "smsConsent" | "form",
@@ -61,11 +64,13 @@ const registration = z.object({
     .max(40, NAME_MAX)
     .regex(/^$|^[\p{L}' -]+$/u, "Use letters only"),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
-  // US and Canada only (99 of the last 100 GHL registrants), as E.164.
+  // US and Canada only (99 of the last 100 GHL registrants), as E.164. No 555
+  // area code and no N11 area code or exchange: they cannot take a text and
+  // would spend SMS sends and rate-limit budget.
   phone: z
     .string()
     .transform((v) => v.replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""))
-    .refine((v) => /^[2-9]\d{2}[2-9]\d{6}$/.test(v), {
+    .refine((v) => /^(?!555|[2-9]11)[2-9]\d{2}(?![2-9]11)[2-9]\d{6}$/.test(v), {
       error: "Enter a US or Canada mobile number",
     })
     .transform((v) => `+1${v}`),
@@ -166,8 +171,17 @@ export async function registerForMasterclass(
   }
 
   const event = await getMasterclassEvent();
-  const eventTag = event.label ? webinarEventTag(event.label) : null;
-  if (!eventTag) {
+  // Past the live window the GHL date is last week's until the rollover writes
+  // the next one: keep the lead, but never tag them into a finished room.
+  const stale = masterclassPhase(Date.now(), event.startsAt) === "ended";
+  if (stale) {
+    console.warn("masterclass: event date is stale, registering untagged", {
+      label: event.label,
+      startsAt: event.startsAt,
+    });
+  }
+  const eventTag = !stale && event.label ? webinarEventTag(event.label) : null;
+  if (!eventTag && !stale) {
     console.warn(
       "masterclass: event tag unknown, repeat-registration check off",
     );
@@ -189,6 +203,9 @@ export async function registerForMasterclass(
     });
     return { errors: { form: registrationErrorCopy.failed }, values };
   }
+
+  // No confirmation page for a room that is over: say the next date is coming.
+  if (stale) return { notice: registrationErrorCopy.nextDatePending };
 
   // Lets the confirmation page write intake answers to this contact. Optional:
   // without the secret the page simply shows no intake form.

@@ -1,8 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { buttonClass } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 const GHL_FORM_LOADING = "Loading your application…";
+const GHL_FORM_FALLBACK = "Open the application";
+const NEW_TAB_NOTE = " (opens in a new tab)";
+
+/** How long the form may take before the visitor is offered a way round it. */
+export const GHL_FORM_STALL_MS = 15_000;
+
+/**
+ * Calls `onStall` once if not cancelled within `ms`; returns the cancel.
+ * Kept outside the component so the timing is testable without a DOM.
+ */
+export function watchForStall(onStall: () => void, ms = GHL_FORM_STALL_MS) {
+  const timer = setTimeout(onStall, ms);
+  return () => clearTimeout(timer);
+}
 
 /** Grey label / field / text bars; the submit bar carries the button blue. */
 const bar = "rounded-control bg-slate-100";
@@ -15,10 +31,28 @@ const field = `${bar} h-[42px] w-full`;
  * screen while form_embed.js loads (2-12s). It stays until the iframe has
  * fired `load` AND form_embed.js has revealed it, then fades; a white form
  * covers it either way, so a missed event only leaves it hidden underneath.
+ *
+ * If form_embed.js or the iframe is blocked (ad blockers, strict networks),
+ * neither ever happens. After GHL_FORM_STALL_MS the spinner label becomes a
+ * link to the same form on GHL (same UTM params) and the layer rises over the
+ * iframe so the link can be clicked; a late load still fades it away.
  */
-export function GhlFormLoading({ iframeId }: { iframeId: string }) {
+export function GhlFormLoading({
+  iframeId,
+  fallbackHref,
+}: {
+  iframeId: string;
+  /** The form's own URL, opened in a new tab if the embed never loads. */
+  fallbackHref: string;
+}) {
   const layer = useRef<HTMLDivElement>(null);
   const [loaded, setLoaded] = useState(false);
+  const [stalled, setStalled] = useState(false);
+
+  useEffect(() => {
+    if (loaded) return;
+    return watchForStall(() => setStalled(true));
+  }, [loaded]);
 
   useEffect(() => {
     const slot = layer.current?.parentElement;
@@ -66,18 +100,27 @@ export function GhlFormLoading({ iframeId }: { iframeId: string }) {
   return (
     <>
       <p role="status" className="sr-only">
-        {loaded ? "" : GHL_FORM_LOADING}
+        {loaded
+          ? ""
+          : stalled
+            ? GHL_FORM_FALLBACK + NEW_TAB_NOTE
+            : GHL_FORM_LOADING}
       </p>
       <div
         ref={layer}
-        aria-hidden="true"
-        className={
-          "absolute inset-0 z-0 px-[18px] pt-[25px] transition-opacity duration-300 motion-reduce:transition-none sm:pt-[65px] " +
-          (loaded ? "pointer-events-none opacity-0" : "opacity-100")
-        }
+        aria-hidden={stalled && !loaded ? undefined : true}
+        className={cn(
+          "absolute inset-0 px-[18px] pt-[25px] transition-opacity duration-300 motion-reduce:transition-none sm:pt-[65px]",
+          loaded ? "pointer-events-none opacity-0" : "opacity-100",
+          stalled && !loaded ? "z-20" : "z-0",
+        )}
       >
-        <PhoneSkeleton />
-        <WideSkeleton />
+        <PhoneSkeleton
+          action={<FormAction stalled={stalled} href={fallbackHref} />}
+        />
+        <WideSkeleton
+          action={<FormAction stalled={stalled} href={fallbackHref} />}
+        />
       </div>
     </>
   );
@@ -100,11 +143,34 @@ function Field({ twoLineLabel = false }: { twoLineLabel?: boolean }) {
   );
 }
 
-function SubmitBar({ className }: { className: string }) {
+/**
+ * The submit bar: a spinner while loading, then (stalled) the page's button
+ * linking to the form on GHL. One instance per skeleton; only one is shown.
+ */
+export function FormAction({
+  stalled,
+  href,
+}: {
+  stalled: boolean;
+  href: string;
+}) {
+  if (!stalled) return <SubmitBar />;
   return (
-    <div
-      className={`rounded-control flex h-[42px] items-center justify-center gap-2 bg-[var(--brand-700)]/15 text-sm font-semibold text-[var(--brand-700)] ${className}`}
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener"
+      className={buttonClass({ size: "md", className: "w-full px-4" })}
     >
+      <span className="text-center leading-tight">{GHL_FORM_FALLBACK}</span>
+      <span className="sr-only">{NEW_TAB_NOTE}</span>
+    </a>
+  );
+}
+
+function SubmitBar() {
+  return (
+    <div className="rounded-control flex h-[42px] w-full items-center justify-center gap-2 bg-[var(--brand-700)]/15 text-sm font-semibold text-[var(--brand-700)]">
       <svg
         viewBox="0 0 24 24"
         fill="none"
@@ -121,7 +187,7 @@ function SubmitBar({ className }: { className: string }) {
 }
 
 /** Below sm: one column of seven labelled fields, then a full-width submit. */
-function PhoneSkeleton() {
+function PhoneSkeleton({ action }: { action: ReactNode }) {
   return (
     <div className="flex flex-col sm:hidden">
       <div className="flex flex-col gap-6">
@@ -129,7 +195,7 @@ function PhoneSkeleton() {
           <Field key={index} twoLineLabel={index === 6} />
         ))}
       </div>
-      <SubmitBar className="mt-9 w-full" />
+      <div className="mt-9">{action}</div>
       <Consent lines={5} className="mt-6" />
       <Consent lines={7} className="mt-7" />
     </div>
@@ -137,7 +203,7 @@ function PhoneSkeleton() {
 }
 
 /** sm and up: GHL's two-column grid, a half-width field, button, small print. */
-function WideSkeleton() {
+function WideSkeleton({ action }: { action: ReactNode }) {
   return (
     <div className="hidden flex-col sm:flex">
       <div className="grid w-full grid-cols-2 gap-x-[26px] gap-y-6">
@@ -145,7 +211,7 @@ function WideSkeleton() {
           <Field key={index} twoLineLabel={index === 6} />
         ))}
       </div>
-      <SubmitBar className="mt-[34px] w-[320px] self-center" />
+      <div className="mt-[34px] w-[320px] self-center">{action}</div>
       <Consent lines={3} className="mt-6" />
       <Consent lines={4} className="mt-6" />
     </div>

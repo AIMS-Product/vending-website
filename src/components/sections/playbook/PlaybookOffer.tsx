@@ -88,7 +88,7 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
                 {pad(i + 1)}
               </span>
               <div className="pt-1">
-                {c.lessons ? <p className={EYEBROW}>{c.lessons}</p> : null}
+                <p className={EYEBROW}>{c.lessons || `Chapter ${i + 1}`}</p>
                 <h3 className="v2-display text-ink mt-1 text-2xl leading-[1.05] text-balance uppercase">
                   {c.title}
                 </h3>

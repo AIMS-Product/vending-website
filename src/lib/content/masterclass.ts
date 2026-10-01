@@ -90,6 +90,45 @@ export function confirmedPlaybookParams(params: QueryParams): QueryParams {
 /** 60 minutes of training plus 15 of live Q&A, per the confirmation email. */
 export const MASTERCLASS_MINUTES = 75;
 
+/**
+ * How long after the start the room counts as live. Longer than the scheduled
+ * 75 minutes because the Q&A runs over; after it the GHL date is stale until
+ * the weekly rollover writes the next one.
+ */
+export const MASTERCLASS_LIVE_WINDOW_MINUTES = 90;
+
+export type MasterclassPhase = "upcoming" | "live" | "ended";
+
+/**
+ * Where `now` sits against the GHL start. An unknown or unparsed start counts
+ * as upcoming, so the page shows the GHL text as written.
+ */
+export function masterclassPhase(
+  now: number,
+  startsAt: string | null | undefined,
+): MasterclassPhase {
+  const start = startsAt ? Date.parse(startsAt) : Number.NaN;
+  if (Number.isNaN(start) || now < start) return "upcoming";
+  return now < start + MASTERCLASS_LIVE_WINDOW_MINUTES * 60_000
+    ? "live"
+    : "ended";
+}
+
+/** The ISO instant the live window closes, or null without a start. */
+export function masterclassLiveEnd(startsAt: string | null): string | null {
+  const start = startsAt ? Date.parse(startsAt) : Number.NaN;
+  if (Number.isNaN(start)) return null;
+  return new Date(
+    start + MASTERCLASS_LIVE_WINDOW_MINUTES * 60_000,
+  ).toISOString();
+}
+
+/** Shown in place of the date line once the start has passed. */
+export const eventPhaseCopy = {
+  live: "Live now",
+  ended: "Next session date coming soon",
+} as const;
+
 export const masterclassHero = {
   eyebrow: "Free live masterclass with Anthony Kolodziej",
   /** Small label over the form card. */
@@ -137,18 +176,12 @@ export const ANTHONY_VIDEO_ID = "fsRX7K_Hg08";
 export const hostVideoPoster = "/images/masterclass/anthony-at-machine.jpg";
 
 /**
- * The closing strip, middle one tallest. The GHL kitchen and hallway candids
- * only exist at ~400px wide (soft in 330px tiles on 2x screens), so the sides
- * use the 1200px shots; `position` keeps Anthony in each crop.
+ * The closing pair, the portrait shot wider. The at-machine shot is the host
+ * video's poster, so it is not repeated here; the GHL kitchen and hallway
+ * candids only exist at ~400px wide (soft on 2x screens). `position` keeps
+ * Anthony in each crop.
  */
 export const hostCandids = [
-  {
-    src: "/images/masterclass/anthony-at-machine.jpg",
-    alt: "Anthony in front of a stocked smart vending machine",
-    width: 1200,
-    height: 628,
-    position: "object-[10%_50%]",
-  },
   {
     src: "/images/masterclass/anthony-pointing-at-machine.jpg",
     alt: "Anthony pointing at a stocked smart vending machine on location",
@@ -188,6 +221,8 @@ export const fitCopy = {
   /** The GHL closing headline ("Your Freedom Starts Here"). */
   heading: "Your freedom starts here",
   highlight: "freedom",
+  /** Verbatim from the GHL closing block. */
+  subheading: "Learn how to launch a profitable vending business",
   forTitle: "This is for you if",
   notForTitle: "Skip it if",
   cta: "Save my free seat",
@@ -198,6 +233,9 @@ export const fitCopy = {
 export const registrationErrorCopy = {
   consent: "Check the box so we can text you the Zoom link",
   failed: "We could not save your seat just now. Please try again in a minute.",
+  /** The GHL date has passed and the rollover has not written the next one. */
+  nextDatePending:
+    "You're on the list. The next date is being set, and we'll send it to you as soon as it is.",
 };
 
 /** The Vidalytics welcome video from the GHL thank-you page (embed id read off that page 2026-09-30). */

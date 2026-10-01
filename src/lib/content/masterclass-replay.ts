@@ -109,6 +109,9 @@ export const REPLAY_MAIN_VIDEO: ReplayVideo = {
   embedId: "cARihXjwCxR3xiJ0",
 };
 
+/** UI label over the Calendly booking heading (adnb); not offer copy. */
+export const REPLAY_BOOKING_EYEBROW = "Book a call";
+
 export const REPLAY_ANCHORS = {
   video: "replay",
   cta: "book-call",

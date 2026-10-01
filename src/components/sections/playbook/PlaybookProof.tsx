@@ -55,7 +55,7 @@ function Emphasis({
 
 type Quote = (typeof opportunityQuotes)[number];
 
-const AVATAR_PX = 56;
+const AVATAR_PX = 88;
 
 /**
  * The face from GHL's approved group image, cropped to its square. A
@@ -67,7 +67,7 @@ function QuoteAvatar({ crop }: { crop: Quote["crop"] }) {
   return (
     <span
       aria-hidden="true"
-      className="border-ink relative block size-14 shrink-0 overflow-hidden rounded-full border-2 bg-white"
+      className="border-ink rounded-control relative block size-[88px] shrink-0 overflow-hidden border-2 bg-white"
     >
       <Image
         src={images.results.src}
@@ -139,11 +139,19 @@ export function PlaybookOpportunity() {
 
 type Story = (typeof stories.items)[number];
 
+/** Story names that also appear in the approved group image get its face. */
+const storyCrop = (name: string) =>
+  opportunityQuotes.find((q) => q.name === name)?.crop;
+
 function StoryCard({ story }: { story: Story }) {
+  const crop = storyCrop(story.name);
   return (
     <Card as="figure" className="flex h-full flex-col">
-      <figcaption className="v2-display text-ink text-3xl leading-none uppercase">
-        {story.name}
+      <figcaption className="flex items-center gap-4">
+        {crop ? <QuoteAvatar crop={crop} /> : null}
+        <span className="v2-display text-ink text-3xl leading-none uppercase">
+          {story.name}
+        </span>
       </figcaption>
       <blockquote className="mt-5 text-[1.05rem] leading-relaxed">
         {story.text}
@@ -206,13 +214,16 @@ export function PlaybookCompare() {
                   {ours}
                 </p>
               </div>
-              <dl className="text-ink/70 mt-3 grid grid-cols-2 gap-3 text-sm">
+              <dl className="text-ink/70 mt-3 grid grid-cols-2 grid-rows-[auto_auto] gap-x-3 gap-y-0.5 text-sm">
                 {others.map((c, i) => (
-                  <div key={compare.columns[i + 1]}>
+                  <div
+                    key={compare.columns[i + 1]}
+                    className="row-span-2 grid grid-rows-subgrid"
+                  >
                     <dt className="text-xs font-black tracking-[0.1em] uppercase">
                       {compare.columns[i + 1]}
                     </dt>
-                    <dd className="mt-0.5">{c}</dd>
+                    <dd>{c}</dd>
                   </div>
                 ))}
               </dl>
@@ -222,8 +233,8 @@ export function PlaybookCompare() {
         <div className="border-ink shadow-card rounded-card hidden overflow-hidden border-2 bg-white sm:block">
           <table className="w-full table-fixed text-left text-[0.95rem]">
             <colgroup>
-              <col className="w-[34%]" />
-              <col className="w-[24%]" />
+              <col className="w-[28%]" />
+              <col className="w-[11.5rem]" />
               <col />
               <col />
             </colgroup>
@@ -265,7 +276,7 @@ export function PlaybookCompare() {
                       )}
                     >
                       {i === 0 ? (
-                        <span className="flex items-start gap-1.5">
+                        <span className="flex items-start gap-1.5 whitespace-nowrap">
                           <CheckIcon className="text-brand-600 mt-0.5 size-4 shrink-0" />
                           {c}
                         </span>

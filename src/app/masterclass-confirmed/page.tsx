@@ -46,6 +46,14 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
+/**
+ * The render's clock reading. A server component renders once per request (or
+ * per ISR regeneration), so reading the clock is the point, not a side effect.
+ */
+function renderTime() {
+  return Date.now();
+}
+
 export default async function MasterclassConfirmedPage({
   searchParams,
 }: {
@@ -81,6 +89,7 @@ export default async function MasterclassConfirmedPage({
         label={event.label}
         startsAt={event.startsAt}
         links={links}
+        renderedAt={renderTime()}
       />
       <NextSteps />
       <ShowUpLive />

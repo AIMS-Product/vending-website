@@ -140,7 +140,7 @@ export function ReviewGuide() {
         <h1 className="v2-display text-ink mt-2 text-[clamp(2.25rem,6vw,3.5rem)] leading-none text-balance uppercase">
           {reviewCopy.heading}
         </h1>
-        <p className="mt-4 text-[17px] leading-relaxed text-slate-700">
+        <p className="mt-4 max-w-[64ch] text-[17px] leading-relaxed text-slate-700">
           {reviewCopy.intro}
         </p>
 

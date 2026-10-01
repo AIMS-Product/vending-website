@@ -41,7 +41,7 @@ export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
             </p>
           </div>
           <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-6" />
-          <dl className="border-ink mt-9 grid max-w-lg grid-cols-3 gap-x-5 border-t-2 pt-4 sm:gap-x-10">
+          <dl className="border-ink mt-9 grid max-w-lg grid-cols-3 gap-x-5 border-t-2 pt-4 sm:grid-cols-[repeat(3,auto)] sm:justify-between sm:gap-x-3">
             {stats.map((s) => (
               <div key={s.label}>
                 <dt className="sr-only">{s.label}</dt>
@@ -49,7 +49,7 @@ export function PlaybookHero({ checkoutHref }: PlaybookHeroProps) {
                   <span className="v2-display text-ink block text-3xl leading-none">
                     {s.value}
                   </span>
-                  <span className="text-eyebrow mt-1.5 block text-xs font-black tracking-[0.1em] uppercase">
+                  <span className="text-eyebrow mt-1.5 block text-xs font-black tracking-[0.1em] uppercase sm:whitespace-nowrap">
                     {s.label}
                   </span>
                 </dd>

@@ -12,10 +12,7 @@ import {
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
-import {
-  ATTRIBUTION_KEYS,
-  MASTERCLASS_MINUTES,
-} from "@/lib/content/masterclass";
+import { ATTRIBUTION_KEYS } from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -41,16 +38,11 @@ export const metadata: Metadata = {
 };
 
 /**
- * The GHL date text, or null once the session has ended: the countdown hides
- * itself then, and a past date beside the form would read as stale.
+ * The render's clock reading. A server component renders once per request (or
+ * per ISR regeneration), so reading the clock is the point, not a side effect.
  */
-function upcomingLabel(event: {
-  label: string | null;
-  startsAt: string | null;
-}) {
-  if (!event.startsAt) return event.label;
-  const endsAt = Date.parse(event.startsAt) + MASTERCLASS_MINUTES * 60_000;
-  return Date.now() > endsAt ? null : event.label;
+function renderTime() {
+  return Date.now();
 }
 
 export default async function MasterclassPage({
@@ -70,7 +62,9 @@ export default async function MasterclassPage({
       return text ? [[key, text.slice(0, 200)]] : [];
     }),
   );
-  const label = upcomingLabel(event);
+  // The date lines swap to "Live now" or "Next session date coming soon" on
+  // the visitor's clock; this pins their first render to the server's.
+  const renderedAt = renderTime();
 
   return (
     <main className={anton.variable}>
@@ -80,15 +74,20 @@ export default async function MasterclassPage({
         aside={
           <RegistrationForm
             attribution={attribution}
-            eventLabel={label}
+            eventLabel={event.label}
             eventStartsAt={event.startsAt}
+            renderedAt={renderedAt}
           />
         }
       />
       <ResultsTicker stories={stories} />
       <HostBand stats={event.anthony} />
       <StoriesGrid stories={stories} />
-      <FitSection label={label} startsAt={event.startsAt} />
+      <FitSection
+        label={event.label}
+        startsAt={event.startsAt}
+        renderedAt={renderedAt}
+      />
       <MasterclassFooter />
     </main>
   );

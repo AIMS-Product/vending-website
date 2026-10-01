@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
-import { EventLabel } from "@/components/sections/masterclass/EventLabel";
+import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
 import { CheckDisc } from "@/components/sections/masterclass/MasterclassHero";
 import { StoriesToggle } from "@/components/sections/masterclass/StoriesToggle";
 import { Wordmark } from "@/components/site/Wordmark";
@@ -12,12 +12,12 @@ import { APPLY_QUIZ_ANCHOR, APPLY_VSL_ANCHOR } from "@/lib/content/apply-page";
 import {
   ANTHONY_VIDEO_ID,
   MASTERCLASS_DISCLAIMER,
-  MASTERCLASS_MINUTES,
   fitCopy,
   fitFor,
   hostCandids,
   hostCopy,
   hostVideoPoster,
+  masterclassLiveEnd,
   notFitFor,
   storiesCopy,
 } from "@/lib/content/masterclass";
@@ -311,15 +311,13 @@ export function StoryList({
 export function FitSection({
   label,
   startsAt,
+  renderedAt,
 }: {
   label: string | null;
   startsAt: string | null;
+  renderedAt: number;
 }) {
-  const endsAt = startsAt
-    ? new Date(
-        Date.parse(startsAt) + MASTERCLASS_MINUTES * 60_000,
-      ).toISOString()
-    : null;
+  const endsAt = masterclassLiveEnd(startsAt);
   return (
     <section className="border-ink bg-tint border-t-2">
       <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
@@ -327,9 +325,16 @@ export function FitSection({
           <h2 className={cn(SECTION_HEADING, "text-balance")}>
             <Emphasis text={fitCopy.heading} phrase={fitCopy.highlight} />
           </h2>
+          <p className="text-ink mt-3 text-xl font-bold text-balance">
+            {fitCopy.subheading}
+          </p>
           {label ? (
             <p className="text-ink mt-4 text-lg font-bold">
-              <EventLabel label={label} startsAt={startsAt} />
+              <EventDateLine
+                label={label}
+                startsAt={startsAt}
+                renderedAt={renderedAt}
+              />
             </p>
           ) : null}
           <HostCandids />
@@ -338,10 +343,8 @@ export function FitSection({
               <Countdown startsAt={startsAt} endsAt={endsAt} />
             </div>
           ) : null}
-          {/* Phones: the fit cards push the closing button a screen away. */}
-          <SaveSeatButton className="mt-6 sm:hidden" />
         </div>
-        <div className="mt-12 grid items-stretch gap-6 md:grid-cols-2">
+        <div className="mt-12 grid gap-6 md:grid-cols-2 md:items-start">
           <FitCard title={fitCopy.forTitle} items={fitFor} good />
           <FitCard title={fitCopy.notForTitle} items={notFitFor} />
         </div>
@@ -372,22 +375,22 @@ function SaveSeatButton({ className }: { className?: string }) {
 }
 
 /**
- * Three candid shots of Anthony, the middle one taller. The side tiles stay
- * short enough (6:5) that their 628px-tall sources are not upscaled on 2x
- * screens. Below sm only the middle shot shows, landscape, so the closing
+ * Two candid shots of Anthony, the portrait one wider. The side tile stays
+ * short enough (6:5) that its 628px-tall source is not upscaled on 2x
+ * screens. Below sm only the portrait shot shows, landscape, so the closing
  * button stays near the heading.
  */
 function HostCandids() {
   return (
-    <div className="mx-auto mt-8 grid w-full max-w-[1100px] grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_1.2fr_1fr] sm:gap-6">
+    <div className="mx-auto mt-8 grid w-full max-w-[860px] grid-cols-1 items-center gap-3 sm:grid-cols-[1.2fr_1fr] sm:gap-6">
       {hostCandids.map((photo, index) => {
-        const middle = index === 1;
+        const main = index === 0;
         return (
           <div
             key={photo.src}
             className={cn(
               "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white",
-              middle
+              main
                 ? "aspect-[4/3] sm:aspect-[4/5]"
                 : "hidden aspect-[6/5] sm:block",
             )}
@@ -397,9 +400,9 @@ function HostCandids() {
               alt={photo.alt}
               fill
               sizes={
-                middle
-                  ? "(min-width: 1180px) 400px, (min-width: 640px) 38vw, 100vw"
-                  : "(min-width: 1180px) 330px, 31vw"
+                main
+                  ? "(min-width: 860px) 460px, (min-width: 640px) 52vw, 100vw"
+                  : "(min-width: 860px) 380px, 44vw"
               }
               className={cn("object-cover", photo.position)}
             />
@@ -422,7 +425,7 @@ function FitCard({
   return (
     <div
       data-reveal
-      className="rounded-card border-ink shadow-card h-full border-2 bg-white p-6"
+      className="rounded-card border-ink shadow-card border-2 bg-white p-6"
     >
       <h3 className="v2-display text-ink text-[clamp(1.6rem,2.6vw,2rem)] leading-none uppercase">
         {title}

@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   registerForMasterclass,
   type RegistrationState,
 } from "@/app/masterclass/actions";
-import { EventLabel } from "@/components/sections/masterclass/EventLabel";
+import { EventDateLine } from "@/components/sections/masterclass/EventDateLine";
+import { liveErrors } from "@/components/sections/masterclass/field-errors";
 import { buttonClass } from "@/components/ui/Button";
 import { FieldLabel, fieldClass, fieldErrorClass } from "@/components/ui/Field";
 import { cn } from "@/lib/utils";
@@ -22,19 +23,33 @@ type Props = {
   eventLabel: string | null;
   /** ISO start; adds the weekday to the date line. */
   eventStartsAt?: string | null;
+  /** Server render time (ms), so the date line hydrates in the same phase. */
+  renderedAt: number;
 };
+
+const NO_EDITS: ReadonlySet<string> = new Set();
 
 export function RegistrationForm({
   attribution,
   eventLabel,
   eventStartsAt,
+  renderedAt,
 }: Props) {
   const [state, action, pending] = useActionState<RegistrationState, FormData>(
     registerForMasterclass,
     {},
   );
-  const errors = state.errors ?? {};
+  // Fields edited since this result came back; a new result starts clean.
+  const [edits, setEdits] = useState({ result: state, fields: NO_EDITS });
+  const edited = edits.result === state ? edits.fields : NO_EDITS;
+  const errors = liveErrors(state.errors ?? {}, edited);
   const values = state.values;
+  const markEdited = (event: React.FormEvent<HTMLFormElement>) => {
+    const name = (event.target as HTMLInputElement).name;
+    if (!name || !state.errors?.[name as keyof typeof errors]) return;
+    if (edited.has(name)) return;
+    setEdits({ result: state, fields: new Set([...edited, name]) });
+  };
   const formRef = useRef<HTMLFormElement>(null);
 
   // After a failed submit, move focus to the first field that needs fixing so
@@ -53,6 +68,7 @@ export function RegistrationForm({
     <form
       ref={formRef}
       action={action}
+      onChange={markEdited}
       noValidate
       className="rounded-card border-ink shadow-card border-2 bg-white p-6 sm:p-7"
     >
@@ -64,7 +80,11 @@ export function RegistrationForm({
       </p>
       {eventLabel ? (
         <p className="mt-1 text-[15px] font-semibold text-slate-600">
-          <EventLabel label={eventLabel} startsAt={eventStartsAt} />
+          <EventDateLine
+            label={eventLabel}
+            startsAt={eventStartsAt}
+            renderedAt={renderedAt}
+          />
         </p>
       ) : null}
 
@@ -167,6 +187,14 @@ export function RegistrationForm({
           className="mt-3 rounded-sm text-center text-sm font-semibold text-red-600 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
         >
           {errors.form}
+        </p>
+      ) : null}
+      {state.notice ? (
+        <p
+          role="status"
+          className="text-ink rounded-control border-ink bg-tint mt-3 border-2 px-4 py-3 text-center text-sm font-semibold"
+        >
+          {state.notice}
         </p>
       ) : null}
 

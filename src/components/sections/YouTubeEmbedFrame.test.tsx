@@ -36,6 +36,19 @@ describe("YouTubeEmbedFrame", () => {
     expect(card.match(/<button/g)).toHaveLength(1);
   });
 
+  it("keeps the heavy scrim on the hero and a light one on cards", () => {
+    const hero = renderToStaticMarkup(
+      <YouTubeEmbedFrame embed={embed} title="Host video" />,
+    );
+    expect(hero).toContain("rgba(0,0,0,0.35)");
+
+    const card = renderToStaticMarkup(
+      <YouTubeEmbedFrame embed={embed} title="Member story" variant="card" />,
+    );
+    expect(card).toContain("rgba(0,0,0,0.15)");
+    expect(card).not.toContain("rgba(0,0,0,0.35)");
+  });
+
   it("moves the card button to the top-right when asked", () => {
     const card = renderToStaticMarkup(
       <YouTubeEmbedFrame

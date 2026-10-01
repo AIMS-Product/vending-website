@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { claim } from "./nowPlaying";
 
 /**
  * A play button laid over a player's box that renders `children` (the
@@ -40,6 +41,7 @@ export function ClickToLoad({
   children: ReactNode;
 }) {
   const [loaded, setLoaded] = useState(false);
+  const fallbackId = useId();
 
   // Only ever true after a press, so focus never moves on its own.
   useEffect(() => {
@@ -52,7 +54,13 @@ export function ClickToLoad({
   return (
     <button
       type="button"
-      onClick={() => setLoaded(true)}
+      onClick={() => {
+        // The player about to load takes the "now playing" channel, so any
+        // other video on the page stops. The id matches the one the player
+        // listens under (VidalyticsNowPlaying uses the container id).
+        claim(focusTargetId ?? fallbackId);
+        setLoaded(true);
+      }}
       aria-label={label}
       className="group absolute inset-0 z-10 grid cursor-pointer place-items-center focus-visible:outline-none"
     >

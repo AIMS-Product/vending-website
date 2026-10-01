@@ -14,7 +14,7 @@ const iconProps = {
   strokeWidth: 2,
   strokeLinecap: "round",
   strokeLinejoin: "round",
-  className: "text-brand-700 size-6 shrink-0",
+  className: "size-5 shrink-0",
 } as const;
 
 function BadgePercent() {
@@ -64,7 +64,7 @@ export function ShowUpLive() {
             {copy.highlight.map((phrase, index) => (
               <Fragment key={phrase}>
                 {index ? " " : null}
-                <Highlight>{phrase}</Highlight>
+                <Highlight className="my-0 leading-[1.02]">{phrase}</Highlight>
               </Fragment>
             ))}
           </h2>
@@ -85,11 +85,10 @@ export function ShowUpLive() {
                 >
                   <span
                     aria-hidden
-                    className="bg-brand-700 grid size-10 shrink-0 place-items-center rounded-md text-sm font-black text-white"
+                    className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--brand-700)] text-white"
                   >
-                    {index + 1}
+                    {Icon ? <Icon /> : null}
                   </span>
-                  {Icon ? <Icon /> : null}
                   <span className="min-w-0">
                     <span className="v2-display text-ink block text-[1.35rem] leading-none uppercase">
                       {bonus.title}

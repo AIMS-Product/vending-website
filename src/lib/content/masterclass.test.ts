@@ -5,6 +5,8 @@ import {
   calendarIcs,
   calendarLinks,
   confirmedPlaybookParams,
+  masterclassLiveEnd,
+  masterclassPhase,
   parseWebinarStart,
   safeFirstName,
 } from "./masterclass";
@@ -146,5 +148,37 @@ describe("confirmed page Playbook link", () => {
     expect(query.has("full_name")).toBe(false);
     expect(query.has("email")).toBe(false);
     expect(query.has("phone")).toBe(false);
+  });
+});
+
+describe("masterclassPhase", () => {
+  const startsAt = "2026-10-07T00:30:00.000Z";
+  const at = (iso: string) => Date.parse(iso);
+
+  it("is upcoming before the start, or with no readable start", () => {
+    expect(masterclassPhase(at("2026-10-06T12:00:00Z"), startsAt)).toBe(
+      "upcoming",
+    );
+    expect(masterclassPhase(at("2026-10-08T12:00:00Z"), null)).toBe("upcoming");
+  });
+
+  it("is live for 90 minutes from the start", () => {
+    expect(masterclassPhase(at(startsAt), startsAt)).toBe("live");
+    expect(masterclassPhase(at("2026-10-07T00:45:00Z"), startsAt)).toBe("live");
+    expect(masterclassPhase(at("2026-10-07T01:59:59Z"), startsAt)).toBe("live");
+  });
+
+  it("is ended from 90 minutes after the start", () => {
+    expect(masterclassPhase(at("2026-10-07T02:00:00Z"), startsAt)).toBe(
+      "ended",
+    );
+    expect(masterclassPhase(at("2026-10-08T12:00:00Z"), startsAt)).toBe(
+      "ended",
+    );
+  });
+
+  it("ends the countdown's live window at the same instant", () => {
+    expect(masterclassLiveEnd(startsAt)).toBe("2026-10-07T02:00:00.000Z");
+    expect(masterclassLiveEnd(null)).toBeNull();
   });
 });

@@ -9,7 +9,7 @@ import {
   ReplayHero,
   ReplayTestimonials,
 } from "@/components/sections/masterclass-replay/ReplaySections";
-import { StripPiiParams } from "@/components/sections/masterclass-replay/StripPiiParams";
+import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import replayHostStill from "@/components/sections/masterclass-replay/replay-host-still.jpg";
 import {
   replayCountdownLive,
@@ -38,7 +38,7 @@ export function replayMetadata(key: ReplayVariantKey): Metadata {
     url: replayHostStill.src,
     width: replayHostStill.width,
     height: replayHostStill.height,
-    alt: "Anthony K hosting the Vendingpreneurs masterclass replay",
+    alt: "Host of the Vendingpreneurs masterclass replay",
   };
   return {
     title: variant.metaTitle,

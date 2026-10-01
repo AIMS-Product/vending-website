@@ -11,11 +11,13 @@ import {
   REPLAY_GHL_FORM_ID,
   REPLAY_GHL_FORM_SCRIPT,
   REPLAY_GHL_FORM_SRC,
+  REPLAY_BOOKING_EYEBROW,
   replayTestimonials,
   replayTestimonialsCopy,
   type ReplayCtaParagraph,
   type ReplayVariant,
   type ReplayVideo,
+  youtubePoster,
 } from "@/lib/content/masterclass-replay";
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
@@ -35,6 +37,7 @@ export function ReplayVideoPlayer({
   loadOn = "near",
   bare = false,
   poster,
+  posterClassName,
   heroWidth = 940,
 }: {
   video: ReplayVideo;
@@ -43,6 +46,8 @@ export function ReplayVideoPlayer({
   bare?: boolean;
   /** Overrides the video's own poster (the hero's host still). */
   poster?: string;
+  /** Extra classes on the Vidalytics root; reaches the poster `img` child. */
+  posterClassName?: string;
   /** Desktop CSS width of a framed (hero) player, for the poster's `sizes`. */
   heroWidth?: number;
 }) {
@@ -53,6 +58,7 @@ export function ReplayVideoPlayer({
         title={title}
         loadOn={loadOn}
         poster={poster ?? video.poster}
+        className={posterClassName}
         framed={!bare}
         playButton={bare ? "card" : "hero"}
         playLabel={`Play ${title}`}
@@ -71,6 +77,7 @@ export function ReplayVideoPlayer({
       embed={embed}
       title={title}
       className="aspect-video w-full"
+      thumbnailUrl={youtubePoster(video.id)}
       variant={bare ? "card" : "hero"}
     />
   );
@@ -108,8 +115,8 @@ function AnchorButton({
 /**
  * The slim, unlinked brand bar /masterclass opens with. The wordmark PNG is
  * ~47% transparent margin, so height 52 draws a ~28px mark with ~15px of
- * air above and below it. Its column is the hero's, so the mark lines up
- * with the player's left edge.
+ * air above and below it. Narrow, its column is the 840px framed player's
+ * (840 + 2x40 gutter), so the mark lines up with the player's left edge.
  */
 function ReplayLogoBar({ wide }: { wide: boolean }) {
   return (
@@ -117,7 +124,7 @@ function ReplayLogoBar({ wide }: { wide: boolean }) {
       <div
         className={cn(
           "mx-auto flex items-center px-5 py-0.5 lg:px-10",
-          wide ? "max-w-[1120px]" : "max-w-[980px]",
+          wide ? "max-w-[1120px]" : "max-w-[920px]",
         )}
       >
         <Wordmark height={52} eager />
@@ -142,19 +149,28 @@ export function ReplayHero({
   // lines and pushes the player below the fold; a smaller size and wider
   // column keep it to two.
   const midHeading = !longHeading && variant.heading.length > 70;
+  // The framed player (every variant but advisory) is capped at 840px and set
+  // closer to the headline, so at 1440x900 it ends above the fold. The column
+  // keeps a 24px rhythm; the sub copy under the H1 tucks up to 16px.
   const subCopy = variant.sub.map((line) => (
-    <p key={line} className="max-w-[720px] text-lg text-slate-700">
+    <p
+      key={line}
+      className={cn(
+        "max-w-[720px] text-lg text-slate-700",
+        !midHeading && !copyAfterVideo && "-mt-2",
+      )}
+    >
       {line}
     </p>
   ));
   return (
     <section className="border-ink border-b-2 bg-white">
-      <ReplayLogoBar wide={longHeading || midHeading} />
+      <ReplayLogoBar wide={midHeading} />
       {expiresAt ? <ReplayCountdownStrip expiresAt={expiresAt} /> : null}
       <div
         className={cn(
           "mx-auto flex flex-col items-center px-5 pb-12 text-center lg:px-10",
-          midHeading ? "gap-5 pt-7" : "gap-6 pt-10 lg:pt-12",
+          midHeading ? "gap-5 pt-7" : "gap-6 pt-9",
           longHeading || midHeading ? "max-w-[1120px]" : "max-w-[980px]",
         )}
       >
@@ -177,15 +193,20 @@ export function ReplayHero({
           id={REPLAY_ANCHORS.video}
           className={cn(
             "w-full scroll-mt-6",
-            midHeading ? "max-w-[940px]" : "mt-2",
+            midHeading ? "max-w-[940px]" : "max-w-[840px]",
           )}
         >
           <ReplayVideoPlayer
             video={variant.mainVideo}
             title="Masterclass replay"
             poster={replayHostStill.src}
+            // The still is 16:9 like the player, so object-position alone
+            // cannot move it: a 2.5% zoom anchored at the bottom lifts the
+            // half-cut "1%" line on the wall sign out of frame (the top ~16 of
+            // 675 source rows) and leaves the host's face in the right third.
+            posterClassName="[&>img]:origin-bottom [&>img]:scale-[1.025]"
             loadOn="click"
-            heroWidth={longHeading ? 1040 : midHeading ? 940 : 900}
+            heroWidth={midHeading ? 940 : 840}
           />
         </div>
         {copyAfterVideo ? subCopy : null}
@@ -266,10 +287,11 @@ export function ReplayBooking({
       className="border-ink bg-tint scroll-mt-6 border-b-2"
     >
       <div className="mx-auto max-w-[760px] px-5 pt-14 lg:px-10">
+        {calendly ? <Eyebrow>{REPLAY_BOOKING_EYEBROW}</Eyebrow> : null}
         <h2
           className={cn(
-            "v2-display text-ink text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase",
-            calendly ? "text-left md:text-center" : "text-center",
+            "v2-display text-ink text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase",
+            calendly && "mt-3",
           )}
         >
           {cta.heading}
@@ -301,12 +323,12 @@ export function ReplayBooking({
         </div>
       </div>
       {/* Calendly switches to its two-column layout at 1000px; 1100 - 2x40 gutter - border leaves 1016px. The form needs no more than the copy column.
-          On phones hideDetails drops Calendly's event-details panel (the copy above already says it), so the frame opens on the month; md+ keeps the two-column layout with the event title and prep note. Once Calendly reports its real height the frame takes it. Pre-load minimum on a phone: a five-row month plus time zone ends ~480px into the frame, a six-row one ~530px, hence 620. Framed like every other card on the page. */}
+          On phones hideDetails drops Calendly's event-details panel (the copy above already says it), so the frame opens on the month; md+ keeps the two-column layout with the event title and prep note. Once Calendly reports its real height the frame takes it. Pre-load minimum on a phone: a five-row month plus time zone ends ~480px into the frame, a six-row one ~530px, hence 520; a six-row month grows it through page_height. Phones keep the ink frame; from md up Calendly's own grey-bordered card sits straight on the tint (as on GHL) instead of inside a second frame. CalendlyEmbed takes no className, so its root is reached as this wrapper's child. */}
       <div
         className={cn(
           "mx-auto px-5 lg:px-10",
           calendly
-            ? "max-w-[1100px] pt-6 pb-10 md:pt-8 md:pb-14"
+            ? "max-w-[1100px] pt-6 pb-10 md:pt-8 md:pb-14 md:[&>div]:border-0 md:[&>div]:bg-transparent md:[&>div]:shadow-none"
             : "max-w-[760px] pt-8 pb-14",
         )}
       >
@@ -317,7 +339,7 @@ export function ReplayBooking({
             url={cta.action.calendlyUrl}
             attribution={attribution}
             hideDetails="phone"
-            heightClassName="h-[620px] md:h-[700px]"
+            heightClassName="h-[520px] md:h-[700px]"
           />
         )}
       </div>
@@ -366,7 +388,10 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
         id={GHL_FORM_SLOT_ID}
         className="relative -mt-2 min-h-[1206px] overflow-hidden sm:-mt-10 sm:min-h-[787px]"
       >
-        <GhlFormLoading iframeId={`inline-${REPLAY_GHL_FORM_ID}`} />
+        <GhlFormLoading
+          iframeId={`inline-${REPLAY_GHL_FORM_ID}`}
+          fallbackHref={src.toString()}
+        />
         <WhenNearViewport
           targetId={GHL_FORM_SLOT_ID}
           margin="0px 0px 200px 0px"
@@ -403,18 +428,24 @@ function ReplayResult({ result }: { result: string }) {
   );
 }
 
+function Eyebrow({ children }: { children: string }) {
+  return (
+    <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
+      {children}
+    </p>
+  );
+}
+
 export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
-        <p className="text-eyebrow text-center text-xs font-black tracking-[0.14em] uppercase">
-          {replayTestimonialsCopy.eyebrow}
-        </p>
+        <Eyebrow>{replayTestimonialsCopy.eyebrow}</Eyebrow>
         <h2 className="v2-display text-ink mt-3 text-center text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
           {replayTestimonialsCopy.heading}
         </h2>
         {/* Below md a scroll-snap rail (next card peeking); a grid above. */}
-        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 items-start gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:items-stretch md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 items-stretch gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
           {replayTestimonials.map((item, index) => {
             const video = variant.testimonialVideos[index];
             return (
