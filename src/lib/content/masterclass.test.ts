@@ -144,6 +144,12 @@ describe("stripPiiFromUrl", () => {
     expect(stripPiiFromUrl(`${base}?first=4155551234`)).toBe(base);
   });
 
+  it("removes the GHL contact_id and keeps attribution", () => {
+    expect(
+      stripPiiFromUrl(`${base}?contact_id=abc123XYZ&utm_source=fb&first=Jane`),
+    ).toBe(`${base}?utm_source=fb&first=Jane`);
+  });
+
   it("keeps a plain first name", () => {
     expect(isSafeFirstName("Jane")).toBe(true);
     expect(stripPiiFromUrl(`${base}?first=Jane`)).toBeNull();

@@ -40,16 +40,24 @@ export function countdownPhase(
   return expiredLabel && now < end ? { phase: "label" } : { phase: "none" };
 }
 
+/** The timer's accessible name, set only when a call site gives one. */
+export function timerLabelProps(label?: string): { "aria-label"?: string } {
+  return label ? { "aria-label": label } : {};
+}
+
 export function Countdown({
   startsAt,
   endsAt,
   expiredLabel,
+  label,
 }: {
   startsAt: string;
   /** When the live window closes; after it nothing renders. */
   endsAt?: string;
   /** Shown from `startsAt` to `endsAt`. Omit to render nothing on expiry. */
   expiredLabel?: string;
+  /** Accessible name for the role="timer" element. No default. */
+  label?: string;
 }) {
   const now = useSyncExternalStore(subscribeToSeconds, readSecond, readNothing);
 
@@ -70,7 +78,12 @@ export function Countdown({
   }));
 
   return (
-    <div className="flex gap-2 sm:gap-3" role="timer" aria-live="off">
+    <div
+      className="flex gap-2 sm:gap-3"
+      role="timer"
+      aria-live="off"
+      {...timerLabelProps(label)}
+    >
       {parts.map(({ label, short, value }) => (
         <div
           key={label}

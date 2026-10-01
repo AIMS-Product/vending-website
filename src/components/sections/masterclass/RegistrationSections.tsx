@@ -13,7 +13,9 @@ import { Highlight } from "@/components/ui/Highlight";
 import { APPLY_QUIZ_ANCHOR, APPLY_VSL_ANCHOR } from "@/lib/content/apply-page";
 import {
   ANTHONY_VIDEO_ID,
+  COUNTDOWN_LABEL,
   MASTERCLASS_DISCLAIMER,
+  WATCH_HEADING_ID,
   fitCopy,
   fitFor,
   hostCandids,
@@ -91,7 +93,11 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {hostCopy.eyebrow}
           </p>
-          <h2 className={cn(SECTION_HEADING, "mt-3 text-balance")}>
+          <h2
+            id={WATCH_HEADING_ID}
+            tabIndex={-1}
+            className={cn(SECTION_HEADING, "mt-3 text-balance outline-none")}
+          >
             <Emphasis text={hostCopy.line} phrase={hostCopy.highlight} />
           </h2>
           {rows.length ? (
@@ -303,7 +309,7 @@ export function StoryList({
                     <p className="flex flex-col items-start gap-1">
                       <Highlight
                         className={cn(
-                          "v2-display px-1.5 leading-none tabular-nums",
+                          "v2-display px-1.5 leading-none uppercase tabular-nums",
                           statSize === "lg" ? "text-3xl" : "text-2xl",
                         )}
                       >
@@ -366,7 +372,11 @@ export function FitSection({
           ) : null}
           {startsAt && endsAt ? (
             <div className="mt-5">
-              <Countdown startsAt={startsAt} endsAt={endsAt} />
+              <Countdown
+                startsAt={startsAt}
+                endsAt={endsAt}
+                label={COUNTDOWN_LABEL}
+              />
             </div>
           ) : null}
           <HostCandids />

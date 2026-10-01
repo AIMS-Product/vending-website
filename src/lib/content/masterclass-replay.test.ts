@@ -5,6 +5,7 @@ import {
   replayExpiry,
   REPLAY_L1_BOOKING_CALENDLY,
   REPLAY_MAIN_VIDEO,
+  REPLAY_META_TITLE,
   REPLAY_PATHS,
   replayCountdownLive,
   replayDescription,
@@ -97,25 +98,25 @@ describe("masterclass replay content", () => {
     ]);
   });
 
-  it("orders advisory's cards Michael, Joe, Mallorie / Shannon, Katie + Graham, videos following", () => {
+  it("orders every variant's cards Michael, Joe, Mallorie / Shannon, Katie + Graham, videos following", () => {
     const names = (key: ReplayVariantKey) =>
       replayTestimonialCards(replayVariants[key]).map((c) => c.item.name);
-    expect(names("advisory")).toEqual([
-      "Michael",
-      "Joe",
-      "Mallorie",
-      "Shannon",
-      "Katie + Graham",
-    ]);
-    for (const key of ["dna", "adnb", "meta"] as const) {
-      expect(names(key)).toEqual(replayTestimonials.map((t) => t.name));
+    for (const key of KEYS) {
+      expect(names(key)).toEqual([
+        "Michael",
+        "Joe",
+        "Mallorie",
+        "Shannon",
+        "Katie + Graham",
+      ]);
     }
     // Each card keeps its own member's video after the reorder.
-    const advisory = replayTestimonialCards(replayVariants.advisory);
-    const dna = replayTestimonialCards(replayVariants.dna);
-    for (const card of advisory) {
-      const same = dna.find((c) => c.item.name === card.item.name);
-      expect(card.video).toEqual(same?.video);
+    for (const key of KEYS) {
+      const variant = replayVariants[key];
+      for (const card of replayTestimonialCards(variant)) {
+        const index = replayTestimonials.indexOf(card.item);
+        expect(card.video).toBe(variant.testimonialVideos[index]);
+      }
     }
   });
 
@@ -184,12 +185,18 @@ describe("masterclass replay content", () => {
     expect(replayCountdownLive("not a date", at)).toBe(false);
   });
 
-  it("titles every variant 'Masterclass Replay' and describes it from its page copy", () => {
-    // The audience key (DNA, ADNB, Meta, Advisory) never reaches a tab or a
-    // share preview.
-    for (const key of KEYS) {
-      expect(replayVariants[key].metaTitle).toBe("Masterclass Replay");
+  it("tells the variants apart by tab title, and describes each from its page copy", () => {
+    // Tabs name the page's offer; the audience key (DNA, ADNB, Meta) never
+    // reaches a tab, and every share preview stays "Masterclass Replay".
+    for (const key of ["dna", "adnb", "meta"] as const) {
+      expect(replayVariants[key].metaTitle).toBe(
+        "Masterclass Replay: Book Your Call",
+      );
     }
+    expect(replayVariants.advisory.metaTitle).toBe(
+      "Masterclass Replay: Advisory",
+    );
+    expect(REPLAY_META_TITLE).toBe("Masterclass Replay");
     for (const key of KEYS) {
       const variant = replayVariants[key];
       const description = replayDescription(variant);

@@ -12,6 +12,7 @@ import {
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import replayHostStill from "@/components/sections/masterclass-replay/replay-host-still.jpg";
 import {
+  REPLAY_META_TITLE,
   replayCountdownLive,
   replayDescription,
   replayExpiry,
@@ -28,12 +29,14 @@ import {
  * Replay pages are sent by email, SMS, and ads; never indexed. Each variant
  * still carries its own description and share card (the hero's host still),
  * so a link pasted into a text or DM previews as this replay rather than the
- * homepage. The title is the same "Masterclass Replay" on all four: the
- * variant key is an internal audience code and stays out of tabs and shares.
+ * homepage. The share title is "Masterclass Replay" on all four; the tab
+ * title adds what the page offers (Book Your Call / Advisory) so the
+ * variants differ in tabs and analytics. The audience key never shows.
  */
 export function replayMetadata(key: ReplayVariantKey): Metadata {
   const variant = replayVariants[key];
-  const title = variant.metaTitle;
+  // Shares keep the plain title; only the tab names the page's offer.
+  const title = REPLAY_META_TITLE;
   const description = replayDescription(variant);
   const image = {
     url: replayHostStill.src,

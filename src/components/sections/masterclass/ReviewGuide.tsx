@@ -210,7 +210,20 @@ export function ReviewGuide() {
                         external
                       </span>
                     ) : null}
-                    <Slashed text={pathOf(page.href)} />
+                    {external ? (
+                      <>
+                        {/* Below sm the repeated GHL host is dropped so the
+                            pill and the path share one line. */}
+                        <span className="sm:hidden">
+                          {new URL(page.href).pathname}
+                        </span>
+                        <span className="hidden sm:inline">
+                          <Slashed text={pathOf(page.href)} />
+                        </span>
+                      </>
+                    ) : (
+                      <Slashed text={pathOf(page.href)} />
+                    )}
                   </span>
                 </span>
                 <ArrowRightIcon />

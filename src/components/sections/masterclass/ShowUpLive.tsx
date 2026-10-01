@@ -18,7 +18,7 @@ const iconProps = {
   strokeWidth: 2,
   strokeLinecap: "round",
   strokeLinejoin: "round",
-  className: "size-5 shrink-0",
+  className: "size-4 shrink-0",
 } as const;
 
 function BadgePercent() {
@@ -87,21 +87,23 @@ export function ShowUpLive({
           </p>
         </div>
         <div data-reveal>
-          <ol className="grid gap-4">
+          {/* One flat list, outlined icons: the page already stacks card
+              groups, and the bonuses read better as a single checklist. */}
+          <ul className="rounded-card border-ink border-2 bg-white">
             {copy.bonuses.map((bonus, index) => {
               const Icon = ICONS[index];
               return (
                 <li
                   key={bonus.title}
-                  className="rounded-card border-ink flex items-center gap-4 border-2 bg-white p-5"
+                  className="flex gap-3 border-b border-slate-200 p-4 last:border-b-0"
                 >
                   <span
                     aria-hidden
-                    className="grid size-10 shrink-0 place-items-center rounded-md bg-[var(--brand-700)] text-white"
+                    className="border-ink text-ink grid size-8 shrink-0 place-items-center rounded-md border-2 bg-white"
                   >
                     {Icon ? <Icon /> : null}
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 pt-0.5">
                     <span className="v2-display text-ink block text-[1.35rem] leading-none uppercase">
                       {bonus.title}
                     </span>
@@ -112,10 +114,9 @@ export function ShowUpLive({
                 </li>
               );
             })}
-          </ol>
-          <p className="text-eyebrow mt-5 text-center text-xs font-black tracking-[0.14em] uppercase lg:text-left">
-            {copy.closing}
-          </p>
+          </ul>
+          {/* copy.closing ("These won't be in the replay.") is not rendered:
+              the body above already says it. */}
         </div>
       </div>
     </section>

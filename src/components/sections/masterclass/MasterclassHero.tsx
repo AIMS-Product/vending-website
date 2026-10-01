@@ -1,8 +1,10 @@
 import { APPLY_QUIZ_ANCHOR, APPLY_VSL_ANCHOR } from "@/lib/content/apply-page";
+import { SaveSeatLink } from "@/components/sections/masterclass/SaveSeatLink";
 import { ChevronDownIcon, PlayIcon } from "@/components/sections/apply/icons";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
 import {
+  WATCH_HEADING_ID,
   masterclassHero,
   masterclassTakeaways,
 } from "@/lib/content/masterclass";
@@ -77,10 +79,10 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
       </div>
       {/* One grid, in reading order: headline, subhead, form, takeaways,
           video link. So keyboard focus reaches the form right after the
-          headline. From lg the copy sits in column 1 between two flexible
-          spacer rows (vertically centred against the form) and the form
-          spans every row of column 2. */}
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[1fr_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
+          headline. From lg the copy is top-anchored in column 1 (a fixed top
+          row, a flexible bottom one) so form validation growing column 2
+          never moves it, and the form spans every row of column 2. */}
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase lg:col-start-1 lg:row-start-2 lg:max-w-[620px]">
           {copy.eyebrow}
         </p>
@@ -109,7 +111,7 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
         </p>
         <div
           id={APPLY_QUIZ_ANCHOR}
-          className="mt-6 w-full min-w-0 scroll-mt-6 self-center lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
+          className="mt-6 w-full min-w-0 scroll-mt-6 self-start lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
         >
           {aside}
         </div>
@@ -137,8 +139,9 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
             })}
           </ul>
         </div>
-        <a
+        <SaveSeatLink
           href={`#${APPLY_VSL_ANCHOR}`}
+          focusId={WATCH_HEADING_ID}
           className="group text-ink mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:col-start-1 lg:row-start-6"
         >
           <span className="bg-brand-600 flex size-11 items-center justify-center rounded-full text-white shadow-[3px_3px_0_#111111] transition-transform group-hover:translate-y-0.5">
@@ -148,7 +151,7 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
             {copy.videoCue}
             <ChevronDownIcon className="text-eyebrow size-4 motion-safe:animate-bounce" />
           </span>
-        </a>
+        </SaveSeatLink>
       </div>
     </section>
   );

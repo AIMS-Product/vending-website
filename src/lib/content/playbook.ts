@@ -389,8 +389,6 @@ export const stories = {
   eyebrow: "SAME PLAYBOOK. DIFFERENT SUCCESS STORIES.",
   title: "What Happens When You Follow Mike's Process, Step-By-Step?",
   highlight: "Mike's Process",
-  intro:
-    "A food truck owner, a stay-at-home mom, a former real estate agent, and a first-time micro market operator - four different starting points, the same process, all profitable routes.",
   items: [
     // Members with a face in the approved group image lead, so the two
     // photo cards share a row.
@@ -434,10 +432,14 @@ export const host = {
   title:
     "From 60-Hour Work Weeks Making 1,200/Month to 150+ Machines Generating 200k/Month In Just a Few Years",
   highlight: "200k/Month",
+  /** GHL's three bio paragraphs, split at sentence boundaries for phones. */
   paragraphs: [
-    "I grew up on a family farm in rural Iowa. I put myself through the University of Kansas, and for years I worked as a college strength and conditioning coach. My life consisted of long hours, a paycheck that never seemed to move, and a schedule that wasn't mine. The moment vending stopped being a curiosity and started being the plan is when I really started to see a change. My first machine brought in 600 a month. It wasn't life-changing, but it was proof.",
-    "Today, my best location alone brings in over 22k in a single month, and I still run this business myself. Not because I have to, but because I built it to work, and I want to know it still works. Every script, template, and framework in this Playbook is what I'm using on my own route right now, not what I used to do five years ago.",
-    "The part I care about most isn't my own numbers. It's watching regular people - people with a job, a family, a schedule already full - use this exact process to place their first machine and realize this is actually real. That's who this Playbook is for. Not someone looking for a get-rich-quick story. Someone who wants a real, proven way to build something that's theirs.",
+    "I grew up on a family farm in rural Iowa. I put myself through the University of Kansas, and for years I worked as a college strength and conditioning coach. My life consisted of long hours, a paycheck that never seemed to move, and a schedule that wasn't mine.",
+    "The moment vending stopped being a curiosity and started being the plan is when I really started to see a change. My first machine brought in 600 a month. It wasn't life-changing, but it was proof.",
+    "Today, my best location alone brings in over 22k in a single month, and I still run this business myself. Not because I have to, but because I built it to work, and I want to know it still works.",
+    "Every script, template, and framework in this Playbook is what I'm using on my own route right now, not what I used to do five years ago.",
+    "The part I care about most isn't my own numbers. It's watching regular people - people with a job, a family, a schedule already full - use this exact process to place their first machine and realize this is actually real.",
+    "That's who this Playbook is for. Not someone looking for a get-rich-quick story. Someone who wants a real, proven way to build something that's theirs.",
   ],
 };
 
@@ -472,6 +474,7 @@ export const faq = {
 export const finalOffer = {
   badge: "EARLY BIRD SPECIAL · ACTIVATED",
   title: "Get Mike Hoffmann's Playbook Today",
+  highlight: "Mike Hoffmann's Playbook",
   proof: "3,000 Active Vending Locations · $3M+ Combined Revenue",
   urgency: "Enrollment Closing Soon - Nearing Capacity",
   price: "$67",

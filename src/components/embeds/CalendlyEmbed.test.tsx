@@ -253,6 +253,98 @@ describe("CalendlyFrame stall fallback", () => {
     expect(calls.loaded).toBe(0);
   });
 
+  // Chrome does not paint an offscreen cross-origin iframe, so a clock
+  // started at mount showed a false fallback to visitors still watching the
+  // replay above. The clock starts when the calendar nears the viewport.
+  it("starts the stall clock only once the calendar intersects", () => {
+    vi.useFakeTimers();
+    const source = new EventTarget();
+    const calls = { loaded: 0, stalled: 0 };
+    let fire: ((entries: { isIntersecting: boolean }[]) => void) | undefined;
+    const observed = { options: undefined as unknown, disconnects: 0 };
+    class FakeObserver {
+      constructor(
+        cb: (entries: { isIntersecting: boolean }[]) => void,
+        options?: IntersectionObserverInit,
+      ) {
+        fire = cb;
+        observed.options = options;
+      }
+      observe() {}
+      disconnect() {
+        observed.disconnects++;
+      }
+    }
+    const stop = frame.watchCalendly({
+      source: source as unknown as Window,
+      target: {} as Element,
+      Observer: FakeObserver,
+      onHeight: () => {},
+      onLoaded: () => calls.loaded++,
+      onStall: () => calls.stalled++,
+      stallMs: 15_000,
+    });
+    expect(observed.options).toEqual({ rootMargin: "200px" });
+    vi.advanceTimersByTime(60_000);
+    expect(calls.stalled).toBe(0);
+    fire?.([{ isIntersecting: false }]);
+    vi.advanceTimersByTime(15_000);
+    expect(calls.stalled).toBe(0);
+    fire?.([{ isIntersecting: true }]);
+    vi.advanceTimersByTime(14_999);
+    expect(calls.stalled).toBe(0);
+    vi.advanceTimersByTime(1);
+    expect(calls.stalled).toBe(1);
+    // The listener was live before intersection all along.
+    source.dispatchEvent(
+      new MessageEvent("message", {
+        origin: "https://calendly.com",
+        data: { event: "calendly.event_type_viewed" },
+      }),
+    );
+    expect(calls.loaded).toBe(1);
+    stop();
+    expect(observed.disconnects).toBeGreaterThan(0);
+  });
+
+  it("starts the clock at mount when IntersectionObserver is missing", () => {
+    vi.useFakeTimers();
+    let stalled = 0;
+    frame.watchCalendly({
+      source: new EventTarget() as unknown as Window,
+      target: {} as Element,
+      Observer: undefined,
+      onHeight: () => {},
+      onLoaded: () => {},
+      onStall: () => stalled++,
+      stallMs: 15_000,
+    });
+    vi.advanceTimersByTime(15_000);
+    expect(stalled).toBe(1);
+  });
+
+  it("drops the spinner and skeleton once stalled", () => {
+    const src = "https://calendly.com/d/x";
+    const loading = renderToStaticMarkup(
+      createElement(frame.LoadingLayer, { stalled: false, frameSrc: src }),
+    );
+    expect(loading).toContain("Loading available times…");
+    expect(loading).toContain("<svg");
+    expect(loading).not.toContain(frame.CALENDLY_FALLBACK);
+
+    const stalled = renderToStaticMarkup(
+      createElement(frame.LoadingLayer, { stalled: true, frameSrc: src }),
+    );
+    expect(stalled).not.toContain("Loading available times…");
+    expect(stalled).not.toContain("<svg");
+    expect(stalled).not.toContain("rounded-full bg-slate-100");
+    expect(stalled).toContain("justify-center");
+    expect(stalled).toContain(
+      frame.CALENDLY_STALLED_LINE.replace("'", "&#x27;"),
+    );
+    expect(stalled).toContain(frame.CALENDLY_FALLBACK);
+  });
+
   it("hides the iframe until loaded so only our skeleton shows", () => {
     const html = renderToStaticMarkup(
       createElement(CalendlyEmbed, {

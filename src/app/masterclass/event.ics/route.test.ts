@@ -32,7 +32,7 @@ describe("GET /masterclass/event.ics", () => {
     // The long DESCRIPTION really was folded, and unfolds back to one line.
     expect(lines.some((line) => line.startsWith(" "))).toBe(true);
     expect(unfold(ics)).toContain(
-      "DESCRIPTION:Your personal Zoom link is in your confirmation email from anthony@webinar.vendingpreneurs.co.\r\n",
+      "DESCRIPTION:Your personal Zoom link is in the confirmation email from anthony@webinar.vendingpreneurs.co (check spam)\r\n",
     );
   });
 

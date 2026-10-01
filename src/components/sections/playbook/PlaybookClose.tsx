@@ -43,7 +43,7 @@ export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
             <Highlight>{host.highlight}</Highlight>
             {after}
           </h2>
-          <div className="mt-8 max-w-[60ch] space-y-5 text-[1.05rem] leading-relaxed">
+          <div className="mt-8 max-w-[60ch] space-y-4 text-[1.0625rem] leading-relaxed">
             {host.paragraphs.map((p) => (
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
@@ -101,6 +101,24 @@ export function PlaybookFaq() {
   );
 }
 
+/**
+ * The Emphasis highlight, cut into two blocks at the phrase's last space:
+ * "Mike Hoffmann's Playbook" in one nowrap block is wider than the offer
+ * card at every breakpoint, so the second word gets to take a new line.
+ */
+function SplitEmphasis({ text, phrase }: { text: string; phrase: string }) {
+  const [before, after] = text.split(phrase);
+  const cut = phrase.lastIndexOf(" ");
+  return (
+    <>
+      {before}
+      <Highlight>{phrase.slice(0, cut)}</Highlight>{" "}
+      <Highlight>{phrase.slice(cut + 1)}</Highlight>
+      {after}
+    </>
+  );
+}
+
 export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
   return (
     <section className="bg-brand-50 py-16 lg:py-24">
@@ -119,7 +137,10 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
           <div className="mx-auto max-w-[640px] p-6 text-center sm:p-10">
             <p className={EYEBROW}>{finalOffer.badge}</p>
             <h2 className="v2-display text-ink mt-3 text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
-              {finalOffer.title}
+              <SplitEmphasis
+                text={finalOffer.title}
+                phrase={finalOffer.highlight}
+              />
             </h2>
             <p className="mt-3 text-sm font-bold">{finalOffer.proof}</p>
             <p className="text-eyebrow mt-5 text-sm font-black uppercase">

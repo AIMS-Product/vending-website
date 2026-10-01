@@ -22,7 +22,9 @@ const LIMITS = {
   // IP budget is loose while each email and phone stays tight.
   masterclass_register_ip: { windowMs: 10 * 60 * 1000, max: 30 },
   masterclass_register: { windowMs: 10 * 60 * 1000, max: 5 },
-  masterclass_register_phone: { windowMs: 24 * 60 * 60 * 1000, max: 3 },
+  // Email and phone budgets are only spent by a registration GHL accepted
+  // (peek before, record after), so a GHL outage never locks a person out.
+  masterclass_register_phone: { windowMs: 24 * 60 * 60 * 1000, max: 5 },
   // Intake answers onto a contact the signed cookie names; keyed per contact.
   masterclass_intake: { windowMs: 10 * 60 * 1000, max: 10 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
@@ -155,6 +157,77 @@ export async function checkPublicRateLimit(
   }
 
   return true;
+}
+
+type RateLimitSubject = { ip: string | null; email?: string | null };
+
+/**
+ * Report whether one more attempt would be allowed, WITHOUT spending budget.
+ * Pair it with `recordPublicRateLimitHit` after the guarded work succeeds, for
+ * budgets that should only count real outcomes (a failed upstream write must
+ * not use up a registrant's daily allowance). Same fail-open/closed rules as
+ * `checkPublicRateLimit`.
+ */
+export async function peekPublicRateLimit(
+  action: PublicRateLimitAction,
+  { ip, email }: RateLimitSubject,
+  deps: PublicRateLimitDeps = {},
+): Promise<boolean> {
+  const emailHash = hashEmail(email);
+  if (!ip && !emailHash) return true;
+
+  const { windowMs, max } = LIMITS[action];
+  const now = deps.now?.() ?? new Date();
+  const since = new Date(now.getTime() - windowMs).toISOString();
+
+  try {
+    const client = deps.client ?? createAdminClient();
+    const { count, error } = await client
+      .from("public_request_hits")
+      .select("id", { count: "exact", head: true })
+      .eq("action", action)
+      .gte("occurred_at", since)
+      .or(subjectFilter(ip, emailHash));
+    if (error) throw new Error(error.message);
+    return (count ?? 0) < max;
+  } catch (error) {
+    const failClosed = deps.failClosed ?? false;
+    console.warn(
+      `public rate limit peek failed ${failClosed ? "closed" : "open"}`,
+      {
+        action,
+        error: error instanceof Error ? error.message : "unknown error",
+      },
+    );
+    return !failClosed;
+  }
+}
+
+/**
+ * Spend one unit of budget for an attempt that already succeeded (see
+ * `peekPublicRateLimit`). Throws on a database error so the caller decides
+ * what a lost hit means; it never silently drops one.
+ */
+export async function recordPublicRateLimitHit(
+  action: PublicRateLimitAction,
+  { ip, email }: RateLimitSubject,
+  deps: Pick<PublicRateLimitDeps, "client" | "now"> = {},
+): Promise<void> {
+  const emailHash = hashEmail(email);
+  if (!ip && !emailHash) return;
+  const now = deps.now?.() ?? new Date();
+  const client = deps.client ?? createAdminClient();
+  const { error } = await client.from("public_request_hits").insert({
+    action,
+    ip,
+    email_hash: emailHash,
+    occurred_at: now.toISOString(),
+  });
+  if (error) {
+    throw new Error(
+      `public rate limit record failed (${action}): ${error.message}`,
+    );
+  }
 }
 
 /** Drop hit rows past the retention window. Best-effort; never throws. */

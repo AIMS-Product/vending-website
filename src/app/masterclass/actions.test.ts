@@ -18,6 +18,8 @@ const mocks = vi.hoisted(() => ({
     throw new Error(`REDIRECT ${url}`);
   }),
   checkPublicRateLimit: vi.fn(),
+  peekPublicRateLimit: vi.fn(),
+  recordPublicRateLimitHit: vi.fn(),
   registerWebinarContact: vi.fn(),
   getMasterclassEvent: vi.fn(),
   config: {
@@ -40,6 +42,8 @@ vi.mock("@/lib/public-rate-limit", async () => ({
     "@/lib/public-rate-limit",
   )),
   checkPublicRateLimit: mocks.checkPublicRateLimit,
+  peekPublicRateLimit: mocks.peekPublicRateLimit,
+  recordPublicRateLimitHit: mocks.recordPublicRateLimitHit,
 }));
 vi.mock("@/lib/ghl/webinar-registration", async () => ({
   ...(await vi.importActual<typeof import("@/lib/ghl/webinar-registration")>(
@@ -75,6 +79,8 @@ beforeEach(() => {
   mocks.config.MASTERCLASS_SESSION_SECRET = "k".repeat(32);
   mocks.headers.mockResolvedValue(new Headers({ "x-real-ip": "1.2.3.4" }));
   mocks.checkPublicRateLimit.mockResolvedValue(true);
+  mocks.peekPublicRateLimit.mockResolvedValue(true);
+  mocks.recordPublicRateLimitHit.mockResolvedValue(undefined);
   mocks.registerWebinarContact.mockResolvedValue({
     outcome: "registered",
     contactId: "c1",
@@ -157,7 +163,7 @@ describe("registerForMasterclass", () => {
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
   });
 
-  it("checks a loose IP budget, then tight email and phone budgets, all fail closed", async () => {
+  it("spends the IP budget up front and only peeks the email and phone budgets, all fail closed", async () => {
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
       "REDIRECT",
     );
@@ -167,6 +173,8 @@ describe("registerForMasterclass", () => {
         { ip: "1.2.3.4", email: null },
         { failClosed: true },
       ],
+    ]);
+    expect(mocks.peekPublicRateLimit.mock.calls).toEqual([
       [
         "masterclass_register",
         { ip: null, email: "mary@example.com" },
@@ -178,21 +186,54 @@ describe("registerForMasterclass", () => {
         { failClosed: true },
       ],
     ]);
+    // Spent only after GHL accepted the contact.
+    expect(mocks.recordPublicRateLimitHit.mock.calls).toEqual([
+      ["masterclass_register", { ip: null, email: "mary@example.com" }],
+      ["masterclass_register_phone", { ip: null, email: "phone:+15415550123" }],
+    ]);
+    expect(
+      mocks.registerWebinarContact.mock.invocationCallOrder[0],
+    ).toBeLessThan(mocks.recordPublicRateLimitHit.mock.invocationCallOrder[0]);
   });
 
   it("gives each phone its own budget, fail closed", async () => {
-    mocks.checkPublicRateLimit
-      .mockResolvedValueOnce(true)
+    mocks.peekPublicRateLimit
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false);
     const state = await registerForMasterclass({}, form());
-    expect(state.errors?.form).toBeTruthy();
-    expect(mocks.checkPublicRateLimit).toHaveBeenLastCalledWith(
+    expect(state.errors?.form).toBe(MASTERCLASS_BUSY_MESSAGE);
+    expect(mocks.peekPublicRateLimit).toHaveBeenLastCalledWith(
       "masterclass_register_phone",
       { ip: null, email: "phone:+15415550123" },
       { failClosed: true },
     );
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
+    expect(mocks.recordPublicRateLimitHit).not.toHaveBeenCalled();
+  });
+
+  it("does not spend the email or phone budget when GHL fails", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.registerWebinarContact.mockRejectedValue(new Error("GHL down"));
+    const state = await registerForMasterclass({}, form());
+    expect(state.errors?.form).toBe(registrationErrorCopy.failed);
+    expect(mocks.peekPublicRateLimit).toHaveBeenCalledTimes(2);
+    expect(mocks.recordPublicRateLimitHit).not.toHaveBeenCalled();
+  });
+
+  it("still confirms a registration whose budget hit could not be recorded", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.recordPublicRateLimitHit.mockRejectedValue(new Error("db down"));
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed",
+    );
+    expect(error).toHaveBeenCalledWith(
+      "masterclass: rate limit hit not recorded",
+      expect.objectContaining({ action: "masterclass_register" }),
+    );
+  });
+
+  it("does not promise a time window in the busy message", () => {
+    expect(MASTERCLASS_BUSY_MESSAGE).not.toMatch(/minute|hour|\d/);
   });
 
   it.each([

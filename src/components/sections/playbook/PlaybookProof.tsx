@@ -142,13 +142,16 @@ type Story = (typeof stories.items)[number];
 /** One header pattern for every story: name, then the story. Faces live in the Opportunity cards. */
 function StoryCard({ story }: { story: Story }) {
   return (
-    <Card as="article" className="flex h-full flex-col">
-      <h3 className="v2-display text-ink text-3xl leading-none uppercase">
+    <Card
+      as="article"
+      className="flex h-full flex-col max-md:border-0 max-md:p-0 max-md:shadow-none"
+    >
+      <h3 className="v2-display text-ink text-2xl leading-none uppercase md:text-3xl">
         {story.name}
       </h3>
-      <blockquote className="mt-5 text-[1.05rem] leading-relaxed">
+      <p className="mt-2 leading-snug md:mt-5 md:text-[1.05rem] md:leading-relaxed">
         {story.text}
-      </blockquote>
+      </p>
     </Card>
   );
 }
@@ -165,12 +168,11 @@ export function PlaybookStories({ checkoutHref }: PlaybookProofProps) {
             nowrap="Step-By-Step?"
           />
         </h2>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed">
-          {stories.intro}
-        </p>
-        <ul className="mt-12 grid gap-6 md:grid-cols-2">
+        {/* Phones: one framed list, so the four stories don't read as a
+            second run of raised cards after the Opportunity quotes. */}
+        <ul className="rounded-card border-ink divide-ink mt-10 divide-y-2 border-2 bg-white md:mt-12 md:grid md:grid-cols-2 md:gap-6 md:divide-y-0 md:border-0 md:bg-transparent">
           {stories.items.map((s) => (
-            <li key={s.name} data-reveal>
+            <li key={s.name} data-reveal className="p-5 md:p-0">
               <StoryCard story={s} />
             </li>
           ))}

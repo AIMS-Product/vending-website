@@ -5,6 +5,7 @@ import {
   armStallWatch,
   FormAction,
   GHL_FORM_STALL_MS,
+  GhlFormLayer,
   GhlFormLoading,
   isGhlOrigin,
   trackGhlForm,
@@ -227,5 +228,38 @@ describe("GhlFormLoading", () => {
     expect(html).toContain('aria-hidden="true"');
     expect(html).toContain("Loading your application");
     expect(html).not.toContain("Open the application");
+  });
+
+  it("drops the skeleton once stalled: one line, then the link straight under it", () => {
+    const html = renderToStaticMarkup(
+      createElement(GhlFormLayer, { loaded: false, stalled: true, href: HREF }),
+    );
+    expect(html).not.toContain("data-ghl-skeleton");
+    expect(html).not.toContain("Loading your application");
+    expect(html).toContain("data-ghl-fallback");
+    expect(html).toContain("The application didn&#x27;t load here.");
+    expect(html).toContain("Open the application");
+    // In flow (not absolute), so the slot can shrink to the panel.
+    expect(html).not.toContain("absolute");
+    expect(html.indexOf("didn&#x27;t load here")).toBeLessThan(
+      html.indexOf("Open the application"),
+    );
+  });
+
+  it("keeps the skeleton while loading, and a late form fades the panel", () => {
+    const loading = renderToStaticMarkup(
+      createElement(GhlFormLayer, {
+        loaded: false,
+        stalled: false,
+        href: HREF,
+      }),
+    );
+    expect(loading).toContain("data-ghl-skeleton");
+    expect(loading).not.toContain("data-ghl-fallback");
+    const late = renderToStaticMarkup(
+      createElement(GhlFormLayer, { loaded: true, stalled: true, href: HREF }),
+    );
+    expect(late).toContain("opacity-0");
+    expect(late).not.toContain("data-ghl-fallback");
   });
 });

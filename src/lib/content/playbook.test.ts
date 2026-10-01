@@ -3,7 +3,10 @@ import {
   GHL_CHECKOUT_URL,
   PRICE,
   checkoutHref,
+  finalOffer,
+  host,
   playbookHref,
+  stories,
 } from "./playbook";
 
 describe("playbook offer", () => {
@@ -66,5 +69,34 @@ describe("playbook offer", () => {
     expect(name("x".repeat(81))).toBeNull();
     expect(name("Bob")).toBe("Bob");
     expect(name("Mary-Jo O'Neil")).toBe("Mary-Jo O'Neil");
+  });
+
+  it("keeps Mike's bio verbatim after the phone-friendly split", () => {
+    const bio = host.paragraphs.join(" ");
+    expect(bio).toContain(
+      "a schedule that wasn't mine. The moment vending stopped being a curiosity",
+    );
+    expect(bio).toContain(
+      "I want to know it still works. Every script, template, and framework",
+    );
+    expect(bio.split(/(?<=\.) /).length).toBe(14);
+    expect(bio.startsWith("I grew up on a family farm in rural Iowa.")).toBe(
+      true,
+    );
+    expect(bio.endsWith("build something that's theirs.")).toBe(true);
+  });
+
+  it("highlights a phrase that is really in the final offer title", () => {
+    expect(finalOffer.title).toContain(finalOffer.highlight);
+  });
+
+  it("drops the story intro that named a card we don't show", () => {
+    expect("intro" in stories).toBe(false);
+    expect(stories.items.map((s) => s.name)).toEqual([
+      "Shannon",
+      "Anthony",
+      "Jesse",
+      "Madison",
+    ]);
   });
 });

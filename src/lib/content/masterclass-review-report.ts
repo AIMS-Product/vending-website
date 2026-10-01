@@ -5,6 +5,15 @@
  * Every figure here is from the build log of 2026-09-30; update it, never guess.
  */
 
+/** A decision is one line, or a lead + one entry per item + a closing ask. */
+export type ReviewDecision =
+  | string
+  | {
+      lead: string;
+      items: readonly { name: string; text: string }[];
+      tail: string;
+    };
+
 export const reportCopy = {
   journeyHeading: "The journey, start to finish",
   journeyIntro:
@@ -56,7 +65,7 @@ export const reportCopy = {
       who: "Site",
       step: "Replay pages",
       detail:
-        "Registered but missed it, attended but did not book, Meta retargeting, advisory team. Each has the replay, its expiry and the booking path.",
+        "Registered but missed it, attended but did not book, Meta retargeting, advisory team. Each has the replay and its expiry; three have the booking path (advisory goes through the advisory team).",
     },
     {
       who: "Site",
@@ -113,13 +122,39 @@ export const reportCopy = {
   decisionsHeading: "Decisions before we swap",
   decisions: [
     "Playbook bonuses: the page shows a 5-item bonus stack and 9 bonuses. Which are actually delivered?",
-    'Member figures conflict across pages. Anthony\'s appear in several versions (locations, machines, monthly revenue) and as "120k$". Michael D: "$650K Annual Revenue" and "18 machines" on his /masterclass card (the ticker reads "$650K annual revenue"), "$600K/Yr" burned into his video thumbnail, and "18 locations | ~$54K/mo" on the replay pages. Joe: "15+ Machines" in his video thumbnail, "$5,500 Monthly Revenue" and "15 locations" on his /masterclass card, "15 locations | ~$5.5K/mo" on the replay pages. Matt Morrison: "$43K Monthly Revenue" on his /masterclass card and in the ticker, "$7K/MO" in his video thumbnail. Kody and legal to approve one set per member and the formatting.',
+    {
+      lead: "Member figures conflict across pages.",
+      items: [
+        {
+          name: "Anthony",
+          text: 'Appears in several versions (locations, machines, monthly revenue) and as "120k$". On /playbook alone: "We have 45 locations, 77 machines, and did $98,000 last month" (opportunity quote card), "to go from laid off to 98k/mo with 45 locations" (opportunity checklist), "Former real estate entrepreneur, Anthony, followed this same process to scale to 45 locations and 79 machines, generating over 100k in revenue in one month" (story card), and "exceed 120k$ in monthly revenue" (hero H1). Background reads "laid off" in the checklist and "Former real estate entrepreneur" in the story card.',
+        },
+        {
+          name: "Mike Hoffmann",
+          text: 'On /playbook: "How Mike generates 100k/mo from 102 machines" (opportunity checklist) vs "150+ Machines Generating 200k/Month" (host section H2).',
+        },
+        {
+          name: "Michael D",
+          text: '"$650K Annual Revenue" and "18 machines" on his /masterclass card (the ticker reads "$650K annual revenue"), "$600K/Yr" burned into his video thumbnail, and "18 locations | ~$54K/mo" on the replay pages.',
+        },
+        {
+          name: "Joe",
+          text: '"15+ Machines" in his video thumbnail, "$5,500 Monthly Revenue" and "15 locations" on his /masterclass card, "15 locations | ~$5.5K/mo" on the replay pages.',
+        },
+        {
+          name: "Matt Morrison",
+          text: '"$43K Monthly Revenue" on his /masterclass card and in the ticker, "$7K/MO" in his video thumbnail.',
+        },
+      ],
+      tail: "Kody and legal to approve one set per member and the formatting.",
+    },
+    "Playbook hero reads '120K$'. Approve a format-only change to '$120K' (figure unchanged).",
     '"Show up live" bonuses on the confirmation page: the GHL block is live word for word, except that "tonight" reads "on Tuesday" (the session\'s weekday) until the day of the session. Pending owner confirmation that the bonuses are still offered.',
     "Who hosts each replay (Mike or Anthony) for the photos and labels.",
     "GHL scoring form styling (teal button) is set in the GHL form builder.",
     'Vidalytics player settings ("Pearl VP Admin" label, unmute overlay) are set in the Vidalytics account.',
     'The site banner still says "1 open seat left in the September cohort".',
-  ],
+  ] as readonly ReviewDecision[],
   swapHeading: "Swap plan for the next webinar",
   swap: [
     "Team reviews today and sends notes to Adam.",

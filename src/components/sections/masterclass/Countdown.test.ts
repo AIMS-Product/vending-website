@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { countdownPhase } from "./Countdown";
+import { countdownPhase, timerLabelProps } from "./Countdown";
 
 const START = "2026-10-06T00:30:00.000Z";
 const at = (offsetMs: number) => Date.parse(START) + offsetMs;
@@ -33,5 +33,14 @@ describe("countdownPhase", () => {
 
   it("renders nothing on expiry without a label", () => {
     expect(countdownPhase(at(0), START)).toEqual({ phase: "none" });
+  });
+});
+
+describe("timerLabelProps", () => {
+  it("names the timer only when a label is given", () => {
+    expect(timerLabelProps("Time until the masterclass starts")).toEqual({
+      "aria-label": "Time until the masterclass starts",
+    });
+    expect(timerLabelProps()).toEqual({});
   });
 });

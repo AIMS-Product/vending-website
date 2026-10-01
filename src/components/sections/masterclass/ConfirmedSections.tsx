@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import {
   SENDER_EMAIL,
   ANTHONY_VIDEO_ID,
+  COUNTDOWN_LABEL,
   CONFIRMED_VIDEO_EMBED_ID,
   CONFIRMED_VIDEO_POSTER,
   confirmedCopy,
@@ -57,11 +58,11 @@ export function ConfirmedHero({
     >
       {/* The same logo bar as the registration hero. */}
       <div className="border-ink relative border-b-2 bg-white">
-        <div className="mx-auto flex max-w-[1180px] items-center px-5 py-3 lg:px-10">
+        <div className="mx-auto flex max-w-[1080px] items-center px-5 py-3 lg:px-10">
           <Wordmark height={44} eager />
         </div>
       </div>
-      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:pt-10 lg:pb-14">
+      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:pt-8 lg:pb-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
         </p>
@@ -102,22 +103,26 @@ export function ConfirmedHero({
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
           title="A welcome from Anthony"
-          className="mt-6 w-full max-w-[700px]"
+          className="mt-6 w-full max-w-[620px]"
           loadOn="click"
           poster={CONFIRMED_VIDEO_POSTER}
           playLabel="Play Anthony's welcome"
-          posterSizes="(min-width: 1024px) 700px, 100vw"
+          posterSizes="(min-width: 1024px) 620px, 100vw"
         />
         {/* Live, the date line says so; after that, nothing counts down. */}
         {startsAt && endsAt ? (
-          <div className="mt-5">
-            <Countdown startsAt={startsAt} endsAt={endsAt} />
+          <div className="mt-4">
+            <Countdown
+              startsAt={startsAt}
+              endsAt={endsAt}
+              label={COUNTDOWN_LABEL}
+            />
           </div>
         ) : null}
         {links ? (
           // A finished session is not worth a calendar slot.
           <UntilEnded startsAt={startsAt} renderedAt={renderedAt}>
-            <div className="mt-5 flex w-full flex-col items-center">
+            <div className="mt-4 flex w-full flex-col items-center">
               <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
                 Add it to your calendar now
               </p>
@@ -175,14 +180,14 @@ export function NextSteps() {
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1080px] px-5 pt-8 pb-14 sm:pt-14 lg:px-10">
-        <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
+        <h2 className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           Before the call
-        </p>
+        </h2>
         <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
           <Step n={zoom.n} title={zoom.title}>
-            It comes from{" "}
-            <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>
-            . Check spam and promotions, and move it to your inbox.
+            Your Zoom link is in the email from{" "}
+            <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
+            (check spam and promotions, then move it to your inbox).
           </Step>
           <Step n={reply.n} title={reply.title}>
             {reply.body}
@@ -219,13 +224,13 @@ export function CoverSection() {
           <h2 className="v2-display text-ink mt-2 text-[clamp(2.2rem,4vw,3.25rem)] leading-none uppercase">
             {coverCopy.heading}
           </h2>
-          <ol className="mt-6 grid gap-3">
+          <ol className="rounded-card border-ink mt-6 border-2 bg-white">
             {coverCopy.topics.map((topic, index) => (
               <li
                 key={topic}
-                className="rounded-card border-ink flex items-center gap-4 border-2 bg-white p-4"
+                className="flex items-center gap-4 border-b border-slate-200 p-4 last:border-b-0"
               >
-                <span className="bg-brand-700 grid size-10 shrink-0 place-items-center rounded-md text-sm font-black text-white">
+                <span className="border-ink text-ink grid size-9 shrink-0 place-items-center rounded-md border-2 bg-white text-sm font-black tabular-nums">
                   0{index + 1}
                 </span>
                 <span className="v2-display text-ink text-xl leading-[1.05] uppercase">

@@ -19,7 +19,12 @@ import {
   webinarEventTag,
   WebinarRegistrationError,
 } from "@/lib/ghl/webinar-registration";
-import { checkPublicRateLimit, requestIp } from "@/lib/public-rate-limit";
+import {
+  checkPublicRateLimit,
+  peekPublicRateLimit,
+  recordPublicRateLimitHit,
+  requestIp,
+} from "@/lib/public-rate-limit";
 import {
   SESSION_COOKIE,
   SESSION_COOKIE_OPTIONS,
@@ -144,10 +149,12 @@ export async function registerForMasterclass(
 
   // Fail closed: every accepted registration texts a phone number, so a
   // limiter outage must not uncap it. The phone gets its own budget, so
-  // rotating emails and IPs cannot keep texting one person.
+  // rotating emails and IPs cannot keep texting one person. The IP budget is
+  // spent up front (it throttles floods); the email and phone budgets are
+  // only peeked here and spent once GHL has accepted the contact, so a GHL
+  // failure never locks a real registrant out for the day.
   const ip = requestIp(await headers());
-  const checks = [
-    { action: "masterclass_register_ip", ip, email: null },
+  const personBudgets = [
     { action: "masterclass_register", ip: null, email: parsed.data.email },
     {
       action: "masterclass_register_phone",
@@ -155,10 +162,14 @@ export async function registerForMasterclass(
       email: `phone:${parsed.data.phone}`,
     },
   ] as const;
-  let allowed = true;
-  for (const { action, ...subject } of checks) {
-    allowed = await checkPublicRateLimit(action, subject, { failClosed: true });
+  let allowed = await checkPublicRateLimit(
+    "masterclass_register_ip",
+    { ip, email: null },
+    { failClosed: true },
+  );
+  for (const { action, ...subject } of personBudgets) {
     if (!allowed) break;
+    allowed = await peekPublicRateLimit(action, subject, { failClosed: true });
   }
   // Also false when the limiter is down, so the copy never says "too many".
   if (!allowed) return { errors: { form: MASTERCLASS_BUSY_MESSAGE }, values };
@@ -202,6 +213,21 @@ export async function registerForMasterclass(
       name: error instanceof Error ? error.name : "UnknownError",
     });
     return { errors: { form: registrationErrorCopy.failed }, values };
+  }
+
+  // GHL accepted the contact: now spend the email and phone budgets.
+  for (const { action, ...subject } of personBudgets) {
+    try {
+      await recordPublicRateLimitHit(action, subject);
+    } catch (error) {
+      // Logged, not rethrown: the person IS registered, and an error page
+      // would send them to register again. A lost hit only loosens the
+      // budget by one, and the IP budget was already spent.
+      console.error("masterclass: rate limit hit not recorded", {
+        action,
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+    }
   }
 
   // No confirmation page for a room that is over: say the next date is coming.

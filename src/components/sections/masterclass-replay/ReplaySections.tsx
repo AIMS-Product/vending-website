@@ -94,10 +94,14 @@ export function ReplayVideoPlayer({
 
 const anchorHref = (target: "video" | "cta") => `#${REPLAY_ANCHORS[target]}`;
 
-/** The booking heading; in-page CTAs move focus to it after the scroll. */
+/**
+ * Where an in-page CTA moves focus after the scroll: the booking heading, or
+ * the replay column, where ReplayAnchorLink focuses its play button (the
+ * shared player has no id hook for the button itself).
+ */
 const BOOKING_HEADING_ID = `${REPLAY_ANCHORS.cta}-heading`;
 const focusIdFor = (target: "video" | "cta") =>
-  target === "cta" ? BOOKING_HEADING_ID : undefined;
+  target === "cta" ? BOOKING_HEADING_ID : REPLAY_ANCHORS.video;
 
 function AnchorButton({
   label,
@@ -168,13 +172,41 @@ export function ReplayHero({
       {line}
     </p>
   ));
+  // A page with no steps and no booking (advisory) is the replay and the
+  // stories alone: its player takes the testimonial grid's own column
+  // (1180 - 2x40 gutter), so the two share their left and right edges.
+  const wideVideo = !variant.cta && variant.steps.length === 0;
+  const playerWidth = wideVideo ? 1100 : midHeading ? 940 : 840;
+  const video = (
+    <div
+      id={REPLAY_ANCHORS.video}
+      className={cn(
+        "w-full scroll-mt-6",
+        !wideVideo && (midHeading ? "max-w-[940px]" : "max-w-[840px]"),
+      )}
+    >
+      <ReplayVideoPlayer
+        video={variant.mainVideo}
+        title="Masterclass replay"
+        poster={replayHostStill.src}
+        // The still is 16:9 like the player, so object-position alone
+        // cannot move it: a 2.5% zoom anchored at the bottom lifts the
+        // half-cut "1%" line on the wall sign out of frame (the top ~16 of
+        // 675 source rows) and leaves the host's face in the right third.
+        posterClassName="[&>img]:origin-bottom [&>img]:scale-[1.025]"
+        loadOn="click"
+        heroWidth={playerWidth}
+      />
+    </div>
+  );
   return (
     <section className="border-ink border-b-2 bg-white">
       <ReplayLogoBar />
       {expiresAt ? <ReplayCountdownStrip expiresAt={expiresAt} /> : null}
       <div
         className={cn(
-          "mx-auto flex flex-col items-center px-5 pb-10 text-center md:pb-12 lg:px-10",
+          "mx-auto flex flex-col items-center px-5 text-center lg:px-10",
+          wideVideo ? "pb-5" : "pb-10 md:pb-12",
           midHeading ? "gap-5 pt-7" : "gap-6 pt-9",
           longHeading || midHeading ? "max-w-[1120px]" : "max-w-[980px]",
         )}
@@ -197,26 +229,7 @@ export function ReplayHero({
         {/* As on GHL, the steps sit above the player, so "set up call below"
             is on screen at load (1440x900) rather than under the fold. */}
         {variant.steps.length ? <ReplaySteps variant={variant} /> : null}
-        <div
-          id={REPLAY_ANCHORS.video}
-          className={cn(
-            "w-full scroll-mt-6",
-            midHeading ? "max-w-[940px]" : "max-w-[840px]",
-          )}
-        >
-          <ReplayVideoPlayer
-            video={variant.mainVideo}
-            title="Masterclass replay"
-            poster={replayHostStill.src}
-            // The still is 16:9 like the player, so object-position alone
-            // cannot move it: a 2.5% zoom anchored at the bottom lifts the
-            // half-cut "1%" line on the wall sign out of frame (the top ~16 of
-            // 675 source rows) and leaves the host's face in the right third.
-            posterClassName="[&>img]:origin-bottom [&>img]:scale-[1.025]"
-            loadOn="click"
-            heroWidth={midHeading ? 940 : 840}
-          />
-        </div>
+        {wideVideo ? null : video}
         {copyAfterVideo ? subCopy : null}
         {variant.hero ? (
           <AnchorButton
@@ -225,6 +238,11 @@ export function ReplayHero({
           />
         ) : null}
       </div>
+      {wideVideo ? (
+        <div className="mx-auto max-w-[1180px] px-5 pb-10 md:pb-12 lg:px-10">
+          {video}
+        </div>
+      ) : null}
     </section>
   );
 }
@@ -394,14 +412,15 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
   }
   return (
     <div className="rounded-card border-ink shadow-card overflow-hidden border-2 bg-white pb-6">
-      <div
-        id={GHL_FORM_SLOT_ID}
-        className="relative -mt-2 min-h-[1206px] overflow-hidden sm:-mt-10 sm:min-h-[787px]"
+      {/* Stalled (GHL blocked), the slot drops its reserved height and the
+          blank iframe collapses to 0 under the fallback panel; a late
+          form_embed.js inline height overrides the h-0. */}
+      <GhlFormLoading
+        iframeId={`inline-${REPLAY_GHL_FORM_ID}`}
+        fallbackHref={src.toString()}
+        slotId={GHL_FORM_SLOT_ID}
+        className="relative -mt-2 min-h-[1206px] overflow-hidden data-[stalled]:min-h-0 sm:-mt-10 sm:min-h-[787px] [&[data-stalled]_iframe]:mb-0 [&[data-stalled]_iframe]:h-0 [&[data-stalled]_iframe]:min-h-0"
       >
-        <GhlFormLoading
-          iframeId={`inline-${REPLAY_GHL_FORM_ID}`}
-          fallbackHref={src.toString()}
-        />
         <WhenNearViewport
           targetId={GHL_FORM_SLOT_ID}
           margin="0px 0px 200px 0px"
@@ -417,7 +436,7 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
           />
           <Script src={REPLAY_GHL_FORM_SCRIPT} strategy="lazyOnload" />
         </WhenNearViewport>
-      </div>
+      </GhlFormLoading>
     </div>
   );
 }
@@ -479,9 +498,10 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
                   <blockquote className="mt-3 text-[15px] text-slate-700">
                     &ldquo;{item.quote}&rdquo;
                   </blockquote>
-                  {/* Name and result sit straight under the quote; a short
-                      quote's spare height falls at the card foot. */}
-                  <div className="mt-6">
+                  {/* Name and result sit at the card foot (at least 24px
+                      under the quote), so a row's attributions share a
+                      baseline; a shorter quote's spare height falls above. */}
+                  <div className="mt-auto pt-6">
                     <p className="text-ink text-[15px] font-black whitespace-nowrap">
                       &mdash; {item.name}
                     </p>

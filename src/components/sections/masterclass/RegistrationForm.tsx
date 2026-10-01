@@ -201,18 +201,25 @@ export function RegistrationForm({
       <p className="mt-2 text-center text-xs text-slate-500">
         Free. Takes 20 seconds.{" "}
         <span className="whitespace-nowrap">
+          {/* New tab: coming back here must not wipe the form. */}
           <Link
             href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center px-1 underline underline-offset-2"
           >
             Privacy
+            <span className="sr-only"> (opens in new tab)</span>
           </Link>{" "}
-          ·{" "}
+          · {/* New tab: coming back here must not wipe the form. */}
           <Link
             href="/terms"
+            target="_blank"
+            rel="noopener noreferrer"
             className="inline-flex min-h-11 items-center px-1 underline underline-offset-2"
           >
             Terms
+            <span className="sr-only"> (opens in new tab)</span>
           </Link>
         </span>
       </p>

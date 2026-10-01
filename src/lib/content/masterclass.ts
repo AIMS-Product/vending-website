@@ -42,7 +42,12 @@ export const ATTRIBUTION_KEYS = [
 /** Same rule as the registration form: letters, spaces, apostrophes, hyphens. */
 export const NAME_PATTERN = /^[\p{L}' -]+$/u;
 
-/** Query params that identify a person; stripped from the confirmed page's URL. */
+/**
+ * Query params that identify a person; stripped from the funnel pages' URLs
+ * (StripPiiParams). `contact_id` is the GHL contact id GHL links append: no
+ * page reads it from the URL, and left in place it reaches GA page_location
+ * and referrers.
+ */
 export const PII_PARAMS = [
   "email",
   "phone",
@@ -50,6 +55,7 @@ export const PII_PARAMS = [
   "last_name",
   "name",
   "full_name",
+  "contact_id",
 ] as const;
 
 type QueryParams = Record<string, string | string[] | undefined>;
@@ -364,7 +370,7 @@ export function withLiveDay(text: string, day: string): string {
  * during a limiter outage (fail closed), so it must not say "too many".
  */
 export const MASTERCLASS_BUSY_MESSAGE =
-  "We couldn't save that just now. Please try again in a few minutes.";
+  "We couldn't save that right now. Please try again later.";
 
 /**
  * The GHL "Webinar Intake Form" (nnne5vuyx5sLjhqneIFg) from the GHL thank-you
@@ -451,6 +457,12 @@ export const notFitFor = [
 ] as const;
 
 export const SENDER_EMAIL = "anthony@webinar.vendingpreneurs.co";
+
+/** The #watch band's heading: the hero's "watch" link moves focus here. */
+export const WATCH_HEADING_ID = "mc-watch-heading";
+
+/** Accessible name of the live countdown on /masterclass and /masterclass-confirmed. */
+export const COUNTDOWN_LABEL = "Time until the masterclass starts";
 
 const MONTHS = [
   "january",
@@ -624,7 +636,7 @@ export function calendarLinks({
 /** The confirmation-page event, shared by the calendar links and the .ics route. */
 export const masterclassCalendarEvent = (start: Date): CalendarEvent => ({
   title: confirmedCopy.calendarTitle,
-  details: `Your personal Zoom link is in your confirmation email from ${SENDER_EMAIL}.`,
+  details: `Your personal Zoom link is in the confirmation email from ${SENDER_EMAIL} (check spam)`,
   start,
   minutes: MASTERCLASS_MINUTES,
 });

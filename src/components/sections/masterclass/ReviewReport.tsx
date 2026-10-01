@@ -26,10 +26,10 @@ export function ReviewReport() {
               {index + 1}
             </span>
             <div className="min-w-0">
-              <p className="text-ink font-black">
-                {item.step}
+              <p className="text-ink flex flex-wrap items-center gap-x-2 gap-y-1 font-black">
+                <span className="text-balance">{item.step}</span>
                 <span
-                  className={`ml-2 rounded px-1.5 py-0.5 align-middle text-[11px] font-black tracking-wider uppercase ${
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-black tracking-wider uppercase ${
                     item.who === "GHL"
                       ? "bg-slate-100 text-slate-600"
                       : "bg-tint text-eyebrow"
@@ -88,15 +88,40 @@ export function ReviewReport() {
 
       <h2 className={H2}>{reportCopy.decisionsHeading}</h2>
       <ol className={`${CARD} mt-5`}>
-        {reportCopy.decisions.map((line, index) => (
+        {reportCopy.decisions.map((decision, index) => (
           <li
-            key={line}
-            className="flex gap-3 border-b border-slate-200 p-4 text-[15px] text-slate-700 last:border-b-0"
+            key={typeof decision === "string" ? decision : decision.lead}
+            className="flex gap-4 border-b border-slate-200 p-4 text-[15px] text-slate-700 last:border-b-0"
           >
-            <span className="text-eyebrow w-5 shrink-0 font-black">
+            <span className="border-ink text-ink grid size-7 shrink-0 place-items-center rounded-md border-2 bg-white text-sm font-black tabular-nums">
               {index + 1}
             </span>
-            {line}
+            <div className="min-w-0 pt-[3px] [overflow-wrap:anywhere]">
+              {typeof decision === "string" ? (
+                decision
+              ) : (
+                <>
+                  <p>{decision.lead}</p>
+                  <ul className="mt-2 grid gap-1.5 text-[15px]">
+                    {decision.items.map((item) => (
+                      <li key={item.name} className="flex gap-2">
+                        <span
+                          aria-hidden
+                          className="text-eyebrow shrink-0 font-black"
+                        >
+                          &ndash;
+                        </span>
+                        <span className="min-w-0">
+                          <strong className="text-ink">{item.name}:</strong>{" "}
+                          {item.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mt-2">{decision.tail}</p>
+                </>
+              )}
+            </div>
           </li>
         ))}
       </ol>
