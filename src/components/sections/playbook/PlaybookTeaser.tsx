@@ -27,18 +27,18 @@ export function PlaybookTeaser({
   return (
     <div
       className={cn(
-        "border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]",
+        "border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]",
         className,
       )}
     >
       <div className="bg-tint border-ink v2-dots flex items-center justify-center overflow-hidden border-b-2 p-6 md:items-center md:border-r-2 md:border-b-0 lg:p-8">
         <Image
-          src={images.product.src}
-          alt={images.product.alt}
-          width={images.product.width}
-          height={images.product.height}
+          src={images.productTrimmed.src}
+          alt={images.productTrimmed.alt}
+          width={images.productTrimmed.width}
+          height={images.productTrimmed.height}
           sizes="(min-width: 768px) 640px, 100vw"
-          className="h-auto w-[92%] max-w-none object-contain"
+          className="h-auto w-full max-w-none object-contain"
         />
       </div>
       <div className="p-6 lg:p-8">

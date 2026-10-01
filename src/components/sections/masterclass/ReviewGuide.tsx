@@ -73,7 +73,7 @@ function WithEmail({ text }: { text: string }) {
   return (
     <>
       {text.slice(0, at)}
-      <code className="bg-tint text-ink rounded-[4px] px-1.5 font-mono text-[14px] [overflow-wrap:anywhere]">
+      <code className="bg-tint text-ink rounded-control px-1.5 font-mono text-[14px] [overflow-wrap:anywhere]">
         {SENDER_EMAIL}
       </code>
       {text.slice(at + SENDER_EMAIL.length)}
@@ -83,7 +83,7 @@ function WithEmail({ text }: { text: string }) {
 
 function NumberChip({ n }: { n: number }) {
   return (
-    <span className="bg-brand-700 grid size-8 shrink-0 place-items-center rounded-md text-sm font-black text-white tabular-nums">
+    <span className="bg-brand-700 rounded-control grid size-8 shrink-0 place-items-center text-sm font-black text-white tabular-nums">
       {String(n).padStart(2, "0")}
     </span>
   );
@@ -176,7 +176,7 @@ export function ReviewGuide() {
                   <p className="text-ink hidden text-lg leading-tight font-black uppercase sm:block">
                     {step.title}
                   </p>
-                  <p className="text-[15px] leading-relaxed [overflow-wrap:anywhere] text-slate-600 sm:mt-1">
+                  <p className="text-[15px] leading-relaxed break-words text-slate-600 sm:mt-1">
                     <WithEmail text={step.body} />
                   </p>
                   {cta ? (
@@ -220,7 +220,7 @@ export function ReviewGuide() {
                   <span className="text-ink block font-black">
                     {page.label}
                     {external ? (
-                      <span className="border-ink ml-2 inline-block rounded-[4px] border px-1.5 align-middle text-[11px] font-black tracking-wide uppercase">
+                      <span className="border-ink rounded-control ml-2 inline-block border px-1.5 align-middle text-[11px] font-black tracking-wide uppercase">
                         external
                       </span>
                     ) : null}

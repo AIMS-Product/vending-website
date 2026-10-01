@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
 import {
+  BUY_CTA,
   DISCLAIMER,
   PRICE,
   faq,
@@ -16,7 +17,7 @@ interface PlaybookCloseProps {
   checkoutHref: string;
 }
 
-export function PlaybookHost() {
+export function PlaybookHost({ checkoutHref }: PlaybookCloseProps) {
   const [before, after] = host.title.split(host.highlight);
   return (
     <section className="bg-brand-50 border-ink border-b-2 py-16 lg:py-24">
@@ -36,7 +37,7 @@ export function PlaybookHost() {
           <p className={EYEBROW}>{host.eyebrow}</p>
           <h2
             data-reveal
-            className="v2-display text-ink mt-3 text-[1.625rem] leading-[1.15] text-balance uppercase lg:max-w-[18ch] lg:text-[2.75rem]"
+            className="v2-display text-ink mt-3 text-[1.625rem] leading-[1.15] text-balance uppercase lg:max-w-[28ch] lg:text-[2.75rem]"
           >
             {before}
             <Highlight>{host.highlight}</Highlight>
@@ -47,6 +48,7 @@ export function PlaybookHost() {
               <p key={p.slice(0, 24)}>{p}</p>
             ))}
           </div>
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} className="mt-8" />
         </div>
       </div>
     </section>
@@ -66,7 +68,7 @@ export function PlaybookFaq() {
               key={item.q}
               className="group border-ink rounded-card open:bg-tint border-2 bg-white"
             >
-              <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[1.05rem] font-black [&::-webkit-details-marker]:hidden">
+              <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-[1.05rem] font-black focus-visible:outline-offset-[-3px] [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <span
                   aria-hidden="true"
@@ -88,15 +90,15 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
   return (
     <section className="bg-brand-50 py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
-        <div className="border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white lg:grid-cols-2">
+        <div className="border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
           <div className="bg-tint border-ink v2-dots flex items-center overflow-hidden border-b-2 p-6 lg:border-r-2 lg:border-b-0 lg:p-8">
             <Image
-              src={images.product.src}
-              alt={images.product.alt}
-              width={images.product.width}
-              height={images.product.height}
+              src={images.productTrimmed.src}
+              alt={images.productTrimmed.alt}
+              width={images.productTrimmed.width}
+              height={images.productTrimmed.height}
               sizes="(min-width: 1024px) 640px, 100vw"
-              className="h-auto w-full scale-110"
+              className="h-auto w-full max-w-none object-contain"
             />
           </div>
           <div className="p-6 text-center sm:p-10">
@@ -132,7 +134,7 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
         </div>
       </div>
       <footer className="mx-auto mt-12 max-w-3xl px-5 text-center text-xs leading-relaxed text-slate-600">
-        <Wordmark height={36} className="mx-auto" />
+        <Wordmark height={56} className="mx-auto mb-2" />
         <p className="mt-4">{DISCLAIMER}</p>
         <p className="text-ink mt-4 font-bold">© 2026 Vendingpreneurs</p>
         <p className="mt-2">

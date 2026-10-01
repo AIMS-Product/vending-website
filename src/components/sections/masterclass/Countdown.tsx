@@ -24,8 +24,22 @@ const UNITS = [
  *
  * Between `startsAt` and `endsAt` it shows `expiredLabel` (the live window);
  * after `endsAt`, or on expiry when no live label is given, it renders nothing,
- * so a stale tab never claims "live now" days later.
+ * so a stale tab never claims "live now" days later. With a label and no
+ * `endsAt` (a replay's "Replay expires" strip) the label stays for good.
  */
+export function countdownPhase(
+  now: number,
+  startsAt: string,
+  endsAt?: string,
+  expiredLabel?: string,
+): { phase: "counting"; left: number } | { phase: "label" | "none" } {
+  const target = Date.parse(startsAt);
+  const end = endsAt ? Date.parse(endsAt) : expiredLabel ? Infinity : target;
+  const left = target - now;
+  if (left > 0) return { phase: "counting", left };
+  return expiredLabel && now < end ? { phase: "label" } : { phase: "none" };
+}
+
 export function Countdown({
   startsAt,
   endsAt,
@@ -37,18 +51,17 @@ export function Countdown({
   /** Shown from `startsAt` to `endsAt`. Omit to render nothing on expiry. */
   expiredLabel?: string;
 }) {
-  const target = Date.parse(startsAt);
-  const end = endsAt ? Date.parse(endsAt) : target;
   const now = useSyncExternalStore(subscribeToSeconds, readSecond, readNothing);
 
   if (now == null) return <div className="h-[84px]" aria-hidden />;
-  const left = target - now;
-  if (left <= 0) {
-    if (!expiredLabel || now >= end) return null;
+  const state = countdownPhase(now, startsAt, endsAt, expiredLabel);
+  if (state.phase !== "counting") {
+    if (state.phase === "none") return null;
     return (
       <p className="text-ink text-2xl font-black uppercase">{expiredLabel}</p>
     );
   }
+  const { left } = state;
 
   const parts = UNITS.map(([label, short, ms, wrap]) => ({
     label,

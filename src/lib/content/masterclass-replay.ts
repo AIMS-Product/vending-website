@@ -178,6 +178,21 @@ const READY_TO_BUILD = {
   action: { kind: "ghl-form" },
 } as const;
 
+/**
+ * Meta's hero and buttons offer a "free advisory call", so its form copy names
+ * the same call. Process copy only; DNA keeps GHL's "Strategy Call" wording.
+ */
+const READY_TO_BUILD_META = {
+  ...READY_TO_BUILD,
+  paragraphs: [
+    {
+      lines: [
+        "Complete the short application below and schedule your free advisory call. We'll learn about your goals, answer your questions, and if it makes sense, show you the fastest path to building your own vending business.",
+      ],
+    },
+  ],
+} as const;
+
 export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   dna: {
     key: "dna",
@@ -255,7 +270,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     ],
     steps: [],
     hero: { label: "RESERVE MY FREE ADVISORY CALL", target: "cta" },
-    cta: READY_TO_BUILD,
+    cta: READY_TO_BUILD_META,
     closing: { label: "Reserve my free advisory call", target: "cta" },
     testimonialVideos: META_TESTIMONIAL_VIDEOS,
   },

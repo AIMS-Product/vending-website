@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -17,10 +17,18 @@ export function ClickToLoad({
   label,
   variant = "hero",
   playPosition = "br",
+  focusTargetId,
   children,
 }: {
   /** Accessible name of the play button. */
   label: string;
+  /**
+   * Id of the player container (tabIndex={-1}) that takes focus once the
+   * button is pressed. The button unmounts on press, so without this a
+   * keyboard user's focus falls back to <body> and the next Tab starts at the
+   * top of the page.
+   */
+  focusTargetId?: string;
   /**
    * "hero": a large disc centred on the player. "card": a small disc in a
    * corner, so the burned-in result text on a member's thumbnail ("$90K/MO")
@@ -32,6 +40,12 @@ export function ClickToLoad({
   children: ReactNode;
 }) {
   const [loaded, setLoaded] = useState(false);
+
+  // Only ever true after a press, so focus never moves on its own.
+  useEffect(() => {
+    if (!loaded || !focusTargetId) return;
+    document.getElementById(focusTargetId)?.focus({ preventScroll: true });
+  }, [loaded, focusTargetId]);
 
   if (loaded) return children;
 

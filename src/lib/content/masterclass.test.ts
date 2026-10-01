@@ -94,12 +94,25 @@ describe("ATTRIBUTION_KEYS", () => {
 describe("safeFirstName", () => {
   it("accepts a plain name and rejects anything else", () => {
     expect(safeFirstName({ first: " Mary " })).toBe("Mary");
-    expect(safeFirstName({ first: "Anne-Marie O'Neil" })).toBe(
-      "Anne-Marie O'Neil",
-    );
+    expect(safeFirstName({ first: "Anne-Marie" })).toBe("Anne-Marie");
+    expect(safeFirstName({ first: "O'Neil" })).toBe("O'Neil");
     expect(safeFirstName({ first: "<script>" })).toBeUndefined();
-    expect(safeFirstName({ first: "visit evil.com" })).toBeUndefined();
+    expect(safeFirstName({ first: "evil.com" })).toBeUndefined();
+    expect(safeFirstName({ first: "a".repeat(21) })).toBeUndefined();
     expect(safeFirstName({})).toBeUndefined();
+  });
+
+  it("keeps only the first word, so a link cannot print a sentence", () => {
+    expect(safeFirstName({ first: "Your account is suspended call now" })).toBe(
+      "Your",
+    );
+    expect(safeFirstName({ first: "Anne-Marie O'Neil" })).toBe("Anne-Marie");
+    expect(safeFirstName({ first: "visit evil.com" })).toBe("Visit");
+  });
+
+  it("capitalises the first letter", () => {
+    expect(safeFirstName({ first: "adam" })).toBe("Adam");
+    expect(safeFirstName({ first: "élodie" })).toBe("Élodie");
   });
 });
 

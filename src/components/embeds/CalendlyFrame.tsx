@@ -1,56 +1,118 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/utils";
 
 /**
  * The Calendly iframe plus a light "Loading available times…" layer behind
  * it, so the card is never a blank box while the scheduler loads. The layer
- * is removed once Calendly itself reports in: Calendly's page is transparent
- * outside its own card, and the surface around it should read as the card,
- * not the loading state.
+ * is removed once Calendly itself reports a painted scheduler: Calendly's page
+ * is transparent outside its own card, and the surface around it should read
+ * as the card, not the loading state.
  *
  * The iframe's own load event is not used. Calendly's first document loads in
  * ~3s, then redirects and paints the calendar several seconds later, so
- * clearing on `onLoad` left a blank tint box in between. Instead the layer
- * clears on the first `calendly.*` message the embed posts to this page (it
- * does, because buildCalendlySrc sets `embed_domain`). A timer clears it
- * regardless, in case those messages never arrive.
+ * clearing on `onLoad` left a blank tint box in between. Not every
+ * `calendly.*` message works either: the redirect page posts page_height
+ * "26px" / "2px" 1-2s before the calendar paints. So the layer clears on
+ * `calendly.event_type_viewed`, or on a page_height tall enough to be the
+ * scheduler. A timer clears it regardless, in case those never arrive.
+ *
+ * The same real page_height also sizes the iframe, so the card hugs
+ * Calendly's month view instead of leaving dead tint under it.
+ * `heightClassName` stays as the pre-load minimum.
  */
 const LOADING_LAYER_MAX_MS = 12_000;
 const CALENDLY_ORIGIN = "https://calendly.com";
+/** Anything shorter is Calendly's redirect page, not the scheduler. */
+const MIN_SCHEDULER_HEIGHT = 300;
 
-function isCalendlyMessage(event: Pick<MessageEvent, "origin" | "data">) {
-  if (event.origin !== CALENDLY_ORIGIN) return false;
+type CalendlyMessage = Pick<MessageEvent, "origin" | "data">;
+
+function calendlyEventName(event: CalendlyMessage): string | null {
+  if (event.origin !== CALENDLY_ORIGIN) return null;
   const data: unknown = event.data;
-  if (typeof data !== "object" || data === null) return false;
+  if (typeof data !== "object" || data === null) return null;
   const name = (data as { event?: unknown }).event;
-  return typeof name === "string" && name.startsWith("calendly.");
+  return typeof name === "string" && name.startsWith("calendly.") ? name : null;
 }
+
+/** The scheduler's painted height, or null if this message does not carry one. */
+function schedulerHeight(event: CalendlyMessage): number | null {
+  if (calendlyEventName(event) !== "calendly.page_height") return null;
+  const payload = (event.data as { payload?: unknown }).payload;
+  if (typeof payload !== "object" || payload === null) return null;
+  const raw = (payload as { height?: unknown }).height;
+  const height =
+    typeof raw === "number"
+      ? raw
+      : typeof raw === "string"
+        ? parseInt(raw, 10)
+        : NaN;
+  return Number.isFinite(height) && height >= MIN_SCHEDULER_HEIGHT
+    ? height
+    : null;
+}
+
+/** True once a message shows the scheduler has painted. */
+function isCalendlyMessage(event: CalendlyMessage) {
+  return (
+    calendlyEventName(event) === "calendly.event_type_viewed" ||
+    schedulerHeight(event) !== null
+  );
+}
+
+const PHONE_QUERY = "(max-width: 767px)";
+const noSubscribe = () => () => {};
+const isPhone = () => window.matchMedia(PHONE_QUERY).matches;
+const unknownOnServer = () => null;
 
 export function CalendlyFrame({
   src,
+  phoneSrc,
   title,
   heightClassName,
 }: {
   src: string;
+  /**
+   * A phone-only src. When set, the iframe waits for the client to know the
+   * viewport and then loads exactly one of the two, so it never loads twice
+   * and the server markup never disagrees with the client's.
+   */
+  phoneSrc?: string;
   title: string;
   heightClassName: string;
 }) {
+  const phone = useSyncExternalStore<boolean | null>(
+    noSubscribe,
+    isPhone,
+    unknownOnServer,
+  );
+  const frameSrc =
+    phoneSrc === undefined
+      ? src
+      : phone === null
+        ? null
+        : phone
+          ? phoneSrc
+          : src;
   const [loaded, setLoaded] = useState(false);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      const measured = schedulerHeight(event);
+      if (measured !== null) setHeight(measured);
+      if (isCalendlyMessage(event)) setLoaded(true);
+    };
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, []);
 
   useEffect(() => {
     if (loaded) return;
-    const clear = () => setLoaded(true);
-    const onMessage = (event: MessageEvent) => {
-      if (isCalendlyMessage(event)) clear();
-    };
-    window.addEventListener("message", onMessage);
-    const timer = setTimeout(clear, LOADING_LAYER_MAX_MS);
-    return () => {
-      window.removeEventListener("message", onMessage);
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(() => setLoaded(true), LOADING_LAYER_MAX_MS);
+    return () => clearTimeout(timer);
   }, [loaded]);
 
   return (
@@ -63,14 +125,23 @@ export function CalendlyFrame({
           Loading available times…
         </div>
       )}
-      <iframe
-        className={cn("relative block w-full border-0", heightClassName)}
-        loading="eager"
-        src={src}
-        title={title}
-      />
+      {frameSrc === null ? (
+        <div aria-hidden className={cn("w-full", heightClassName)} />
+      ) : (
+        <iframe
+          className={cn("relative block w-full border-0", heightClassName)}
+          style={height === null ? undefined : { height: `${height}px` }}
+          loading="eager"
+          src={frameSrc}
+          title={title}
+        />
+      )}
     </>
   );
 }
 
-export const __testing = { isCalendlyMessage, LOADING_LAYER_MAX_MS };
+export const __testing = {
+  isCalendlyMessage,
+  schedulerHeight,
+  LOADING_LAYER_MAX_MS,
+};

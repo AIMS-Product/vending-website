@@ -139,45 +139,11 @@ export function PlaybookOpportunity() {
 
 type Story = (typeof stories.items)[number];
 
-/** One 64px square per story: the member photo, or their initial. */
-function StoryAvatar({ story }: { story: Story }) {
-  const box =
-    "border-ink rounded-control block size-16 shrink-0 overflow-hidden border-2";
-  if ("photo" in story && story.photo) {
-    return (
-      <span aria-hidden="true" className={box}>
-        <Image
-          src={story.photo.src}
-          alt=""
-          width={story.photo.width}
-          height={story.photo.height}
-          sizes="128px"
-          className="size-full object-cover object-[50%_30%]"
-        />
-      </span>
-    );
-  }
-  return (
-    <span
-      aria-hidden="true"
-      className={cn(
-        box,
-        "bg-tint v2-display text-brand-700 grid place-items-center text-3xl",
-      )}
-    >
-      {story.name.charAt(0)}
-    </span>
-  );
-}
-
 function StoryCard({ story }: { story: Story }) {
   return (
     <Card as="figure" className="flex h-full flex-col">
-      <figcaption className="flex items-center gap-4">
-        <StoryAvatar story={story} />
-        <span className="v2-display text-ink text-3xl uppercase">
-          {story.name}
-        </span>
+      <figcaption className="v2-display text-ink text-3xl leading-none uppercase">
+        {story.name}
       </figcaption>
       <blockquote className="mt-5 text-[1.05rem] leading-relaxed">
         {story.text}

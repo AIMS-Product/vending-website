@@ -56,7 +56,7 @@ export function ReplayVideoPlayer({
         posterSizes={
           bare
             ? "(min-width: 1024px) 400px, 100vw"
-            : "(min-width: 1024px) 1060px, 100vw"
+            : "(min-width: 1024px) 1040px, 100vw"
         }
       />
     );
@@ -94,7 +94,7 @@ function AnchorButton({
       className={buttonClass({
         size: "lg",
         className:
-          "w-full px-5 text-[15px] text-balance sm:w-auto sm:px-10 sm:text-base",
+          "w-full px-4 text-[14px] tracking-[-0.01em] text-balance sm:w-auto sm:px-10 sm:text-base sm:tracking-normal",
       })}
     >
       <span className="text-center leading-tight">{label}</span>
@@ -105,12 +105,18 @@ function AnchorButton({
 /**
  * The slim, unlinked brand bar /masterclass opens with. The wordmark PNG is
  * ~47% transparent margin, so height 52 draws a ~28px mark with ~15px of
- * air above and below it.
+ * air above and below it. Its column is the hero's, so the mark lines up
+ * with the player's left edge.
  */
-function ReplayLogoBar() {
+function ReplayLogoBar({ wide }: { wide: boolean }) {
   return (
     <div className="border-ink border-b-2 bg-white">
-      <div className="mx-auto flex max-w-[1180px] items-center px-5 py-0.5 lg:px-10">
+      <div
+        className={cn(
+          "mx-auto flex items-center px-5 py-0.5 lg:px-10",
+          wide ? "max-w-[1120px]" : "max-w-[980px]",
+        )}
+      >
         <Wordmark height={52} eager />
       </div>
     </div>
@@ -121,7 +127,7 @@ function ReplayLogoBar() {
 function ReplayCountdownStrip({ expiresAt }: { expiresAt: string }) {
   return (
     <div className="border-ink bg-tint border-b-2">
-      <div className="mx-auto flex max-w-[980px] flex-col items-center gap-2 px-5 py-4 lg:px-10">
+      <div className="mx-auto flex max-w-[980px] flex-col items-center gap-2 px-5 py-4 lg:flex-row lg:justify-center lg:gap-6 lg:px-10 lg:py-3">
         <p className="text-eyebrow text-sm font-black tracking-[0.14em] uppercase">
           {replayExpiresLabel}
         </p>
@@ -154,7 +160,7 @@ export function ReplayHero({
   ));
   return (
     <section className="border-ink border-b-2 bg-white">
-      <ReplayLogoBar />
+      <ReplayLogoBar wide={longHeading || midHeading} />
       {expiresAt ? <ReplayCountdownStrip expiresAt={expiresAt} /> : null}
       <div
         className={cn(
@@ -189,6 +195,7 @@ export function ReplayHero({
             video={variant.mainVideo}
             title="Masterclass replay"
             poster={replayHostStill.src}
+            loadOn="click"
           />
         </div>
         {copyAfterVideo ? subCopy : null}
@@ -211,7 +218,7 @@ function ReplaySteps({ variant }: { variant: ReplayVariant }) {
       {variant.steps.map((step, index) => {
         const badge = (
           <span
-            aria-hidden
+            aria-hidden="true"
             className="rounded-control border-ink grid size-8 shrink-0 place-items-center border-2 bg-white text-sm font-black tabular-nums"
           >
             {index + 1}
@@ -304,12 +311,12 @@ export function ReplayBooking({
         </div>
       </div>
       {/* Calendly switches to its two-column layout at 1000px; 1100 - 2x40 gutter - border leaves 1016px. The form needs no more than the copy column.
-          hideDetails drops Calendly's event-details panel (the copy above already says it), so a phone opens on the month: a six-row month plus time zone ends at ~650px, hence 680. */}
+          On phones hideDetails drops Calendly's event-details panel (the copy above already says it), so the frame opens on the month; md+ keeps the two-column layout with the event title and prep note. Once Calendly reports its real height the frame takes it. Pre-load minimum on a phone: a five-row month plus time zone ends ~480px into the frame, a six-row one ~530px, hence 620. Framed like every other card on the page. */}
       <div
         className={cn(
           "mx-auto px-5 lg:px-10",
           calendly
-            ? "max-w-[1100px] pt-0 pb-10 md:pb-14"
+            ? "max-w-[1100px] pt-6 pb-10 md:pt-8 md:pb-14"
             : "max-w-[760px] pt-8 pb-14",
         )}
       >
@@ -319,9 +326,8 @@ export function ReplayBooking({
           <CalendlyEmbed
             url={cta.action.calendlyUrl}
             attribution={attribution}
-            hideDetails
-            heightClassName="h-[680px] md:h-[700px]"
-            framed={false}
+            hideDetails="phone"
+            heightClassName="h-[620px] md:h-[700px]"
           />
         )}
       </div>
@@ -368,8 +374,9 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
     <div className="rounded-card border-ink shadow-card overflow-hidden border-2 bg-white pb-6">
       <div
         id={GHL_FORM_SLOT_ID}
-        className="-mt-2 min-h-[1206px] overflow-hidden sm:-mt-10 sm:min-h-[787px]"
+        className="relative -mt-2 min-h-[1206px] overflow-hidden sm:-mt-10 sm:min-h-[787px]"
       >
+        <GhlFormLoading />
         <WhenNearViewport
           targetId={GHL_FORM_SLOT_ID}
           margin="0px 0px 200px 0px"
@@ -378,7 +385,7 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
             id={`inline-${REPLAY_GHL_FORM_ID}`}
             src={src.toString()}
             title="Book your free advisory call"
-            className="-mb-8 block min-h-[787px] w-full border-0 sm:mb-0"
+            className="relative z-10 -mb-8 block min-h-[787px] w-full border-0 sm:mb-0"
             data-form-id={REPLAY_GHL_FORM_ID}
             data-layout="{'id':'INLINE'}"
             data-form-name="Lead Scoring -> Book a Call"
@@ -387,6 +394,46 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
         </WhenNearViewport>
       </div>
     </div>
+  );
+}
+
+const GHL_FORM_LOADING = "Loading your application…";
+
+/**
+ * Sits under the iframe until form_embed.js reveals it (2-12s), so the slot
+ * is not a blank card meanwhile; the loaded white form covers it.
+ */
+function GhlFormLoading() {
+  return (
+    <>
+      <p role="status" className="sr-only">
+        {GHL_FORM_LOADING}
+      </p>
+      <div
+        aria-hidden="true"
+        className="absolute inset-x-0 top-10 z-0 flex flex-col items-center gap-3 px-6 text-center sm:top-20"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          className="size-6 text-[var(--brand-700)] motion-safe:animate-spin"
+        >
+          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+        </svg>
+        <p className="text-sm font-semibold text-slate-600">
+          {GHL_FORM_LOADING}
+        </p>
+        {[0, 1, 2, 3].map((field) => (
+          <div
+            key={field}
+            className="rounded-control h-12 w-full max-w-[520px] bg-slate-100"
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -417,7 +464,7 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
           {replayTestimonialsCopy.heading}
         </h2>
         {/* Below md a scroll-snap rail (next card peeking); a grid above. */}
-        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
+        <ul className="-mx-5 mt-10 flex snap-x snap-mandatory scroll-px-5 items-start gap-4 overflow-x-auto px-5 pb-4 md:mx-0 md:snap-none md:flex-wrap md:items-stretch md:justify-center md:gap-6 md:overflow-visible md:px-0 md:pb-0">
           {replayTestimonials.map((item, index) => {
             const video = variant.testimonialVideos[index];
             return (
@@ -455,6 +502,9 @@ export function ReplayTestimonials({ variant }: { variant: ReplayVariant }) {
             );
           })}
         </ul>
+        <p className="text-eyebrow mt-3 text-center text-xs font-black tracking-[0.14em] uppercase md:hidden">
+          Swipe for {replayTestimonials.length} stories
+        </p>
         {variant.closing ? (
           <div className="mt-12 flex justify-center">
             <AnchorButton

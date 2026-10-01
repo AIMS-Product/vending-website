@@ -76,40 +76,45 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
           </div>
         ) : null}
         {links ? (
-          <div className="mt-6 grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
-            <a
-              href={links.google}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonClass({ className: "col-span-2 gap-2.5" })}
-            >
-              <span className="grid size-7 place-items-center rounded-md bg-white">
-                <GoogleCalendarLogo />
-              </span>
-              Google Calendar
-            </a>
-            <a
-              href={links.ics}
-              className={buttonClass({
-                variant: "ghost",
-                className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
-              })}
-            >
-              <AppleLogo />
-              Apple / iCal
-            </a>
-            <a
-              href={links.outlook}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={buttonClass({
-                variant: "ghost",
-                className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
-              })}
-            >
-              <OutlookLogo />
-              Outlook
-            </a>
+          <div className="mt-5 flex w-full flex-col items-center">
+            <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
+              Add it to your calendar now
+            </p>
+            <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
+              <a
+                href={links.google}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClass({ className: "col-span-2 gap-2.5" })}
+              >
+                <span className="grid size-7 place-items-center rounded-md bg-white">
+                  <GoogleCalendarLogo />
+                </span>
+                Google Calendar
+              </a>
+              <a
+                href={links.ics}
+                className={buttonClass({
+                  variant: "ghost",
+                  className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                })}
+              >
+                <AppleLogo />
+                Apple / iCal
+              </a>
+              <a
+                href={links.outlook}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={buttonClass({
+                  variant: "ghost",
+                  className: "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                })}
+              >
+                <OutlookLogo />
+                Outlook
+              </a>
+            </div>
           </div>
         ) : null}
       </div>

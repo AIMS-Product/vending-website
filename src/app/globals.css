@@ -256,6 +256,20 @@ body:has([data-hide-site-footer="true"]) > footer {
   }
 }
 
+/* Catch-all for reduced motion: transitions and animations the components
+   did not opt out of themselves (the skip link's slide, card shadow/outline
+   transitions) finish instantly instead of moving. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 /* ── Scroll-linked reveals ───────────────────────────────────────────────
    Content pages reveal their blocks as they enter the viewport. This is a
    native scroll-driven animation, not JavaScript: no observer, no hydration

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { EventLabel } from "@/components/sections/masterclass/EventLabel";
@@ -14,7 +15,9 @@ import {
   MASTERCLASS_MINUTES,
   fitCopy,
   fitFor,
+  hostCandids,
   hostCopy,
+  hostVideoPoster,
   notFitFor,
   storiesCopy,
 } from "@/lib/content/masterclass";
@@ -73,6 +76,7 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
             <YouTubeEmbedFrame
               embed={embed}
               title={hostCopy.videoTitle}
+              thumbnailUrl={hostVideoPoster}
               className="aspect-video w-full rounded-[10px]"
             />
           </div>
@@ -94,14 +98,14 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
                 <div
                   key={label}
                   className={cn(
-                    "rounded-control border-ink bg-tint flex min-w-0 flex-col-reverse border-2 px-3 py-3",
+                    "rounded-control border-ink bg-tint flex min-w-0 flex-col-reverse border-2 px-4 py-3",
                     index === 2 && "col-span-2 sm:col-span-1",
                   )}
                 >
                   <dt className="text-eyebrow text-xs font-black tracking-[0.12em] uppercase">
                     {label}
                   </dt>
-                  <dd className="text-ink text-[clamp(1.5rem,2.6vw,1.9rem)] font-black tabular-nums">
+                  <dd className="v2-display text-ink text-[clamp(1.6rem,2.8vw,2.1rem)] leading-none tabular-nums">
                     {value}
                   </dd>
                 </div>
@@ -326,13 +330,14 @@ export function FitSection({
               <EventLabel label={label} />
             </p>
           ) : null}
+          <HostCandids />
           {startsAt && endsAt ? (
-            <div className="mt-5">
+            <div className="mt-8">
               <Countdown startsAt={startsAt} endsAt={endsAt} />
             </div>
           ) : null}
         </div>
-        <div className="mt-12 grid items-start gap-6 md:grid-cols-2">
+        <div className="mt-12 grid items-stretch gap-6 md:grid-cols-2">
           <FitCard title={fitCopy.forTitle} items={fitFor} good />
           <FitCard title={fitCopy.notForTitle} items={notFitFor} />
         </div>
@@ -355,6 +360,43 @@ export function FitSection({
   );
 }
 
+/**
+ * Three candid shots of Anthony on the route, the middle one taller. Below sm
+ * the middle shot leads full width with the other two side by side under it.
+ */
+function HostCandids() {
+  return (
+    <div className="mx-auto mt-8 grid w-full max-w-[1100px] grid-cols-2 items-center gap-3 sm:grid-cols-[1fr_1.2fr_1fr] sm:gap-6">
+      {hostCandids.map((photo, index) => {
+        const middle = index === 1;
+        return (
+          <div
+            key={photo.src}
+            className={cn(
+              "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white",
+              middle
+                ? "col-span-2 aspect-[4/5] max-sm:order-first sm:col-span-1"
+                : "aspect-[3/4]",
+            )}
+          >
+            <Image
+              src={photo.src}
+              alt={photo.alt}
+              fill
+              sizes={
+                middle
+                  ? "(min-width: 1180px) 400px, (min-width: 640px) 38vw, 100vw"
+                  : "(min-width: 1180px) 330px, (min-width: 640px) 31vw, 50vw"
+              }
+              className="object-cover"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function FitCard({
   title,
   items,
@@ -367,7 +409,7 @@ function FitCard({
   return (
     <div
       data-reveal
-      className="rounded-card border-ink shadow-card border-2 bg-white p-6"
+      className="rounded-card border-ink shadow-card h-full border-2 bg-white p-6"
     >
       <h3 className="v2-display text-ink text-[clamp(1.6rem,2.6vw,2rem)] leading-none uppercase">
         {title}

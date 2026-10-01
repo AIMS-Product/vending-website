@@ -37,6 +37,12 @@ describe("masterclass replay content", () => {
     for (const key of ["dna", "meta"] as const) {
       expect(replayVariants[key].cta?.action).toEqual({ kind: "ghl-form" });
     }
+    // Meta's form copy names the call its hero and buttons offer.
+    const metaCopy = replayVariants.meta.cta?.paragraphs
+      .flatMap((p) => p.lines)
+      .join(" ");
+    expect(metaCopy).toContain("schedule your free advisory call");
+    expect(metaCopy).not.toContain("Strategy Call");
     expect(REPLAY_GHL_FORM_SRC).toBe(
       "https://api.leadconnectorhq.com/widget/form/0vrICJhXXOmSC9aGHj3P",
     );

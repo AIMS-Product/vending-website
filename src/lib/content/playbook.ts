@@ -76,6 +76,13 @@ export const images = {
     width: 1200,
     height: 630,
   },
+  /** Same art with its transparent padding cropped, for tight tint panels. */
+  productTrimmed: {
+    src: "/images/playbook/playbook-mockup-trimmed.png",
+    alt: "Mike Hoffmann's Playbook and its bonus kits",
+    width: 1138,
+    height: 514,
+  },
   mike: {
     src: "https://storage.googleapis.com/funnel-ai-production/cloned/ugsZYdqKsLoW0wAXmnl9/Osj0NNWjQdzZbtGtF3GC/img_13",
     alt: "Mike Hoffmann",
@@ -115,7 +122,7 @@ export const hero = {
 };
 
 export const steps = {
-  title: ["Find The Location.", "Close The Deal.", "Run The Route. Repeat"],
+  title: ["Find The Location.", "Close The Deal.", "Run The Route. Repeat."],
   items: [
     {
       label: "Find it",

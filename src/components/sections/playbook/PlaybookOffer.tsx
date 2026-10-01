@@ -98,7 +98,7 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
           ))}
         </ol>
       </div>
-      <IncludedBonuses />
+      <IncludedBonuses checkoutHref={checkoutHref} />
     </section>
   );
 }
@@ -108,7 +108,7 @@ const noBreakHyphen = (title: string) =>
   title.replace("Quick-Start", "Quick\u2011Start");
 
 /** The five chapter companions: heading row, then one full-width ruled table. */
-function IncludedBonuses() {
+function IncludedBonuses({ checkoutHref }: PlaybookOfferProps) {
   return (
     <div className="mx-auto mt-20 max-w-[1180px] px-5 lg:px-10">
       <div className="lg:flex lg:items-end lg:justify-between lg:gap-16">
@@ -118,7 +118,10 @@ function IncludedBonuses() {
             {includedBonuses.title}
           </h3>
         </div>
-        <PriceTag className="hidden shrink-0 lg:flex" />
+        <div className="hidden shrink-0 lg:flex lg:items-end lg:gap-6">
+          <PriceTag />
+          <PlaybookCta href={checkoutHref} label={BUY_CTA} />
+        </div>
       </div>
       <ul className="border-ink bg-ink shadow-card rounded-card mt-8 grid gap-[2px] overflow-hidden border-2">
         {includedBonuses.items.map((b, i) => (
@@ -136,6 +139,9 @@ function IncludedBonuses() {
           </li>
         ))}
       </ul>
+      <div className="mt-8 flex justify-center">
+        <PlaybookCta href={checkoutHref} label={BUY_CTA} />
+      </div>
     </div>
   );
 }
@@ -177,9 +183,21 @@ function BonusRow({ bonus, open }: { bonus: Bonus; open: boolean }) {
         </span>
         <span
           aria-hidden="true"
-          className="border-ink mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border-2 text-lg leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none"
+          className="border-ink mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border-2"
         >
-          +
+          {/* lucide ChevronDown (the package is not a dependency here). */}
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
         </span>
       </summary>
       <CheckList items={rest} className="mt-2.5 pr-12 text-[0.95rem]" />

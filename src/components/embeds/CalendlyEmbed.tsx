@@ -8,8 +8,12 @@ type CalendlyEmbedProps = {
   url: string;
   /** Omit on surfaces with no lead/session context (e.g. /thank-you). */
   attribution?: LeadAttribution;
-  /** Open straight on the date picker (hides Calendly's event-details block). */
-  hideDetails?: boolean;
+  /**
+   * Open straight on the date picker (hides Calendly's event-details block).
+   * "phone" hides it only below md: at md+ the two-column scheduler keeps the
+   * event title and description beside the month.
+   */
+  hideDetails?: boolean | "phone";
   title?: string;
   /**
    * Height classes for the iframe. Calendly stacks the month and the times
@@ -38,7 +42,13 @@ export function CalendlyEmbed({
   heightClassName = "h-[720px]",
   framed = true,
 }: CalendlyEmbedProps) {
-  const src = buildCalendlySrc(url, attribution, { hideDetails });
+  const src = buildCalendlySrc(url, attribution, {
+    hideDetails: hideDetails === true,
+  });
+  const phoneSrc =
+    hideDetails === "phone"
+      ? buildCalendlySrc(url, attribution, { hideDetails: true })
+      : undefined;
 
   return (
     <div
@@ -50,6 +60,7 @@ export function CalendlyEmbed({
     >
       <CalendlyFrame
         src={src}
+        phoneSrc={phoneSrc}
         title={title}
         heightClassName={heightClassName}
       />

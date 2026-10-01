@@ -92,9 +92,13 @@ export function VidalyticsPlayer({
           className="object-cover"
         />
       ) : null}
+      {/* Focus target after a play-button press (ClickToLoad). */}
       <div
         id={containerId}
-        className="relative"
+        tabIndex={-1}
+        role="group"
+        aria-label={title ?? "Video player"}
+        className="relative focus:outline-none"
         style={{ width: "100%", paddingTop: "56.25%" }}
       />
       {/* Counts quarters watched against this session. Renders nothing. */}

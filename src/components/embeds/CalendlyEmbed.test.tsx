@@ -45,12 +45,7 @@ describe("CalendlyEmbed", () => {
 describe("CalendlyFrame loading layer", () => {
   const msg = (origin: string, data: unknown) => ({ origin, data });
 
-  it("clears on any calendly.* message from calendly.com", () => {
-    expect(
-      frame.isCalendlyMessage(
-        msg("https://calendly.com", { event: "calendly.page_height" }),
-      ),
-    ).toBe(true);
+  it("clears when Calendly reports the event type is on screen", () => {
     expect(
       frame.isCalendlyMessage(
         msg("https://calendly.com", { event: "calendly.event_type_viewed" }),
@@ -58,15 +53,51 @@ describe("CalendlyFrame loading layer", () => {
     ).toBe(true);
   });
 
+  it("clears on a scheduler-sized page_height", () => {
+    expect(
+      frame.isCalendlyMessage(
+        msg("https://calendly.com", {
+          event: "calendly.page_height",
+          payload: { height: "602px" },
+        }),
+      ),
+    ).toBe(true);
+  });
+
+  // Calendly's redirect page posts these 1-2s before the calendar paints;
+  // clearing on them showed an empty tint box.
+  it.each(["26px", "2px", undefined])(
+    "does not clear on the redirect page's page_height %s",
+    (height) => {
+      expect(
+        frame.isCalendlyMessage(
+          msg("https://calendly.com", {
+            event: "calendly.page_height",
+            payload: height === undefined ? undefined : { height },
+          }),
+        ),
+      ).toBe(false);
+    },
+  );
+
   it.each([
     [
       "another origin",
       "https://calendly.com.evil.test",
-      { event: "calendly.x" },
+      { event: "calendly.event_type_viewed" },
     ],
-    ["plain http", "http://calendly.com", { event: "calendly.x" }],
+    [
+      "plain http",
+      "http://calendly.com",
+      { event: "calendly.event_type_viewed" },
+    ],
     ["a non-calendly event", "https://calendly.com", { event: "other" }],
     ["a string payload", "https://calendly.com", "calendly.page_height"],
+    [
+      "another origin's event_type_viewed",
+      "https://calendly.com.evil.test",
+      { event: "calendly.event_type_viewed" },
+    ],
     ["no payload", "https://calendly.com", null],
   ])("ignores %s", (_label, origin, data) => {
     expect(frame.isCalendlyMessage(msg(origin, data))).toBe(false);
@@ -84,5 +115,50 @@ describe("CalendlyFrame loading layer", () => {
     expect(source).not.toMatch(/onLoad=/);
     expect(source).toContain('removeEventListener("message"');
     expect(source).toContain("clearTimeout(timer)");
+  });
+});
+
+// The fixed iframe height left 80-150px of dead tint under Calendly's month
+// view on phones, so a real page_height sizes the frame.
+describe("CalendlyFrame height", () => {
+  const pageHeight = (height: unknown, origin = "https://calendly.com") => ({
+    origin,
+    data: { event: "calendly.page_height", payload: { height } },
+  });
+
+  it("takes the scheduler's reported height", () => {
+    expect(frame.schedulerHeight(pageHeight("602px"))).toBe(602);
+  });
+
+  it("ignores the redirect page's 26px report", () => {
+    expect(frame.schedulerHeight(pageHeight("26px"))).toBeNull();
+  });
+
+  it("ignores heights from any other origin", () => {
+    expect(
+      frame.schedulerHeight(pageHeight("602px", "https://evil.test")),
+    ).toBeNull();
+  });
+
+  it("ignores events that are not page_height", () => {
+    expect(
+      frame.schedulerHeight({
+        origin: "https://calendly.com",
+        data: {
+          event: "calendly.event_type_viewed",
+          payload: { height: "602px" },
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("applies the height as an inline style, not by mutating props", () => {
+    const source = readFileSync(
+      new URL("./CalendlyFrame.tsx", import.meta.url),
+      "utf8",
+    );
+    expect(source).toMatch(
+      /style=\{height === null \? undefined : \{ height: `\$\{height\}px` \}\}/,
+    );
   });
 });

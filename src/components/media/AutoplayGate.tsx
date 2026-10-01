@@ -47,7 +47,7 @@ export function AutoplayGate({
   if (loadOn === "near" && reduced === null) return null;
   if (loadOn === "click" || reduced) {
     return (
-      <ClickToLoad label={label} variant={variant}>
+      <ClickToLoad label={label} variant={variant} focusTargetId={targetId}>
         {children}
       </ClickToLoad>
     );

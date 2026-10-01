@@ -74,7 +74,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
         <input key={key} type="hidden" name={key} value={value} />
       ))}
 
-      <div className="mt-5 grid grid-cols-1 items-end gap-3 min-[360px]:grid-cols-2">
+      <div className="mt-5 grid grid-cols-1 items-start gap-3 min-[360px]:grid-cols-2">
         <Field
           name="firstName"
           label="First name"

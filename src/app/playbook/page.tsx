@@ -47,7 +47,7 @@ export default async function PlaybookPage({
       <PlaybookMoreBonuses checkoutHref={href} />
       <PlaybookStories checkoutHref={href} />
       <PlaybookCompare />
-      <PlaybookHost />
+      <PlaybookHost checkoutHref={href} />
       <PlaybookFaq />
       <PlaybookFinalOffer checkoutHref={href} />
     </main>

@@ -57,10 +57,18 @@ type QueryParams = Record<string, string | string[] | undefined>;
 const firstValue = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] : value;
 
-/** `?first=` as a display name, or undefined when it is not a plain name. */
+/** One given name: letters, apostrophes, hyphens; no spaces, at most 20. */
+const FIRST_NAME_TOKEN = /^[\p{L}'-]{1,20}$/u;
+
+/**
+ * `?first=` as a display name, or undefined when it is not a plain name. Only
+ * the first word is kept, so a crafted link cannot print a sentence in the H1,
+ * and its first letter is capitalised ("adam" reads "Adam").
+ */
 export function safeFirstName(params: QueryParams): string | undefined {
-  const value = firstValue(params.first)?.trim().slice(0, 40);
-  return value && NAME_PATTERN.test(value) ? value : undefined;
+  const [token] = (firstValue(params.first) ?? "").trim().split(/\s+/u);
+  if (!token || !FIRST_NAME_TOKEN.test(token)) return undefined;
+  return token.charAt(0).toLocaleUpperCase("en-US") + token.slice(1);
 }
 
 /**
@@ -120,6 +128,35 @@ export const hostCopy = {
 
 /** Anthony's own case-study video; also left out of the member grid below it. */
 export const ANTHONY_VIDEO_ID = "fsRX7K_Hg08";
+
+/**
+ * Candid photos of Anthony from the GHL registration page. The video uses its
+ * own still because YouTube's thumbnail burns in a figure that disagrees with
+ * the verified stats beside it; his face sits left of the centred play disc.
+ */
+export const hostVideoPoster = "/images/masterclass/anthony-at-machine.jpg";
+
+/** The closing strip: route life away from the camera, middle one tallest. */
+export const hostCandids = [
+  {
+    src: "/images/masterclass/anthony-kitchen-table.jpg",
+    alt: "Anthony working on a laptop at his kitchen island",
+    width: 382,
+    height: 628,
+  },
+  {
+    src: "/images/masterclass/anthony-pointing-at-machine.jpg",
+    alt: "Anthony pointing at a stocked smart vending machine on location",
+    width: 1080,
+    height: 1350,
+  },
+  {
+    src: "/images/masterclass/anthony-stocked-hallway.jpg",
+    alt: "Anthony wheeling a cart stacked with drink cases down a hallway",
+    width: 420,
+    height: 628,
+  },
+] as const;
 
 export const storiesCopy = {
   eyebrow: "Real operators. Real routes.",

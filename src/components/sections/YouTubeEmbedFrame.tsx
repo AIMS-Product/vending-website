@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
   PlayGlyph,
   type PlayButtonVariant,
@@ -36,6 +36,12 @@ export function YouTubeEmbedFrame({
   playPosition = "br",
 }: YouTubeEmbedFrameProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const playerRef = useRef<HTMLIFrameElement>(null);
+  // isPlaying only turns true from a press. The button unmounts, so move
+  // focus to the player rather than letting it fall back to <body>.
+  useEffect(() => {
+    if (isPlaying) playerRef.current?.focus({ preventScroll: true });
+  }, [isPlaying]);
   const previewThumbnailUrl = thumbnailUrl || embed.thumbnailUrl;
   const thumbnailStyle: CSSProperties = {
     backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.08), rgba(0,0,0,0.35)), url("${previewThumbnailUrl}")`,
@@ -44,6 +50,7 @@ export function YouTubeEmbedFrame({
   if (isPlaying) {
     return (
       <iframe
+        ref={playerRef}
         src={createVideoEmbedAutoplayUrl(embed)}
         title={title}
         loading="lazy"
