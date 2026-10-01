@@ -19,13 +19,13 @@ export function LocalOpportunity({ market }: { market: PortalLocalMarket }) {
           {paragraph}
         </p>
       ))}
-      <div className="overflow-hidden rounded-[10px] border-2 border-[#111111]">
+      <div className="grid overflow-hidden rounded-[12px] border-2 border-[#111111] bg-white shadow-[6px_6px_0_#55b8e8] md:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)]">
         <LocationMap
           market={market}
           activeRank={active}
-          className="vp-map h-[320px] w-full bg-[#eaf6ff] sm:h-[380px]"
+          className="vp-map h-[300px] w-full min-w-0 bg-[#eaf6ff] md:h-full md:min-h-[400px]"
         />
-        <ol className="divide-y divide-slate-200 border-t-2 border-[#111111] bg-white">
+        <ol className="min-w-0 divide-y divide-slate-200 border-t-2 border-[#111111] bg-white md:border-t-0 md:border-l-2">
           {market.locations.map((location) => (
             <li key={location.rank}>
               <button

@@ -12,9 +12,13 @@ type LocationMapProps = {
   className?: string;
 };
 
-// ponytail: OpenStreetMap's public tiles are for light use (their tile
-// policy). Switch the URL to a keyed provider (MapTiler, Stadia, or Google to
-// match VendScout) before this goes to thousands of prospects.
+// OpenStreetMap tiles. OSM's tile policy requires a Referer, and this page
+// sets `referrer: no-referrer` (the URL is a private token), which got every
+// tile a 403 "Access blocked" on the deployed preview. The tile layer below
+// overrides that per request with `strict-origin`: OSM sees only the site
+// origin, never the token path.
+// ponytail: OSM's public tiles are for light use. Move to a keyed provider
+// (MapTiler, Stadia, or Google to match VendScout) before real volume.
 const TILE_URL = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
 const ATTRIBUTION =
   '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
@@ -41,9 +45,12 @@ export function LocationMap({
         zoomControl: true,
         attributionControl: true,
       });
-      L.tileLayer(TILE_URL, { attribution: ATTRIBUTION, maxZoom: 18 }).addTo(
-        map,
-      );
+      L.tileLayer(TILE_URL, {
+        attribution: ATTRIBUTION,
+        maxZoom: 19,
+        // Origin only, never the tokenized path.
+        referrerPolicy: "strict-origin",
+      }).addTo(map);
 
       L.marker([market.center.lat, market.center.lng], {
         icon: L.divIcon({

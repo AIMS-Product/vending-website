@@ -23,9 +23,9 @@ Source documents (ask Adam for copies; they are not in either repo):
   This frontend uses its vocabulary on purpose (`journey_definition`, `journey_step`,
   `portal_step_state`, `portal_question`, `portal_access_grant`, "generated-link" vs "verified" access).
 
-Design direction from Adam (2026-10-01): **story, not bulletin board.** "Here's what's happening on these
-days." A calendar keyed to the call, an interactive to-do list, a real live map, clean and focused on the
-person.
+Design direction from Adam (2026-10-01): full-width page with the sections laid out on screen (not one long
+to-do list), a centered hero that highlights the person's name, a real live map, and a sticky Next Steps
+panel with a small week calendar keyed to the call and a tickable checklist.
 
 ## 2. Where the code is
 
@@ -50,9 +50,9 @@ person.
 | `src/lib/portal/personalize.test.ts`            | 21 tests: persona rules, scheduling, system steps, private-data gate.                                                                                                              |
 | `src/app/portal/[token]/page.tsx`               | Route. Reads verification cookie, loads data + wins, renders.                                                                                                                      |
 | `src/app/portal/[token]/actions.ts`             | **Write seams** (server actions): `submitIntake`, `setStepDone`, `verifyEmail`, `askQuestion`. Validate with zod; demo tokens handled locally; real tokens return "not connected". |
-| `src/components/portal/PortalPage.tsx`          | Page shell: header, hero (who + when + their goal), plan, ask-your-rep.                                                                                                            |
-| `src/components/portal/PortalPlan.tsx`          | Client. Calendar strip, day groups, step accordion, tick/untick, progress count, localStorage stand-in for step state.                                                             |
-| `src/components/portal/StepContent.tsx`         | What opens inside each step, one case per `StepContentKind`.                                                                                                                       |
+| `src/components/portal/PortalPage.tsx`          | Page shell: centered hero on the prospect's name + call card, sections in goal-based order (`moduleOrder`), sticky checklist sidebar, locked teasers, follow-up, ask-your-rep.     |
+| `src/components/portal/PortalChecklist.tsx`     | Client. The Next Steps spine: week calendar (call day marked), tickable checklist linking to each section, mobile "Next:" bar. localStorage stand-in for step state.               |
+| `src/components/portal/PortalModules.tsx`       | The sections: intake, local map, people like you, wins, Mike's answers + prep, call summary (verify gate), follow-up, onboarding, resources, locked teasers, ask.                  |
 | `src/components/portal/LocalOpportunity.tsx`    | Client. Map + ranked list, hover links row to pin.                                                                                                                                 |
 | `src/components/portal/LocationMap.tsx`         | Client. Leaflet + OpenStreetMap tiles, numbered pins, fit-to-bounds.                                                                                                               |
 | `src/components/portal/PortalForms.tsx`         | Client. Intake, verify-email, ask-question forms (`useActionState`).                                                                                                               |
@@ -147,7 +147,7 @@ Field → source (PRD §10 + arch doc §5):
    (never the raw token as a primary key, never logged). Return `null` for unknown/revoked. Omit
    `callSummary` (and any private field) unless verified.
 2. **`setStepDone`:** upsert `portal_step_state` (subject-scoped, idempotent). Then remove the
-   localStorage stand-in in `PortalPlan.tsx` (or keep it as an optimistic cache).
+   localStorage stand-in in `PortalChecklist.tsx` (or keep it as an optimistic cache).
 3. **`verifyEmail`:** send a one-time code to the bound email (add a "send code" action; the form
    currently assumes the code was sent), verify it, set a signed, httpOnly, path-scoped session. Replace
    the demo cookie check in `page.tsx`.
@@ -192,7 +192,9 @@ certain.
 
 ## 6. Known gaps and open decisions
 
-- **Map tiles:** OpenStreetMap's public tile server is for light use. Before real volume, switch
+- **Map tiles:** the page sends no Referer (private token URL); OSM 403s referrer-less tile requests, so the
+  tile layer sets `referrerPolicy: "strict-origin"` (origin only). Keep that if you change providers. Do NOT use
+  CARTO basemaps without a key (they return an "API KEY REQUIRED" watermark). OpenStreetMap's public tile server is for light use. Before real volume, switch
   `TILE_URL` in `LocationMap.tsx` to a keyed provider (MapTiler/Stadia) or Google Maps to match
   VendScout (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` exists in VendHub).
 - **Demo locations** are real OSM places sorted by distance, not a VendScout ranking. Real data must

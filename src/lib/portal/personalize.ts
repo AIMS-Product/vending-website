@@ -185,3 +185,57 @@ export function winTypesFor(stage: PortalStage): readonly string[] {
   if (stage === "lost") return [];
   return ["Revenue milestone", "Scale-up", "Hustle log"];
 }
+
+export type ModuleId =
+  | "local"
+  | "people"
+  | "wins"
+  | "faq"
+  | "summary"
+  | "onboarding"
+  | "resources";
+
+const DEFAULT_ORDER: Record<PortalStage, ModuleId[]> = {
+  pre_call: ["local", "people", "wins", "faq", "resources"],
+  post_call: ["summary", "people", "local", "wins", "resources"],
+  won: ["onboarding", "local", "wins", "resources"],
+  lost: ["people", "faq", "wins", "local", "resources"],
+};
+
+const GOAL_RULES: ReadonlyArray<{ module: ModuleId; pattern: RegExp }> = [
+  {
+    module: "faq",
+    pattern: /\b(cost|budget|afford|money|financ\w*|credit|price|invest\w*)\b/i,
+  },
+  {
+    module: "local",
+    pattern: /\b(location|locations|area|city|town|near|local|map|where)\b/i,
+  },
+  {
+    module: "people",
+    pattern:
+      /\b(quit|replace|income|earn|freedom|retire\w*|passive|family|time|side)\b/i,
+  },
+];
+
+/** PRD §5.4: the section matching their goal moves up under the hero. The stage's own section stays first. */
+export function moduleOrder(
+  stage: PortalStage,
+  goal: string | null | undefined,
+): ModuleId[] {
+  const order = DEFAULT_ORDER[stage];
+  const text = goal?.trim();
+  const match = text
+    ? GOAL_RULES.find(
+        (rule) => order.includes(rule.module) && rule.pattern.test(text),
+      )
+    : undefined;
+  if (!match) return order;
+  const pinned: ModuleId[] =
+    order[0] === "summary" || order[0] === "onboarding" ? [order[0]] : [];
+  return [
+    ...pinned,
+    match.module,
+    ...order.filter((id) => id !== match.module && !pinned.includes(id)),
+  ];
+}
