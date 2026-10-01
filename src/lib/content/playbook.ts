@@ -211,7 +211,7 @@ export const curriculum = {
 };
 
 export const includedBonuses = {
-  eyebrow: "Bonus Stack",
+  eyebrow: "Included with the course",
   title: "Included Free With Mike Hoffmann's Playbook",
   items: [
     {
@@ -277,7 +277,7 @@ export const opportunity = {
 export const opportunityQuotes = [
   {
     name: "Anthony",
-    quote: "“We have 45 locations, 77 machines, and did $98,000 last month…”…",
+    quote: "“We have 45 locations, 77 machines, and did $98,000 last month…”",
     crop: { x: 57, y: 57, size: 192 },
   },
   {
@@ -294,7 +294,6 @@ export const opportunityQuotes = [
 ] as const;
 
 export const moreBonuses = {
-  eyebrow: "9 BONUSES",
   title: "Plus: Add 9 Powerful Bonuses",
   items: [
     {

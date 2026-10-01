@@ -26,6 +26,8 @@ export function StoriesToggle({
   children,
 }: StoriesToggleProps) {
   const [expanded, setExpanded] = useState(false);
+  // Read by the polite live region once the cards are revealed.
+  const [announcement, setAnnouncement] = useState("");
   const id = useId();
   const groupRef = useRef<HTMLDivElement>(null);
 
@@ -55,7 +57,12 @@ export function StoriesToggle({
       type="button"
       aria-expanded={expanded}
       aria-controls={id}
-      onClick={() => setExpanded(true)}
+      onClick={() => {
+        setExpanded(true);
+        setAnnouncement(
+          `${count} more ${count === 1 ? "story" : "stories"} shown`,
+        );
+      }}
       className={cn(
         buttonClass({ variant: "ghost" }),
         "mx-auto mt-8 w-full sm:w-auto",
@@ -73,6 +80,9 @@ export function StoriesToggle({
       data-expanded={expanded}
     >
       {children}
+      <p role="status" aria-live="polite" className="sr-only">
+        {announcement}
+      </p>
       {!expanded && hiddenMobile > 0
         ? button(hiddenMobile, "flex md:hidden")
         : null}

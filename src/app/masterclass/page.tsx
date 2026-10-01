@@ -12,7 +12,10 @@ import {
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
-import { ATTRIBUTION_KEYS } from "@/lib/content/masterclass";
+import {
+  ATTRIBUTION_KEYS,
+  MASTERCLASS_MINUTES,
+} from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -21,12 +24,34 @@ import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 export const revalidate = 300;
 
 // Not linked anywhere and kept out of search until it has won a split test.
+const description =
+  "Free live masterclass: how everyday professionals build a cash-flowing vending route in 2026.";
+
 export const metadata: Metadata = {
   title: "Free Vending Masterclass",
-  description:
-    "Free live masterclass: how everyday professionals build a cash-flowing vending route in 2026.",
+  description,
   robots: { index: false, follow: false },
+  openGraph: {
+    title: "Free Vending Masterclass",
+    description,
+    url: "/masterclass",
+    images: ["/images/masterclass/anthony-three-machines.jpg"],
+  },
+  twitter: { card: "summary_large_image" },
 };
+
+/**
+ * The GHL date text, or null once the session has ended: the countdown hides
+ * itself then, and a past date beside the form would read as stale.
+ */
+function upcomingLabel(event: {
+  label: string | null;
+  startsAt: string | null;
+}) {
+  if (!event.startsAt) return event.label;
+  const endsAt = Date.parse(event.startsAt) + MASTERCLASS_MINUTES * 60_000;
+  return Date.now() > endsAt ? null : event.label;
+}
 
 export default async function MasterclassPage({
   searchParams,
@@ -45,6 +70,7 @@ export default async function MasterclassPage({
       return text ? [[key, text.slice(0, 200)]] : [];
     }),
   );
+  const label = upcomingLabel(event);
 
   return (
     <main className={anton.variable}>
@@ -54,14 +80,15 @@ export default async function MasterclassPage({
         aside={
           <RegistrationForm
             attribution={attribution}
-            eventLabel={event.label}
+            eventLabel={label}
+            eventStartsAt={event.startsAt}
           />
         }
       />
       <ResultsTicker stories={stories} />
       <HostBand stats={event.anthony} />
       <StoriesGrid stories={stories} />
-      <FitSection label={event.label} startsAt={event.startsAt} />
+      <FitSection label={label} startsAt={event.startsAt} />
       <MasterclassFooter />
     </main>
   );

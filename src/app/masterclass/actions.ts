@@ -122,7 +122,11 @@ export async function registerForMasterclass(
     const value = parsed.data.attribution[key];
     if (value) next.set(key, value.slice(0, 200));
   }
-  if (text(HONEYPOT_FIELD)) redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
+  if (text(HONEYPOT_FIELD)) {
+    // Logged so a real registrant dropped by an over-eager autofill shows up.
+    console.warn("masterclass: honeypot tripped");
+    redirect(`${MASTERCLASS_CONFIRMED_PATH}?${next}`);
+  }
 
   // Drop any earlier registration's intake session up front: a failed attempt
   // must not leave this browser holding a previous contact's cookie. A

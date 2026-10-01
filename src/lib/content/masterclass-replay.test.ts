@@ -6,6 +6,8 @@ import {
   REPLAY_L1_BOOKING_CALENDLY,
   REPLAY_MAIN_VIDEO,
   REPLAY_PATHS,
+  replayCountdownLive,
+  replayDescription,
   replayTestimonials,
   replayVariants,
   type ReplayVariantKey,
@@ -37,12 +39,15 @@ describe("masterclass replay content", () => {
     for (const key of ["dna", "meta"] as const) {
       expect(replayVariants[key].cta?.action).toEqual({ kind: "ghl-form" });
     }
-    // Meta's form copy names the call its hero and buttons offer.
-    const metaCopy = replayVariants.meta.cta?.paragraphs
-      .flatMap((p) => p.lines)
-      .join(" ");
-    expect(metaCopy).toContain("schedule your free advisory call");
-    expect(metaCopy).not.toContain("Strategy Call");
+    // DNA's and meta's form copy names the call their steps, hero and
+    // buttons offer, never GHL's "Strategy Call".
+    for (const key of ["dna", "meta"] as const) {
+      const copy = replayVariants[key].cta?.paragraphs
+        .flatMap((p) => p.lines)
+        .join(" ");
+      expect(copy).toContain("schedule your free advisory call");
+      expect(copy).not.toContain("Strategy Call");
+    }
     expect(REPLAY_GHL_FORM_SRC).toBe(
       "https://api.leadconnectorhq.com/widget/form/0vrICJhXXOmSC9aGHj3P",
     );
@@ -91,7 +96,7 @@ describe("masterclass replay content", () => {
     ]);
   });
 
-  it("gives every Vidalytics testimonial a poster: the same member's YouTube thumbnail", () => {
+  it("gives every Vidalytics testimonial a poster: the same member's full-size YouTube thumbnail", () => {
     const youtubeIds = replayVariants.dna.testimonialVideos.map((v) =>
       v.kind === "youtube" ? v.id : null,
     );
@@ -99,7 +104,7 @@ describe("masterclass replay content", () => {
       replayVariants[key].testimonialVideos.forEach((video, index) => {
         if (video.kind !== "vidalytics") return;
         expect(video.poster).toBe(
-          `https://i.ytimg.com/vi/${youtubeIds[index]}/hqdefault.jpg`,
+          `https://i.ytimg.com/vi/${youtubeIds[index]}/maxresdefault.jpg`,
         );
       });
     }
@@ -142,6 +147,32 @@ describe("masterclass replay content", () => {
     // Sunday event -> the prior Sunday. Mar 2027 spring forward: Tue Mar 16.
     expect(replayExpiry("2027-03-17T00:30:00.000Z")).toBe(
       "2027-03-15T04:00:00.000Z",
+    );
+  });
+
+  it("shows the expiry strip only while the expiry is ahead, never an 'ended' state", () => {
+    const expiry = "2026-10-05T04:00:00.000Z";
+    const at = Date.parse(expiry);
+    expect(replayCountdownLive(expiry, at - 1000)).toBe(true);
+    // At and after the expiry the replay still plays: no strip at all.
+    expect(replayCountdownLive(expiry, at)).toBe(false);
+    expect(replayCountdownLive(expiry, at + 86_400_000)).toBe(false);
+    expect(replayCountdownLive(null, at)).toBe(false);
+    expect(replayCountdownLive("not a date", at)).toBe(false);
+  });
+
+  it("gives each variant its own title and a description from its page copy", () => {
+    const titles = KEYS.map((key) => replayVariants[key].metaTitle);
+    expect(new Set(titles).size).toBe(KEYS.length);
+    expect(replayVariants.meta.metaTitle).toBe("Masterclass Replay (Meta)");
+    for (const key of KEYS) {
+      const variant = replayVariants[key];
+      const description = replayDescription(variant);
+      expect(description).toContain(variant.sub.join(" "));
+      expect(description.length).toBeGreaterThanOrEqual(80);
+    }
+    expect(replayDescription(replayVariants.advisory)).toBe(
+      "See How Professionals Are Building an Additional Income Stream With Vending. This replay will only be available for a limited time.",
     );
   });
 

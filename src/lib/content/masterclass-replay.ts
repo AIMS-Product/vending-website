@@ -73,6 +73,22 @@ export function replayExpiry(startsAt: string | null): string | null {
   return null;
 }
 
+/**
+ * The "Replay expires" strip shows only while the expiry is ahead. Past it the
+ * replay still plays and booking still works until the next room, so the
+ * strip disappears rather than claiming the replay has ended. Used on the
+ * server (an expired strip is never rendered) and in the browser (an ISR copy
+ * or a tab left open past the expiry drops the strip at that second).
+ */
+export function replayCountdownLive(
+  expiresAt: string | null,
+  now: number,
+): expiresAt is string {
+  if (!expiresAt) return false;
+  const expiry = Date.parse(expiresAt);
+  return Number.isFinite(expiry) && expiry > now;
+}
+
 /** The GHL "Lead Scoring -> Book a Call" form, embedded as-is on DNA and Meta. */
 export const REPLAY_GHL_FORM_ID = "0vrICJhXXOmSC9aGHj3P";
 export const REPLAY_GHL_FORM_SRC = `https://api.leadconnectorhq.com/widget/form/${REPLAY_GHL_FORM_ID}`;
@@ -114,6 +130,7 @@ export type ReplayStep = { label: string; target?: "video" | "cta" };
 export type ReplayVariant = {
   key: ReplayVariantKey;
   path: `/${string}`;
+  /** Tab title; the root layout appends " | Vendingpreneurs". */
   metaTitle: string;
   heading: string;
   mainVideo: ReplayVideo;
@@ -140,11 +157,19 @@ const youtube = (id: string): ReplayVideo => ({ kind: "youtube", id });
 /**
  * Vidalytics shows nothing until its player loads, so each meta testimonial
  * borrows the YouTube thumbnail of the same member's story as its poster.
+ * maxresdefault (1280x720, no letterbox) rather than hqdefault (480x360,
+ * letterboxed), which was soft at the ~400px card width on retina. Resolved
+ * by hand rather than at runtime: all five ids served a real maxresdefault on
+ * 2026-09-30. A new id must be checked the same way (`curl -I`), or fall back
+ * to sddefault.jpg.
  */
+export const youtubePoster = (id: string) =>
+  `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+
 const vidalytics = (embedId: string, posterOf: string): ReplayVideo => ({
   kind: "vidalytics",
   embedId,
-  poster: `https://i.ytimg.com/vi/${posterOf}/hqdefault.jpg`,
+  poster: youtubePoster(posterOf),
 });
 
 // Same five member videos as GHL, in the order of the five testimonials below
@@ -165,25 +190,14 @@ const META_TESTIMONIAL_VIDEOS = [
   vidalytics("LchE9_kgP012adAZ", "heSbv_uG734"),
 ] as const;
 
+/**
+ * DNA's and Meta's booking copy. GHL's DNA paragraph said "schedule a
+ * Strategy Call", but both pages' steps, hero and buttons offer a "free
+ * advisory call", so the form copy names that same call. Process copy only.
+ */
 const READY_TO_BUILD = {
   heading: "Ready to Build Something You Actually Own?",
   lead: "You've seen the strategy. Now let's see if it's the right fit for you.",
-  paragraphs: [
-    {
-      lines: [
-        "Complete the short application below and schedule a Strategy Call. We'll learn about your goals, answer your questions, and if it makes sense, show you the fastest path to building your own vending business.",
-      ],
-    },
-  ],
-  action: { kind: "ghl-form" },
-} as const;
-
-/**
- * Meta's hero and buttons offer a "free advisory call", so its form copy names
- * the same call. Process copy only; DNA keeps GHL's "Strategy Call" wording.
- */
-const READY_TO_BUILD_META = {
-  ...READY_TO_BUILD,
   paragraphs: [
     {
       lines: [
@@ -191,13 +205,14 @@ const READY_TO_BUILD_META = {
       ],
     },
   ],
+  action: { kind: "ghl-form" },
 } as const;
 
 export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   dna: {
     key: "dna",
     path: REPLAY_PATHS.dna,
-    metaTitle: "Masterclass Replay",
+    metaTitle: "Masterclass Replay (DNA)",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "If you want an income stream you're in control of, watch this.",
     sub: [
@@ -218,7 +233,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   adnb: {
     key: "adnb",
     path: REPLAY_PATHS.adnb,
-    metaTitle: "Masterclass Replay",
+    metaTitle: "Masterclass Replay (ADNB)",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading: "Miss Something?",
     sub: [
@@ -261,7 +276,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
   meta: {
     key: "meta",
     path: REPLAY_PATHS.meta,
-    metaTitle: "Masterclass Replay",
+    metaTitle: "Masterclass Replay (Meta)",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See why professionals, entrepreneurs, and families are choosing vending over other business opportunities.",
@@ -270,14 +285,14 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     ],
     steps: [],
     hero: { label: "RESERVE MY FREE ADVISORY CALL", target: "cta" },
-    cta: READY_TO_BUILD_META,
+    cta: READY_TO_BUILD,
     closing: { label: "Reserve my free advisory call", target: "cta" },
     testimonialVideos: META_TESTIMONIAL_VIDEOS,
   },
   advisory: {
     key: "advisory",
     path: REPLAY_PATHS.advisory,
-    metaTitle: "Masterclass Replay",
+    metaTitle: "Masterclass Replay (Advisory)",
     mainVideo: REPLAY_MAIN_VIDEO,
     heading:
       "See How Professionals Are Building an Additional Income Stream With Vending",
@@ -289,6 +304,20 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
 };
+
+/**
+ * Share and search description, from the page's own copy: the line under the
+ * heading, led by the heading when that line alone is too short to say what
+ * the page is (advisory's "available for a limited time").
+ */
+export function replayDescription(variant: ReplayVariant): string {
+  const sub = variant.sub.join(" ");
+  if (sub.length >= 80) return sub;
+  const heading = /[.!?]$/.test(variant.heading)
+    ? variant.heading
+    : `${variant.heading}.`;
+  return `${heading} ${sub}`;
+}
 
 export const replayExpiresLabel = "Replay Expires";
 

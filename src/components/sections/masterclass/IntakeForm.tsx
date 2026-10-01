@@ -21,8 +21,10 @@ export function IntakeForm() {
   const errors = state.errors ?? {};
 
   return (
-    <section className="border-ink border-t-2 bg-white">
-      <div className="mx-auto max-w-[760px] px-5 py-14">
+    // Sits under the bordered ShowUpLive band; PlaybookBand's top padding
+    // spaces it from the card below.
+    <section className="bg-white">
+      <div className="mx-auto max-w-[760px] px-5 pt-14">
         <div className="rounded-card border-ink shadow-card border-2 bg-white p-6 sm:p-8">
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             {intakeCopy.eyebrow}

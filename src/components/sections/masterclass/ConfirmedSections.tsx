@@ -12,10 +12,12 @@ import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
+import { cn } from "@/lib/utils";
 import {
   SENDER_EMAIL,
   ANTHONY_VIDEO_ID,
   CONFIRMED_VIDEO_EMBED_ID,
+  CONFIRMED_VIDEO_POSTER,
   confirmedCopy,
   coverCopy,
   MASTERCLASS_MINUTES,
@@ -44,11 +46,23 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
         </p>
-        <h1 className="v2-display text-ink mt-4 text-[clamp(2.8rem,6vw,4.75rem)] leading-[1] uppercase">
+        <h1
+          className={cn(
+            "v2-display text-ink mt-4 max-w-full min-w-0 leading-[1] uppercase",
+            // A long first name (up to 20 letters) steps down so it breaks
+            // less often; overflow-wrap catches the rest.
+            first && first.length > 10
+              ? "text-[clamp(2.2rem,5vw,4.75rem)]"
+              : "text-[clamp(2.8rem,6vw,4.75rem)]",
+          )}
+        >
           You&apos;re in
           {first ? (
             <>
-              , <Highlight>{first}.</Highlight>
+              ,{" "}
+              <Highlight className="max-w-full [overflow-wrap:anywhere] break-words whitespace-normal">
+                {first}.
+              </Highlight>
             </>
           ) : (
             "."
@@ -56,13 +70,17 @@ export function ConfirmedHero({ first, label, startsAt, links }: Props) {
         </h1>
         {label ? (
           <p className="text-ink mt-4 text-xl font-black">
-            <EventLabel label={label} />
+            <EventLabel label={label} startsAt={startsAt} />
           </p>
         ) : null}
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
           title="A welcome from Anthony"
           className="mt-6 w-full max-w-[780px]"
+          loadOn="click"
+          poster={CONFIRMED_VIDEO_POSTER}
+          playLabel="Play Anthony's welcome"
+          posterSizes="(min-width: 1024px) 780px, 100vw"
         />
         {startsAt ? (
           <div className="mt-6">
@@ -250,7 +268,7 @@ export function PlaybookBand({
 }) {
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-[1080px] px-5 pb-16 lg:px-10">
+      <div className="mx-auto max-w-[1080px] px-5 pt-14 pb-16 lg:px-10">
         <PlaybookTeaser searchParams={params} />
       </div>
     </section>

@@ -161,10 +161,7 @@ export function ReviewGuide() {
             return (
               <li
                 key={step.title}
-                className={cn(
-                  "rounded-card border-ink flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4",
-                  cta && "shadow-card",
-                )}
+                className="rounded-card border-ink shadow-card flex min-w-0 flex-col gap-3 border-2 bg-white p-5 sm:flex-row sm:gap-4"
               >
                 <div className="flex items-center gap-3 sm:items-start">
                   <NumberChip n={index + 1} />
@@ -195,7 +192,7 @@ export function ReviewGuide() {
           {reviewCopy.flow.map((item, index) => (
             <li
               key={item.step}
-              className="flex items-center gap-4 border-b border-slate-200 p-4 last:border-b-0"
+              className="flex items-start gap-4 border-b border-slate-200 p-4 last:border-b-0"
             >
               <NumberChip n={index + 1} />
               <div className="min-w-0 break-words">

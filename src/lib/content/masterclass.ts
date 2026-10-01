@@ -24,7 +24,7 @@ export const GHL_VALUE_NAMES = {
 } as const;
 
 /** Hidden from people; a bot that fills it gets the thank-you page and nothing is written. */
-export const HONEYPOT_FIELD = "company_website";
+export const HONEYPOT_FIELD = "mc_hp_field";
 
 /** Ad-click parameters carried from the landing URL into the submission. */
 export const ATTRIBUTION_KEYS = [
@@ -136,25 +136,32 @@ export const ANTHONY_VIDEO_ID = "fsRX7K_Hg08";
  */
 export const hostVideoPoster = "/images/masterclass/anthony-at-machine.jpg";
 
-/** The closing strip: route life away from the camera, middle one tallest. */
+/**
+ * The closing strip, middle one tallest. The GHL kitchen and hallway candids
+ * only exist at ~400px wide (soft in 330px tiles on 2x screens), so the sides
+ * use the 1200px shots; `position` keeps Anthony in each crop.
+ */
 export const hostCandids = [
   {
-    src: "/images/masterclass/anthony-kitchen-table.jpg",
-    alt: "Anthony working on a laptop at his kitchen island",
-    width: 382,
+    src: "/images/masterclass/anthony-at-machine.jpg",
+    alt: "Anthony in front of a stocked smart vending machine",
+    width: 1200,
     height: 628,
+    position: "object-[10%_50%]",
   },
   {
     src: "/images/masterclass/anthony-pointing-at-machine.jpg",
     alt: "Anthony pointing at a stocked smart vending machine on location",
     width: 1080,
     height: 1350,
+    position: "object-[50%_8%] sm:object-center",
   },
   {
-    src: "/images/masterclass/anthony-stocked-hallway.jpg",
-    alt: "Anthony wheeling a cart stacked with drink cases down a hallway",
-    width: 420,
+    src: "/images/masterclass/anthony-three-machines.jpg",
+    alt: "Anthony, arms crossed, in front of three stocked vending machines",
+    width: 1200,
     height: 628,
+    position: "object-center",
   },
 ] as const;
 
@@ -196,6 +203,13 @@ export const registrationErrorCopy = {
 /** The Vidalytics welcome video from the GHL thank-you page (embed id read off that page 2026-09-30). */
 export const CONFIRMED_VIDEO_EMBED_ID = "Uu01XEF76UJIUSOJ";
 
+/**
+ * Still behind the welcome video's play button. Vidalytics only serves a
+ * 480px captioned thumbnail, so this is a clean candid of Anthony instead.
+ */
+export const CONFIRMED_VIDEO_POSTER =
+  "/images/masterclass/anthony-at-machine.jpg";
+
 export const confirmedCopy = {
   eyebrow: "Seat confirmed",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
@@ -209,7 +223,34 @@ export const confirmedCopy = {
   ],
   storiesEyebrow: "While you wait",
   storiesHeading: "How they did it",
+  /** Built only from the on-page step titles and calendar line above. */
+  metaDescription:
+    "Seat confirmed for the Vendingpreneurs Live Masterclass with Anthony. Find your Zoom link, add it to your calendar now, and hit reply to Anthony.",
 };
+
+/**
+ * The GHL thank-you page's "Show up live" block, transcribed verbatim from its
+ * image (2026-09-30). The heading splits so the closing phrase can highlight.
+ */
+export const showUpLiveCopy = {
+  eyebrow: "Show up live",
+  // Non-breaking spaces keep the dash with "you" and the 3 with its noun.
+  heading: "If you want to own something no one can take from you\u00a0— ",
+  /** "that alone is reason enough.", in two blocks so it wraps cleanly. */
+  highlight: ["that alone is", "reason enough."],
+  bodyLead: "Show up live tonight and you'll walk away with ",
+  bodyStrong: "3\u00a0exclusive bonuses",
+  bodyTail: " you won't find in the replay.",
+  bonuses: [
+    {
+      title: "Fast-action bonus",
+      body: "Exclusive discount — for live attendees who act tonight only",
+    },
+    { title: "Exclusive resource", body: "You won't find this anywhere else" },
+    { title: "Special guide", body: "Fast-track your success from day one" },
+  ],
+  closing: "These won't be in the replay.",
+} as const;
 
 /**
  * Shown by both masterclass forms when the limiter refuses. It also refuses
@@ -379,6 +420,36 @@ const icsText = (text: string) =>
   text.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\r?\n/g, "\\n");
 
 /**
+ * RFC 5545 section 3.1: a content line longer than 75 octets continues on the
+ * next line after CRLF and one space. Counted in UTF-8 bytes, never splitting a
+ * character.
+ */
+export function foldIcsLine(line: string): string {
+  const encoder = new TextEncoder();
+  const parts: string[] = [];
+  let current = "";
+  let bytes = 0;
+  for (const char of line) {
+    const size = encoder.encode(char).length;
+    // Continuation lines spend one of their 75 octets on the leading space.
+    const limit = parts.length ? 74 : 75;
+    if (bytes + size > limit) {
+      parts.push(current);
+      current = "";
+      bytes = 0;
+    }
+    current += char;
+    bytes += size;
+  }
+  parts.push(current);
+  return parts.join("\r\n ");
+}
+
+/** Shown as the event's location; the personal Zoom link only goes by email. */
+export const MASTERCLASS_ICS_LOCATION =
+  "Zoom (link in your confirmation email)";
+
+/**
  * The event as an .ics file. DTSTAMP is when the file was made (`now`), as
  * RFC 5545 requires, not the start time.
  */
@@ -399,10 +470,18 @@ export function calendarIcs(
     `DTEND:${stamp(end)}`,
     `SUMMARY:${icsText(title)}`,
     `DESCRIPTION:${icsText(details)}`,
+    `LOCATION:${icsText(MASTERCLASS_ICS_LOCATION)}`,
+    "BEGIN:VALARM",
+    "TRIGGER:-PT30M",
+    "ACTION:DISPLAY",
+    "DESCRIPTION:Reminder",
+    "END:VALARM",
     "END:VEVENT",
     "END:VCALENDAR",
-    "",
-  ].join("\r\n");
+  ]
+    .map(foldIcsLine)
+    .join("\r\n")
+    .concat("\r\n");
 }
 
 /** Free add-to-calendar links, replacing the paid AddEvent embed. */

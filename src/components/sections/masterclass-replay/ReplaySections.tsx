@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import Script from "next/script";
 import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
-import { Countdown } from "@/components/sections/masterclass/Countdown";
 import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
 import { WhenNearViewport } from "@/components/media/WhenNearViewport";
@@ -12,7 +11,6 @@ import {
   REPLAY_GHL_FORM_ID,
   REPLAY_GHL_FORM_SCRIPT,
   REPLAY_GHL_FORM_SRC,
-  replayExpiresLabel,
   replayTestimonials,
   replayTestimonialsCopy,
   type ReplayCtaParagraph,
@@ -22,6 +20,8 @@ import {
 import type { LeadAttribution } from "@/lib/lead-attribution";
 import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import { cn } from "@/lib/utils";
+import { GhlFormLoading } from "./GhlFormLoading";
+import { ReplayCountdownStrip } from "./ReplayCountdownStrip";
 import replayHostStill from "./replay-host-still.jpg";
 
 /**
@@ -35,13 +35,16 @@ export function ReplayVideoPlayer({
   loadOn = "near",
   bare = false,
   poster,
+  heroWidth = 940,
 }: {
   video: ReplayVideo;
   title: string;
   loadOn?: "near" | "click";
   bare?: boolean;
-  /** Overrides the video's own poster (the hero's branded host still). */
+  /** Overrides the video's own poster (the hero's host still). */
   poster?: string;
+  /** Desktop CSS width of a framed (hero) player, for the poster's `sizes`. */
+  heroWidth?: number;
 }) {
   if (video.kind === "vidalytics") {
     return (
@@ -56,7 +59,7 @@ export function ReplayVideoPlayer({
         posterSizes={
           bare
             ? "(min-width: 1024px) 400px, 100vw"
-            : "(min-width: 1024px) 1040px, 100vw"
+            : `(min-width: 1024px) ${heroWidth}px, 100vw`
         }
       />
     );
@@ -123,20 +126,6 @@ function ReplayLogoBar({ wide }: { wide: boolean }) {
   );
 }
 
-/** The countdown sits in its own tinted strip so it reads as a timer. */
-function ReplayCountdownStrip({ expiresAt }: { expiresAt: string }) {
-  return (
-    <div className="border-ink bg-tint border-b-2">
-      <div className="mx-auto flex max-w-[980px] flex-col items-center gap-2 px-5 py-4 lg:flex-row lg:justify-center lg:gap-6 lg:px-10 lg:py-3">
-        <p className="text-eyebrow text-sm font-black tracking-[0.14em] uppercase">
-          {replayExpiresLabel}
-        </p>
-        <Countdown startsAt={expiresAt} expiredLabel="This replay has ended" />
-      </div>
-    </div>
-  );
-}
-
 export function ReplayHero({
   variant,
   expiresAt,
@@ -188,7 +177,7 @@ export function ReplayHero({
           id={REPLAY_ANCHORS.video}
           className={cn(
             "w-full scroll-mt-6",
-            midHeading ? "max-w-[1060px]" : "mt-2",
+            midHeading ? "max-w-[940px]" : "mt-2",
           )}
         >
           <ReplayVideoPlayer
@@ -196,6 +185,7 @@ export function ReplayHero({
             title="Masterclass replay"
             poster={replayHostStill.src}
             loadOn="click"
+            heroWidth={longHeading ? 1040 : midHeading ? 940 : 900}
           />
         </div>
         {copyAfterVideo ? subCopy : null}
@@ -376,7 +366,7 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
         id={GHL_FORM_SLOT_ID}
         className="relative -mt-2 min-h-[1206px] overflow-hidden sm:-mt-10 sm:min-h-[787px]"
       >
-        <GhlFormLoading />
+        <GhlFormLoading iframeId={`inline-${REPLAY_GHL_FORM_ID}`} />
         <WhenNearViewport
           targetId={GHL_FORM_SLOT_ID}
           margin="0px 0px 200px 0px"
@@ -394,46 +384,6 @@ function GhlForm({ attribution }: { attribution: LeadAttribution }) {
         </WhenNearViewport>
       </div>
     </div>
-  );
-}
-
-const GHL_FORM_LOADING = "Loading your application…";
-
-/**
- * Sits under the iframe until form_embed.js reveals it (2-12s), so the slot
- * is not a blank card meanwhile; the loaded white form covers it.
- */
-function GhlFormLoading() {
-  return (
-    <>
-      <p role="status" className="sr-only">
-        {GHL_FORM_LOADING}
-      </p>
-      <div
-        aria-hidden="true"
-        className="absolute inset-x-0 top-10 z-0 flex flex-col items-center gap-3 px-6 text-center sm:top-20"
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          className="size-6 text-[var(--brand-700)] motion-safe:animate-spin"
-        >
-          <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-        </svg>
-        <p className="text-sm font-semibold text-slate-600">
-          {GHL_FORM_LOADING}
-        </p>
-        {[0, 1, 2, 3].map((field) => (
-          <div
-            key={field}
-            className="rounded-control h-12 w-full max-w-[520px] bg-slate-100"
-          />
-        ))}
-      </div>
-    </>
   );
 }
 

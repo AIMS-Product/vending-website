@@ -25,7 +25,7 @@ const UNITS = [
  * Between `startsAt` and `endsAt` it shows `expiredLabel` (the live window);
  * after `endsAt`, or on expiry when no live label is given, it renders nothing,
  * so a stale tab never claims "live now" days later. With a label and no
- * `endsAt` (a replay's "Replay expires" strip) the label stays for good.
+ * `endsAt` the label stays for good.
  */
 export function countdownPhase(
   now: number,

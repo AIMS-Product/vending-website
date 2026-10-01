@@ -19,14 +19,36 @@ import {
   PlaybookMoreBonuses,
   PlaybookSteps,
 } from "@/components/sections/playbook/PlaybookOffer";
-import { checkoutHref } from "@/lib/content/playbook";
+import { checkoutHref, images } from "@/lib/content/playbook";
 
 // Paid-traffic landing page; kept out of search.
+const TITLE = "Mike Hoffmann's Vending Playbook";
+const DESCRIPTION =
+  "Mike Hoffmann's Playbook: the Profit Machine System for finding, closing and running vending locations.";
+
 export const metadata: Metadata = {
   // The root layout appends " | Vendingpreneurs".
-  title: "Mike Hoffmann's Vending Playbook",
-  description:
-    "Mike Hoffmann's Playbook: the Profit Machine System for finding, closing and running vending locations.",
+  title: TITLE,
+  description: DESCRIPTION,
+  openGraph: {
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "/playbook",
+    images: [
+      {
+        url: images.productTrimmed.src,
+        width: images.productTrimmed.width,
+        height: images.productTrimmed.height,
+        alt: images.productTrimmed.alt,
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [images.productTrimmed.src],
+  },
   robots: { index: false, follow: false },
 };
 

@@ -3,7 +3,10 @@ import {
   SESSION_COOKIE,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
-import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
+import {
+  HONEYPOT_FIELD,
+  MASTERCLASS_BUSY_MESSAGE,
+} from "@/lib/content/masterclass";
 import { registerForMasterclass } from "./actions";
 
 const mocks = vi.hoisted(() => ({
@@ -234,11 +237,15 @@ describe("registerForMasterclass", () => {
   });
 
   it("sends a honeypot bot to the thank-you page and writes nothing", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(HONEYPOT_FIELD).toBe("mc_hp_field");
     await expect(
-      registerForMasterclass({}, form({ company_website: "spam.example" })),
+      registerForMasterclass({}, form({ [HONEYPOT_FIELD]: "spam.example" })),
     ).rejects.toThrow("REDIRECT");
     expect(mocks.registerWebinarContact).not.toHaveBeenCalled();
     expect(mocks.checkPublicRateLimit).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledWith("masterclass: honeypot tripped");
+    warn.mockRestore();
   });
 
   it("still registers when the event date cannot be read", async () => {
@@ -299,7 +306,7 @@ describe("registerForMasterclass", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     await registerForMasterclass({}, form());
     await expect(
-      registerForMasterclass({}, form({ company_website: "spam.example" })),
+      registerForMasterclass({}, form({ [HONEYPOT_FIELD]: "spam.example" })),
     ).rejects.toThrow("REDIRECT");
     expect(mocks.cookieSet).not.toHaveBeenCalled();
   });

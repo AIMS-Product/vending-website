@@ -103,6 +103,11 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
   );
 }
 
+const BONUS_EYEBROW =
+  "text-eyebrow block text-xs font-black tracking-[0.14em] uppercase";
+const BONUS_TITLE =
+  "v2-display text-ink text-2xl leading-[1.05] text-balance uppercase";
+
 /** Display-only: keep "Quick-Start" on one line. Stored copy is unchanged. */
 const noBreakHyphen = (title: string) =>
   title.replace("Quick-Start", "Quick\u2011Start");
@@ -111,17 +116,11 @@ const noBreakHyphen = (title: string) =>
 function IncludedBonuses({ checkoutHref }: PlaybookOfferProps) {
   return (
     <div className="mx-auto mt-20 max-w-[1180px] px-5 lg:px-10">
-      <div className="lg:flex lg:items-end lg:justify-between lg:gap-16">
-        <div>
-          <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
-          <h3 className="v2-display text-ink mt-3 max-w-[22ch] text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
-            {includedBonuses.title}
-          </h3>
-        </div>
-        <div className="hidden shrink-0 lg:flex lg:items-end lg:gap-6">
-          <PriceTag />
-          <PlaybookCta href={checkoutHref} label={BUY_CTA} />
-        </div>
+      <div>
+        <p className={EYEBROW}>{includedBonuses.eyebrow}</p>
+        <h3 className="v2-display text-ink mt-3 max-w-[22ch] text-[clamp(2rem,3.4vw,2.9rem)] leading-[1.02] text-balance uppercase">
+          {includedBonuses.title}
+        </h3>
       </div>
       <ul className="border-ink bg-ink shadow-card rounded-card mt-8 grid gap-[2px] overflow-hidden border-2">
         {includedBonuses.items.map((b, i) => (
@@ -129,13 +128,13 @@ function IncludedBonuses({ checkoutHref }: PlaybookOfferProps) {
             key={b.title}
             className="bg-tint grid gap-x-8 gap-y-1 p-5 sm:grid-cols-[32%_1fr] lg:px-7"
           >
-            <p className="text-ink leading-tight font-black text-balance uppercase">
-              <span className="text-eyebrow mb-1 block text-xs tracking-[0.14em]">
-                Bonus {i + 1}
-              </span>
-              {noBreakHyphen(b.title)}
-            </p>
-            <p className="text-[0.95rem] leading-snug sm:pt-5">{b.text}</p>
+            <div>
+              <span className={BONUS_EYEBROW}>Included {i + 1}</span>
+              <p className={`${BONUS_TITLE} mt-1.5`}>
+                {noBreakHyphen(b.title)}
+              </p>
+            </div>
+            <p className="text-[0.95rem] leading-snug sm:pt-6">{b.text}</p>
           </li>
         ))}
       </ul>
@@ -148,16 +147,11 @@ function IncludedBonuses({ checkoutHref }: PlaybookOfferProps) {
 
 type Bonus = (typeof moreBonuses.items)[number];
 
-const BONUS_EYEBROW =
-  "text-eyebrow block text-xs font-black tracking-[0.14em] uppercase";
-const BONUS_TITLE =
-  "v2-display text-ink text-2xl leading-[1.05] text-balance uppercase";
-
 /** md and up: every bullet, always visible. */
-function BonusCell({ bonus }: { bonus: Bonus }) {
+function BonusCell({ bonus, index }: { bonus: Bonus; index: number }) {
   return (
     <>
-      <span className={BONUS_EYEBROW}>Bonus</span>
+      <span className={BONUS_EYEBROW}>{`Bonus #${index + 1}`}</span>
       <p className={`${BONUS_TITLE} mt-2`}>{bonus.title}</p>
       <CheckList items={bonus.points} className="mt-5 text-[0.95rem]" />
     </>
@@ -168,13 +162,21 @@ function BonusCell({ bonus }: { bonus: Bonus }) {
  * Phones: a compact row, title and first bullet in the summary, the rest
  * behind the disclosure. The first three start open.
  */
-function BonusRow({ bonus, open }: { bonus: Bonus; open: boolean }) {
+function BonusRow({
+  bonus,
+  index,
+  open,
+}: {
+  bonus: Bonus;
+  index: number;
+  open: boolean;
+}) {
   const [lead, ...rest] = bonus.points;
   return (
     <details open={open} className="group">
       <summary className="flex cursor-pointer list-none gap-4 [&::-webkit-details-marker]:hidden">
         <span className="min-w-0 flex-1">
-          <span className={BONUS_EYEBROW}>Bonus</span>
+          <span className={BONUS_EYEBROW}>{`Bonus #${index + 1}`}</span>
           <span className={`${BONUS_TITLE} mt-1.5 block`}>{bonus.title}</span>
           <span className="mt-3 flex gap-3 text-[0.95rem] leading-snug">
             <CheckIcon className="text-brand-600 mt-0.5 size-5 shrink-0" />
@@ -210,18 +212,17 @@ export function PlaybookMoreBonuses({ checkoutHref }: PlaybookOfferProps) {
   return (
     <section className="border-ink border-b-2 bg-white py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
-        <p className={EYEBROW}>{moreBonuses.eyebrow}</p>
-        <h2 data-reveal className={`${H2} mt-2`}>
+        <h2 data-reveal className={H2}>
           {moreBonuses.title}
         </h2>
         <ul className="border-ink bg-ink shadow-card rounded-card mt-10 grid gap-[2px] overflow-hidden border-2 md:grid-cols-2 lg:grid-cols-3">
           {moreBonuses.items.map((b, i) => (
             <li key={b.title} className="bg-white p-5 md:p-6 lg:p-8">
               <div className="md:hidden">
-                <BonusRow bonus={b} open={i < 3} />
+                <BonusRow bonus={b} index={i} open={i < 3} />
               </div>
               <div className="hidden md:block">
-                <BonusCell bonus={b} />
+                <BonusCell bonus={b} index={i} />
               </div>
             </li>
           ))}

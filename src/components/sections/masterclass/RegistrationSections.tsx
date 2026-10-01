@@ -287,11 +287,13 @@ export function StoryList({
                       </span>
                     </p>
                   ) : null}
-                  {second ? (
-                    <p className="mt-1 text-sm font-semibold text-slate-600">
-                      {second.value} {second.label.toLowerCase()}
-                    </p>
-                  ) : null}
+                  {/* Two lines reserved, so a wrapped detail never lifts
+                      this card's badge above its neighbours'. */}
+                  <p className="mt-1 text-sm font-semibold text-slate-600 sm:min-h-[2lh]">
+                    {second
+                      ? `${second.value} ${second.label.toLowerCase()}`
+                      : null}
+                  </p>
                 </div>
               ) : null}
             </div>
@@ -327,7 +329,7 @@ export function FitSection({
           </h2>
           {label ? (
             <p className="text-ink mt-4 text-lg font-bold">
-              <EventLabel label={label} />
+              <EventLabel label={label} startsAt={startsAt} />
             </p>
           ) : null}
           <HostCandids />
@@ -336,21 +338,15 @@ export function FitSection({
               <Countdown startsAt={startsAt} endsAt={endsAt} />
             </div>
           ) : null}
+          {/* Phones: the fit cards push the closing button a screen away. */}
+          <SaveSeatButton className="mt-6 sm:hidden" />
         </div>
         <div className="mt-12 grid items-stretch gap-6 md:grid-cols-2">
           <FitCard title={fitCopy.forTitle} items={fitFor} good />
           <FitCard title={fitCopy.notForTitle} items={notFitFor} />
         </div>
         <div className="mt-12 flex flex-col items-center gap-3">
-          <a
-            href={`#${APPLY_QUIZ_ANCHOR}`}
-            className={buttonClass({
-              size: "lg",
-              className: "w-full sm:w-auto",
-            })}
-          >
-            {fitCopy.cta}
-          </a>
+          <SaveSeatButton />
           <p className="text-[15px] font-semibold text-slate-600">
             {fitCopy.ctaNote}
           </p>
@@ -360,13 +356,30 @@ export function FitSection({
   );
 }
 
+/** The one CTA back to the form in the hero. */
+function SaveSeatButton({ className }: { className?: string }) {
+  return (
+    <a
+      href={`#${APPLY_QUIZ_ANCHOR}`}
+      className={buttonClass({
+        size: "lg",
+        className: cn("w-full sm:w-auto", className),
+      })}
+    >
+      {fitCopy.cta}
+    </a>
+  );
+}
+
 /**
- * Three candid shots of Anthony on the route, the middle one taller. Below sm
- * the middle shot leads full width with the other two side by side under it.
+ * Three candid shots of Anthony, the middle one taller. The side tiles stay
+ * short enough (6:5) that their 628px-tall sources are not upscaled on 2x
+ * screens. Below sm only the middle shot shows, landscape, so the closing
+ * button stays near the heading.
  */
 function HostCandids() {
   return (
-    <div className="mx-auto mt-8 grid w-full max-w-[1100px] grid-cols-2 items-center gap-3 sm:grid-cols-[1fr_1.2fr_1fr] sm:gap-6">
+    <div className="mx-auto mt-8 grid w-full max-w-[1100px] grid-cols-1 items-center gap-3 sm:grid-cols-[1fr_1.2fr_1fr] sm:gap-6">
       {hostCandids.map((photo, index) => {
         const middle = index === 1;
         return (
@@ -375,8 +388,8 @@ function HostCandids() {
             className={cn(
               "rounded-card border-ink shadow-card relative overflow-hidden border-2 bg-white",
               middle
-                ? "col-span-2 aspect-[4/5] max-sm:order-first sm:col-span-1"
-                : "aspect-[3/4]",
+                ? "aspect-[4/3] sm:aspect-[4/5]"
+                : "hidden aspect-[6/5] sm:block",
             )}
           >
             <Image
@@ -386,9 +399,9 @@ function HostCandids() {
               sizes={
                 middle
                   ? "(min-width: 1180px) 400px, (min-width: 640px) 38vw, 100vw"
-                  : "(min-width: 1180px) 330px, (min-width: 640px) 31vw, 50vw"
+                  : "(min-width: 1180px) 330px, 31vw"
               }
-              className="object-cover"
+              className={cn("object-cover", photo.position)}
             />
           </div>
         );
@@ -445,17 +458,17 @@ export function MasterclassFooter() {
       <div className="mx-auto flex max-w-[860px] flex-col items-center gap-3 px-5 py-10 text-center">
         <Wordmark height={56} className="mb-2" />
         <p className="text-[13px] text-slate-500">{MASTERCLASS_DISCLAIMER}</p>
-        <p className="text-[13px] text-slate-500">
+        <p className="flex items-center justify-center text-[13px] text-slate-500">
           <Link
             href="/privacy"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 items-center px-2 underline underline-offset-2"
           >
             Privacy Policy
           </Link>
-          {" · "}
+          <span aria-hidden>·</span>
           <Link
             href="/terms"
-            className="inline-block py-2 underline underline-offset-2"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center px-2 underline underline-offset-2"
           >
             Terms
           </Link>

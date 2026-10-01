@@ -11,11 +11,13 @@ import {
   NextSteps,
   PlaybookBand,
 } from "@/components/sections/masterclass/ConfirmedSections";
+import { ShowUpLive } from "@/components/sections/masterclass/ShowUpLive";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { config } from "@/lib/config";
 import {
   calendarLinks,
+  confirmedCopy,
   confirmedPlaybookParams,
   masterclassCalendarEvent,
   safeFirstName,
@@ -29,9 +31,19 @@ import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 export const revalidate = 300;
 
+const description = confirmedCopy.metaDescription;
+
 export const metadata: Metadata = {
   title: "You're in: Masterclass",
+  description,
   robots: { index: false, follow: false },
+  openGraph: {
+    title: "You're in: Masterclass",
+    description,
+    url: "/masterclass-confirmed",
+    images: ["/images/masterclass/anthony-three-machines.jpg"],
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function MasterclassConfirmedPage({
@@ -71,6 +83,7 @@ export default async function MasterclassConfirmedPage({
         links={links}
       />
       <NextSteps />
+      <ShowUpLive />
       {hasSession ? <IntakeForm /> : null}
       <PlaybookBand params={confirmedPlaybookParams(params)} />
       <CoverSection />

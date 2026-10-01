@@ -20,9 +20,15 @@ type Props = {
   /** UTMs from the ad click, carried into the submission. */
   attribution: Record<string, string>;
   eventLabel: string | null;
+  /** ISO start; adds the weekday to the date line. */
+  eventStartsAt?: string | null;
 };
 
-export function RegistrationForm({ attribution, eventLabel }: Props) {
+export function RegistrationForm({
+  attribution,
+  eventLabel,
+  eventStartsAt,
+}: Props) {
   const [state, action, pending] = useActionState<RegistrationState, FormData>(
     registerForMasterclass,
     {},
@@ -58,7 +64,7 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
       </p>
       {eventLabel ? (
         <p className="mt-1 text-[15px] font-semibold text-slate-600">
-          <EventLabel label={eventLabel} />
+          <EventLabel label={eventLabel} startsAt={eventStartsAt} />
         </p>
       ) : null}
 
@@ -66,7 +72,9 @@ export function RegistrationForm({ attribution, eventLabel }: Props) {
         type="text"
         name={HONEYPOT_FIELD}
         tabIndex={-1}
-        autoComplete="off"
+        autoComplete="new-password"
+        data-1p-ignore=""
+        data-lpignore="true"
         aria-hidden="true"
         className="absolute -left-[9999px] h-px w-px opacity-0"
       />

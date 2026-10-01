@@ -72,12 +72,24 @@ export function PlaybookFaq() {
                 {item.q}
                 <span
                   aria-hidden="true"
-                  className="border-ink grid size-8 shrink-0 place-items-center rounded-full border-2 text-lg leading-none transition-transform group-open:rotate-45 motion-reduce:transition-none"
+                  className="border-ink grid size-8 shrink-0 place-items-center rounded-full border-2"
                 >
-                  +
+                  {/* lucide ChevronDown, matching the bonus rows. */}
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden="true"
+                    className="size-4 transition-transform group-open:rotate-180 motion-reduce:transition-none"
+                  >
+                    <path d="m6 9 6 6 6-6" />
+                  </svg>
                 </span>
               </summary>
-              <p className="-mt-1 px-5 pb-5 leading-relaxed">{item.a}</p>
+              <p className="px-5 pt-1 pb-5 leading-relaxed">{item.a}</p>
             </details>
           ))}
         </div>
@@ -90,18 +102,18 @@ export function PlaybookFinalOffer({ checkoutHref }: PlaybookCloseProps) {
   return (
     <section className="bg-brand-50 py-16 lg:py-24">
       <div className="mx-auto max-w-[1180px] px-5 lg:px-10">
-        <div className="border-ink shadow-card rounded-card grid overflow-hidden border-2 bg-white lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
-          <div className="bg-tint border-ink v2-dots flex items-center overflow-hidden border-b-2 p-6 lg:border-r-2 lg:border-b-0 lg:p-8">
+        <div className="border-ink shadow-card rounded-card overflow-hidden border-2 bg-white">
+          <div className="bg-tint border-ink v2-dots flex justify-center overflow-hidden border-b-2 px-6 pt-8 pb-6 lg:px-16 lg:pt-12 lg:pb-8">
             <Image
               src={images.productTrimmed.src}
               alt={images.productTrimmed.alt}
               width={images.productTrimmed.width}
               height={images.productTrimmed.height}
-              sizes="(min-width: 1024px) 640px, 100vw"
-              className="h-auto w-full max-w-none object-contain"
+              sizes="(min-width:1024px) 760px, 100vw"
+              className="h-auto w-full max-w-[760px] object-contain"
             />
           </div>
-          <div className="p-6 text-center sm:p-10">
+          <div className="mx-auto max-w-[640px] p-6 text-center sm:p-10">
             <p className={EYEBROW}>{finalOffer.badge}</p>
             <h2 className="v2-display text-ink mt-3 text-[clamp(2.2rem,4vw,3.25rem)] leading-[1.02] uppercase">
               {finalOffer.title}
