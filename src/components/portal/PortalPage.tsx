@@ -1,192 +1,176 @@
 import Image from "next/image";
-import Link from "next/link";
 import { Wordmark } from "@/components/site/Wordmark";
 import { LegalFooter } from "@/components/site/LegalFooter";
 import { VidalyticsGlobalTag } from "@/components/media/VidalyticsPlayer";
-import { CheckIcon } from "@/components/sections/apply/icons";
+import { portalCopy, portalHero } from "@/lib/content/portal";
 import {
+  dayKey,
+  daysUntil,
   formatCallTime,
-  moduleOrder,
-  nextSteps,
-  personaFor,
-  type ModuleId,
-  type NextStep,
-} from "@/lib/portal/personalize";
-import type { PortalWin } from "@/lib/portal/wins";
-import {
-  PORTAL_HERO_SUBLINE,
-  PORTAL_LOCKED,
-  PORTAL_STAGE_LABEL,
-} from "@/lib/content/portal";
+  formatDay,
+  isDone,
+  schedule,
+  stepsFor,
+} from "@/lib/portal/journey";
+import { personaFor } from "@/lib/portal/personalize";
 import type { PortalData } from "@/lib/portal/types";
-import {
-  FaqModule,
-  IntakeModule,
-  LocalModule,
-  LockedModule,
-  OnboardingModule,
-  PeopleModule,
-  ResourcesModule,
-  SummaryModule,
-  WinsModule,
-} from "./PortalModules";
+import type { PortalWin } from "@/lib/portal/wins";
+import { AskForm } from "./PortalForms";
+import { PortalPlan, type PlanDayView, type PlanStepView } from "./PortalPlan";
+import { StepContent, type StepContext } from "./StepContent";
 
-// /portal/[token] — one prospect's journey page (Client Journey Portal PRD).
-// One layout, four stage states, one persistent Next Steps spine. Visual
-// language is /pre-call-resources and /apply: ink borders, offset sky shadows,
-// uppercase black headings, dotted paper-blue hero wash.
+// /portal/[token]: one prospect's journey, told as a dated plan.
+// Hero (who + when) → calendar strip → day-by-day steps that open in place →
+// ask your rep. Visual language is the VP site (/apply, /pre-call-resources):
+// ink borders, sky offset shadow on the active card, uppercase black heads.
+
+const firstName = (name: string | undefined | null) =>
+  name?.split(/\s+/)[0] ?? null;
 
 export function PortalPage({
   data,
   wins,
+  now,
 }: {
   data: PortalData;
   wins: PortalWin[];
+  now: Date;
 }) {
   const persona = personaFor(data.prospect.occupation);
-  const steps = nextSteps(data);
-  const order = moduleOrder(data.stage, data.prospect.goal);
-  const needsIntake =
-    data.stage === "pre_call" &&
-    (!data.prospect.occupation || !data.prospect.zip);
+  const repFirstName = firstName(data.call?.rep.name);
+  const ctx: StepContext = { data, persona, wins, repFirstName };
 
-  const render = (id: ModuleId) => {
-    switch (id) {
-      case "local":
-        return <LocalModule key={id} market={data.localMarket} />;
-      case "people":
-        return <PeopleModule key={id} persona={persona} />;
-      case "wins":
-        return <WinsModule key={id} wins={wins} stage={data.stage} />;
-      case "faq":
-        return <FaqModule key={id} persona={persona} />;
-      case "summary":
-        return data.callSummary ? (
-          <SummaryModule
-            key={id}
-            summary={data.callSummary}
-            persona={persona}
-            repName={data.call?.rep.name}
-          />
-        ) : (
-          <LockedModule
-            key={id}
-            id="summary"
-            {...PORTAL_LOCKED.summaryPending}
-          />
-        );
-      case "onboarding":
-        return (
-          <OnboardingModule
-            key={id}
-            onboarding={data.onboarding}
-            steps={steps}
-          />
-        );
-      case "resources":
-        return <ResourcesModule key={id} stage={data.stage} />;
-    }
+  const steps = stepsFor(data);
+  const fill = (title: string) =>
+    title
+      .replace("{rep}", repFirstName ?? "your advisor")
+      .replace("{story}", persona.caseStudy.name);
+  const stepViews: PlanStepView[] = steps.map((step) => ({
+    key: step.key,
+    title: fill(step.title),
+    detail: step.detail,
+    minutes: step.minutes,
+    completedBy: step.completedBy,
+    systemDone: isDone(step, data, new Set()),
+    content: <StepContent step={step} ctx={ctx} />,
+  }));
+
+  const today = dayKey(now);
+  const tomorrow = dayKey(new Date(now.getTime() + 86_400_000));
+  const anchorLabel =
+    data.stage === "won" ? portalCopy.joinDay : portalCopy.callDay;
+  const dayLabel = (key: string) => {
+    const long = formatDay(key, "long");
+    if (key === today) return `${portalCopy.today} · ${long}`;
+    if (key === tomorrow) return `${portalCopy.tomorrow} · ${long}`;
+    return long;
   };
+  const days: PlanDayView[] = schedule(steps, data, now).map((day) => ({
+    key: day.key,
+    label: dayLabel(day.key),
+    chipDay: formatDay(day.key, "short"),
+    chipDate: String(Number(day.key.slice(8))),
+    isToday: day.isToday,
+    anchorLabel:
+      day.isAnchor && (data.stage === "won" || data.call?.scheduledAt)
+        ? anchorLabel
+        : null,
+    stepKeys: day.stepKeys,
+  }));
+
+  const hero = portalHero(data.stage, {
+    firstName: data.prospect.firstName,
+    repFirstName,
+    daysUntilCall: daysUntil(data.call?.scheduledAt, now),
+    callTime: formatCallTime(data.call?.scheduledAt),
+  });
 
   return (
     <>
       <VidalyticsGlobalTag />
-      <MobileNextBar steps={steps} />
-      <header className="border-b-2 border-[#111111] bg-white">
-        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-4 lg:px-10">
-          <Wordmark height={30} eager />
-          <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-            {PORTAL_STAGE_LABEL[data.stage]}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-[760px] items-center justify-between gap-4 px-5 py-4">
+          <Wordmark height={28} eager />
+          <p className="text-xs font-black tracking-[0.14em] text-slate-500 uppercase">
+            For {data.prospect.firstName}
           </p>
         </div>
       </header>
 
-      <main>
-        <Hero data={data} />
-        <div className="mx-auto grid max-w-[1180px] gap-10 px-5 py-12 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-10">
-          <div className="order-2 flex min-w-0 flex-col gap-10 lg:order-1">
-            {needsIntake ? (
-              <IntakeModule token={data.token} prospect={data.prospect} />
+      <main className="bg-white">
+        <section className="relative isolate overflow-hidden border-b border-slate-200">
+          <div
+            aria-hidden
+            className="absolute inset-0 bg-[#f5fbff]"
+            style={{
+              backgroundImage:
+                "radial-gradient(rgba(42,143,204,0.14) 1.2px, transparent 1.2px)",
+              backgroundSize: "22px 22px",
+            }}
+          />
+          <div className="relative mx-auto max-w-[760px] px-5 pt-12 pb-10 sm:pt-16">
+            <h1 className="max-w-[20ch] text-[clamp(2rem,5vw,3.25rem)] leading-[1.04] font-black tracking-tight text-balance text-[#111111]">
+              {hero.title}
+            </h1>
+            <p className="mt-4 max-w-[56ch] text-[17px] leading-relaxed font-semibold text-slate-700">
+              {hero.body}
+            </p>
+
+            {data.prospect.goal ? (
+              <p className="mt-6 max-w-[56ch] border-l-4 border-[#2a8fcc] pl-4 text-[15px] leading-relaxed font-semibold text-slate-700">
+                {portalCopy.goalLead}:{" "}
+                <span className="font-black text-[#111111]">
+                  &ldquo;{data.prospect.goal}.&rdquo;
+                </span>{" "}
+                {portalCopy.goalTail}
+              </p>
             ) : null}
-            {order.map(render)}
-            {data.stage === "pre_call" ? (
-              <LockedModule id="summary" {...PORTAL_LOCKED.summary} />
-            ) : null}
-            {data.stage === "pre_call" || data.stage === "post_call" ? (
-              <LockedModule id="onboarding" {...PORTAL_LOCKED.onboarding} />
+
+            {data.call ? (
+              <div className="mt-8 flex items-center gap-3">
+                <RepAvatar
+                  name={data.call.rep.name}
+                  photoUrl={data.call.rep.photoUrl}
+                />
+                <p className="text-sm font-semibold text-slate-700">
+                  <span className="block font-black text-[#111111]">
+                    {data.call.rep.name}
+                  </span>
+                  {data.call.rep.title ?? "Your Vendingpreneurs advisor"}
+                </p>
+              </div>
             ) : null}
           </div>
-          <aside className="order-1 lg:order-2">
-            <NextStepsPanel steps={steps} />
-          </aside>
+        </section>
+
+        <div className="mx-auto flex max-w-[760px] flex-col gap-14 px-5 py-12">
+          <PortalPlan
+            token={data.token}
+            steps={stepViews}
+            days={days}
+            initialDone={data.completedSteps}
+            showCalendar={data.stage !== "lost"}
+          />
+
+          <section
+            aria-labelledby="ask-heading"
+            className="rounded-[12px] border-2 border-[#111111] bg-[#f5fbff] p-6"
+          >
+            <h2
+              id="ask-heading"
+              className="text-lg font-black text-[#111111] uppercase"
+            >
+              {portalCopy.askHeading(repFirstName)}
+            </h2>
+            <p className="mt-1 mb-4 text-[15px] font-semibold text-slate-700">
+              {portalCopy.askBody}
+            </p>
+            <AskForm token={data.token} />
+          </section>
         </div>
       </main>
       <LegalFooter />
     </>
-  );
-}
-
-function Hero({ data }: { data: PortalData }) {
-  const { prospect, call, stage } = data;
-  const when = formatCallTime(call?.scheduledAt);
-
-  return (
-    <section className="relative isolate overflow-hidden border-b-2 border-[#111111]">
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-[#eaf6ff]"
-        style={{
-          backgroundImage:
-            "radial-gradient(rgba(42,143,204,0.20) 1.4px, transparent 1.4px)",
-          backgroundSize: "22px 22px",
-        }}
-      />
-      <div className="relative mx-auto max-w-[1180px] px-5 pt-14 pb-14 lg:px-10 lg:pt-20">
-        <p className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase">
-          Prepared for {prospect.firstName}
-          {prospect.lastName ? ` ${prospect.lastName}` : ""}
-        </p>
-        <h1 className="mt-4 max-w-[18ch] text-[clamp(2.2rem,4.4vw,3.8rem)] leading-[1.02] font-black tracking-tight text-balance text-[#111111] uppercase">
-          We built this for you, {prospect.firstName}.
-        </h1>
-        <p className="mt-5 max-w-[60ch] text-[17px] leading-relaxed font-semibold text-slate-700">
-          {PORTAL_HERO_SUBLINE[stage]}
-        </p>
-        {call ? (
-          <div
-            id="call"
-            className="mt-8 inline-flex max-w-full flex-wrap items-center gap-4 rounded-[10px] border-2 border-[#111111] bg-white px-5 py-4 shadow-[7px_7px_0_#55b8e8]"
-          >
-            <RepAvatar name={call.rep.name} photoUrl={call.rep.photoUrl} />
-            <div className="min-w-0">
-              <p className="text-sm font-black text-[#111111]">
-                {call.rep.name}
-                {call.rep.title ? (
-                  <span className="font-semibold text-slate-600">
-                    , {call.rep.title}
-                  </span>
-                ) : null}
-              </p>
-              <p className="text-sm font-semibold text-slate-700">
-                {stage === "pre_call"
-                  ? when
-                    ? `Your call: ${when}`
-                    : "Your call time is in your confirmation email"
-                  : "Your Vendingpreneurs advisor"}
-              </p>
-            </div>
-            {stage === "pre_call" && call.rescheduleUrl ? (
-              <Link
-                href={call.rescheduleUrl}
-                className="text-sm font-black text-[#066a99] underline underline-offset-4 hover:text-[#111111]"
-              >
-                Need a different time?
-              </Link>
-            ) : null}
-          </div>
-        ) : null}
-      </div>
-    </section>
   );
 }
 
@@ -202,9 +186,9 @@ function RepAvatar({
       <Image
         src={photoUrl}
         alt=""
-        width={48}
-        height={48}
-        className="size-12 rounded-full border-2 border-[#111111] object-cover"
+        width={44}
+        height={44}
+        className="size-11 rounded-full border-2 border-[#111111] object-cover"
       />
     );
   }
@@ -217,104 +201,9 @@ function RepAvatar({
   return (
     <span
       aria-hidden
-      className="grid size-12 shrink-0 place-items-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] text-sm font-black text-white"
+      className="grid size-11 shrink-0 place-items-center rounded-full border-2 border-[#111111] bg-[#2a8fcc] text-sm font-black text-white"
     >
       {initials}
     </span>
-  );
-}
-
-function firstOpen(steps: NextStep[]): NextStep | undefined {
-  return steps.find((step) => !step.done);
-}
-
-/** PRD §6.1: the spine. Sticky sidebar on desktop, full list up top on mobile. */
-function NextStepsPanel({ steps }: { steps: NextStep[] }) {
-  const current = firstOpen(steps);
-  return (
-    <section
-      id="next-steps"
-      aria-labelledby="next-steps-heading"
-      className="scroll-mt-20 rounded-[12px] border-2 border-[#111111] bg-white p-6 shadow-[8px_8px_0_#111111] lg:sticky lg:top-6"
-    >
-      <h2
-        id="next-steps-heading"
-        className="text-xs font-black tracking-[0.14em] text-[#066a99] uppercase"
-      >
-        Your next steps
-      </h2>
-      <ol className="mt-5 flex flex-col gap-3">
-        {steps.map((step, index) => {
-          const isCurrent = step.id === current?.id;
-          return (
-            <li key={step.id}>
-              <a
-                href={step.href}
-                target={step.external ? "_blank" : undefined}
-                rel={step.external ? "noopener noreferrer" : undefined}
-                aria-current={isCurrent ? "step" : undefined}
-                className={`flex items-start gap-3 rounded-[8px] border-2 p-3 transition focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none ${
-                  isCurrent
-                    ? "border-[#111111] bg-[#eaf6ff] hover:-translate-y-0.5"
-                    : "border-transparent hover:border-[#111111]"
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`grid size-8 shrink-0 place-items-center rounded-full border-2 border-[#111111] text-sm font-black ${
-                    step.done
-                      ? "bg-[#111111] text-white"
-                      : isCurrent
-                        ? "bg-[#2a8fcc] text-white"
-                        : "bg-white text-[#111111]"
-                  }`}
-                >
-                  {step.done ? <CheckIcon className="size-4" /> : index + 1}
-                </span>
-                <span className="min-w-0 pt-1">
-                  <span
-                    className={`block text-[15px] leading-snug font-black ${
-                      step.done
-                        ? "text-slate-500 line-through"
-                        : "text-[#111111]"
-                    }`}
-                  >
-                    {step.label}
-                  </span>
-                  {step.detail ? (
-                    <span className="mt-0.5 block text-sm font-semibold text-slate-600">
-                      {step.detail}
-                    </span>
-                  ) : null}
-                  {step.done ? <span className="sr-only">(done)</span> : null}
-                </span>
-              </a>
-            </li>
-          );
-        })}
-      </ol>
-    </section>
-  );
-}
-
-/** Mobile only: the one next step, pinned, so it is never more than a tap away. */
-function MobileNextBar({ steps }: { steps: NextStep[] }) {
-  const current = firstOpen(steps);
-  if (!current) return null;
-  return (
-    <div className="sticky top-0 z-30 border-b-2 border-[#111111] bg-[#111111] lg:hidden">
-      <a
-        href="#next-steps"
-        className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-5 py-3 text-white"
-      >
-        <span className="min-w-0 truncate text-sm font-black">
-          <span className="text-[#55b8e8] uppercase">Next: </span>
-          {current.label}
-        </span>
-        <span className="shrink-0 text-xs font-black tracking-[0.1em] uppercase">
-          All steps
-        </span>
-      </a>
-    </div>
   );
 }

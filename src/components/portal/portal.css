@@ -1,0 +1,41 @@
+/* Client portal map pins (Leaflet divIcons). Brand: ink #111111, sky #2a8fcc. */
+.vp-pin {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid #111111;
+  border-radius: 9999px;
+  background: #2a8fcc;
+  color: #ffffff;
+  font:
+    900 13px/1 var(--font-sans, system-ui),
+    sans-serif;
+  box-shadow: 2px 2px 0 #111111;
+  transition: transform 120ms ease;
+}
+.vp-pin--home {
+  width: 44px;
+  height: 26px;
+  background: #111111;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 #55b8e8;
+}
+.vp-pin-active .vp-pin {
+  transform: scale(1.25);
+  background: #111111;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vp-pin {
+    transition: none;
+  }
+}
+/* Mute the basemap so the pins carry the color. */
+.vp-map .leaflet-tile-pane {
+  filter: grayscale(0.85) brightness(1.06) contrast(0.92);
+}
+.vp-map {
+  font-family: inherit;
+}
