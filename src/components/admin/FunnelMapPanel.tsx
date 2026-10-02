@@ -31,15 +31,6 @@ import type {
  * from the table. A metric nobody observed renders "—", never a zero.
  */
 
-export function funnelMapHref(
-  range: AdminAnalyticsRangeKey,
-  includeInternal: boolean,
-) {
-  const params = new URLSearchParams({ range, tab: "map" });
-  if (includeInternal) params.set("internal", "1");
-  return `/admin/analytics?${params.toString()}`;
-}
-
 export function FunnelMapTab({
   data,
   range,
