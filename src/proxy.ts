@@ -1,14 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { lookupRedirectForPath } from "@/lib/redirect-table";
 import { resolveRedirectDestination } from "@/lib/redirects";
-import { hasPublishedPostSlug } from "@/lib/services/news";
-import { hasPublishedCaseStudySlug } from "@/lib/services/case-studies";
+import {
+  hasPublishedCaseStudySlugCached,
+  hasPublishedPostSlugCached,
+  hasPublishedSeoPagePathCached,
+} from "@/lib/published-slug-cache";
 import { listProcessSlugs } from "@/lib/content/process";
 import { DEFAULT_ROUTE_PREFIXES } from "@/lib/page-builder/route-prefix-defaults";
-import {
-  getBuilderRedirectBySourcePath,
-  hasPublishedSeoPagePath,
-} from "@/lib/services/seo-page-public";
 import {
   isBuilderRoutePath,
   splitAssignableBuilderRoutePath,
@@ -49,7 +48,7 @@ const TWO_SEGMENT_DYNAMIC_EXISTS: Record<
   (slug: string) => boolean | Promise<boolean>
 > = {
   process: (slug) => listProcessSlugs().includes(slug),
-  "case-studies": (slug) => hasPublishedCaseStudySlug(slug),
+  "case-studies": (slug) => hasPublishedCaseStudySlugCached(slug),
   demo: (slug) => slug === "book-a-call",
 };
 
@@ -150,7 +149,7 @@ async function handleCustomBuilderPath(request: NextRequest, path: string) {
   );
   if (!isConfigured) return redirectOrNext(request, path);
 
-  const redirect = await getBuilderRedirectBySourcePath(path);
+  const redirect = await lookupRedirectForPath(path);
   if (redirect) {
     return NextResponse.redirect(
       resolveRedirectDestination(request, redirect.destination_path),
@@ -246,7 +245,7 @@ export async function proxy(request: NextRequest) {
     // A coded page under a builder prefix has no `seo_pages` row, so the
     // existence check below would 404 it before its route ever runs. A Studio
     // redirect still wins, so this sits after the redirect lookup.
-    const redirect = await getBuilderRedirectBySourcePath(path);
+    const redirect = await lookupRedirectForPath(path);
     if (redirect) {
       return NextResponse.redirect(
         resolveRedirectDestination(request, redirect.destination_path),
@@ -264,14 +263,14 @@ export async function proxy(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const exists = await hasPublishedSeoPagePath(routePath);
+    const exists = await hasPublishedSeoPagePathCached(routePath);
     if (!exists) {
       // Legacy /blog/{slug} links permanently redirect to the matching
       // published news article. A published builder page at the same path
       // wins (handled above); only otherwise do we fall back to news.
       if (routePath.startsWith("/blog/")) {
         const slug = routePath.replace(/^\/blog\//, "");
-        if (await hasPublishedPostSlug(slug)) {
+        if (await hasPublishedPostSlugCached(slug)) {
           return NextResponse.redirect(
             new URL(`/news/${slug}`, request.url),
             308,
@@ -317,7 +316,7 @@ export async function proxy(request: NextRequest) {
     } catch {
       return notFoundResponse(request);
     }
-    const exists = await hasPublishedPostSlug(slug);
+    const exists = await hasPublishedPostSlugCached(slug);
     if (!exists) {
       return notFoundResponse(request);
     }

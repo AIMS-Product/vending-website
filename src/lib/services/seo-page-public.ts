@@ -61,6 +61,24 @@ export async function listPublishedSeoPageSlugs() {
   return (data ?? []).map((row) => row.slug);
 }
 
+/**
+ * Every published route_path, for the proxy's in-memory existence set — see
+ * `@/lib/published-slug-cache`. Throws on error so the caller falls back to the
+ * per-path check instead of caching an empty list as "nothing is published".
+ */
+export async function listPublishedSeoPageRoutePaths() {
+  const supabase = getPublicClient();
+  const { data, error } = await supabase
+    .from(PUBLIC_SEO_PAGES_TABLE)
+    .select("route_path");
+
+  if (error) {
+    throwPublicSeoPageQueryError("listPublishedSeoPageRoutePaths", error);
+  }
+
+  return (data ?? []).map((row) => row.route_path);
+}
+
 export async function hasPublishedSeoPageSlug(slug: string) {
   return hasPublishedSeoPagePath(pagePathForSlug(slug));
 }

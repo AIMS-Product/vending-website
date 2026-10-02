@@ -30,6 +30,7 @@ export function AboutHero() {
             fill
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
+            fetchPriority="high"
             className="object-cover object-top"
           />
         </div>

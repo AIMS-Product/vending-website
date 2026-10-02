@@ -67,7 +67,6 @@ export function ApplyVsl({
               fill
               sizes="(min-width: 940px) 940px, 100vw"
               className="object-cover"
-              priority
             />
             <span className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-black/30" />
             {/* The YouTube poster carries its own lower-third text ("Book a

@@ -47,6 +47,7 @@ export function FeaturedCaseStudy({
                 sizes="(max-width: 1024px) 100vw, 700px"
                 className="object-cover"
                 priority
+                fetchPriority="high"
               />
             ) : null}
             {caseStudy.youtube_video_id ? (

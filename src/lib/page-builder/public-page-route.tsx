@@ -9,13 +9,13 @@ import {
 } from "@/lib/lead-attribution";
 import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
 import { resolveDefaultQualificationFormVersion } from "@/lib/services/qualification-forms";
-import { getPublishedSeoPageByPath } from "@/lib/services/seo-page-public";
+import { getPublishedSeoPageByPathOnce } from "@/lib/page-builder/request-cache";
 
 export async function generateBuilderPageMetadata(
   routePrefix: string,
   slug: string,
 ): Promise<Metadata> {
-  const page = await getPublishedSeoPageByPath(`${routePrefix}/${slug}`);
+  const page = await getPublishedSeoPageByPathOnce(`${routePrefix}/${slug}`);
   if (!page) notFound();
   const title = normalizeBrandedPageTitle(page.seo_title ?? page.title);
 
@@ -44,7 +44,7 @@ export async function renderBuilderPage({
   searchParams: Promise<LeadSearchParams>;
 }) {
   const [page, query] = await Promise.all([
-    getPublishedSeoPageByPath(`${routePrefix}/${slug}`),
+    getPublishedSeoPageByPathOnce(`${routePrefix}/${slug}`),
     searchParams,
   ]);
   if (!page) notFound();

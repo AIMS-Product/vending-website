@@ -26,7 +26,6 @@ export function Wordmark({
       width={width}
       height={height}
       loading={eager ? "eager" : undefined}
-      fetchPriority={eager ? "high" : undefined}
       className={cn("block", className)}
       style={{ width, height }}
     />
