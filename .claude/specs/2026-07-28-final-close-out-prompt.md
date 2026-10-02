@@ -151,7 +151,7 @@ Report the raw count both before and after.
   cleanup. Internal-lead detection lives in
   `src/lib/services/admin-analytics-internal.ts`; if a new test pattern is
   visible in the list, add it there rather than deleting rows by hand.
-- Leave `Nathan Wirth · nrwirthdesign@gmail.com` alone. Adam has not ruled on
+- Leave `Lead A · lead-a@example.com` alone. Adam has not ruled on
   whether it is real. Deletion is irreversible; keeping it costs nothing.
 
 ---
@@ -192,7 +192,7 @@ of. An unverified item is a FAIL, not a pass.
 [ ] /admin/analytics loads on production; all four tabs render
 [ ] /admin/leads shows no new test rows
 [ ] Untracked GO-LIVE doc: committed or deleted (say which)
-[ ] Nathan Wirth row still present
+[ ] Lead A row still present
 ```
 
 Then write a short report for Adam in **plain English**: what is now working,
@@ -202,7 +202,7 @@ goes in the spec files.
 
 ### Still needs Adam, do not attempt
 
-- Whether `Nathan Wirth` is a real lead.
+- Whether `Lead A` is a real lead.
 - Telling Stephen it is safe to delete the five `SK - UTM *` lead fields in
   Close. The site no longer writes them — that is proven — but deleting a Close
   field destroys its history, so anyone reporting on pre-cutover attribution

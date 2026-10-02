@@ -22,6 +22,13 @@ export type SubscribeOutcome =
   | { ok: true }
   | { ok: false; reason: "invalid" | "unconfigured" | "provider" };
 
+/**
+ * ActiveCampaign and the webhook are third parties; a slow one must not hold
+ * the function open until the platform kills it.
+ */
+const REQUEST_TIMEOUT_MS = 10_000;
+const timeoutSignal = () => AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+
 // Deliberately loose. The only thing worth rejecting at this stage is input
 // that cannot be an address at all; anything subtler belongs to the ESP's
 // own verification, and a clever regex here just rejects real people.
@@ -79,6 +86,7 @@ function activeCampaign(
       const syncResponse = await fetch(`${root}/api/3/contact/sync`, {
         method: "POST",
         headers,
+        signal: timeoutSignal(),
         body: JSON.stringify({
           contact: {
             email,
@@ -108,6 +116,7 @@ function activeCampaign(
       const listResponse = await fetch(`${root}/api/3/contactLists`, {
         method: "POST",
         headers,
+        signal: timeoutSignal(),
         body: JSON.stringify({
           contactList: {
             list: listId,
@@ -128,16 +137,24 @@ function activeCampaign(
       if (tagId) {
         // Best effort. The subscription already succeeded, so a failed tag is
         // logged and swallowed rather than shown to the reader as an error.
-        const tagResponse = await fetch(`${root}/api/3/contactTags`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            contactTag: { contact: contactId, tag: tagId },
-          }),
-        });
-        if (!tagResponse.ok) {
+        try {
+          const tagResponse = await fetch(`${root}/api/3/contactTags`, {
+            method: "POST",
+            headers,
+            signal: timeoutSignal(),
+            body: JSON.stringify({
+              contactTag: { contact: contactId, tag: tagId },
+            }),
+          });
+          if (!tagResponse.ok) {
+            console.error(
+              `[subscribe] ActiveCampaign tag failed (${tagResponse.status}). Subscription itself succeeded.`,
+            );
+          }
+        } catch (error) {
           console.error(
-            `[subscribe] ActiveCampaign tag failed (${tagResponse.status}). Subscription itself succeeded.`,
+            "[subscribe] ActiveCampaign tag request failed. Subscription itself succeeded.",
+            error,
           );
         }
       }
@@ -174,6 +191,7 @@ function resolveProvider(): Provider | null {
         const response = await fetch(webhook, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          signal: timeoutSignal(),
           body: JSON.stringify({
             email,
             source,

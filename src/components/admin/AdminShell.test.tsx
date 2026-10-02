@@ -211,6 +211,23 @@ describe("AdminShell navigation for a read-only viewer", () => {
     });
   });
 
+  it("shows the least-privileged nav on fallback screens where the role is unknown", () => {
+    const html = renderToStaticMarkup(
+      <AdminShell activeSection="overview" title="Not found" roleUnknown>
+        content
+      </AdminShell>,
+    );
+
+    readable.forEach((href) => {
+      expect(html).toContain(`href="${href}"`);
+    });
+    denied.forEach((href) => {
+      expect(html).not.toContain(`href="${href}"`);
+    });
+    // No role is claimed on screen: unknown is not "Viewer".
+    expect(html).not.toContain("Viewer");
+  });
+
   it("renders the full nav when no role is supplied", () => {
     // Callers that predate the viewer role must not silently lose their nav.
     const html = renderShell("overview");

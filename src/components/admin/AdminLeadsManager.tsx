@@ -23,8 +23,8 @@ import type {
   AdminLeadDetail,
   AdminLeadListItem,
 } from "@/lib/services/lead-admin";
+import { AdminPaginationLink } from "@/components/admin/AdminPaginationLink";
 import { formatPacificDay } from "@/lib/admin/format-time";
-import { ADMIN_LEAD_LIST_LIMIT } from "@/lib/admin/lead-list-limit";
 
 const initialActionState: LeadAdminActionState = { status: "idle" };
 
@@ -107,15 +107,23 @@ export function AdminLeadsManager({
   activeCloseSyncStatus,
   activeLifecycleStatus,
   leads,
+  page,
+  pageSize,
+  syncIssueTotal,
+  total,
 }: {
   activeCallStatus: string;
   activeCloseSyncStatus: string;
   activeLifecycleStatus: string;
   leads: AdminLeadListItem[];
+  /** 1-based page being shown. */
+  page: number;
+  pageSize: number;
+  /** Sync problems across every lead, not just this page. */
+  syncIssueTotal: number;
+  /** Leads matching the active filters, across every page. */
+  total: number;
 }) {
-  // The list loads the newest leads only. Say so, or "Visible 100" reads as
-  // the total and a sync failure further back looks like it does not exist.
-  const capped = leads.length >= ADMIN_LEAD_LIST_LIMIT;
   const pendingCount = leads.filter(
     (lead) => lead.lifecycleStatus === "qualification_pending",
   ).length;
@@ -130,11 +138,15 @@ export function AdminLeadsManager({
   const notBookedCount = leads.filter(
     (lead) => !lead.callBookedAt && lead.callReconciledAt !== null,
   ).length;
-  const failedSyncCount = leads.filter((lead) =>
-    ["failed", "needs_review", "dead_letter"].includes(
-      lead.closeSyncStatus ?? "",
-    ),
-  ).length;
+  const failedSyncCount = syncIssueTotal;
+  const paged = total > pageSize;
+  const firstShown = leads.length ? (page - 1) * pageSize + 1 : 0;
+  const lastShown = firstShown + leads.length - (leads.length ? 1 : 0);
+  const filterParams = {
+    lifecycle: activeLifecycleStatus,
+    sync: activeCloseSyncStatus,
+    call: activeCallStatus,
+  };
 
   return (
     <div className="grid gap-5">
@@ -147,9 +159,9 @@ export function AdminLeadsManager({
         <AdminMetricPanel
           icon="mail"
           tone="blue"
-          label="Visible"
-          value={leads.length}
-          caption={capped ? "latest leads, filter to narrow" : "leads"}
+          label="Leads"
+          value={total}
+          caption="match these filters"
         />
         <AdminMetricPanel
           icon="filter"
@@ -170,21 +182,21 @@ export function AdminLeadsManager({
           tone="green"
           label="Booked a call"
           value={bookedCount}
-          caption="of the leads shown"
+          caption="on this page"
         />
         <AdminMetricPanel
           icon="help"
           tone={notBookedCount ? "amber" : "slate"}
           label="No call booked"
           value={notBookedCount}
-          caption="of the leads shown"
+          caption="on this page"
         />
         <AdminMetricPanel
           icon="shield"
           tone={failedSyncCount ? "amber" : "slate"}
           label="Sync issues"
           value={failedSyncCount}
-          caption={capped ? "recoverable, in the latest leads" : "recoverable"}
+          caption="recoverable, across all leads"
         />
       </AdminMetricStrip>
 
@@ -226,48 +238,66 @@ export function AdminLeadsManager({
           </div>
         </div>
 
-        {capped ? (
-          <p className="text-ui-text-muted border-ui-line border-b px-4 py-2 text-xs">
-            Showing the {ADMIN_LEAD_LIST_LIMIT} most recent leads that match
-            these filters. Older leads are not listed here.
-          </p>
+        {leads.length ? (
+          <PagerBar
+            filterParams={filterParams}
+            page={page}
+            paged={paged}
+            pageSize={pageSize}
+            range={`Showing ${firstShown}-${lastShown} of ${total}`}
+            total={total}
+            border="b"
+          />
         ) : null}
 
         {leads.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1040px] text-left text-sm">
-              <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
-                <tr>
-                  <th scope="col" className="px-4 py-2">
-                    Lead
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Lifecycle
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Qualification
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Close sync
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Call booked
-                  </th>
-                  <th scope="col" className="px-3 py-2">
-                    Source
-                  </th>
-                  <th scope="col" className="px-4 py-2 text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-ui-line divide-y">
-                {leads.map((lead) => (
-                  <LeadRow key={lead.id} lead={lead} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[1040px] text-left text-sm">
+                <thead className="border-ui-line bg-ui-canvas text-ui-text-subtle border-b text-[0.6875rem] font-semibold tracking-[0.08em] uppercase">
+                  <tr>
+                    <th scope="col" className="px-4 py-2">
+                      Lead
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Lifecycle
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Qualification
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Close sync
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Call booked
+                    </th>
+                    <th scope="col" className="px-3 py-2">
+                      Source
+                    </th>
+                    <th scope="col" className="px-4 py-2 text-right">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-ui-line divide-y">
+                  {leads.map((lead) => (
+                    <LeadRow key={lead.id} lead={lead} />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {paged ? (
+              <PagerBar
+                filterParams={filterParams}
+                page={page}
+                paged={paged}
+                pageSize={pageSize}
+                range={`Showing ${firstShown}-${lastShown} of ${total}`}
+                total={total}
+                border="t"
+              />
+            ) : null}
+          </>
         ) : (
           <div className="px-5 py-10 text-center">
             <h2 className="text-ui-text text-lg font-semibold">
@@ -280,6 +310,51 @@ export function AdminLeadsManager({
           </div>
         )}
       </section>
+    </div>
+  );
+}
+
+function PagerBar({
+  border,
+  filterParams,
+  page,
+  paged,
+  pageSize,
+  range,
+  total,
+}: {
+  border: "b" | "t";
+  filterParams: Record<string, string>;
+  page: number;
+  paged: boolean;
+  pageSize: number;
+  range: string;
+  total: number;
+}) {
+  const lastPage = Math.max(1, Math.ceil(total / pageSize));
+  return (
+    <div
+      className={`border-ui-line flex items-center justify-between gap-3 px-4 py-2 ${border === "b" ? "border-b" : "border-t"}`}
+    >
+      <p className="text-ui-text-muted text-xs">{range}</p>
+      {paged ? (
+        <nav aria-label="Lead pages" className="flex items-center gap-2">
+          <AdminPaginationLink
+            href={leadListHref({ ...filterParams, page: String(page - 1) })}
+            label="Previous page"
+            disabled={page <= 1}
+          />
+          <span className="text-ui-text-muted text-xs">
+            Page {page} of {lastPage}
+          </span>
+          <AdminPaginationLink
+            href={leadListHref({ ...filterParams, page: String(page + 1) })}
+            label="Next page"
+            disabled={page >= lastPage}
+            next
+          />
+        </nav>
+      ) : null}
     </div>
   );
 }
@@ -806,7 +881,9 @@ function FilterNav({
 function leadListHref(params: Record<string, string>) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value && value !== "all") search.set(key, value);
+    if (value && value !== "all" && !(key === "page" && value === "1")) {
+      search.set(key, value);
+    }
   }
   const query = search.toString();
   return query ? `/admin/leads?${query}` : "/admin/leads";

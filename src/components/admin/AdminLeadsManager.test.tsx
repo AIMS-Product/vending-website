@@ -104,37 +104,66 @@ const detail: AdminLeadDetail = {
   ],
 };
 
+const baseProps = {
+  activeLifecycleStatus: "all",
+  activeCloseSyncStatus: "all",
+  activeCallStatus: "all",
+  total: 1,
+  page: 1,
+  pageSize: 100,
+  syncIssueTotal: 1,
+};
+
 describe("AdminLeadsManager", () => {
-  it("says the list is capped when it holds the newest 100 leads", () => {
+  it("shows the exact total, the range on screen, and page links when there are more leads than one page", () => {
     const many = Array.from({ length: 100 }, (_, i) => ({
       ...lead,
       id: `lead_${i}`,
     }));
-    const props = {
-      activeLifecycleStatus: "all",
-      activeCloseSyncStatus: "all",
-      activeCallStatus: "all",
-    };
-    const capped = renderToStaticMarkup(
-      <AdminLeadsManager leads={many} {...props} />,
+    const paged = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={many}
+        {...baseProps}
+        total={342}
+        page={2}
+        syncIssueTotal={7}
+      />,
     );
-    expect(capped).toContain("Showing the 100 most recent leads");
-    expect(capped).toContain("latest leads, filter to narrow");
+    expect(paged).toContain("Showing 101-200 of 342");
+    expect(paged).toContain("Page 2 of 4");
+    expect(paged).toContain('href="/admin/leads"');
+    expect(paged).toContain('href="/admin/leads?page=3"');
+    expect(paged).toContain("recoverable, across all leads");
 
-    const short = renderToStaticMarkup(
-      <AdminLeadsManager leads={many.slice(0, 3)} {...props} />,
+    const single = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={many.slice(0, 3)}
+        {...baseProps}
+        total={3}
+        page={1}
+      />,
     );
-    expect(short).not.toContain("most recent leads");
+    expect(single).toContain("Showing 1-3 of 3");
+    expect(single).not.toContain("Lead pages");
+  });
+
+  it("keeps the active filters on page links", () => {
+    const html = renderToStaticMarkup(
+      <AdminLeadsManager
+        leads={[lead]}
+        {...baseProps}
+        activeCallStatus="booked"
+        total={250}
+        pageSize={100}
+        page={1}
+      />,
+    );
+    expect(html).toContain('href="/admin/leads?call=booked&amp;page=2"');
   });
 
   it("renders lead identity, lifecycle, sync state, source attribution, and filters", () => {
     const html = renderToStaticMarkup(
-      <AdminLeadsManager
-        leads={[lead]}
-        activeLifecycleStatus="all"
-        activeCloseSyncStatus="all"
-        activeCallStatus="all"
-      />,
+      <AdminLeadsManager leads={[lead]} {...baseProps} />,
     );
 
     expect(html).toContain("Jane Buyer");
@@ -150,12 +179,7 @@ describe("AdminLeadsManager", () => {
 
   it("does not render CSV, dashboards, reports, or A/B winner UI", () => {
     const html = renderToStaticMarkup(
-      <AdminLeadsManager
-        leads={[lead]}
-        activeLifecycleStatus="all"
-        activeCloseSyncStatus="all"
-        activeCallStatus="all"
-      />,
+      <AdminLeadsManager leads={[lead]} {...baseProps} />,
     );
 
     expect(html).not.toContain("CSV");
@@ -229,12 +253,7 @@ describe("AdminLeadDetailView", () => {
 describe("AdminLeadsManager sync issues banner (I7)", () => {
   it("renders a prominent alert banner with a jump link when sync failures exist", () => {
     const html = renderToStaticMarkup(
-      <AdminLeadsManager
-        leads={[lead]}
-        activeLifecycleStatus="all"
-        activeCloseSyncStatus="all"
-        activeCallStatus="all"
-      />,
+      <AdminLeadsManager leads={[lead]} {...baseProps} />,
     );
 
     expect(html).toContain('role="alert"');
@@ -254,9 +273,8 @@ describe("AdminLeadsManager sync issues banner (I7)", () => {
     const html = renderToStaticMarkup(
       <AdminLeadsManager
         leads={[healthyLead]}
-        activeLifecycleStatus="all"
-        activeCloseSyncStatus="all"
-        activeCallStatus="all"
+        {...baseProps}
+        syncIssueTotal={0}
       />,
     );
 
@@ -266,12 +284,7 @@ describe("AdminLeadsManager sync issues banner (I7)", () => {
 
   it("uses the permanently-failed filter label instead of dead letter jargon", () => {
     const html = renderToStaticMarkup(
-      <AdminLeadsManager
-        leads={[lead]}
-        activeLifecycleStatus="all"
-        activeCloseSyncStatus="all"
-        activeCallStatus="all"
-      />,
+      <AdminLeadsManager leads={[lead]} {...baseProps} />,
     );
 
     expect(html).toContain("Permanently failed");

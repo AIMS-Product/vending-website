@@ -1,5 +1,5 @@
 /**
- * How many leads the admin list loads. Kept apart from the service so the
- * client list can say "latest N" without importing server code.
+ * Page size for the admin leads list (`adminListLeads`). The page passes it
+ * to the client list as `pageSize`, so client code never imports this.
  */
 export const ADMIN_LEAD_LIST_LIMIT = 100;

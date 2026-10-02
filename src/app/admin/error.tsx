@@ -80,6 +80,7 @@ export default function AdminError({
     <AdminShell
       activeSection={adminSectionForPath(pathname)}
       title="Something went wrong"
+      roleUnknown
     >
       {body}
     </AdminShell>
