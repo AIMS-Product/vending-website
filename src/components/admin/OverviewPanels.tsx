@@ -31,6 +31,17 @@ import {
  * number on the page is a link to the screen that can explain it.
  */
 
+/**
+ * Overview ranges are 7d/30d/90d/1y/custom; the bookings page offers 7, 30
+ * and 90 days. A click should open the same window, and where it cannot (a
+ * year, a custom span) the widest one is the closest honest answer.
+ */
+export function bookingsRange(range: string): "7" | "30" | "90" {
+  if (range === "7d") return "7";
+  if (range === "30d") return "30";
+  return "90";
+}
+
 export function channelHref(channel: string, range: string) {
   const params = new URLSearchParams({ range, tab: "channels", channel });
   return `/admin/analytics?${params.toString()}`;
@@ -124,7 +135,7 @@ export function OverviewHeadline({
     <AdminMetricStrip columns={5}>
       <OverviewMetric
         canEdit={canEdit}
-        href="/admin/leads"
+        href={`/admin/analytics?range=${range}&tab=channels`}
         label="Site form fills"
         value={leads}
         caption={since}
@@ -145,7 +156,7 @@ export function OverviewHeadline({
       />
       <OverviewMetric
         canEdit={canEdit}
-        href="/admin/bookings"
+        href={`/admin/bookings?range=${bookingsRange(range)}`}
         label="Calls booked"
         value={booked}
         caption={since}

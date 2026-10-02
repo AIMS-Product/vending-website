@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { total } from "./OverviewPanels";
+import { bookingsRange, total } from "./OverviewPanels";
 
 // The Overview tile read "Leads 109" for a week that captured 1,308 people,
 // because site form fills and total capture differ by more than 10x
@@ -20,5 +20,18 @@ describe("total captured", () => {
 
   it("keeps a real zero distinct from unobserved", () => {
     expect(total(0, null)).toBe(0);
+  });
+});
+
+describe("bookingsRange", () => {
+  it("opens the bookings page on the range the Overview is showing", () => {
+    expect(bookingsRange("7d")).toBe("7");
+    expect(bookingsRange("30d")).toBe("30");
+    expect(bookingsRange("90d")).toBe("90");
+  });
+
+  it("falls back to the widest window for a year or a custom span", () => {
+    expect(bookingsRange("1y")).toBe("90");
+    expect(bookingsRange("custom:2026-01-01:2026-02-01")).toBe("90");
   });
 });
