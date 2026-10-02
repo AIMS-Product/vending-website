@@ -406,7 +406,7 @@ export const VALUE_FIRST_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
     function: {
       name: "share_resource",
       description:
-        "Show a free resource or one of the team's short answer videos as a card in this chat, no email needed. roadmap = the 90-day plan members follow; finance_templates = the spreadsheet for running the numbers; the rest are short videos answering one question each: what_you_get, locations (help finding locations), machine_cost, financing (financing or credit), earnings. One card per turn; never the same one twice.",
+        "Show a free resource or one of the team's short answer videos as a card in this chat, no email needed. roadmap = the 90-day plan members follow; finance_templates = the spreadsheet for running the numbers; the rest are short videos answering one question each: what_you_get, locations (help finding locations), earnings. One card per turn; never the same one twice.",
       parameters: {
         type: "object",
         properties: {

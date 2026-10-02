@@ -11,7 +11,7 @@
 export const preCallMeta = {
   title: "Pre-Call Resources",
   description:
-    "Watch these before your vending advising session: what you get, how locations and financing work, and how real operators built their routes.",
+    "Watch these before your vending advising session: what you get, how locations work, and how real operators built their routes.",
 } as const;
 
 export const preCallHero = {
@@ -26,7 +26,8 @@ export const preCallHero = {
 
 /** The objection answers, in the order marketing laid them out. The
  * "What does it actually cost to join" video was pulled 2026-10-02 (Adam):
- * seeing the price before the call drove cancellations. */
+ * seeing the price before the call drove cancellations. The machine-cost and
+ * financing videos followed the same day for the same reason. */
 export const preCallResources = {
   title: "Your Pre-Call Resources",
   items: [
@@ -43,22 +44,6 @@ export const preCallResources = {
       embedId: "VVyREGvkL93bpwkh",
       answer:
         "Vendingpreneurs gives you a custom-built tool to find, organize, and reach out to potential locations, cutting down what would normally take weeks of legwork. As you build consistency in the program, additional nationally sourced opportunities may become available.",
-    },
-    {
-      id: "machine-cost",
-      question:
-        "What Does a Vending Machine Cost? Is it Less Expensive Through You?",
-      embedId: "1rlrA2otFcLsTslx",
-      answer:
-        "Machine costs vary depending on size, type, and features, and buying at retail adds up fast. Vendingpreneurs members get access to discounted pricing, rebates, and credit offers that change what you actually pay out of pocket.",
-    },
-    {
-      id: "financing",
-      question:
-        "Do You Offer Financing? How Healthy Does My Credit Need to Be?",
-      embedId: "wSYT3LtwDcazRfOx",
-      answer:
-        "Financing is available through lending partners set up specifically for this program, with options that can include little to nothing down. Your credit profile plays a role in which options are available to you.",
     },
     {
       // Jess, Slack 2026-09-15: the heading said "Learn" but Mike answers

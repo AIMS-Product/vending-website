@@ -169,16 +169,12 @@ export function sharedResourceMessage(
 const PRE_CALL_VIDEO_KEYS: Record<string, string> = {
   "what-you-get": "what_you_get",
   "securing-locations": "locations",
-  "machine-cost": "machine_cost",
-  financing: "financing",
   "what-youll-earn": "earnings",
 };
 
 export const PRE_CALL_VIDEO_KEY_LIST = [
   "what_you_get",
   "locations",
-  "machine_cost",
-  "financing",
   "earnings",
 ] as const;
 export type PreCallVideoKey = (typeof PRE_CALL_VIDEO_KEY_LIST)[number];
