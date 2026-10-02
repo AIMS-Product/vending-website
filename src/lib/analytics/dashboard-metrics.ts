@@ -25,6 +25,13 @@ import {
   type CloseCall,
 } from "@/lib/services/close-week-view";
 
+/**
+ * The first day site leads exist (`lead_submissions` starts here; AGENTS.md).
+ * A window reaching earlier cannot count leads, so it shows none rather
+ * than a zero.
+ */
+export const LEADS_RECORDED_FROM = "2026-07-06";
+
 export const inRange = (day: string, range: DayRange) =>
   day >= range.startDay && day <= range.endDay;
 

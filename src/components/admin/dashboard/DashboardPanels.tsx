@@ -32,6 +32,7 @@ import {
   deltaPct,
   inRange,
   keptCalls,
+  LEADS_RECORDED_FROM,
   monthKeys,
   planBooked,
   sameDayLastWeek,
@@ -95,6 +96,13 @@ const stamp = (iso: string | null) =>
         minute: "2-digit",
       })} ET`
     : "never";
+
+/** "the 30 days window", or the dates themselves for a custom range. */
+function windowPhrase(window: DashboardWindow): string {
+  return window.key.startsWith("custom:")
+    ? window.label
+    : `the ${windowPhrase(window)} window`;
+}
 
 /** At least 14 days ending where the window ends, so a short window still has a line. */
 function sparkRange(window: DashboardWindow): DayRange {
@@ -434,7 +442,18 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
   const prior = window.prior;
   const cells: ReactNode[] = [];
 
-  if (leads.ok) {
+  if (window.startDay < LEADS_RECORDED_FROM) {
+    cells.push(
+      <KpiCell
+        key="leads"
+        label="Leads"
+        value="–"
+        delta={null}
+        caption="Site leads are recorded from Jul 6, 2026"
+        spark={null}
+      />,
+    );
+  } else if (leads.ok) {
     const now = countInRange(leads.data, (l) => l.day, window);
     const before = countInRange(leads.data, (l) => l.day, prior);
     cells.push(
@@ -606,10 +625,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         {cells}
       </div>
       <p className="border-ui-line text-ui-text-subtle border-t px-4 py-2 text-[0.6875rem]">
-        {window.label}, {dayLabel(window.startDay)} – {dayLabel(window.endDay)},
-        against {dayLabel(prior.startDay)} – {dayLabel(prior.endDay)}. Leads §4
-        · Booked §5 Close mirror, SteelTrap rule §3 · Show rate §7 calls held ·
-        Revenue §8 · CAC §10.
+        {window.key.startsWith("custom:") ? "" : `${window.label}, `}
+        {dayLabel(window.startDay)} – {dayLabel(window.endDay)}, against{" "}
+        {dayLabel(prior.startDay)} – {dayLabel(prior.endDay)}. Leads §4 · Booked
+        §5 Close mirror, SteelTrap rule §3 · Show rate §7 calls held · Revenue
+        §8 · CAC §10.
       </p>
     </section>
   );
@@ -666,8 +686,8 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
           </>
         ) : (
           <CardMessage tone="empty">
-            No captures or first calls in {window.label.toLowerCase()}. Try a
-            wider window.
+            No captures or first calls in {windowPhrase(window)}. Try a wider
+            window.
           </CardMessage>
         ))}
     </DashboardCard>
@@ -756,7 +776,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
     >
       {kept.length === 0 ? (
         <CardMessage tone="empty">
-          No first calls dated in {window.label.toLowerCase()}.
+          No first calls dated in {windowPhrase(window)}.
         </CardMessage>
       ) : (
         <>
