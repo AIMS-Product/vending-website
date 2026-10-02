@@ -7,11 +7,11 @@ import {
 import { DEFAULT_ROUTE_PREFIXES } from "@/lib/page-builder/route-prefix-defaults";
 import type { LeadSearchParams } from "@/lib/lead-attribution";
 import { hasPublishedPostSlug } from "@/lib/services/news";
+import { getBuilderRedirectBySourcePath } from "@/lib/services/seo-page-public";
 import {
-  getBuilderRedirectBySourcePath,
-  getPublishedSeoPageByPath,
-} from "@/lib/services/seo-page-public";
-import { listRoutePrefixes } from "@/lib/services/route-prefixes";
+  getPublishedSeoPageByPathOnce,
+  listRoutePrefixesOnce,
+} from "@/lib/page-builder/request-cache";
 
 // Catch-all (not `[prefix]/[slug]`): Next's route sorter rejects two
 // different slug names at the same dynamic position, and `[legacyLeadPath]`
@@ -40,7 +40,7 @@ async function resolveBuilderRoute(
   if (builderPath.length !== 2) notFound();
   const [prefixSegment, slug] = builderPath;
   const routePrefix = `/${prefixSegment}`;
-  const configured = await listRoutePrefixes();
+  const configured = await listRoutePrefixesOnce();
   if (!configured.some((entry) => entry.prefix === routePrefix)) notFound();
   return { routePrefix, slug };
 }
@@ -52,7 +52,7 @@ async function resolveBuilderRoute(
 // builder lookup calls notFound() first, which would 404 the request
 // before the page component ever renders.
 async function redirectLegacyNewsSlug(slug: string): Promise<void> {
-  const builderPage = await getPublishedSeoPageByPath(`/blog/${slug}`);
+  const builderPage = await getPublishedSeoPageByPathOnce(`/blog/${slug}`);
   if (!builderPage && (await hasPublishedPostSlug(slug))) {
     permanentRedirect(`/news/${slug}`);
   }
