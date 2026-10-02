@@ -241,6 +241,17 @@ body:has([data-hide-site-footer="true"]) > footer {
   display: none !important;
 }
 
+/* The sticky site header (about 82px) and the fixed chat launcher would cover a
+   control that keyboard focus or an anchor jump scrolls to the edge of the
+   viewport (WCAG 2.4.11). Pages without the header (admin, booking funnels)
+   keep a zero top offset. */
+html:has(body > header) {
+  scroll-padding-top: 6rem;
+}
+html {
+  scroll-padding-bottom: 5.5rem;
+}
+
 @keyframes brand-marquee {
   from {
     transform: translateX(0);
