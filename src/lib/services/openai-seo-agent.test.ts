@@ -194,6 +194,22 @@ describe("OpenAI SEO agent", () => {
     expect(claim.claim.endsWith("...")).toBe(false);
   });
 
+  it("raises a 504 generation error when OpenAI does not answer in time", async () => {
+    const fetchFn = vi.fn(async (_input: unknown, init?: RequestInit) => {
+      expect(init?.signal).toBeInstanceOf(AbortSignal);
+      throw new DOMException("The operation timed out.", "TimeoutError");
+    });
+
+    const failure = await generateOpenAiSeoProposalFromSources(
+      { page, sourceBundle, model: "gpt-5.5" },
+      { apiKey: "sk-test", fetchFn },
+    ).catch((error) => error);
+
+    expect(failure).toBeInstanceOf(SeoAgentGenerationError);
+    expect(failure.status).toBe(504);
+    expect(failure.message).toBe("OpenAI timed out after 90s.");
+  });
+
   it("fails before calling OpenAI when the key is missing", async () => {
     const fetchFn = vi.fn();
 

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createSign } from "node:crypto";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 /**
  * Minimal GA4 Data API client.
@@ -246,14 +247,19 @@ export function serviceAccountToken(
     signer.update(`${header}.${claims}`);
     const assertion = `${header}.${claims}.${base64Url(signer.sign(account.privateKey))}`;
 
-    const response = await fetchImpl(account.tokenUri, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }).toString(),
-    });
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      account.tokenUri,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+          assertion,
+        }).toString(),
+      },
+      { label: "Google token exchange" },
+    );
 
     // Deliberately does not include the response body: a failed token
     // exchange echoes back parts of the assertion, and the assertion is signed
@@ -329,7 +335,8 @@ export function createGa4Client({
     offset: number,
   ): Promise<unknown> => {
     const token = await accessToken();
-    const response = await fetchImpl(
+    const response = await fetchWithTimeout(
+      fetchImpl,
       `${DATA_API_BASE}/properties/${encodeURIComponent(propertyId)}:runReport`,
       {
         method: "POST",
@@ -354,6 +361,7 @@ export function createGa4Client({
           offset,
         }),
       },
+      { label: "GA4 runReport" },
     );
 
     const text = await response.text();

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 /**
  * Minimal read-only GoHighLevel v2 client.
  *
@@ -81,15 +83,23 @@ export function createGhlClient(options: {
   async function get<T>(path: string, version: string): Promise<T> {
     let lastError: unknown;
     for (let attempt = 0; attempt < RETRIES; attempt += 1) {
-      const response = await fetchImpl(`${BASE_URL}${path}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          Version: version,
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithTimeout(
+        fetchImpl,
+        `${BASE_URL}${path}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            Version: version,
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
         },
-      });
+        {
+          label: "GHL",
+          onTimeout: (timeout) => new GhlApiError(timeout.message, 504),
+        },
+      );
       const text = await response.text();
       if (response.ok) {
         return (text ? JSON.parse(text) : {}) as T;

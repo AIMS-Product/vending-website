@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 /**
  * Minimal read-only Metricool client.
  *
@@ -155,14 +157,22 @@ export function createMetricoolClient(options: {
   async function get<T>(url: string): Promise<T> {
     let lastError: unknown;
     for (let attempt = 0; attempt < RETRIES; attempt += 1) {
-      const response = await fetchImpl(url, {
-        method: "GET",
-        headers: {
-          "X-Mc-Auth": options.apiKey,
-          Accept: "application/json",
-          "User-Agent": USER_AGENT,
+      const response = await fetchWithTimeout(
+        fetchImpl,
+        url,
+        {
+          method: "GET",
+          headers: {
+            "X-Mc-Auth": options.apiKey,
+            Accept: "application/json",
+            "User-Agent": USER_AGENT,
+          },
         },
-      });
+        {
+          label: "Metricool",
+          onTimeout: (timeout) => new MetricoolApiError(timeout.message, 504),
+        },
+      );
       const text = await response.text();
       if (response.ok) return (text ? JSON.parse(text) : {}) as T;
       lastError = new MetricoolApiError(

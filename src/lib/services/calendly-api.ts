@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 /**
  * Thin read-only Calendly REST client used by the booking reconciliation
  * sweep (src/lib/chatbot/booking-reconcile.ts). Mirrors the house pattern in
@@ -161,12 +163,20 @@ export function createCalendlyApiClient({
       : `${normalizedBaseUrl}${pathOrUrl}`;
 
     for (let attempt = 1; attempt <= MAX_ATTEMPTS_PER_REQUEST; attempt++) {
-      const response = await fetchImpl(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
+      const response = await fetchWithTimeout(
+        fetchImpl,
+        url,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
         },
-      });
+        {
+          label: "Calendly",
+          onTimeout: (timeout) => new CalendlyApiError(504, timeout.message),
+        },
+      );
 
       if (response.status === 429 && attempt < MAX_ATTEMPTS_PER_REQUEST) {
         const retryAfterSeconds = Number(response.headers.get("retry-after"));

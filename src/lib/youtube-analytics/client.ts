@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 /**
  * Minimal YouTube Analytics API v2 client, read-only, as the channel owner.
  *
@@ -69,19 +71,26 @@ export function createYouTubeAnalyticsClient(options: {
   const now = options.now ?? (() => Date.now());
   let cached: { value: string; expiresAt: number } | null = null;
   let metrics: readonly string[] = FULL_METRICS;
+  const timedOut = (error: Error) =>
+    new YouTubeAnalyticsError(error.message, 504);
 
   async function accessToken(): Promise<string> {
     if (cached && cached.expiresAt > now()) return cached.value;
-    const response = await fetchImpl(TOKEN_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: options.clientId,
-        client_secret: options.clientSecret,
-        refresh_token: options.refreshToken,
-        grant_type: "refresh_token",
-      }),
-    });
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      TOKEN_URL,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: options.clientId,
+          client_secret: options.clientSecret,
+          refresh_token: options.refreshToken,
+          grant_type: "refresh_token",
+        }),
+      },
+      { label: "YouTube token refresh", onTimeout: timedOut },
+    );
     const text = await response.text();
     if (!response.ok) {
       throw new YouTubeAnalyticsError(
@@ -119,9 +128,17 @@ export function createYouTubeAnalyticsClient(options: {
       maxResults: String(PAGE_SIZE),
       startIndex: String(startIndex),
     });
-    const response = await fetchImpl(`${REPORTS_URL}?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
-    });
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      `${REPORTS_URL}?${params.toString()}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+      { label: "YouTube Analytics", onTimeout: timedOut },
+    );
     const text = await response.text();
     if (response.status === 400 && metrics === FULL_METRICS) {
       // ponytail: one retry without thumbnail impressions; impressions stays

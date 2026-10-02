@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 import {
   apiMessage,
   parseServiceAccount,
@@ -103,14 +104,21 @@ export function createSearchConsoleClient({
 
   const call = async (path: string, body?: unknown): Promise<unknown> => {
     const token = await accessToken();
-    const response = await fetchImpl(`${API_BASE}${path}`, {
-      method: body === undefined ? "GET" : "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(body === undefined ? null : { "Content-Type": "application/json" }),
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      `${API_BASE}${path}`,
+      {
+        method: body === undefined ? "GET" : "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(body === undefined
+            ? null
+            : { "Content-Type": "application/json" }),
+        },
+        ...(body === undefined ? null : { body: JSON.stringify(body) }),
       },
-      ...(body === undefined ? null : { body: JSON.stringify(body) }),
-    });
+      { label: "Search Console" },
+    );
     const text = await response.text();
     if (!response.ok) {
       throw new Error(

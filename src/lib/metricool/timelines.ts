@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
 
 /**
  * Metricool's per-day account series (`/v2/analytics/timelines`). The metric
@@ -109,9 +110,12 @@ export function createMetricoolTimelines({
         timezone: "UTC",
       });
       if (subject) params.set("subject", subject);
-      const response = await fetchImpl(`${BASE}?${params}`, {
-        headers: { "X-Mc-Auth": apiKey, Accept: "application/json" },
-      });
+      const response = await fetchWithTimeout(
+        fetchImpl,
+        `${BASE}?${params}`,
+        { headers: { "X-Mc-Auth": apiKey, Accept: "application/json" } },
+        { label: "Metricool" },
+      );
       if (response.status === 403) return null;
       const text = await response.text();
       if (!response.ok) {

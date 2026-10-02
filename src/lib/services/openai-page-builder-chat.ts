@@ -1,6 +1,7 @@
 import "server-only";
 
 import { config } from "@/lib/config";
+import { fetchWithTimeout, LLM_TIMEOUT_MS } from "@/lib/fetch-timeout";
 import {
   PAGE_BUILDER_AI_MESSAGE_MAX_CHARS,
   pageBuilderAiChatResponseSchema,
@@ -75,36 +76,46 @@ async function requestOpenAiChatResponse(
   apiKey: string,
   options: OpenAiPageBuilderChatOptions,
 ): Promise<PageBuilderAiChatResponse> {
-  const response = await (options.fetchFn ?? fetch)(OPENAI_RESPONSES_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
+  const response = await fetchWithTimeout(
+    options.fetchFn ?? fetch,
+    OPENAI_RESPONSES_URL,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: options.model ?? config.OPENAI_SEO_MODEL,
+        instructions: pageBuilderAiSystemPrompt(
+          request.context,
+          latestUserMessage(request),
+        ),
+        input: request.messages.map((message) => ({
+          role: message.role,
+          content: message.content,
+        })),
+        tools: buildPageBuilderAiToolDefinitions(request.context),
+        tool_choice: "auto",
+        parallel_tool_calls: true,
+        reasoning: {
+          effort: options.reasoningEffort ?? config.OPENAI_SEO_REASONING_EFFORT,
+        },
+        max_output_tokens: 8000,
+        store: false,
+        metadata: {
+          surface: "seo-page-builder-chat",
+          page_id: request.context.pageId ?? "new-page",
+        },
+      }),
     },
-    body: JSON.stringify({
-      model: options.model ?? config.OPENAI_SEO_MODEL,
-      instructions: pageBuilderAiSystemPrompt(
-        request.context,
-        latestUserMessage(request),
-      ),
-      input: request.messages.map((message) => ({
-        role: message.role,
-        content: message.content,
-      })),
-      tools: buildPageBuilderAiToolDefinitions(request.context),
-      tool_choice: "auto",
-      parallel_tool_calls: true,
-      reasoning: {
-        effort: options.reasoningEffort ?? config.OPENAI_SEO_REASONING_EFFORT,
-      },
-      max_output_tokens: 8000,
-      store: false,
-      metadata: {
-        surface: "seo-page-builder-chat",
-        page_id: request.context.pageId ?? "new-page",
-      },
-    }),
-  });
+    {
+      label: "OpenAI",
+      timeoutMs: LLM_TIMEOUT_MS,
+      onTimeout: (timeout) =>
+        new PageBuilderAiGenerationError(timeout.message, { status: 504 }),
+    },
+  );
 
   const payload = await readOpenAiResponse(response);
   if (!response.ok) throw generationErrorFromPayload(response.status, payload);
