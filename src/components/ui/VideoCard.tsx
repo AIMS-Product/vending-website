@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 
 // "A member talks on camera", one treatment site-wide: the poster still, a
@@ -18,10 +18,18 @@ export function VideoCard({
   label: string;
 }) {
   const [playing, setPlaying] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // The play button unmounts when the video replaces it, which would drop
+  // keyboard focus to <body>; move it onto the player instead (WCAG 2.4.3).
+  useEffect(() => {
+    if (playing) videoRef.current?.focus();
+  }, [playing]);
 
   if (playing) {
     return (
       <video
+        ref={videoRef}
         controls
         autoPlay
         playsInline
