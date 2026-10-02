@@ -164,19 +164,6 @@ type PageFormOverrides = {
   omitGovernanceFields?: boolean;
 };
 
-// Same names in the FormData and in the service patch.
-const GOVERNANCE_FIELDS = [
-  "internalTags",
-  "topicCluster",
-  "campaignLabel",
-  "funnelStage",
-  "reviewPeriodMonths",
-  "nextReviewAt",
-  "lifecycleStatus",
-  "ogTitle",
-  "ogDescription",
-] as const;
-
 function pageForm(overrides: PageFormOverrides = {}) {
   const values = {
     title: "Coffee Vending Adelaide",

@@ -474,13 +474,6 @@ function caseStudyMemberName(resource: ChatbotResource): string {
   return idx === -1 ? resource.title : resource.title.slice(0, idx);
 }
 
-/** Pulls the background fragment back out of the blurb resources.ts already built ("Was {background} before starting a route."). */
-function priorBackgroundFrom(resource: ChatbotResource): string | null {
-  return (
-    resource.blurb.match(/^Was (.+) before starting a route\.$/)?.[1] ?? null
-  );
-}
-
 /** Real anchor text instead of a bare URL — required for every link in the HTML body. */
 function anchorTextFor(resource: ChatbotResource): string {
   if (resource.key.startsWith(CASE_STUDY_KEY_PREFIX)) {
