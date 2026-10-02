@@ -2,6 +2,7 @@ import "server-only";
 
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { readAllPages } from "@/lib/services/paged-read";
+import { logReadFailure } from "@/lib/services/read-failure";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
@@ -116,9 +117,13 @@ async function fetchWebinars(
         .limit(500);
     let { data, error } = await read(`${base},booked_calls`);
     if (error) ({ data, error } = await read(base));
-    if (error) return [];
+    if (error) {
+      logReadFailure("kpi webinar events", error);
+      return [];
+    }
     return (data ?? []) as unknown as WebinarEventRow[];
-  } catch {
+  } catch (error) {
+    logReadFailure("kpi webinar events", error);
     return [];
   }
 }

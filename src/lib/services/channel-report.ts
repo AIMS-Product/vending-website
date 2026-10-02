@@ -2,6 +2,8 @@ import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { readAllPages } from "@/lib/services/paged-read";
+import { logReadFailure } from "@/lib/services/read-failure";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 import {
@@ -279,21 +281,23 @@ export function applyLeadDefinition(
   const storedIds = new Set(stored.map(factId));
   const missing = [...counted.entries()]
     .filter(([id]) => !storedIds.has(id))
-    .map(([, { key, leads }]): ChannelFact => ({
-      ...key,
-      spend: null,
-      impressions: null,
-      reach: null,
-      clicks: null,
-      visits: null,
-      thankyou_visits: null,
-      leads,
-      contacts: null,
-      booked: null,
-      showed: null,
-      won: null,
-      revenue: null,
-    }));
+    .map(
+      ([, { key, leads }]): ChannelFact => ({
+        ...key,
+        spend: null,
+        impressions: null,
+        reach: null,
+        clicks: null,
+        visits: null,
+        thankyou_visits: null,
+        leads,
+        contacts: null,
+        booked: null,
+        showed: null,
+        won: null,
+        revenue: null,
+      }),
+    );
   return [...facts, ...missing];
 }
 
@@ -485,9 +489,13 @@ export async function fetchRuns(client: ReportClient): Promise<SyncRun[]> {
       // Enough to hold the latest run of every connector even after a week of
       // hourly runs from one of them.
       .limit(500);
-    if (error) return [];
+    if (error) {
+      logReadFailure("channel sync runs", error);
+      return [];
+    }
     return (data ?? []) as SyncRun[];
-  } catch {
+  } catch (error) {
+    logReadFailure("channel sync runs", error);
     return [];
   }
 }
@@ -525,9 +533,13 @@ async function fetchFixLinks(
       .gte("published_at", `${startDay}T00:00:00.000Z`)
       .order("published_at", { ascending: false })
       .limit(FIX_LINKS_LIMIT);
-    if (error) return [];
+    if (error) {
+      logReadFailure("fix links", error);
+      return [];
+    }
     return (data ?? []) as FixLinkRow[];
-  } catch {
+  } catch (error) {
+    logReadFailure("fix links", error);
     return [];
   }
 }
@@ -535,7 +547,7 @@ async function fetchFixLinks(
 /** Newest links first; the registry is a log, so the cap matches /admin/links. */
 const GOING_OUT_LIMIT = 200;
 
-async function fetchGoingOut(
+export async function fetchGoingOut(
   client: ReportClient,
   priorStartDay: string,
   endDay: string,
@@ -549,22 +561,35 @@ async function fetchGoingOut(
       )
       .order("created_at", { ascending: false })
       .limit(GOING_OUT_LIMIT);
-    if (error || !links?.length) return [];
+    if (error) {
+      logReadFailure("going out links", error);
+      return [];
+    }
+    if (!links?.length) return [];
     const ids = links
       .map((link) => link.bitly_id)
       .filter((id): id is string => Boolean(id));
     let clicks: BitlyClickFact[] = [];
     if (ids.length > 0) {
-      const { data } = await client
-        .from("bitly_link_clicks")
-        .select("bitly_id,day,clicks")
-        .in("bitly_id", ids)
-        .gte("day", priorStartDay)
-        .lte("day", endDay);
-      clicks = (data ?? []) as BitlyClickFact[];
+      // Up to 200 links times the window's days passes the 1,000-row response
+      // cap, so read every page rather than a silent first thousand.
+      const result = await readAllPages<BitlyClickFact>((from, to, count) =>
+        client
+          .from("bitly_link_clicks")
+          .select("bitly_id,day,clicks", { count })
+          .in("bitly_id", ids)
+          .gte("day", priorStartDay)
+          .lte("day", endDay)
+          .order("day")
+          .order("bitly_id")
+          .range(from, to),
+      );
+      if (result.error) logReadFailure("going out clicks", result.error);
+      else clicks = result.rows;
     }
     return buildGoingOut(links as GoingOutLink[], clicks, startDay);
-  } catch {
+  } catch (error) {
+    logReadFailure("going out links", error);
     return [];
   }
 }
