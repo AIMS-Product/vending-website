@@ -79,7 +79,7 @@ function OverviewMetric({
       <AdminMetricPanel
         label={label}
         value={value == null ? "—" : value.toLocaleString()}
-        caption={value == null ? "not observed" : caption}
+        caption={value == null ? "no data" : caption}
         delta={delta}
       />
     </AdminViewerLink>
@@ -297,7 +297,7 @@ function ChannelRow({
           <Delta current={leads} prior={row.prior.leads} />
           <span className="text-ui-text shrink-0 text-[0.8125rem] font-semibold tabular-nums">
             {leads == null ? (
-              <span className="text-ui-text-subtle" title="Not observed">
+              <span className="text-ui-text-subtle" title="No data">
                 —
               </span>
             ) : (

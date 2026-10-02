@@ -29,7 +29,7 @@ import {
  */
 
 const DASH = (
-  <span className="text-ui-text-subtle" title="Not observed">
+  <span className="text-ui-text-subtle" title="No data">
     —
   </span>
 );
@@ -165,7 +165,7 @@ export function SettersTable({
     >
       {!connected ? (
         <Empty>
-          The Close mirror could not be read, so nothing here is observed.
+          Our copy of Close could not be read, so there is no data to show.
         </Empty>
       ) : rows.length === 1 && report.total.set === 0 ? (
         <Empty>No calls were booked in this period.</Empty>
@@ -279,7 +279,7 @@ export function ClosersTable({
     >
       {!connected ? (
         <Empty>
-          The Close mirror could not be read, so no outcomes are observed.
+          Our copy of Close could not be read, so there are no outcomes to show.
         </Empty>
       ) : report.rows.length === 0 && report.noHost.booked === 0 ? (
         <Empty>No first calls landed in this period.</Empty>
@@ -363,11 +363,11 @@ export function WebinarsTable({ report }: { report: WebinarsReport }) {
       note={`Attendance target ${ATTENDANCE_TARGET_PCT}% of registrations; ${OFFER_TARGET_PCT}% of attendees still there at the offer. Spend is every Webinar-channel ad dollar from the day after the previous webinar through this one.`}
       footer={
         <p>
-          Booked is the count of record: rows on the Booked Calls sheet
-          (booked_calls). Close&apos;s tag cohort is a different population
-          because the event tag goes missing on the people who book, so it is
-          not used here. A dash means the column has not reached production yet,
-          so cost per booked is not observed either.
+          Booked is the count of record: rows on the Booked Calls sheet.
+          Close&apos;s event tag is not used here because it goes missing on the
+          people who book, so its count is a different, smaller group. A dash
+          means we have no data for that column yet, so there is no cost per
+          booked either.
         </p>
       }
     >
@@ -605,19 +605,19 @@ export function AdsTable({
   return (
     <Panel
       title="Ads"
-      note="Spend, leads and booked per campaign from the channel spine. Google keys spend and leads by the same campaign id, so its campaign rows carry a real cost per lead. Meta keys spend by its campaign id and leads by the link's utm tag, so Meta's cost per lead is only honest on the channel line."
+      note="Spend, leads and booked per campaign from our daily channel table. Google keys spend and leads by the same campaign id, so its campaign rows carry a real cost per lead. Meta keys spend by its campaign id and leads by the link's utm tag, so Meta's cost per lead is only honest on the channel line."
       footer={
         <p>
-          Booked here is a lead-linked booking on the spine, not the Close
-          first-call basis the goals page uses. Spend comes from Metricool
-          daily; leads from GHL forms and the site.
+          Booked here is a booking tied to a lead in our daily channel table,
+          not the Close first-call basis the goals page uses. Spend comes from
+          Metricool daily; leads from GHL forms and the site.
         </p>
       }
     >
       {!connected ? (
-        <Empty>The channel spine could not be read.</Empty>
+        <Empty>The daily channel table could not be read.</Empty>
       ) : report.channels.length === 0 ? (
-        <Empty>No paid spend or paid leads were observed in this period.</Empty>
+        <Empty>No paid spend or paid leads were recorded in this period.</Empty>
       ) : (
         <table className="w-full text-[0.8125rem]">
           <thead>

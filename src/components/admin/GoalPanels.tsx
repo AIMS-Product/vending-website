@@ -110,7 +110,7 @@ export function GoalHeadline({ report }: { report: GoalReport }) {
         value={pace.actual == null ? "—" : pace.actual.toLocaleString()}
         caption={
           report.total.week == null
-            ? "not observed"
+            ? "no data"
             : `${report.total.week.booked.toLocaleString()} so far this week`
         }
       />
