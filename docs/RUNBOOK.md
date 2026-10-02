@@ -134,8 +134,8 @@ Point the monitor (UptimeRobot, Better Stack, Vercel Checks, anything that polls
 `/api/health` is a liveness probe only: no database call, no secret, no third-party call, so it is
 free to poll and exposes nothing but the short commit SHA and the environment name. Alert after two
 consecutive failures. A green probe means the deployment is serving; it does **not** mean leads are
-reaching Close. For that, watch the `close_sync_events` backlog (section 6) and the Sentry alert on
-`cron:close-sync`. The SHA identifies the release: compare it with the latest `main` commit after a
+reaching Close. For that, watch the `close_sync_events` backlog (section 6); `close-sync` is not
+reported to Sentry (see the coverage table below). The SHA identifies the release: compare it with the latest `main` commit after a
 deploy, and with the Sentry `release` tag when triaging an error.
 
 ### Failure visibility

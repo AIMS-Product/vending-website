@@ -19,7 +19,6 @@ if (dsn) {
     // Preview deploys also build with NODE_ENV=production; VERCEL_ENV tells
     // them apart from production.
     environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
-    release: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
     sendDefaultPii: false,
     // Strips email/phone/name params from URLs in breadcrumbs, requests, spans.
     ...sentryPiiHooks,
