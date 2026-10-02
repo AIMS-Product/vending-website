@@ -1004,11 +1004,6 @@ async function syncQualificationEnrichment(
     throw new Error(await missingCloseLeadMessage(client, event));
   }
   const contactId = existingCloseIds(event, lead).contactId;
-  await close.createNote({
-    lead_id: leadId,
-    contact_id: contactId,
-    note_html: qualificationNoteHtml(event.payload, isNewsletter),
-  });
 
   // Custom fields are scope-locked in Close: lead-scoped IDs must go on the lead,
   // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
@@ -1026,13 +1021,27 @@ async function syncQualificationEnrichment(
     event.payload,
     closeConfig,
   );
-  if (Object.keys(contactFields).length) {
-    if (!contactId) {
-      throw new CloseNeedsReviewError(
-        "Qualification enrichment has contact-scoped custom fields but no Close contact ID.",
-      );
-    }
+  const hasContactFields = Object.keys(contactFields).length > 0;
+  if (hasContactFields && contactId) {
     await close.updateContact(contactId, contactFields);
+  }
+
+  // The note goes LAST. Close's note endpoint has no idempotency key, so a
+  // note posted before a field write that then failed was posted again on
+  // every retry. The field writes are idempotent PUTs, so retrying them is
+  // harmless.
+  await close.createNote({
+    lead_id: leadId,
+    contact_id: contactId,
+    note_html: qualificationNoteHtml(event.payload, isNewsletter),
+  });
+
+  // Parked after the note, as before: a rep still sees the qualification on
+  // the record while the missing contact is sorted out by hand.
+  if (hasContactFields && !contactId) {
+    throw new CloseNeedsReviewError(
+      "Qualification enrichment has contact-scoped custom fields but no Close contact ID.",
+    );
   }
   return { leadId, contactId };
 }

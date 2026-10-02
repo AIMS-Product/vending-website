@@ -1705,30 +1705,33 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    // Field writes first, note last, so a failed field write never leaves a
+    // note behind to be posted again on retry.
+    expect(fetchMock.mock.calls).toHaveLength(3);
+    expect(fetchMock.mock.calls[2]?.[0]).toBe(
       "https://api.close.com/api/v1/activity/note/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual(
+    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual(
       expect.objectContaining({
         lead_id: "lead_close_1",
         note_html: expect.stringContaining("Available capital"),
       }),
     );
     // Lead-scoped analytics fields go on the lead.
-    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "https://api.close.com/api/v1/lead/lead_close_1/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
       "custom.cf_score": 82,
       "custom.cf_band": "top_closers",
     });
     // Contact-scoped answer/consent fields go on the contact — sending these to
     // the lead makes Close reject the whole update with a 400.
-    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
       "https://api.close.com/api/v1/contact/cont_close_1/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
       "custom.cf_state": "SA",
       "custom.cf_capital": "$25k-$50k",
       "custom.cf_consent": "true",
@@ -1770,13 +1773,13 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    const note = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as {
+    const note = JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string) as {
       note_html: string;
     };
     expect(note.note_html).toContain("The Route newsletter signup");
     expect(note.note_html).not.toContain("Qualification completed");
     expect(note.note_html).not.toContain("qualified");
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_consent": "true",
     });
   });
@@ -1818,7 +1821,7 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
     });
   });
