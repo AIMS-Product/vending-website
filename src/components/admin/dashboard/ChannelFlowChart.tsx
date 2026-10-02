@@ -58,21 +58,22 @@ const colX = (c: number) => (c / (COLS - 1)) * (W - NODE);
 
 type Seg = [top: number, bottom: number];
 
+/**
+ * Columns hang from the top so the flow reads as one block and the log step
+ * shows as the column shortening. A band only earns the full gap when it is
+ * tall enough to need separating; a sliver sits almost flush with the next.
+ */
 function layout(flow: ChannelFlow, H: number): Seg[][] {
   const maxLog = Math.log10(Math.max(...flow.totals) + 1);
+  const inner = H - GAP * (flow.bands.length - 1);
   return flow.totals.map((total, c) => {
-    const inner = H - GAP * (flow.bands.length - 1);
     const colH = maxLog > 0 ? inner * (Math.log10(total + 1) / maxLog) : 0;
-    const hs = flow.bands.map((b) =>
-      b.values[c]! > 0
-        ? Math.max(2, (colH * b.values[c]!) / Math.max(total, 1))
-        : 0,
-    );
-    const used = hs.reduce((s, h) => s + h, 0) + GAP * (flow.bands.length - 1);
-    let y = Math.max(0, (H - used) / 2);
-    return hs.map((h) => {
+    let y = 0;
+    return flow.bands.map((b) => {
+      const v = b.values[c]!;
+      const h = v > 0 ? Math.max(2, (colH * v) / Math.max(total, 1)) : 0;
       const seg: Seg = [y, y + h];
-      y += h + GAP;
+      if (h > 0) y += h + (h < 8 ? 1.5 : GAP);
       return seg;
     });
   });
@@ -277,7 +278,7 @@ export function ChannelFlowChart({ flow }: { flow: ChannelFlow }) {
           </div>
         </div>
 
-        <aside className="border-ui-line hidden w-72 shrink-0 flex-col border-l pl-5 lg:flex">
+        <aside className="border-ui-line hidden w-80 shrink-0 flex-col border-l pl-5 lg:flex">
           <p className="text-ui-text-subtle text-xs">
             {band
               ? `Won to date, ${band.label}`
@@ -328,7 +329,7 @@ function ChannelTotals({
       className="border-ui-line mt-4 flex flex-col gap-2 border-t pt-3"
       aria-label="Totals by channel"
     >
-      <li className="text-ui-text-subtle grid grid-cols-[minmax(0,1fr)_2.75rem_2.25rem_3.5rem] gap-2 text-[0.6875rem]">
+      <li className="text-ui-text-subtle grid grid-cols-[minmax(0,1fr)_2.5rem_2rem_3rem] gap-2 text-[0.6875rem]">
         <span>Channel</span>
         <span className="text-right">Booked</span>
         <span className="text-right">Won</span>
@@ -340,16 +341,17 @@ function ChannelTotals({
             type="button"
             {...bind(b.key)}
             className={cn(
-              "grid w-full grid-cols-[minmax(0,1fr)_2.75rem_2.25rem_3.5rem] items-center gap-2 text-left text-[0.8125rem] transition-opacity",
+              "grid w-full grid-cols-[minmax(0,1fr)_2.5rem_2rem_3rem] items-center gap-2 text-left text-[0.8125rem] transition-opacity",
               focus && focus !== b.key && "opacity-40",
             )}
           >
-            <span className="flex min-w-0 items-center gap-2">
+            <span className="flex min-w-0 items-center gap-1.5">
               <span
-                className="size-2.5 shrink-0 rounded-sm"
+                className="size-2 shrink-0 rounded-sm"
                 style={{ background: FLOW_COLORS[b.key] }}
                 aria-hidden="true"
               />
+              <ChannelLogo label={b.label} />
               <span className="text-ui-text-muted truncate">{b.label}</span>
             </span>
             <span className="text-ui-text text-right tabular-nums">

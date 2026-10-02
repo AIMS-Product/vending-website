@@ -203,7 +203,6 @@ function BurnUp({ rows }: { rows: ContentPlan["burnUp"] }) {
   );
   return (
     <SeoTrendChart
-      width={640}
       grain="fixed"
       ariaLabel="Pieces planned vs live, cumulative by week"
       days={days}

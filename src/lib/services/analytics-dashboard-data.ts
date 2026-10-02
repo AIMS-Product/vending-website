@@ -1,5 +1,6 @@
 import "server-only";
 
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { resolveChannel } from "@/lib/analytics/channel";
 import {
@@ -11,6 +12,11 @@ import {
   collapseToLeads,
   lookbackStart,
 } from "@/lib/analytics/lead-definition";
+import {
+  costPerBookedByMonth,
+  monthKeys,
+  type CostRow,
+} from "@/lib/analytics/dashboard-metrics";
 import { config } from "@/lib/config";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import {
@@ -210,6 +216,29 @@ export const readDeals = cache((from: string, to: string) =>
   }),
 );
 
+/**
+ * Cost per booked call by month for the six months to `today` (§9). The
+ * spine over six months is the slowest read on the dashboard (~6s), and the
+ * finished months in it do not move, so the computed rows are kept for 15
+ * minutes. A failed read throws, and a throw is never cached.
+ */
+const cachedCostRows = unstable_cache(
+  async (today: string): Promise<CostRow[]> => {
+    const [y, m] = today.split("-").map(Number) as [number, number];
+    const from = new Date(Date.UTC(y, m - 6, 1)).toISOString().slice(0, 10);
+    const facts = await fetchFacts(createAdminClient(), from, today);
+    if (facts === null) throw new Error("channel_daily is not available");
+    const months = monthKeys(addDays(`${today.slice(0, 7)}-01`, -150), today);
+    return costPerBookedByMonth(normaliseFacts(facts) as ChannelFact[], months);
+  },
+  ["analytics-dashboard-cost-per-booked"],
+  { revalidate: 900 },
+);
+
+export const readCostByMonth = cache((today: string) =>
+  attempt("The channel spine", () => cachedCostRows(today)),
+);
+
 const readBookingInputs = cache(() =>
   attempt("Calendly bookings", async () => {
     const client = createAdminClient();
@@ -300,19 +329,6 @@ export function callSpan(window: DashboardWindow): {
   const weekBack = addDays(window.today, -14);
   return {
     from: window.prior.startDay < weekBack ? window.prior.startDay : weekBack,
-    to: window.today,
-  };
-}
-
-/** Spine reads also cover six months for cost per booked call. */
-export function spineSpan(window: DashboardWindow): {
-  from: string;
-  to: string;
-} {
-  const [y, m] = window.today.split("-").map(Number) as [number, number];
-  const sixMonths = new Date(Date.UTC(y, m - 6, 1)).toISOString().slice(0, 10);
-  return {
-    from: window.prior.startDay < sixMonths ? window.prior.startDay : sixMonths,
     to: window.today,
   };
 }

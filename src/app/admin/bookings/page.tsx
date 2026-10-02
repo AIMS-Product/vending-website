@@ -1,3 +1,4 @@
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
@@ -281,7 +282,12 @@ function PreCallBriefingPanel({ rows }: { rows: BriefingRow[] }) {
                   {formatDay(row.startAt)}
                 </td>
                 <td className="text-ui-text py-2">{row.name}</td>
-                <td className="text-ui-text-muted py-2">{row.setBy}</td>
+                <td className="text-ui-text-muted py-2">
+                  <span className="inline-flex items-center gap-1.5">
+                    <ChannelLogo label={row.setBy} fallback="none" />
+                    {row.setBy}
+                  </span>
+                </td>
                 <td className="py-2 whitespace-nowrap">
                   <WatchedCell row={row} />
                 </td>
@@ -561,7 +567,10 @@ function CallsPanel({
                   {row.calendar ?? "Unknown calendar"}
                 </td>
                 <td className="text-ui-text py-2 font-medium">
-                  {row.credit.who}
+                  <span className="inline-flex items-center gap-1.5">
+                    <ChannelLogo label={row.credit.who} fallback="none" />
+                    {row.credit.who}
+                  </span>
                   <span className="text-ui-text-muted block text-xs font-normal">
                     {KIND_LABEL[row.credit.kind]}
                   </span>

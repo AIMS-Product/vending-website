@@ -210,3 +210,12 @@ export function resolveDashboardWindow(
   const days = preset === "today" ? 1 : preset === "7d" ? 7 : 30;
   return { key: preset, label, ...trailing(today, days), days, today };
 }
+
+/** The window in running prose: "today", "the last 30 days", or the dates. */
+export function windowPhrase(window: DashboardWindow): string {
+  if (window.key === "today") return "today";
+  if (window.key === "mtd") return "this month so far";
+  if (window.key === "qtd") return "this quarter so far";
+  if (window.key.startsWith("custom:")) return window.label;
+  return `the last ${window.label}`;
+}

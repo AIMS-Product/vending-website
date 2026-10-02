@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { AdminMetricPanel } from "./AdminUi";
+import { AdminBar, AdminMetricPanel } from "./AdminUi";
 
 describe("AdminMetricPanel", () => {
   it("groups thousands in a numeric value", () => {
@@ -19,5 +19,12 @@ describe("AdminMetricPanel", () => {
       <AdminMetricPanel label="Rate" value="—" caption="no data" />,
     );
     expect(dash).toContain(">—<");
+  });
+});
+
+describe("AdminBar", () => {
+  it("draws nothing for a zero share instead of a full row", () => {
+    const html = renderToStaticMarkup(<AdminBar share={0} />);
+    expect(html).toContain("width:0");
   });
 });

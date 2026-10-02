@@ -4,6 +4,7 @@ import {
   adminPanelClass,
   adminStickyHeadClass,
 } from "@/components/admin/AdminUi";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { SeoTrendChart } from "@/components/admin/SeoTrendChart";
 import { type SeoSocial } from "@/lib/services/seo-command-center";
 import { C, n } from "./shared";
@@ -17,11 +18,18 @@ const NETWORK_NAMES: Record<string, string> = {
   youtube: "YouTube",
 };
 
-/** Each value as a share of the series' own average (average = 100). */
-function indexed(values: number[]): number[] {
+/**
+ * Each value as a share of the series' own average (average = 100). Days
+ * before a series' first value are gaps, not zeros: Search Console history
+ * starts later than Metricool's, and a flat zero would read as no searches.
+ */
+function indexed(values: number[]): Array<number | null> {
+  const first = values.findIndex((v) => v > 0);
   const nonZero = values.filter((v) => v > 0);
   const mean = nonZero.reduce((s, v) => s + v, 0) / (nonZero.length || 1);
-  return values.map((v) => (mean ? Math.round((v / mean) * 100) : 0));
+  return values.map((v, i) =>
+    first === -1 || i < first ? null : mean ? Math.round((v / mean) * 100) : 0,
+  );
 }
 
 export function SeoSocialTab({
@@ -66,7 +74,12 @@ export function SeoSocialTab({
             {data.networks.map((s) => (
               <tr key={s.network}>
                 <td className="text-ui-text px-4 py-2">
-                  {NETWORK_NAMES[s.network] ?? s.network}
+                  <span className="flex items-center gap-2">
+                    <ChannelLogo
+                      label={NETWORK_NAMES[s.network] ?? s.network}
+                    />
+                    {NETWORK_NAMES[s.network] ?? s.network}
+                  </span>
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums">
                   {n(s.followers)}
@@ -99,21 +112,21 @@ export function SeoSocialTab({
       </section>
       <section className={adminCardClass}>
         <h2 className="text-ui-text text-sm font-semibold">
-          Brand visibility: Google + social, per day
+          Social impressions and views
         </h2>
+        <p className="text-ui-text-subtle mt-1 text-xs">
+          Every connected network together, YouTube views included. Google
+          search impressions are on the Overview tab: at a thousandth of this
+          scale they would be a flat line here.
+        </p>
         <SeoTrendChart
-          ariaLabel="Google impressions and social impressions per day, stacked"
-          stacked
+          ariaLabel="Social impressions and views"
+          bars
           days={days}
           series={[
             {
-              label: "Google impressions",
-              color: C.accent,
-              values: data.visibility.map((v) => v.google),
-            },
-            {
               label: "Social impressions and views",
-              color: C.ok,
+              color: C.accent,
               values: data.visibility.map((v) => v.social),
             },
           ]}
@@ -139,7 +152,7 @@ export function SeoSocialTab({
             },
             {
               label: "Social impressions (index)",
-              color: C.warn,
+              color: "var(--ui-chart-7)",
               values: indexed(data.visibility.map((v) => v.social)),
             },
           ]}

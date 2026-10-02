@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import type { ReactNode } from "react";
 import {
   AdminBar,
@@ -15,8 +16,8 @@ import {
   FLOW_COLORS,
 } from "@/components/admin/dashboard/ChannelFlowChart";
 import {
-  Sparkline,
-  TrendChart,
+  DailyBarChart,
+  MiniBars,
 } from "@/components/admin/dashboard/DashboardCharts";
 import {
   FLOW_CHANNELS,
@@ -26,14 +27,12 @@ import {
 import {
   bySetter,
   capturedByChannel,
-  costPerBookedByMonth,
   countInRange,
   dailyCounts,
   deltaPct,
   inRange,
   keptCalls,
   LEADS_RECORDED_FROM,
-  monthKeys,
   planBooked,
   sameDayLastWeek,
   showRateHeld,
@@ -45,6 +44,7 @@ import {
   addDays,
   type DashboardWindow,
   type DayRange,
+  windowPhrase,
 } from "@/lib/analytics/dashboard-window";
 import { isYes } from "@/lib/services/close-week-view";
 import {
@@ -53,11 +53,11 @@ import {
   readBookedOn,
   readCac,
   readCalls,
+  readCostByMonth,
   readDeals,
   readFacts,
   readLeads,
   readTrust,
-  spineSpan,
   type Read,
 } from "@/lib/services/analytics-dashboard-data";
 
@@ -96,13 +96,6 @@ const stamp = (iso: string | null) =>
         minute: "2-digit",
       })} ET`
     : "never";
-
-/** "the 30 days window", or the dates themselves for a custom range. */
-function windowPhrase(window: DashboardWindow): string {
-  return window.key.startsWith("custom:")
-    ? window.label
-    : `the ${windowPhrase(window)} window`;
-}
 
 /** At least 14 days ending where the window ends, so a short window still has a line. */
 function sparkRange(window: DashboardWindow): DayRange {
@@ -397,7 +390,7 @@ function KpiCell({
   value: string;
   delta: ReactNode;
   caption: ReactNode;
-  spark: number[] | null;
+  spark: ReadonlyArray<number | null> | null;
   href?: string;
 }) {
   const body = (
@@ -413,7 +406,7 @@ function KpiCell({
         {caption}
       </p>
       <div className="mt-2">
-        {spark ? <Sparkline data={spark} /> : <div className="h-8" />}
+        {spark ? <MiniBars data={spark} /> : <div className="h-8" />}
       </div>
     </>
   );
@@ -495,7 +488,7 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
           { startDay: day, endDay: day },
           window.today,
         ).rate;
-        return { value: r ?? 0 };
+        return { value: r };
       },
     );
     cells.push(
@@ -639,10 +632,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const spine = spineSpan(window);
   const [calls, facts, deals] = await Promise.all([
     readCalls(span.from, span.to),
-    readFacts(spine.from, spine.to),
+    // Captured is the window's own captures: read the window, not the six
+    // months the cost card needs.
+    readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today),
   ]);
   const error = failed(calls, facts, deals);
@@ -699,9 +693,12 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
 function BarList({
   rows,
   total,
+  logos = false,
 }: {
   rows: Array<{ label: string; value: number; color?: string }>;
   total: number;
+  /** Rows are channels: lead each with its mark. */
+  logos?: boolean;
 }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   return (
@@ -717,6 +714,7 @@ function BarList({
                   aria-hidden="true"
                 />
               ) : null}
+              {logos ? <ChannelLogo label={row.label} /> : null}
               <span className="truncate">{row.label}</span>
             </span>
             <span className="text-ui-text tabular-nums">
@@ -752,13 +750,19 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const target = windowPlanTarget(window);
   const plan = planBooked(calls.data, window);
   const share = target ? plan / target : null;
+  // Same order as the flow: largest first, the unrecorded remainder last.
   const byChannel = FLOW_CHANNELS.map((c) => ({
+    key: c.key,
     label: c.label,
     color: FLOW_COLORS[c.key],
     value: kept.filter((k) => flowChannelForFunnel(k.funnel) === c.key).length,
   }))
     .filter((r) => r.value > 0)
-    .sort((a, b) => b.value - a.value);
+    .sort(
+      (a, b) =>
+        Number(a.key === "other") - Number(b.key === "other") ||
+        b.value - a.value,
+    );
   const setters = bySetter(inWindow).slice(0, 8);
   return (
     <DashboardCard
@@ -807,7 +811,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
           <div className="mt-5 grid gap-6 sm:grid-cols-2">
             <div>
               <h3 className={`${adminEyebrowClass} mb-2.5`}>By channel</h3>
-              <BarList rows={byChannel} total={kept.length} />
+              <BarList rows={byChannel} total={kept.length} logos />
             </div>
             <div>
               <h3 className={`${adminEyebrowClass} mb-2.5`}>
@@ -825,11 +829,9 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
 // ── Cost per booked call ────────────────────────────────────────────────
 
 export async function CostCard({ window }: { window: DashboardWindow }) {
-  const spine = spineSpan(window);
-  const facts = await readFacts(spine.from, spine.to);
   const current = window.today.slice(0, 7);
-  const months = monthKeys(addDays(`${current}-01`, -150), window.today);
-  const rows = facts.ok ? costPerBookedByMonth(facts.data, months) : [];
+  const cost = await readCostByMonth(window.today);
+  const rows = cost.ok ? cost.data : [];
   const monthName = (m: string) =>
     new Date(`${m}-01T00:00:00Z`).toLocaleDateString("en-US", {
       month: "short",
@@ -838,9 +840,9 @@ export async function CostCard({ window }: { window: DashboardWindow }) {
   return (
     <DashboardCard
       title="Cost per booked call"
-      source="Ad spend over channel bookings, by complete month (§9). The running month is shown as so far, never as the trend."
+      source="Ad spend over channel bookings, by complete month (§9). The running month is shown as so far, never as the trend, and refreshes every 15 minutes."
     >
-      {failed(facts) ??
+      {failed(cost) ??
         (rows.length === 0 ? (
           <CardMessage tone="empty">
             No ad spend recorded in the last six months.
@@ -858,14 +860,23 @@ export async function CostCard({ window }: { window: DashboardWindow }) {
               return (
                 <li
                   key={row.key}
-                  className={`grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)_auto] items-center gap-4 py-3 ${row.key === "blended" ? "bg-ui-canvas -mx-5 px-5" : ""}`}
+                  className={`grid grid-cols-[minmax(0,7.5rem)_minmax(0,1fr)_8.5rem] items-center gap-4 py-3 ${row.key === "blended" ? "bg-ui-canvas -mx-5 px-5" : ""}`}
                 >
-                  <span className="text-ui-text truncate text-[0.8125rem]">
-                    {row.label}
+                  <span className="text-ui-text flex min-w-0 items-center gap-2 text-[0.8125rem]">
+                    {row.key === "blended" ? null : (
+                      <ChannelLogo label={row.label} />
+                    )}
+                    <span className="truncate">{row.label}</span>
                   </span>
-                  {priced.length > 1 ? (
-                    <Sparkline
-                      data={priced.map((m) => m.cost!)}
+                  {priced.length > 0 ? (
+                    <MiniBars
+                      data={complete.map((m) => m.cost)}
+                      labels={complete.map((m, i) =>
+                        i === 0 || i === complete.length - 1
+                          ? monthName(m.month)
+                          : "",
+                      )}
+                      height={28}
                       color={
                         row.key === "blended"
                           ? "var(--ui-text-muted)"
@@ -874,7 +885,7 @@ export async function CostCard({ window }: { window: DashboardWindow }) {
                     />
                   ) : (
                     <span className="text-ui-text-subtle text-xs">
-                      Too few months to plot
+                      No complete month priced yet
                     </span>
                   )}
                   <span className="text-right">
@@ -920,7 +931,7 @@ export async function TrendCard({ window }: { window: DashboardWindow }) {
   return (
     <DashboardCard
       title="Leads and booked calls per day"
-      source={`Site leads by the day they arrived (§4); Close first calls by the day they are dated (§5).${range === window ? "" : " Shown over 14 days so the line has a shape."}`}
+      source={`Site leads by the day they arrived (§4); Close first calls by the day they are dated (§5).${range === window ? "" : " Shown over 14 days so the bars have a shape."}`}
     >
       {error ??
         (empty ? (
@@ -928,7 +939,7 @@ export async function TrendCard({ window }: { window: DashboardWindow }) {
             Nothing arrived or was booked in these days.
           </CardMessage>
         ) : (
-          <TrendChart
+          <DailyBarChart
             labels={leadSeries.map((d) => dayLabel(d.day))}
             series={[
               {

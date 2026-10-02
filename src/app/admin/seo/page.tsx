@@ -44,9 +44,11 @@ const TABS = [
   { key: "pages", label: "Pages" },
   { key: "keywords", label: "Keywords & AEO" },
   { key: "plan", label: "Content Plan" },
-  { key: "tasks", label: "Tasks" },
   { key: "social", label: "Social" },
   { key: "roadmap", label: "Roadmap" },
+  // The work queue the Monday triggers fill: kept, but set apart at the end
+  // of the bar so the reporting tabs read first.
+  { key: "tasks", label: "Agent tasks" },
 ] as const;
 type TabKey = (typeof TABS)[number]["key"];
 
@@ -72,7 +74,7 @@ export default async function AdminSeoPage({
       activeSection="seo"
       eyebrow="Reporting"
       title="SEO command center"
-      description="Google search, AI Overview citations, the 63-piece content plan, the tasks Kody's triggers open every Monday, and social reach, on one screen."
+      description="Google search, AI answers, the 63-piece content plan and social reach, on one screen."
       userEmail={user.email}
       userRole={role}
     >
@@ -86,7 +88,7 @@ export default async function AdminSeoPage({
             key={t.key}
             href={`/admin/seo?tab=${t.key}`}
             aria-current={t.key === tab ? "page" : undefined}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${t.key === tab ? "border-ui-accent text-ui-text font-medium" : "text-ui-text-muted hover:text-ui-text border-transparent"}`}
+            className={`-mb-px border-b-2 px-3 py-2 text-sm ${t.key === "tasks" ? "ml-auto text-xs" : ""} ${t.key === tab ? "border-ui-accent text-ui-text font-medium" : `${t.key === "tasks" ? "text-ui-text-subtle" : "text-ui-text-muted"} hover:text-ui-text border-transparent`}`}
           >
             {t.label}
           </Link>
@@ -133,7 +135,11 @@ async function TabBody({
         <SeoMissing />
       ) : (
         <div className="space-y-5">
-          <AiVisibilityPanel data={ai} />
+          <AiVisibilityPanel
+            data={ai}
+            aeo={data.aeo}
+            lastPull={data.lastPull}
+          />
           <SeoKeywordsTab {...data} />
         </div>
       );

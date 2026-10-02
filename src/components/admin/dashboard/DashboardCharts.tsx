@@ -46,8 +46,12 @@ function ChartLegend({
   );
 }
 
-/** Daily series with a hover (or tap) readout. `labels` match each series' length. */
-export function TrendChart({
+/**
+ * Daily counts as bars, one group per day, zero-based, with a hover (or tap)
+ * readout. Counts are discrete days, so a bar says "this many that day" where
+ * a line would invent the values between them. `labels` match each series.
+ */
+export function DailyBarChart({
   series,
   labels,
   height = 220,
@@ -60,9 +64,13 @@ export function TrendChart({
   const W = 600;
   const H = height;
   const n = labels.length;
+  const k = series.length;
   const max = niceMax(Math.max(1, ...series.flatMap((s) => s.data)));
-  const x = (i: number) => (n <= 1 ? W / 2 : (i / (n - 1)) * W);
-  const y = (v: number) => H - (v / max) * (H - 8) - 1;
+  const slot = W / Math.max(n, 1);
+  // A day's bars take 70% of its slot, so the gaps mark the days apart.
+  const barW = (slot * 0.7) / Math.max(k, 1);
+  const x = (i: number) => (i + 0.5) * slot;
+  const y = (v: number) => H - (v / max) * (H - 8);
   const ticks = [0, 0.25, 0.5, 0.75, 1].map((t) => t * max);
   const every = Math.max(1, Math.ceil(n / 7));
   const pick = (clientX: number, rect: DOMRect) =>
@@ -71,14 +79,14 @@ export function TrendChart({
         0,
         Math.min(
           n - 1,
-          Math.round(((clientX - rect.left) / rect.width) * (n - 1)),
+          Math.floor(((clientX - rect.left) / rect.width) * Math.max(n, 1)),
         ),
       ),
     );
 
   return (
     <div className="min-w-0">
-      {series.length > 1 ? (
+      {k > 1 ? (
         <div className="mb-3">
           <ChartLegend items={series} />
         </div>
@@ -122,6 +130,15 @@ export function TrendChart({
               )
               .join("; ")}
           >
+            {hover !== null ? (
+              <rect
+                x={hover * slot}
+                y="0"
+                width={slot}
+                height={H}
+                fill="var(--ui-canvas)"
+              />
+            ) : null}
             {ticks.map((t) => (
               <line
                 key={t}
@@ -129,53 +146,32 @@ export function TrendChart({
                 x2={W}
                 y1={y(t)}
                 y2={y(t)}
-                stroke="var(--ui-line)"
+                stroke={t === 0 ? "var(--ui-line-strong)" : "var(--ui-line)"}
                 vectorEffect="non-scaling-stroke"
               />
             ))}
-            {series.map((s, si) => (
-              <polyline
-                key={s.name}
-                points={s.data.map((v, i) => `${x(i)},${y(v)}`).join(" ")}
-                fill="none"
-                stroke={s.color}
-                strokeWidth={si === 0 ? 2 : 1.75}
-                vectorEffect="non-scaling-stroke"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-              />
-            ))}
-            {hover !== null ? (
-              <line
-                x1={x(hover)}
-                x2={x(hover)}
-                y1="0"
-                y2={H}
-                stroke="var(--ui-line-strong)"
-                strokeDasharray="3 3"
-                vectorEffect="non-scaling-stroke"
-              />
-            ) : null}
+            {series.map((s, si) =>
+              s.data.map((v, i) =>
+                v > 0 ? (
+                  <rect
+                    key={`${s.name}${i}`}
+                    x={x(i) - (barW * k) / 2 + si * barW}
+                    y={y(v)}
+                    width={Math.max(barW - 1, 1)}
+                    height={H - y(v)}
+                    fill={s.color}
+                    opacity={hover === null || hover === i ? 1 : 0.55}
+                  />
+                ) : null,
+              ),
+            )}
           </svg>
-          {hover !== null
-            ? series.map((s) => (
-                <span
-                  key={s.name}
-                  className="border-ui-surface pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2"
-                  style={{
-                    left: `${(x(hover) / W) * 100}%`,
-                    top: y(s.data[hover] ?? 0),
-                    background: s.color,
-                  }}
-                />
-              ))
-            : null}
           {hover !== null ? (
             <div
               className="border-ui-line bg-ui-surface shadow-ui-raised rounded-ui-lg pointer-events-none absolute top-0 z-10 min-w-[8rem] border px-3 py-2 text-xs"
               style={{
                 left: `${(x(hover) / W) * 100}%`,
-                transform: `translateX(${hover > n / 2 ? "calc(-100% - 10px)" : "10px"})`,
+                transform: `translateX(${hover > n / 2 ? "calc(-100% - 14px)" : "14px"})`,
               }}
             >
               <div className="text-ui-text mb-1 font-medium tabular-nums">
@@ -213,16 +209,8 @@ export function TrendChart({
           return (
             <span
               key={label}
-              className={`absolute top-0 whitespace-nowrap ${(i / every) % 2 === 1 && !last ? "hidden sm:inline" : ""}`}
-              style={{
-                left: `${(x(i) / W) * 100}%`,
-                transform:
-                  i === 0
-                    ? "none"
-                    : last
-                      ? "translateX(-100%)"
-                      : "translateX(-50%)",
-              }}
+              className={`absolute top-0 -translate-x-1/2 whitespace-nowrap ${(i / every) % 2 === 1 && !last ? "hidden sm:inline" : ""}`}
+              style={{ left: `${(x(i) / W) * 100}%` }}
             >
               {label}
             </span>
@@ -233,48 +221,55 @@ export function TrendChart({
   );
 }
 
-/** A trend line with its last point marked. Decoration: the number beside it carries the value. */
-export function Sparkline({
+/**
+ * A row of small zero-based bars, the newest one in full colour. Built for
+ * short series (a KPI's days, a card's months): a min-max line over five
+ * points turns a $20 move into a cliff, a bar from zero shows it as $20.
+ * `null` is a gap, not a zero. Decoration: the number beside it carries the
+ * value, so the bars are hidden from screen readers.
+ */
+export function MiniBars({
   data,
+  labels,
   color = "var(--ui-chart-1)",
+  height = 32,
 }: {
-  data: readonly number[];
+  data: ReadonlyArray<number | null>;
+  /** Optional caption under each bar, e.g. month names; "" leaves one blank. */
+  labels?: readonly string[];
   color?: string;
+  height?: number;
 }) {
-  if (data.length < 2) return <div className="h-8" aria-hidden="true" />;
-  const max = Math.max(...data);
-  const min = Math.min(...data);
-  const pts = data.map(
-    (v, i) =>
-      [
-        (i / (data.length - 1)) * 100,
-        4 + ((max - v) / (max - min || 1)) * 24,
-      ] as const,
-  );
-  const [lx, ly] = pts[pts.length - 1]!;
+  if (data.length === 0) return <div style={{ height }} aria-hidden="true" />;
+  const max = Math.max(1, ...data.map((v) => v ?? 0));
+  const last = data.length - 1;
   return (
-    <svg
-      viewBox="0 0 100 32"
-      preserveAspectRatio="none"
-      className="h-8 w-full overflow-visible"
-      aria-hidden="true"
-    >
-      <polyline
-        points={pts.map(([px, py]) => `${px},${py}`).join(" ")}
-        fill="none"
-        stroke={color}
-        strokeWidth="1.75"
-        vectorEffect="non-scaling-stroke"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <circle
-        cx={lx}
-        cy={ly}
-        r="2.5"
-        fill={color}
-        vectorEffect="non-scaling-stroke"
-      />
-    </svg>
+    <div aria-hidden="true">
+      <div className="flex items-end gap-[3px]" style={{ height }}>
+        {data.map((v, i) => (
+          <span
+            key={i}
+            className="min-w-0 flex-1 rounded-t-[2px]"
+            style={{
+              height: v ? `${Math.max(4, (v / max) * 100)}%` : 0,
+              background: color,
+              opacity: i === last ? 1 : 0.35,
+            }}
+          />
+        ))}
+      </div>
+      {labels ? (
+        <div className="text-ui-text-subtle mt-1 flex gap-[3px] text-[0.625rem] leading-none">
+          {labels.map((label, i) => (
+            <span
+              key={i}
+              className={`min-w-0 flex-1 text-center whitespace-nowrap ${i === last ? "text-ui-text-muted font-medium" : ""}`}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 }

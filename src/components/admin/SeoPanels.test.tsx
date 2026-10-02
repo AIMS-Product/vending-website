@@ -65,7 +65,8 @@ describe("SeoPanels", () => {
     expect(html).toContain("Scorecard vs Day 0");
     expect(html).toContain("1,287");
     expect(html).toContain("4,500");
-    expect(html).toContain("Branded vs non-branded impressions");
+    expect(html).toContain("Google impressions");
+    expect(html).toContain("Non-branded");
     expect(html).toContain("6,365");
     expect(html).toContain("2026-07-27: Webflow to Next.js");
     expect(html).not.toMatch(/—|–/);

@@ -97,6 +97,34 @@ describe("channel flow", () => {
     expect(flow.bands[0]!.values[0]).toBe(0);
   });
 
+  it("orders bands largest first by booked, other always last", () => {
+    const flow = buildChannelFlow({
+      captured: [
+        { channel: "Webinar", count: 500 },
+        { channel: "Phcheck", count: 900 },
+        { channel: "YouTube", count: 40 },
+      ],
+      calls: [
+        call({ leadId: "a", funnel: "Reactivation Scrapers" }),
+        call({ leadId: "b", funnel: "Reactivation Scrapers" }),
+        call({ leadId: "c", funnel: "Reactivation Scrapers" }),
+        call({ leadId: "d", funnel: "Internal Webinar" }),
+        call({ leadId: "e", funnel: "Internal Webinar" }),
+        call({ leadId: "f", funnel: null }),
+        call({ leadId: "g", funnel: null }),
+        call({ leadId: "h", funnel: null }),
+        call({ leadId: "i", funnel: null }),
+      ],
+      wins: [],
+    });
+    expect(flow.bands.map((b) => b.key)).toEqual([
+      "reactivation",
+      "webinar",
+      "youtube",
+      "other",
+    ]);
+  });
+
   it("returns null for a rate over nothing", () => {
     expect(stageRate(3, 0)).toBeNull();
     expect(stageRate(1, 3)).toBe(33.3);

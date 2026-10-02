@@ -171,7 +171,8 @@ export function AdminBar({ share }: { share: number }) {
         className="bg-ui-accent h-1.5 rounded-r-[3px]"
         // A row with one lead out of four hundred is still a row that happened;
         // the floor keeps it visible instead of rounding it out of existence.
-        style={{ width: pct > 0 ? `max(2px, ${pct}%)` : undefined }}
+        // Zero is an explicit 0: an unset width on a block fills the row.
+        style={{ width: pct > 0 ? `max(2px, ${pct}%)` : 0 }}
       />
     </div>
   );

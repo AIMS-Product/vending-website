@@ -7,6 +7,7 @@ import {
   parseDashboardWindow,
   reportingDay,
   resolveDashboardWindow,
+  windowPhrase,
 } from "./dashboard-window";
 
 describe("dashboard windows", () => {
@@ -66,5 +67,17 @@ describe("dashboard windows", () => {
       "2026-10-02",
     );
     expect(w.prior).toEqual({ startDay: "2026-08-02", endDay: "2026-08-31" });
+  });
+
+  it("names a window in prose without recursing", () => {
+    expect(windowPhrase(resolveDashboardWindow("today", "2026-10-02"))).toBe(
+      "today",
+    );
+    expect(windowPhrase(resolveDashboardWindow("30d", "2026-10-02"))).toBe(
+      "the last 30 days",
+    );
+    expect(windowPhrase(resolveDashboardWindow("mtd", "2026-10-02"))).toBe(
+      "this month so far",
+    );
   });
 });

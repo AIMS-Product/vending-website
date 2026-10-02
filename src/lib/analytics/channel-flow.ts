@@ -59,7 +59,7 @@ const LANE_2_FUNNELS =
   GOAL_CHANNELS.find((channel) => channel.key === "lane-2")?.funnels ?? [];
 
 /**
- * The bands, in drawing order. Chatbot leads sit in Website & search because
+ * The bands. `buildChannelFlow` orders them by size; ties keep this order. Chatbot leads sit in Website & search because
  * Close files a chat-booked call under the funnel the visitor arrived on,
  * mostly Website (13 of 18 matched calls, 2026-10-02); a Chatbot band would
  * carry its captures and none of its calls.
@@ -229,9 +229,17 @@ export function buildChannelFlow(input: {
     }
   }
 
-  const list = FLOW_CHANNELS.map((c) => band(c.key)).filter((b) =>
-    b.values.some((v) => v > 0),
-  );
+  // Largest band first by Booked (then Captured), so the rail, the chart and
+  // the Bookings card read in one order; "Other and not recorded" is always
+  // last because it is a remainder, not a channel.
+  const list = FLOW_CHANNELS.map((c) => band(c.key))
+    .filter((b) => b.values.some((v) => v > 0))
+    .sort(
+      (a, b) =>
+        Number(a.key === "other") - Number(b.key === "other") ||
+        b.values[1] - a.values[1] ||
+        b.values[0] - a.values[0],
+    );
   const totals = [0, 1, 2, 3, 4].map((i) =>
     list.reduce((sum, b) => sum + b.values[i]!, 0),
   ) as ChannelFlow["totals"];

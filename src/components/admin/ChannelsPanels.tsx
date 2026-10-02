@@ -804,7 +804,13 @@ function GoingOutTable({
                     </a>
                   </td>
                   <td className="text-ui-text py-2.5 pr-3">
-                    {row.utm_source}
+                    <span className="inline-flex items-center gap-1.5 align-middle">
+                      <ChannelLogo
+                        label={row.utm_source ?? ""}
+                        fallback="none"
+                      />
+                      {row.utm_source}
+                    </span>
                     <span className="text-ui-text-subtle">
                       {" "}
                       · {row.utm_medium}
@@ -861,8 +867,9 @@ function FixLinksPanel({ rows, days }: { rows: FixLinkRow[]; days: number }) {
           {rows.map((row) => (
             <li key={row.post_id} className="py-2.5 text-[0.8125rem]">
               <div className="flex items-baseline gap-2">
-                <span className="text-ui-text font-medium capitalize">
-                  {row.network}
+                <span className="text-ui-text inline-flex items-center gap-1.5 self-center font-medium capitalize">
+                  <ChannelLogo label={row.network} />
+                  {row.network === "twitter" ? "X" : row.network}
                 </span>
                 <span className="text-ui-text-subtle text-xs">
                   {String(row.published_at).slice(0, 10)}
