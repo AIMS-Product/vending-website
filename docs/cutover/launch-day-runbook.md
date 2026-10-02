@@ -1,5 +1,7 @@
 # Launch Day Runbook
 
+> **Historical (2026-10-02).** The pre-cutover launch-day runbook; its "do not push, deploy or change DNS" instructions no longer apply. The cutover happened 2026-07-27. Current operations: `docs/RUNBOOK.md`.
+
 Last updated: 2026-06-22.
 
 This runbook starts after the current launch-readiness code changes are

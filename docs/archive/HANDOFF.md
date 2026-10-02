@@ -1,3 +1,5 @@
+> Historical, superseded by `README.md` and `docs/ARCHITECTURE.md`. Written 2026-05-04 during the Webflow migration; the cutover happened 2026-07-27.
+
 # Handoff — Vendingpreneurs Webflow → Next.js Migration
 
 _Last updated 2026-05-04. Use this to start a fresh Claude Code session

@@ -1,5 +1,7 @@
 # Stack Release Plan
 
+> **Historical (2026-10-02).** The stacked-release plan below is not current: scheduled publishing is on `main` and in `vercel.json`. Still true: the repo-local Husky `pre-push` hook blocks pushes from `codex/*`, `stack/*`, `builder-v2/*` and `release-stack/*` branches unless `ALLOW_RELEASE_TRAIN_PUSH=1`. Current process: `docs/RUNBOOK.md`.
+
 This repo is using a local-only stacked release train for Website Builder / SEO
 Page Builder work so completed work can be banked locally and released in
 controlled slices.

@@ -1,5 +1,7 @@
 # Staging Validation Checklist — Webflow → New Site Cutover
 
+> **Historical (2026-10-02).** A pre-cutover staging checklist; its boxes were never ticked here. Superseded by the cutover record in `docs/cutover/GO-LIVE-HANDOFF-2026-07-27.md` and `docs/RUNBOOK.md`.
+
 Run every row on the **staging preview** before merging to production and
 switching DNS. Nothing here touches production; the freeze stays until every box
 is checked and Adam gives the word.
