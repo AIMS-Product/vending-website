@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
+import { isProductionDeployment } from "@/lib/routing/internal-pages";
 import { ApplyPageContent } from "@/components/sections/ApplyPageContent";
 import {
   buildLeadAttribution,
@@ -25,6 +27,8 @@ export default async function DemoBookACallPage({
 }: {
   searchParams: Promise<LeadSearchParams>;
 }) {
+  // The proxy already answers 404 here on production; this is the second guard.
+  if (isProductionDeployment()) notFound();
   const attribution = buildLeadAttribution(
     await searchParams,
     "/demo/book-a-call",
