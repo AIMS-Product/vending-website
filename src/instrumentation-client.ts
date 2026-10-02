@@ -1,4 +1,4 @@
-import type * as SentryNs from "@sentry/nextjs";
+import * as Sentry from "@sentry/nextjs";
 import { sentryPiiHooks } from "@/lib/tracking/sentry-scrub";
 import posthog from "posthog-js";
 import {
@@ -13,40 +13,18 @@ import {
 
 const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
 
-// Sentry's browser SDK (tracing included) is ~100 KB gzipped of main-thread
-// parse work. It is loaded after the page is idle so it never competes with
-// hydration; errors thrown in the first moments of a page load are not
-// captured (accepted trade-off, measured TBT win).
-let sentry: typeof SentryNs | null = null;
-
 if (dsn) {
-  const bootSentry = () => {
-    import("@sentry/nextjs")
-      .then((Sentry) => {
-        Sentry.init({
-          dsn,
-          environment: process.env.NODE_ENV,
-          sendDefaultPii: false,
-          // Strips email/phone/name params from URLs in breadcrumbs, requests, spans.
-          ...sentryPiiHooks,
-          tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
-        });
-        sentry = Sentry;
-      })
-      .catch((error: unknown) => {
-        console.warn("Sentry failed to load", error);
-      });
-  };
-  if (typeof window.requestIdleCallback === "function") {
-    window.requestIdleCallback(bootSentry, { timeout: 4000 });
-  } else {
-    setTimeout(bootSentry, 2000);
-  }
+  Sentry.init({
+    dsn,
+    environment: process.env.NODE_ENV,
+    sendDefaultPii: false,
+    // Strips email/phone/name params from URLs in breadcrumbs, requests, spans.
+    ...sentryPiiHooks,
+    tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
+  });
 }
 
-export const onRouterTransitionStart = (
-  ...args: Parameters<typeof SentryNs.captureRouterTransitionStart>
-) => sentry?.captureRouterTransitionStart(...args);
+export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
 /**
  * PostHog boot. Runs before hydration on every full page load (Next.js

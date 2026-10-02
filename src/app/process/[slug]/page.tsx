@@ -39,6 +39,7 @@ export async function generateMetadata({
       description,
       url: `/process/${step.slug}`,
       type: "article",
+      images: ["/og/default.png"],
     },
   };
 }
