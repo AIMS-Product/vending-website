@@ -22,9 +22,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
  * Ceiling on every stored UTM.
  *
  * These arrive in the JSON body of the public, unauthenticated
- * POST /api/attribution/events, whose zod schema puts no length bound on a
- * property value. `utm_campaign` is incidentally protected by its btree index;
- * the other two were stored with only a trim. A follow-up migration adds
+ * POST /api/attribution/events, whose zod schema only cuts a property value
+ * at 2,000 characters. `utm_campaign` is incidentally protected by its btree
+ * index; the other two were stored with only a trim. A follow-up migration adds
  * matching CHECK constraints so no future caller can bypass this.
  */
 const MAX_UTM_LENGTH = 200;
