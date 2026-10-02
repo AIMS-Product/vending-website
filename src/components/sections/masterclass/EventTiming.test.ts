@@ -21,16 +21,16 @@ describe("localTimeText", () => {
 
   it("names the visitor's time and zone", () => {
     expect(localTimeText(START, "America/New_York")).toBe(
-      "That's 8:30 PM your time (EDT)",
+      "Your time: 8:30 PM EDT",
     );
     expect(localTimeText(START, "America/Los_Angeles")).toBe(
-      "That's 5:30 PM your time (PDT)",
+      "Your time: 5:30 PM PDT",
     );
   });
 
   it("names the weekday when the visitor's day differs", () => {
     expect(localTimeText(START, "Europe/London")).toBe(
-      "That's Wed 1:30 AM your time (GMT+1)",
+      "Your time: Wed 1:30 AM GMT+1",
     );
   });
 
