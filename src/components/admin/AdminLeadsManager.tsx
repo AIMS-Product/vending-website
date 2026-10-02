@@ -23,6 +23,8 @@ import type {
   AdminLeadDetail,
   AdminLeadListItem,
 } from "@/lib/services/lead-admin";
+import { formatPacificDay } from "@/lib/admin/format-time";
+import { ADMIN_LEAD_LIST_LIMIT } from "@/lib/admin/lead-list-limit";
 
 const initialActionState: LeadAdminActionState = { status: "idle" };
 
@@ -111,6 +113,9 @@ export function AdminLeadsManager({
   activeLifecycleStatus: string;
   leads: AdminLeadListItem[];
 }) {
+  // The list loads the newest leads only. Say so, or "Visible 100" reads as
+  // the total and a sync failure further back looks like it does not exist.
+  const capped = leads.length >= ADMIN_LEAD_LIST_LIMIT;
   const pendingCount = leads.filter(
     (lead) => lead.lifecycleStatus === "qualification_pending",
   ).length;
@@ -144,7 +149,7 @@ export function AdminLeadsManager({
           tone="blue"
           label="Visible"
           value={leads.length}
-          caption="leads"
+          caption={capped ? "latest leads, filter to narrow" : "leads"}
         />
         <AdminMetricPanel
           icon="filter"
@@ -179,7 +184,7 @@ export function AdminLeadsManager({
           tone={failedSyncCount ? "amber" : "slate"}
           label="Sync issues"
           value={failedSyncCount}
-          caption="recoverable"
+          caption={capped ? "recoverable, in the latest leads" : "recoverable"}
         />
       </AdminMetricStrip>
 
@@ -220,6 +225,13 @@ export function AdminLeadsManager({
             />
           </div>
         </div>
+
+        {capped ? (
+          <p className="text-ui-text-muted border-ui-line border-b px-4 py-2 text-xs">
+            Showing the {ADMIN_LEAD_LIST_LIMIT} most recent leads that match
+            these filters. Older leads are not listed here.
+          </p>
+        ) : null}
 
         {leads.length ? (
           <div className="overflow-x-auto">
@@ -853,12 +865,7 @@ function formatSummaryValue(value: unknown): string {
 }
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPacificDay(value, { year: true });
 }
 
 function formatStatus(value: string) {

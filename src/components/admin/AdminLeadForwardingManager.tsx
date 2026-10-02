@@ -21,6 +21,7 @@ import type {
 } from "@/lib/services/lead-forward-settings";
 import type { LeadCaptureType } from "@/lib/ghl/forward";
 import type { AdminRole } from "@/lib/supabase/auth";
+import { formatPacificStamp } from "@/lib/admin/format-time";
 
 const initialState: LeadForwardActionState = { status: "idle" };
 
@@ -147,7 +148,7 @@ export function AdminLeadForwardingManager({
                 <span className={adminLabelClass}>Forwarding is on</span>
                 <span className="text-ui-text-muted block text-sm">
                   {settings.updatedAt
-                    ? `Last changed ${new Date(settings.updatedAt).toLocaleString()}${
+                    ? `Last changed ${formatPacificStamp(settings.updatedAt) ?? "at an unknown time"}${
                         settings.updatedBy ? ` by ${settings.updatedBy}` : ""
                       }.`
                     : "Not configured yet."}

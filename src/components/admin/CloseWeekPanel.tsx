@@ -10,6 +10,8 @@ import {
   type CloseWeekRow,
 } from "@/lib/services/close-week-view";
 import type { CloseWeekReport } from "@/lib/services/close-week-view-data";
+import { formatPacificStamp } from "@/lib/admin/format-time";
+import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
  * The week as Close (and SteelTrap) count it: every first call on the
@@ -33,10 +35,6 @@ function weekLabel(week: CloseWeek): string {
 
 function pct(part: number, whole: number): string {
   return whole > 0 ? `${Math.round((part / whole) * 100)}%` : "—";
-}
-
-function money(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
 function Cells({ row }: { row: Omit<CloseWeekRow, "label"> }) {
@@ -202,12 +200,8 @@ export function CloseWeekTab({
           {report.mirrorSyncedAt ? (
             <p>
               First calls last copied from Close at{" "}
-              {new Date(report.mirrorSyncedAt).toLocaleString("en-US", {
-                timeZone: "America/New_York",
-                dateStyle: "medium",
-                timeStyle: "short",
-              })}{" "}
-              ET (every hour). Won deals are read from Close directly.
+              {formatPacificStamp(report.mirrorSyncedAt)} (every hour). Won
+              deals are read from Close directly.
             </p>
           ) : null}
         </div>

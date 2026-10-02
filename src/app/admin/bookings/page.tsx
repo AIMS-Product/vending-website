@@ -36,6 +36,7 @@ import {
   type RepRole,
 } from "@/lib/services/call-credit";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 export const metadata: Metadata = {
   title: "Who set this call",
@@ -616,13 +617,7 @@ const KIND_LABEL: Record<CallCreditKind, string> = {
 };
 
 function formatDay(value: string | null): string {
-  if (!value) return "Unknown";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Unknown";
-  return parsed.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  return formatPacificDay(value) ?? "Unknown";
 }
 
 function singleParam(value: string | string[] | undefined): string | undefined {

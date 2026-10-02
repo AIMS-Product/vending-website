@@ -8,6 +8,7 @@ import { UnverifiedMark } from "@/components/admin/TrustMarks";
 import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
 import { SCRAPER_FUNNEL } from "@/lib/services/close-mtd-funnel";
 import type { CloseMtdReport } from "@/lib/services/close-mtd-funnel-data";
+import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
  * The month so far, in the shape of Stephen's MTD funnel and none of its
@@ -28,10 +29,6 @@ function monthLabel(from: string, to: string): string {
     timeZone: "UTC",
   });
   return `${month} ${Number(from.slice(8, 10))}\u2013${Number(to.slice(8, 10))}, ${from.slice(0, 4)}`;
-}
-
-function money(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
 function rate(part: number, whole: number): string {

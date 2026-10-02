@@ -79,6 +79,7 @@ import {
   type UnverifiedFlag,
 } from "@/lib/analytics/data-trust-bar";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
+import { pacificToday } from "@/lib/admin/format-time";
 
 export const metadata: Metadata = {
   title: "Analytics",
@@ -155,13 +156,13 @@ export default async function AdminAnalyticsPage({
             active={range}
             includeInternal={includeInternal}
             tab={tab}
-            today={new Date().toISOString().slice(0, 10)}
+            today={pacificToday()}
           />
           <AnalyticsCustomRange
             active={range}
             includeInternal={includeInternal}
             tab={tab}
-            today={new Date().toISOString().slice(0, 10)}
+            today={pacificToday()}
           />
           <AnalyticsRangeTabs
             active={range}

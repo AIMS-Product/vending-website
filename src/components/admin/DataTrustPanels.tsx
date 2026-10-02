@@ -12,6 +12,7 @@ import {
   type TrustCheck,
 } from "@/lib/services/data-trust";
 import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
+import { formatPacificStamp } from "@/lib/admin/format-time";
 
 /** A count we stored or a source reported. A dash means not observed. */
 function Count({ value }: { value: number | null }) {
@@ -73,7 +74,7 @@ export function TrustChecks({
           </p>
         </div>
         <p className="text-ui-text-subtle text-xs">
-          Last run {new Date(run.runAt).toLocaleString("en-US")} ·{" "}
+          Last run {formatPacificStamp(run.runAt)} ·{" "}
           {disagreeing.length === 0
             ? "everything agreed"
             : `${disagreeing.length} of ${run.checks.length} disagreed`}

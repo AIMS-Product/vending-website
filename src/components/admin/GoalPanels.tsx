@@ -22,6 +22,7 @@ import {
   MONTHLY_GROWTH,
   OTHER_TARGETS_IN_CIRCULATION,
 } from "@/lib/services/channel-targets";
+import { formatPacificStamp } from "@/lib/admin/format-time";
 
 /**
  * Target, pace and actual for one period. Pace is the point: "ahead or behind,
@@ -109,7 +110,7 @@ export function GoalHeadline({ report }: { report: GoalReport }) {
         value={pace.actual == null ? "—" : pace.actual.toLocaleString()}
         caption={
           report.total.week == null
-            ? "not observed"
+            ? "no data"
             : `${report.total.week.booked.toLocaleString()} so far this week`
         }
       />
@@ -333,7 +334,7 @@ export function GoalBasis({ report }: { report: GoalReport }) {
           <dt className="text-ui-text font-medium">Freshness</dt>
           <dd>
             {report.updatedAt
-              ? `Copied from Close, last updated ${new Date(report.updatedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}. Updates every hour.`
+              ? `Copied from Close, last updated ${formatPacificStamp(report.updatedAt)}. Updates every hour.`
               : "Our copy of Close has not finished its first update yet."}
           </dd>
         </div>

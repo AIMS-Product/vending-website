@@ -108,7 +108,7 @@ export default async function AdminTeamPage({
 
       <p className="text-ui-text-subtle mb-4 text-xs">
         {data.periodLabel} ({data.period.start} to {data.period.end}). A dash
-        means not observed, never zero.
+        means no data, never zero.
       </p>
 
       {data.setters ? (

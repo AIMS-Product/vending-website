@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
+import { BROKEN_FEED_STATUSES } from "@/lib/admin/feed-freshness";
 import { isViewerReadableHref } from "@/lib/admin/viewer-access";
 import {
   AdminBar,
@@ -29,6 +30,17 @@ import {
  * A null is a dash with "not observed" on hover, never a zero, and every
  * number on the page is a link to the screen that can explain it.
  */
+
+/**
+ * Overview ranges are 7d/30d/90d/1y/custom; the bookings page offers 7, 30
+ * and 90 days. A click should open the same window, and where it cannot (a
+ * year, a custom span) the widest one is the closest honest answer.
+ */
+export function bookingsRange(range: string): "7" | "30" | "90" {
+  if (range === "7d") return "7";
+  if (range === "30d") return "30";
+  return "90";
+}
 
 export function channelHref(channel: string, range: string) {
   const params = new URLSearchParams({ range, tab: "channels", channel });
@@ -78,7 +90,7 @@ function OverviewMetric({
       <AdminMetricPanel
         label={label}
         value={value == null ? "—" : value.toLocaleString()}
-        caption={value == null ? "not observed" : caption}
+        caption={value == null ? "no data" : caption}
         delta={delta}
       />
     </AdminViewerLink>
@@ -123,7 +135,7 @@ export function OverviewHeadline({
     <AdminMetricStrip columns={5}>
       <OverviewMetric
         canEdit={canEdit}
-        href="/admin/leads"
+        href={`/admin/analytics?range=${range}&tab=channels`}
         label="Site form fills"
         value={leads}
         caption={since}
@@ -144,7 +156,7 @@ export function OverviewHeadline({
       />
       <OverviewMetric
         canEdit={canEdit}
-        href="/admin/bookings"
+        href={`/admin/bookings?range=${bookingsRange(range)}`}
         label="Calls booked"
         value={booked}
         caption={since}
@@ -296,7 +308,7 @@ function ChannelRow({
           <Delta current={leads} prior={row.prior.leads} />
           <span className="text-ui-text shrink-0 text-[0.8125rem] font-semibold tabular-nums">
             {leads == null ? (
-              <span className="text-ui-text-subtle" title="Not observed">
+              <span className="text-ui-text-subtle" title="No data">
                 —
               </span>
             ) : (
@@ -486,9 +498,6 @@ export function NeedsAttention({
     </section>
   );
 }
-
-/** A connector in one of these states is not reporting; the page says so. */
-const BROKEN_FEED_STATUSES = new Set(["failed", "stale", "never", "empty"]);
 
 function buildAttentionItems(
   overview: AdminOverview,

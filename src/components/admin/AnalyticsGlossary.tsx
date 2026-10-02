@@ -61,9 +61,9 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "On Month over month and Close view, each is out of everyone who booked, never out of the step before it, so Show % is a minimum while logging is incomplete. On Executive and Funnels by month, Show % is out of calls with a show or no-show logged, so calls nobody logged are left out.",
   },
   {
-    term: "Lead % and Book %",
+    term: "Lead % (Opt-in %, Visit→lead) and Book %",
     meaning:
-      "Lead % is leads out of site visits. On Channels, Book % is calls booked out of leads plus registrations & contacts. On Executive and Funnels by month, it is out of site leads only.",
+      "Lead % is leads out of site visits. Executive and Funnels by month call it Opt-in %, and YouTube calls it Visit→lead: the same rate under three names. On Channels, Book % is calls booked out of leads plus registrations & contacts. On Executive and Funnels by month, it is out of site leads only.",
   },
   {
     term: "Still filling in",

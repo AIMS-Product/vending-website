@@ -78,7 +78,7 @@ export default async function AdminGoalsPage({
         {pace.connected ? null : (
           <p className={`${adminPanelClass} mb-4 p-4 text-sm`}>
             The booking tables could not be read in this environment, so every
-            number below reads as not observed rather than zero.
+            number below shows a dash (no data) rather than zero.
           </p>
         )}
         <BookedPaceStrip pace={pace} />
@@ -132,11 +132,12 @@ export default async function AdminGoalsPage({
         ))}
       </nav>
 
+      {/* Operator note: when this shows, apply the close_lead_funnel
+          migration and run the hourly sync once. */}
       {report.connected ? null : (
         <p className={`${adminPanelClass} mb-4 p-4 text-sm`}>
-          The Close mirror table is not available in this environment yet, so
-          every actual reads as not observed. Apply the close_lead_funnel
-          migration and run the hourly sync once.
+          Our copy of Close could not be read, so every actual shows a dash (no
+          data) rather than zero.
         </p>
       )}
 

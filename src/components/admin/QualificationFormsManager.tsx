@@ -18,6 +18,7 @@ import {
   adminSmallButtonClass,
 } from "@/components/admin/AdminUi";
 import type { AdminQualificationForm } from "@/lib/services/qualification-forms";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 const initialActionState: QualificationFormActionState = { status: "idle" };
 
@@ -279,9 +280,5 @@ function ActionMessage({
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPacificDay(iso, { year: true }) ?? "Unknown";
 }

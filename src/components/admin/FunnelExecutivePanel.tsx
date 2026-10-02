@@ -17,6 +17,7 @@ import type {
   FunnelExecutiveReport,
 } from "@/lib/services/funnel-executive";
 import type { FunnelPeriodRow } from "@/lib/services/funnel-monthly";
+import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
  * The executive rollup: one row per month, whole funnel, most recent first.
@@ -126,7 +127,7 @@ const COLUMNS: Column[] = [
     label: "Cost per lead",
     value: (month) => month.costPerLead,
     weight: (month) => month.totals.leads,
-    format: (value) => `$${value.toFixed(0)}`,
+    format: money,
     // Cheaper is better, so a fall is the good direction.
     higherIsBetter: false,
     crossSystem: true,
@@ -400,7 +401,7 @@ function Breakdown({
                           : percent(row.rates.visitToLead)}
                       </td>
                       <td className="text-ui-text-subtle py-1.5 pr-3 text-right text-xs tabular-nums">
-                        {cost === null ? "—" : `$${cost.toFixed(0)}`}
+                        {cost === null ? "—" : money(cost)}
                       </td>
                     </Fragment>
                   );
@@ -455,8 +456,4 @@ function count(value: number): string {
 
 function percent(value: number): string {
   return `${value.toFixed(1)}%`;
-}
-
-function money(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
