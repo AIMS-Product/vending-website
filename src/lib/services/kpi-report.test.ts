@@ -369,8 +369,9 @@ describe("buildKpiReport", () => {
 
   it("counts setters by booking date and the DM funnel from ManyChat", () => {
     const [team, pearl, unassigned, dm] = lane2!.rows;
-    // The self-booked call was due but nobody logged it in Close: not shown.
-    expect(team!.values).toMatchObject({ booked: 3, showed: 1, won: 1 });
+    // Team total is Lane 2 reps only: the self-booked call is another
+    // channel's booking and must not be counted here as well.
+    expect(team!.values).toMatchObject({ booked: 2, showed: 1, won: 1 });
     expect(pearl!.label).toBe("Pearl");
     expect(pearl!.values).toMatchObject({
       booked: 2,
@@ -378,7 +379,8 @@ describe("buildKpiReport", () => {
       won: 1,
       closeRate: 100,
     });
-    expect(unassigned!.label).toBe("No setter (self-booked)");
+    expect(unassigned!.label).toBe("Not Lane 2 (not in total)");
+    expect(unassigned!.values).toMatchObject({ booked: 1 });
     expect(dm!.values).toMatchObject({
       leads: 40,
       clicks: 20,
@@ -386,6 +388,29 @@ describe("buildKpiReport", () => {
       won: 2,
     });
     expect(dm!.lastVerified).toBeNull();
+  });
+
+  it("keeps a non-Lane 2 setter out of the Lane 2 total", () => {
+    const withOther = buildKpiReport({
+      ...input,
+      setterBookings: [
+        ...input.setterBookings,
+        {
+          booked_by_setter: "Someone Off Roster",
+          call_outcome: null,
+          closed_won_at: null,
+          show_state: "pending",
+        },
+      ],
+    });
+    const rows = withOther.sections[3]!.rows;
+    expect(rows[0]!.label).toBe("Team total");
+    expect(rows[0]!.values.booked).toBe(2);
+    expect(rows.map((row) => row.label)).not.toContain("Someone Off Roster");
+    const outside = rows.find(
+      (row) => row.label === "Not Lane 2 (not in total)",
+    );
+    expect(outside!.values.booked).toBe(2);
   });
 
   it("refuses a rate above 100% instead of printing it", () => {

@@ -1,4 +1,5 @@
 import { INSTAGRAM_DM_CHANNEL } from "@/lib/analytics/channel";
+import { setsCalls } from "@/lib/services/call-credit";
 import type { Tables } from "@/types/database";
 import {
   type ChannelFact,
@@ -128,7 +129,7 @@ const PATH_LABEL: Record<string, string> = {
 const RE_ENGAGEMENT_CHANNELS = new Set(["Email", "SMS", "Newsletter"]);
 
 /** Bookings nothing names a setter for: the prospect booked from a link themselves. */
-const SELF_BOOKED = "No setter (self-booked)";
+const NOT_LANE_TWO = "Not Lane 2 (not in total)";
 
 const FUNNEL_COLUMNS: KpiColumn[] = [
   { key: "impressions", label: "Impressions", format: "number" },
@@ -530,9 +531,20 @@ function buildReEngagementSection(input: KpiInput): KpiSection {
 // ---------------------------------------------------------------------------
 
 function buildLane2Section(input: KpiInput): KpiSection {
+  // Only Lane 2 reps' bookings are Lane 2's. Self-booked calls and other
+  // setters' calls belong to their own channel; summing them here counted
+  // every webinar and marketing booking twice (1,024 "Lane 2" calls in the
+  // 30 days to 2026-10-02 when ~530 were Lane 2 reps').
+  const laneTwo: SetterBookingRow[] = [];
+  const outside: SetterBookingRow[] = [];
   const bySetter = new Map<string, SetterBookingRow[]>();
   for (const booking of input.setterBookings) {
-    const setter = booking.booked_by_setter?.trim() || SELF_BOOKED;
+    const setter = booking.booked_by_setter?.trim();
+    if (!setter || !setsCalls(setter)) {
+      outside.push(booking);
+      continue;
+    }
+    laneTwo.push(booking);
     bySetter.set(setter, [...(bySetter.get(setter) ?? []), booking]);
   }
   const owner = ownerFor("Lane 2");
@@ -577,13 +589,20 @@ function buildLane2Section(input: KpiInput): KpiSection {
       ...owner,
     };
   };
-  if (input.setterBookings.length > 0) {
-    rows.push(setterRow("Team total", input.setterBookings));
+  if (laneTwo.length > 0) {
+    rows.push(setterRow("Team total", laneTwo));
     for (const [setter, bookings] of [...bySetter].sort(
       (a, b) => b[1].length - a[1].length,
     )) {
       rows.push(setterRow(setter, bookings));
     }
+  }
+  if (outside.length > 0) {
+    // Shown so the exclusion is visible, never added into Team total.
+    rows.push({
+      ...setterRow(NOT_LANE_TWO, outside),
+      detail: "Self-booked or other setters; counted under its own channel",
+    });
   }
 
   const dm = input.facts.filter(
@@ -617,7 +636,7 @@ function buildLane2Section(input: KpiInput): KpiSection {
     key: "lane2",
     title: "Lane 2",
     basis:
-      "Setter rows count every Calendly booking on the day it was booked (not the day the person became a lead) and name whoever set it: the rep Calendly recorded as booking it, then their own tagged link, then the setter field in Close. Show logged in Close is the share of due calls with a show answer; a booking with no lead behind it can have none, so it sits low. Show rate counts only calls a rep logged as shown, so while that share is low, show rate is a minimum. Instagram DM counts ManyChat stage events.",
+      "Setter rows count Lane 2 reps' Calendly bookings on the day they were booked (not the day the person became a lead) and name whoever set it: the rep Calendly recorded as booking it, then their own tagged link, then the setter field in Close. Show logged in Close is the share of due calls with a show answer; a booking with no lead behind it can have none, so it sits low. Show rate counts only calls a rep logged as shown, so while that share is low, show rate is a minimum. Instagram DM counts ManyChat stage events.",
     columns: LANE2_COLUMNS,
     rows,
     hidden: 0,
