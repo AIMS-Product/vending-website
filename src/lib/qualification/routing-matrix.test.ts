@@ -30,6 +30,8 @@ type Cell = {
   invest: string;
   timeline: string | "operator";
   total: number;
+  timelinePoints: number;
+  investPoints: number;
   band: QualificationBand;
   disqualified: boolean;
   state: ThankYouStateKey;
@@ -54,6 +56,8 @@ function everyAnswer(): Cell[] {
           invest: invest.value,
           timeline,
           total: result.total,
+          timelinePoints: result.timelinePoints,
+          investPoints: result.investPoints,
           band: result.band,
           disqualified: result.disqualified,
           state: result.thankYouState,
@@ -76,6 +80,9 @@ describe("the full answer table", () => {
     for (const cell of cells) {
       expect(cell.total).toBeGreaterThanOrEqual(0);
       expect(cell.total).toBeLessThanOrEqual(100);
+      expect(cell.total, JSON.stringify(cell)).toBe(
+        cell.timelinePoints + cell.investPoints,
+      );
     }
   });
 

@@ -361,8 +361,7 @@ describe("getBookedPace", () => {
 
     const pace = await getBookedPace({ client, now: NOW });
 
-    expect(pace.review).toEqual(
-      expect.objectContaining({ total: expect.any(Number) }),
-    );
+    expect(pace.review).toMatchObject({ total: EVENT_TYPE_ENTRIES.length });
+    expect(pace.review.reviewed + pace.review.draft).toBe(pace.review.total);
   });
 });

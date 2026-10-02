@@ -9,7 +9,7 @@ import {
  * Edge cases around `verifyCalendlySignature` and `parseCalendlyEvent` that
  * calendly-webhook.test.ts does not reach: the exact edges of the freshness
  * window, signature encodings, and header shapes. The signature is the only
- * authentication on the booking webhook, so each of these is a way in.
+ * authentication on the booking webhook, so each edge is pinned here.
  */
 
 const KEY = "whsec_edge_key";

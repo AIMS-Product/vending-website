@@ -607,8 +607,9 @@ describe("phone normalization on the wire", () => {
     expect(result.synced).toBe(1);
   });
 
-  // Production, Aug-Sep 2026: these made Close 400 the whole lead write.
-  it.each(["0907 812 1075", "07496 123456", "tpeek@ryatech.us", "1", "   "])(
+  // Shapes seen in production Aug-Sep 2026 (values synthetic): each made Close
+  // 400 the whole lead write.
+  it.each(["0907 555 0100", "07496 123456", "someone@example.com", "1", "   "])(
     "drops the unusable phone %j and still creates the lead in a single call",
     async (typed) => {
       const { contact, creates, result } = await createdContact(typed);
