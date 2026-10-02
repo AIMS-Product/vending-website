@@ -109,6 +109,8 @@ const legacyNewsRedirects: ReadonlyArray<{
 ];
 
 const nextConfig: NextConfig = {
+  // Do not advertise the framework on every response.
+  poweredByHeader: false,
   // /admin/data renders REPORTING.md, the reporting glossary, so the page and
   // the file cannot drift apart. Nothing imports it, so nothing traces it into
   // the bundle: without this the read succeeds locally and fails in
@@ -249,10 +251,13 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.prod.website-files.com",
       },
-      // YouTube thumbnail CDN — used by the /apply VSL click-to-play facade.
+      // YouTube thumbnail CDN — /apply VSL facade, case studies, masterclass
+      // replay. Every caller reads `/vi/<id>/<name>.jpg`, so nothing else on
+      // the host is optimized on our bill.
       {
         protocol: "https",
         hostname: "i.ytimg.com",
+        pathname: "/vi/**",
       },
       // Community wins board — win photos mirrored onto the wins site, and the
       // Mighty avatars its feed points at. Both render in the wins preview on
@@ -264,17 +269,6 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "media2-production.mightynetworks.com",
-      },
-      // GHL-hosted Playbook offer art (/playbook): the filesafe CDN and the
-      // GHL funnel-ai bucket, scoped to that bucket only.
-      {
-        protocol: "https",
-        hostname: "assets.cdn.filesafe.space",
-      },
-      {
-        protocol: "https",
-        hostname: "storage.googleapis.com",
-        pathname: "/funnel-ai-production/**",
       },
     ],
   },
