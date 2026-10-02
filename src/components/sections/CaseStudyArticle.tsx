@@ -201,6 +201,7 @@ function VideoHero({
           fill
           sizes="(max-width: 1024px) 100vw, 920px"
           priority
+          fetchPriority="high"
           className="object-cover"
         />
       </div>

@@ -87,6 +87,7 @@ export function HeroV2() {
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
               priority
+              fetchPriority="high"
               className="object-cover transition duration-700 ease-out group-hover:scale-[1.04]"
             />
           </div>
