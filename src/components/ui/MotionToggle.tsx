@@ -36,7 +36,7 @@ export function MotionToggle({ className }: { className?: string }) {
       }}
       className={
         className ??
-        "rounded-[6px] border-2 border-[#111111] bg-white px-3 py-1.5 text-xs font-black tracking-wide text-[#111111] uppercase focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none"
+        "rounded-control border-ink text-ink aria-pressed:bg-ink border-2 bg-white px-3 py-1.5 text-xs font-black tracking-wide uppercase focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none aria-pressed:text-white"
       }
     >
       Pause animations

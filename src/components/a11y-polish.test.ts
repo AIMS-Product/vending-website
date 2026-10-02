@@ -108,6 +108,12 @@ describe("motion control and scroll padding", () => {
     expect(src).toContain('alt={index < partnerLogos.length ? logo.name : ""}');
   });
 
+  it("shows the pause toggle's pressed state visually, not only to ARIA", () => {
+    const src = read("components/ui/MotionToggle.tsx");
+    expect(src).toContain("aria-pressed={paused}");
+    expect(src).toContain("aria-pressed:bg-ink");
+  });
+
   it("moves focus to the video when a testimonial starts playing", () => {
     const src = read("components/ui/VideoCard.tsx");
     expect(src).toContain("videoRef.current?.focus()");

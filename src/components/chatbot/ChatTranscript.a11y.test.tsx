@@ -46,5 +46,9 @@ describe("chat error and focus wiring", () => {
     expect(widget).toContain("launcherRef.current?.focus()");
     expect(widget).toContain("trapTabKey(event, panelRef.current)");
     expect(widget).toContain('aria-modal={isMobile ? "true" : "false"}');
+    // Focus-on-open must not re-run when isMobile flips (phone rotation).
+    expect(widget).toMatch(
+      /if \(open\) panelRef\.current\?\.focus\(\);\s*\}, \[open\]\)/,
+    );
   });
 });

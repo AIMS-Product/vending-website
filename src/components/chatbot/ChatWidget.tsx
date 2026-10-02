@@ -273,9 +273,14 @@ export function ChatWidget() {
     return () => clearTimeout(timer);
   }, [enabled, config, open, suppressIdleTeaser]);
 
+  // Separate from the key handler below: rotating a phone across 640px flips
+  // isMobile, and re-focusing the panel then would pull focus out of the input.
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+  }, [open]);
+
   useEffect(() => {
     if (!open) return;
-    panelRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
       // Below 640px the panel covers the whole screen, so Tab must not reach
