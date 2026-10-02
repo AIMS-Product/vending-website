@@ -29,7 +29,7 @@ export const hero = {
     src: "/images/sections/hero.avif",
     alt: "An entrepreneur stocking a smart vending machine",
   },
-  cta: { label: "See if your market is a fit?", href: "/apply" },
+  cta: { label: "See if your market is a fit", href: "/contact" },
 } as const;
 
 export const partnerStrip = {
@@ -144,7 +144,7 @@ export const accelerator = {
     label: "Bonus:",
     body: "Get access to discounted vending machines and bulk product deals to increase your bottom line.",
   },
-  cta: { label: "See if your market is a fit?", href: "/apply" },
+  cta: { label: "See if your market is a fit", href: "/contact" },
 } as const;
 
 export const finalCta = {
@@ -154,5 +154,5 @@ export const finalCta = {
     src: "/images/sections/cta.avif",
     alt: "A customer tapping a phone to pay at a smart vending machine",
   },
-  cta: { label: "Book here", href: "/apply" },
+  cta: { label: "Book here", href: "/contact" },
 } as const;

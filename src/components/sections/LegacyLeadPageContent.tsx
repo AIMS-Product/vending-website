@@ -85,30 +85,6 @@ const variantSections: Record<LegacyLeadVariant, LegacySection[]> = {
       body: "Vendingpreneurs helps you move past research and into the operating decisions that determine whether a route can work.",
     },
   ],
-  eligibility: [
-    {
-      title: "Location Eligibility",
-      body: "Share the city or region you are considering so the team can review the opportunity and direct you to the right next step.",
-    },
-    {
-      title: "What Happens Next",
-      body: "If the area is a fit, the team can help you think through machine placement, route economics, and a clean launch sequence.",
-    },
-  ],
-  watch: [
-    {
-      title: "Smart Machines. Real Support. A Proven System.",
-      body: "The old blueprint pages were built around the same idea: use vending as a practical business model, not a guessing game.",
-    },
-    {
-      title: "Real People. Real Results.",
-      body: "The program is designed for operators who want help choosing the right machines, products, locations, and route-building sequence.",
-    },
-    {
-      title: "Ready To Build The Right Way?",
-      body: "Apply when you are ready to turn the blueprint into a concrete route plan for your market.",
-    },
-  ],
   cashflow: [
     {
       title: "See What Our Community Has to Say",
@@ -125,16 +101,6 @@ const variantSections: Record<LegacyLeadVariant, LegacySection[]> = {
     {
       title: "Here's What You'll Discover",
       body: "The call helps clarify the market, the capital requirements, the launch timeline, and the decisions that should happen before buying equipment.",
-    },
-  ],
-  quiz: [
-    {
-      title: "How Long Have You Been Seriously Considering Vending?",
-      body: "The original qualification flow checked location, timeline, capital, and intent before sending people to an advisor.",
-    },
-    {
-      title: "You're Ready To Speak With A Vendingpreneurs Advisor.",
-      body: "The form now captures the same lead intent while preserving the original test route attribution.",
     },
   ],
   journey: [
@@ -158,30 +124,15 @@ const variantSections: Record<LegacyLeadVariant, LegacySection[]> = {
   callBooking: [
     {
       title: "Don't See a Time That Works?",
-      body: "Need a different time? No problem. We have your availability and will reach out later today to find a slot that fits.",
+      body: "Need a different time? Call us and we will find one that fits.",
     },
     {
       title: "Ready to Talk Right Now?",
-      body: "Skip the scheduling and call the team directly. Available Monday–Friday, 8am–5pm PST.",
+      body: "Skip the scheduling and call the team directly. Available Monday–Friday, 8am–5pm PT.",
       contacts: [
         { label: "+1 (541) 214-2221", tel: "+15412142221" },
         { label: "+1 (949) 676-1373", tel: "+19496761373" },
       ],
-    },
-  ],
-  join: [
-    {
-      title: "Hear From Our Community",
-      body: "Vendingpreneurs is built for people who want a real operating path, not another passive-income theory.",
-    },
-    {
-      title: "Meet Your Ambassadors",
-      body: "The program gives applicants a clearer way to understand machines, locations, financing, and support before they launch.",
-    },
-    {
-      title:
-        "While You're Thinking About It, Someone In Your Market Is Already Placing Machines.",
-      body: "The old join page made the urgency explicit: regions have limits, and the right time to check yours is before you buy equipment.",
     },
   ],
 };

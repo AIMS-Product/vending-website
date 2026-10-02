@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { footerColumns } from "@/lib/content/nav";
+import { CopyrightLine } from "./CopyrightLine";
 import { Wordmark } from "./Wordmark";
 
 const LEGAL_HREFS = new Set(["/terms", "/privacy", "/spam-policy"]);
@@ -34,6 +35,7 @@ export function LegalFooter() {
           </ul>
         </nav>
       </div>
+      <CopyrightLine className="mx-auto mt-4 max-w-[1180px] px-5 text-center text-sm font-semibold text-slate-600 sm:text-left lg:px-10" />
     </footer>
   );
 }

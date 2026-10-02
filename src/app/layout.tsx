@@ -14,7 +14,7 @@ import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { SitePopup } from "@/components/site/SitePopup";
 import { loadSitePopups } from "@/lib/services/popups";
-import { siteUrl } from "@/lib/site";
+import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { siteStructuredData } from "@/lib/site-structured-data";
 import "./globals.css";
 
@@ -35,16 +35,16 @@ export const metadata: Metadata = {
     default: "Vendingpreneurs",
     template: "%s | Vendingpreneurs",
   },
-  description:
-    "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
+  description: siteDescription,
+  // No `url` here: a layout-level og:url is inherited by every page that does
+  // not set its own openGraph and points every share at the homepage.
   openGraph: {
-    title: "Vendingpreneurs",
-    description:
-      "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
-    siteName: "Vendingpreneurs",
-    url: "/",
+    title: siteName,
+    description: siteDescription,
+    siteName,
     type: "website",
   },
+  twitter: { card: "summary_large_image" },
 };
 
 export default async function RootLayout({

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
+import { isProductionDeployment } from "@/lib/routing/internal-pages";
 import {
   legacyLeadRoutes,
   type LegacyLeadRoute,
@@ -124,8 +126,10 @@ const groups: Group[] = [
 const total = calendlyRows.length + nativeRows.length + marketingRows.length;
 
 export default function QaLinksPage() {
+  // The proxy already answers 404 here on production; this is the second guard.
+  if (isProductionDeployment()) notFound();
   return (
-    <main className="min-h-screen bg-[#f5fbff] px-5 pt-28 pb-24 lg:px-10">
+    <div className="min-h-screen bg-[#f5fbff] px-5 pt-28 pb-24 lg:px-10">
       <div className="mx-auto max-w-[1250px]">
         <p className="inline-flex rounded-[8px] border-2 border-[#55b8e8] bg-[#111111] px-4 py-2 text-sm font-black text-white uppercase shadow-[4px_4px_0_#55b8e8]">
           Staging Index · Internal
@@ -181,6 +185,6 @@ export default function QaLinksPage() {
           ))}
         </div>
       </div>
-    </main>
+    </div>
   );
 }

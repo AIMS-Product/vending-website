@@ -22,6 +22,7 @@ import {
   supabaseAuthErrorRedirectPath,
 } from "@/lib/supabase/auth-redirects";
 import { isCodedRoutePath } from "@/lib/page-builder/coded-route-paths";
+import { isHiddenInternalPage } from "@/lib/routing/internal-pages";
 import { isUnknownSingleSegmentPublicPath } from "@/lib/routing/single-segment-routes";
 import { isDevAdminAuthBypassEnabled } from "@/lib/supabase/dev-auth";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -219,7 +220,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (REMOVED_PUBLIC_PATHS.has(path)) {
+  if (REMOVED_PUBLIC_PATHS.has(path) || isHiddenInternalPage(path)) {
     return notFoundResponse(request);
   }
 

@@ -78,7 +78,7 @@ export function ApplyVsl({
                 <PlayIcon className="size-6 translate-x-0.5 text-[#111111] sm:size-7" />
               </span>
             </span>
-            <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-black/35 px-3 py-1.5 text-[11px] font-black tracking-[0.12em] text-white uppercase">
+            <span className="absolute top-4 left-4 rounded-full border border-white/40 bg-black/35 px-3 py-1.5 text-xs font-black tracking-[0.12em] text-white uppercase">
               {vsl.badge}
             </span>
           </button>

@@ -5,12 +5,8 @@ export type LegacyLeadVariant =
   | "market"
   | "schedule"
   | "webinar"
-  | "eligibility"
-  | "watch"
   | "cashflow"
-  | "quiz"
   | "journey"
-  | "join"
   | "callBooking";
 
 export type LegacyLeadRoute = {

@@ -113,8 +113,9 @@ async function checkHome() {
   });
   record({
     name: "home uses contrast-safe hero stat color",
-    ok: html.includes("text-[#d6531f]"),
-    detail: "expected text-[#d6531f]",
+    // Orange is retired (DESIGN.md, 2026-09-22); brand-700 clears 5.24:1.
+    ok: html.includes("v2-display text-brand-700"),
+    detail: "expected v2-display text-brand-700",
   });
 }
 

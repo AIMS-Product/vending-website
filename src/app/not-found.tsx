@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { ERROR_PAGE_LINKS } from "@/lib/content/error-links";
 
 // Through the root layout's "%s | Vendingpreneurs" template. Without it every
 // 404 tab read just "Vendingpreneurs", like the home page.
@@ -11,12 +12,6 @@ export const metadata: Metadata = {
 // Every 404 on the site lands here: notFound() in a route, and the proxy's
 // real-404 rewrite to /_not-found. Set in the public system (DESIGN.md) so a
 // dead link still looks like Vendingpreneurs.
-const LINKS = [
-  { href: "/case-studies", label: "Member stories" },
-  { href: "/news", label: "News" },
-  { href: "/about", label: "About the program" },
-] as const;
-
 export default function NotFound() {
   return (
     <section className="flex h-full items-center bg-[#eaf6ff] px-5 py-20 lg:px-10 lg:py-28">
@@ -36,7 +31,7 @@ export default function NotFound() {
           </Button>
         </div>
         <ul className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm font-black tracking-[0.04em] uppercase">
-          {LINKS.map((link) => (
+          {ERROR_PAGE_LINKS.map((link) => (
             <li key={link.href}>
               <Link
                 href={link.href}

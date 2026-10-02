@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { solutions, solutionsIndex } from "@/lib/content/solutions";
+import { pageOpenGraph } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Solutions",
   description: solutionsIndex.intro,
   alternates: { canonical: "/solutions" },
+  openGraph: pageOpenGraph("Solutions", solutionsIndex.intro, "/solutions"),
 };
 
 export default function SolutionsIndexPage() {

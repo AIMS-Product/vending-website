@@ -1,45 +1,8 @@
 import { VideoCard } from "@/components/ui/VideoCard";
-import {
-  caseStudyQuotes,
-  caseStudyVideos,
-  type CaseStudyQuote,
-  type CaseStudyVideo,
+import type {
+  CaseStudyQuote,
+  CaseStudyVideo,
 } from "@/lib/content/case-studies";
-
-export function Testimonials() {
-  return (
-    <section className="bg-white px-5 py-24 lg:px-10 lg:py-32">
-      <div className="mx-auto max-w-[1500px] text-center">
-        <p className="text-sm font-black text-[#066a99] uppercase">
-          Success Stories
-        </p>
-        <h2 className="mt-4 text-4xl leading-tight font-black text-[#111111] uppercase sm:text-5xl">
-          Real People, Real Results
-        </h2>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-8 font-semibold text-slate-700">
-          See how others have built profitable vending businesses with our
-          coaching.
-        </p>
-
-        <ul className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {caseStudyVideos.map((video) => (
-            <li key={video.id}>
-              <VideoTestimonialCard video={video} />
-            </li>
-          ))}
-        </ul>
-
-        <ul className="mt-12 grid gap-6 text-left lg:grid-cols-2">
-          {caseStudyQuotes.map((quote) => (
-            <li key={quote.id}>
-              <QuoteTestimonialCard quote={quote} />
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
 
 export function VideoTestimonialCard({ video }: { video: CaseStudyVideo }) {
   return (
