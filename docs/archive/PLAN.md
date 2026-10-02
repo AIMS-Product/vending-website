@@ -1,3 +1,5 @@
+> Historical, superseded by `README.md` and `docs/ARCHITECTURE.md`. The stack line below (Next.js 14, shadcn/ui) is out of date: the app is Next.js 16 with Tailwind 4.
+
 # Vendingpreneurs — Webflow → Next.js/Vercel Migration
 
 ## Goal

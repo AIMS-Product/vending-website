@@ -1,5 +1,7 @@
 # Launch Blockers
 
+> **Historical (2026-10-02).** Pre-cutover launch blockers, last verified 2026-06-22. The cutover happened 2026-07-27. Current state: `README.md`, `docs/RUNBOOK.md`.
+
 Last verified: 2026-06-22. Each item lists how it was verified so it can be
 re-checked at cutover time. Companion docs: `docs/cutover/` (route strategy),
 `docs/cutover/launch-day-runbook.md` (ordered launch steps), and

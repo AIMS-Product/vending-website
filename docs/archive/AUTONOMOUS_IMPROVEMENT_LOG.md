@@ -1,3 +1,5 @@
+> Historical, superseded by `docs/RUNBOOK.md` and `docs/SECURITY.md`. A raw log from the 2026-07-31 autonomous hardening run; kept as a record.
+
 # Autonomous Hardening Log
 
 **Started:** 2026-07-31
