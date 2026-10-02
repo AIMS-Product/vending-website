@@ -134,7 +134,7 @@ export function AdminMetricPanel({
     <div className="px-4 py-3.5">
       <p className={adminEyebrowClass}>{label}</p>
       <p className="text-ui-text mt-2 text-2xl leading-none font-semibold tracking-[-0.02em] tabular-nums">
-        {value}
+        {typeof value === "number" ? value.toLocaleString("en-US") : value}
       </p>
       <p className="text-ui-text-muted mt-1.5 flex flex-wrap items-center gap-1.5 text-xs">
         {delta}
