@@ -26,15 +26,18 @@ vi.mock("@/lib/supabase/dev-auth", () => ({
 
 vi.mock("@/lib/services/news", () => ({
   hasPublishedPostSlug: vi.fn(),
+  listPublishedSlugs: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/services/case-studies", () => ({
   hasPublishedCaseStudySlug: vi.fn(),
+  listPublishedCaseStudySlugs: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/services/seo-page-public", () => ({
   getBuilderRedirectBySourcePath: mocks.getBuilderRedirectBySourcePath,
   hasPublishedSeoPagePath: mocks.hasPublishedSeoPagePath,
+  listPublishedSeoPageRoutePaths: vi.fn().mockResolvedValue([]),
 }));
 
 vi.mock("@/lib/services/seo-pages", () => ({
