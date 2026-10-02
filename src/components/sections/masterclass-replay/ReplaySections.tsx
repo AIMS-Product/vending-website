@@ -165,7 +165,8 @@ export function ReplayHero({
     <p
       key={line}
       className={cn(
-        "max-w-[720px] text-lg text-slate-700",
+        // Phones: one size down, so the player starts inside the first screen.
+        "max-w-[720px] text-base text-slate-700 sm:text-lg",
         !midHeading && !copyAfterVideo && "-mt-2",
       )}
     >
@@ -207,7 +208,7 @@ export function ReplayHero({
         className={cn(
           "mx-auto flex flex-col items-center px-5 text-center lg:px-10",
           wideVideo ? "pb-5" : "pb-10 md:pb-12",
-          midHeading ? "gap-5 pt-7" : "gap-6 pt-9",
+          midHeading ? "gap-5 pt-7" : "gap-4 pt-6 sm:gap-6 sm:pt-9",
           longHeading || midHeading ? "max-w-[1120px]" : "max-w-[980px]",
         )}
       >
