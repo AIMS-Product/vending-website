@@ -271,6 +271,14 @@ html {
   }
 }
 
+/* "Pause animations" (MotionToggle) stops every looping decoration on the
+   page: both marquees and the floating hero badges (WCAG 2.2.2). */
+html[data-motion="paused"] .brand-marquee,
+html[data-motion="paused"] .v2-marquee,
+html[data-motion="paused"] .v2-float {
+  animation-play-state: paused;
+}
+
 /* Catch-all for reduced motion: transitions and animations the components
    did not opt out of themselves (the skip link's slide, card shadow/outline
    transitions) finish instantly instead of moving. */
