@@ -19,8 +19,17 @@ function hasValidCronSecret(authorization: string | null, secret: string) {
 
 const optionsSchema = z.object({
   period: z.enum(["day", "week"]).default("day"),
-  /** Builds the report and returns it without sending: for a preview. */
-  dryRun: z.coerce.boolean().optional(),
+  /**
+   * Builds the report and returns it without sending: for a preview. Not
+   * z.coerce.boolean(), which turns any non-empty string ("false" included)
+   * into true, so ?dryRun=false silently skipped the send.
+   */
+  dryRun: z
+    .enum(["true", "false", "1", "0"])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : value === "true" || value === "1",
+    ),
 });
 
 export async function GET(request: Request) {
