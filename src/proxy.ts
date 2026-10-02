@@ -6,13 +6,10 @@ import { hasPublishedCaseStudySlug } from "@/lib/services/case-studies";
 import { listProcessSlugs } from "@/lib/content/process";
 import { DEFAULT_ROUTE_PREFIXES } from "@/lib/page-builder/route-prefix-defaults";
 import {
-  getBuilderRedirectBySourcePath,
-  hasPublishedSeoPagePath,
-} from "@/lib/services/seo-page-public";
-import {
   isBuilderRoutePath,
   splitAssignableBuilderRoutePath,
 } from "@/lib/page-builder/page-paths";
+import { hasPublishedSeoPagePath } from "@/lib/services/seo-page-public";
 import { listRoutePrefixes } from "@/lib/services/route-prefixes";
 import { hasActiveSeoPagePreviewToken } from "@/lib/services/seo-pages";
 import {
@@ -150,7 +147,7 @@ async function handleCustomBuilderPath(request: NextRequest, path: string) {
   );
   if (!isConfigured) return redirectOrNext(request, path);
 
-  const redirect = await getBuilderRedirectBySourcePath(path);
+  const redirect = await lookupRedirectForPath(path);
   if (redirect) {
     return NextResponse.redirect(
       resolveRedirectDestination(request, redirect.destination_path),
@@ -246,7 +243,7 @@ export async function proxy(request: NextRequest) {
     // A coded page under a builder prefix has no `seo_pages` row, so the
     // existence check below would 404 it before its route ever runs. A Studio
     // redirect still wins, so this sits after the redirect lookup.
-    const redirect = await getBuilderRedirectBySourcePath(path);
+    const redirect = await lookupRedirectForPath(path);
     if (redirect) {
       return NextResponse.redirect(
         resolveRedirectDestination(request, redirect.destination_path),

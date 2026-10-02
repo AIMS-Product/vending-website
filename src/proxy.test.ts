@@ -255,7 +255,7 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
   });
 
   it("serves a redirect row under a configured custom prefix as a real HTTP redirect", async () => {
-    mocks.getBuilderRedirectBySourcePath.mockResolvedValue({
+    mocks.lookupRedirectForPath.mockResolvedValue({
       source_path: "/services/r3-services-routing-proof",
       destination_path: "/services/r3-services-proof-renamed",
       status_code: 301,
@@ -269,9 +269,11 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect(response.headers.get("location")).toBe(
       "https://vending-website.vercel.app/services/r3-services-proof-renamed",
     );
-    expect(mocks.getBuilderRedirectBySourcePath).toHaveBeenCalledWith(
+    expect(mocks.lookupRedirectForPath).toHaveBeenCalledWith(
       "/services/r3-services-routing-proof",
     );
+    // Served from the 60s in-memory table, never a per-request query.
+    expect(mocks.getBuilderRedirectBySourcePath).not.toHaveBeenCalled();
     // Terminal branch: must never reach the admin auth gate.
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
@@ -351,7 +353,7 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
   });
 
   it("keeps default-prefix redirect rows served exactly as before", async () => {
-    mocks.getBuilderRedirectBySourcePath.mockResolvedValue({
+    mocks.lookupRedirectForPath.mockResolvedValue({
       source_path: "/resources/old-page",
       destination_path: "/resources/new-page",
       status_code: 308,
@@ -363,7 +365,9 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect(response.headers.get("location")).toBe(
       "https://vending-website.vercel.app/resources/new-page",
     );
-    // Default prefixes never consult the configured-prefix list.
+    // Default prefixes never consult the configured-prefix list, and the
+    // redirect comes from the cached table, not a per-request query.
+    expect(mocks.getBuilderRedirectBySourcePath).not.toHaveBeenCalled();
     expect(mocks.listRoutePrefixes).not.toHaveBeenCalled();
   });
 });
