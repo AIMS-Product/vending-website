@@ -257,6 +257,9 @@ describe("recordCalendlyBooking", () => {
       "Could not store Calendly booking.",
     );
   });
+  // These option assertions are the contract with Postgres: ignoreDuplicates
+  // is ON CONFLICT DO NOTHING, and the follow-up update is filtered on
+  // status <> 'canceled'. The fakes cannot prove the database honours them.
   it("inserts a new booking without overwriting an existing row", async () => {
     const { client, mocks } = buildCalendlyClient();
 

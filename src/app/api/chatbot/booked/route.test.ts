@@ -70,4 +70,19 @@ describe("POST /api/chatbot/booked", () => {
     // A database outage must not be mistaken for an unrelated booking.
     expect(mocks.getInvitee).not.toHaveBeenCalled();
   });
+  it("answers 404 for a cancelled invitee and records nothing", async () => {
+    mocks.result = { data: { id: "conv-1" }, error: null };
+    mocks.getInvitee.mockResolvedValue({
+      uri: "https://api.calendly.com/scheduled_events/e1/invitees/i1",
+      email: "guest@example.test",
+      name: "Guest",
+      status: "canceled",
+      created_at: "2026-09-18T12:00:00.000000Z",
+      tracking: { utm_content: "conv-1" },
+    });
+
+    const response = await POST(request());
+
+    expect(response.status).toBe(404);
+  });
 });

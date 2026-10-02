@@ -78,7 +78,14 @@ export async function POST(request: Request) {
       maxRequests: 4,
     });
     const invitee = await calendly.getInvitee(inviteeUri);
-    if (!invitee || invitee.tracking?.utm_content !== conversation.id) {
+    // A cancelled invitee is final in Calendly (a reschedule gets a new
+    // one), so a late or replayed confirmation must not mark the chat booked
+    // or write a Close note for it.
+    if (
+      !invitee ||
+      invitee.tracking?.utm_content !== conversation.id ||
+      invitee.status !== "active"
+    ) {
       return Response.json(NOT_FOUND, { status: 404 });
     }
     const scheduled = invitee.event

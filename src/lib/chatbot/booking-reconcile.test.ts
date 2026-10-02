@@ -301,6 +301,32 @@ describe("reconcileChatbotBookings", () => {
     expect(stampCloseNote).not.toHaveBeenCalled();
   });
 
+  it("performs zero writes in dry run for a booking that is already stored", async () => {
+    const uri = "https://api.calendly.com/scheduled_events/e1/invitees/1";
+    const fetchImpl = buildCalendlyFetch([
+      {
+        uri,
+        email: "jane@example.com",
+        name: "Jane",
+        status: "active",
+        created_at: "2026-08-01T14:00:00Z",
+        tracking: { utm_source: "chatbot", utm_content: CONVERSATION_ID },
+      },
+    ]);
+    const { client, calls } = buildFakeSupabase({
+      existingBookingUris: new Set([uri]),
+    });
+
+    const result = await reconcileChatbotBookings(
+      { dryRun: true },
+      { token: "tok", fetchImpl, supabaseClient: client },
+    );
+
+    expect(result.errors).toEqual([]);
+    expect(calls.upserts).toHaveLength(0);
+    expect(calls.updates).toHaveLength(0);
+  });
+
   it("honours an explicit window and stores the webhook payload shape", async () => {
     const calendlyFetch = buildCalendlyFetch([
       {
