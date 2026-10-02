@@ -261,7 +261,7 @@ export function TeaserBubble({
         type="button"
         onClick={onDismiss}
         aria-label="Dismiss"
-        className="text-[#6b7280] hover:text-[#111111]"
+        className="-mt-1 -mr-2 flex h-8 w-8 shrink-0 items-center justify-center text-[#6b7280] hover:text-[#111111]"
       >
         <CloseIcon size={14} />
       </button>

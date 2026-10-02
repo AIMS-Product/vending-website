@@ -72,7 +72,7 @@ export async function CaseStudiesStrip() {
           </Button>
           <Link
             href="/case-studies"
-            className="text-sm font-black tracking-wide text-[#066a99] uppercase underline decoration-2 underline-offset-4 transition hover:text-[#111111]"
+            className="inline-flex min-h-11 items-center text-sm font-black tracking-wide text-[#066a99] uppercase underline decoration-2 underline-offset-4 transition hover:text-[#111111]"
           >
             {caseStudiesStripV2.allStoriesLabel}
           </Link>

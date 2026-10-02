@@ -86,7 +86,7 @@ export function CaseStudyArticle({
             <div className="flex flex-wrap items-center gap-4">
               <Link
                 href="/"
-                className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
+                className="inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
               >
                 Home
               </Link>
@@ -95,7 +95,7 @@ export function CaseStudyArticle({
               </span>
               <Link
                 href="/case-studies"
-                className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
+                className="inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
               >
                 Case Studies
               </Link>

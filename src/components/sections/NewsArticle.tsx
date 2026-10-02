@@ -34,7 +34,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/"
-              className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
+              className="inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
               Home
             </Link>
@@ -43,7 +43,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
             </span>
             <Link
               href="/news"
-              className="text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
+              className="inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase transition hover:text-[#2d9fd6]"
             >
               News
             </Link>
