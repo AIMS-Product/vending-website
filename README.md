@@ -8,16 +8,18 @@ domains. Read `AGENTS.md` before changing anything.
 
 ## Stack
 
-| Layer               | Choice                                                                                          |
-| ------------------- | ----------------------------------------------------------------------------------------------- |
-| Framework           | Next.js 16 (App Router, React 19)                                                               |
-| Styling             | Tailwind CSS 4                                                                                  |
-| Data                | Supabase (Postgres + Auth + Storage)                                                            |
-| CRM                 | Close, via a queued sync drained by cron                                                        |
-| Errors              | Sentry                                                                                          |
-| Tests               | Vitest (`*.test.ts` beside each source file); Playwright for the scripted checks under `plans/` |
-| Mutation testing    | Stryker (`npm run mutate`)                                                                      |
-| Structural analysis | Fallow (`fallow.toml`)                                                                          |
+| Layer               | Choice                                                                                                                                                                      |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework           | Next.js 16 (App Router, React 19)                                                                                                                                           |
+| Styling             | Tailwind CSS 4                                                                                                                                                              |
+| Data                | Supabase (Postgres + Auth + Storage); migrations are applied by hand, see `docs/DATABASE.md`                                                                                |
+| CRM                 | Close, via a queued sync (`close_sync_events`) drained by cron                                                                                                              |
+| Other integrations  | Calendly, GoHighLevel, Kit, Resend, Slack, OpenAI (chatbot and page-builder AI), Money Page, GA4, Search Console, Metricool, YouTube Analytics, Bitly, ManyChat, DataForSEO |
+| Errors / analytics  | Sentry; PostHog through a same-origin proxy at `/api/ph`                                                                                                                    |
+| Hosting             | Vercel (two projects: this app, and `apps/mike-newsletter`)                                                                                                                 |
+| Tests               | Vitest (`*.test.ts` beside each source file); Playwright for the scripted checks under `plans/`                                                                             |
+| Mutation testing    | Stryker (`npm run mutate`)                                                                                                                                                  |
+| Structural analysis | Fallow (`fallow.toml`)                                                                                                                                                      |
 
 > **Next.js 16 is not the Next.js in your training data.** APIs, conventions, and file layout
 > differ. Read `node_modules/next/dist/docs/` before writing framework code. Note that
@@ -26,7 +28,8 @@ domains. Read `AGENTS.md` before changing anything.
 ## Getting started
 
 ```bash
-npm install
+npm ci
+npx next typegen          # a fresh checkout needs next-env.d.ts before typecheck
 cp .env.example .env.local   # then fill in the values below
 npm run dev                  # http://localhost:3000
 ```
@@ -37,23 +40,13 @@ honored **only** when `NODE_ENV === "development"` and is ignored everywhere els
 
 ### Environment variables
 
-`.env.example` is the authoritative list. The ones that gate real behavior:
+`docs/ENV.md` is the complete list of runtime variables, with scope, what each does and what
+happens when it is unset. `.env.example` holds the most common ones but is **not** complete
+(for example `CRON_SECRET` and `CALENDLY_WEBHOOK_SIGNING_KEY` are only in `docs/ENV.md`).
+Only three variables are mandatory (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`); everything else is optional and fails closed.
 
-| Variable                                                     | Required for                            | Notes                                           |
-| ------------------------------------------------------------ | --------------------------------------- | ----------------------------------------------- |
-| `NEXT_PUBLIC_SITE_URL`                                       | canonical/OG/RSS tags, auth email links |                                                 |
-| `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | all data access                         |                                                 |
-| `SUPABASE_SERVICE_ROLE_KEY`                                  | admin + server writes                   | **server-only**, never expose                   |
-| `CLOSE_API_KEY`                                              | Close sync runner                       | absent = the runner records a retryable failure |
-| `CLOSE_*_FIELD_ID`                                           | Close custom fields                     | see the Close section below                     |
-| `RESEND_API_KEY` + `LEAD_NOTIFICATION_*`                     | lead email alerts                       |                                                 |
-| `SLACK_WEBHOOK_URL`                                          | lead Slack alerts                       | posts to `#vp-site-leads`                       |
-| `OPENAI_API_KEY`                                             | SEO page-builder AI proposals           |                                                 |
-| `CALENDLY_WEBHOOK_SIGNING_KEY`                               | booking capture                         | HMAC verify, fail-closed                        |
-| `CRON_SECRET`                                                | cron route auth                         | bearer token on `/api/admin/*/run`              |
-| `ADMIN_DEV_AUTH_BYPASS`                                      | local admin access                      | dev only; ignored in production                 |
-
-Vercel env vars only apply to builds created **after** the change — setting one does not affect
+Vercel env vars only apply to builds created **after** the change; setting one does not affect
 the running deployment until the next deploy.
 
 ## Scripts
@@ -67,7 +60,7 @@ the running deployment until the next deploy.
 | `npm run typecheck`               | `tsc --noEmit`                                                       |
 | `npm run lint`                    | ESLint                                                               |
 | `npm run format` / `format:check` | Prettier                                                             |
-| `npm run check:launch`            | launch-readiness checks                                              |
+| `npm run check:launch`            | pre-cutover readiness checks (historical; see `scripts/README.md`)   |
 | `npm run mutate`                  | Stryker mutation testing                                             |
 
 `scripts/guard-next-build.mjs` runs on `prebuild` and **blocks `next build` while a Next dev
@@ -76,44 +69,37 @@ server first.
 
 ## Architecture
 
+The full picture, with diagrams, the complete route table and the authentication layers, is in
+`docs/ARCHITECTURE.md`. In short:
+
 ```
 src/
   app/
     (builder-pages)/[...builderPath]   CMS-authored pages from the SEO page builder
     [legacyLeadPath]/                  legacy Webflow conversion URLs (registry-driven)
-    contact/  booking-*/               lead-capture landing pages
-    admin/                             CMS: pages, news, leads, forms, media, analytics, users
-    api/                               6 route handlers (see below)
-  components/
-    sections/                          public page sections
-    admin/                             admin studio UI (see DESIGN.md for the --ui-* contract)
-    forms/  qualification/             public lead + qualification forms
+    contact/  booking-*/  masterclass*/ lead-capture and funnel landing pages
+    admin/                             CMS and analytics studio
+    api/                               36 route handlers (webhooks, chatbot, ingest, reporting, 22 job runners)
+  components/                          sections/, admin/ (see DESIGN.md), forms/, qualification/
   lib/
     services/                          business logic; most of the real work lives here
-    close/                             Close CRM client, sync queue, dedupe
-    qualification/                     scoring, bands, form field definitions
+    close/  qualification/  chatbot/   Close sync queue, scoring, site chatbot
+    ga4/ metricool/ youtube-analytics/ search-console/ bitly/ dataforseo/ ghl/ kit/   external clients
     supabase/                          clients + auth
-    page-builder/  content/  media/
-  proxy.ts                             middleware: admin auth gate + redirects
-supabase/migrations/                   SQL migrations
+  proxy.ts                             Next 16 proxy (not middleware.ts): redirects, 404s, admin gate
+supabase/migrations/                   SQL migrations (hand-applied; see docs/DATABASE.md)
+apps/mike-newsletter/                  separate newsletter site, own Vercel project
+scripts/                               operational scripts; see scripts/README.md
 ```
 
-### API routes
+Thirty-six routes live under `src/app/api`; there are 26 cron entries in `vercel.json`. The
+route table (which authentication each route uses) and the cron table (schedule, effect, how to
+re-run) are in `docs/ARCHITECTURE.md` and `docs/RUNBOOK.md`. **Vercel crons run on production
+only**; they never fire on preview deployments, so a staging queue must be drained by hand.
 
-| Route                                        | Auth                      | Purpose                                   |
-| -------------------------------------------- | ------------------------- | ----------------------------------------- |
-| `POST /api/webhooks/calendly`                | HMAC signature            | records bookings, matches them to leads   |
-| `GET /api/admin/close-sync/run`              | `CRON_SECRET` bearer      | drains the Close sync queue (every 2 min) |
-| `GET /api/admin/qualification-lifecycle/run` | `CRON_SECRET` bearer      | lifecycle follow-ups (every 10 min)       |
-| `GET /api/admin/scheduled-publishing/run`    | `CRON_SECRET` bearer      | publishes scheduled pages (every 5 min)   |
-| `POST /api/attribution/events`               | public, first-party check | client-side attribution events            |
-| `POST /api/page-builder/ai/chat`             | admin session             | AI page-builder assistant                 |
-
-Cron schedules live in `vercel.json`. **Vercel crons run on production only** — they never fire
-on preview deployments, so a staging queue must be drained by hand.
-
-Every admin page and server action calls `requireAdmin()`/`requireSuperAdmin()` itself rather
-than relying on the proxy alone; RLS on every table is the third layer.
+Every admin page and server action calls `requireAdmin()`/`requireSuperAdmin()` (or the
+read-only gate) itself rather than relying on the proxy alone; RLS on every table is the third
+layer.
 
 ## Key flows
 
@@ -176,21 +162,33 @@ lets a missing guard pass tests and fail in production.
 
 ## Deploying
 
+Full procedure, rollback and incident checks are in `docs/RUNBOOK.md`. The rules:
+
 - `main` is the release branch. Deploy by merging into it, never with `vercel --prod` from a
   working tree.
-- Verify on the deployment's own `*.vercel.app` URL before promoting to the custom domains.
+- Verify on the deployment's own `*.vercel.app` URL before relying on it.
 - Changes under `src/lib/close/*` or the qualification intake path are customer-visible the
   moment they deploy. Verify on preview against the real Close org first.
-- Rollback: re-promote the previous production deployment. DNS does not change.
+- Rollback: re-promote the previous production deployment of this app in Vercel. DNS does not
+  change. The Webflow rollback proxy was retired at the 2026-07-27 cutover.
+- There is no CI workflow in this repository; run typecheck, lint, test and build locally
+  before merging.
 
 ## Further reading
 
-| Doc                                | Contents                                     |
-| ---------------------------------- | -------------------------------------------- |
-| `AGENTS.md` (= `CLAUDE.md`)        | working rules for this repo                  |
-| `DESIGN.md`                        | admin studio `--ui-*` design tokens          |
-| `docs/design/`                     | admin studio + page builder design contracts |
-| `docs/seo-page-builder/roadmap.md` | active product roadmap                       |
-| `docs/cutover/`                    | domain cutover and go-live handoffs          |
-| `docs/migration/`                  | Webflow → Next.js migration mapping          |
-| `.claude/specs/`                   | per-slice implementation specs               |
+`docs/README.md` indexes every document and marks each as current or historical.
+
+| Doc                                | Contents                                                     |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `docs/ARCHITECTURE.md`             | system context, data flows, route and auth table             |
+| `docs/RUNBOOK.md`                  | release, rollback, cron table, monitoring, incident checks   |
+| `docs/SECURITY.md`                 | auth model, PII inventory, subprocessors, hardening status   |
+| `docs/ENV.md`                      | every runtime environment variable                           |
+| `docs/DATABASE.md`                 | tables, migration process, migration ledger to complete      |
+| `scripts/README.md`                | script inventory, marking which ones write to production     |
+| `METRICS.md`, `REPORTING.md`       | metric definitions and the external reporting API            |
+| `AGENTS.md` (= `CLAUDE.md`)        | working rules and learnings for this repo                    |
+| `DESIGN.md`, `docs/design/`        | admin studio and page builder design contracts               |
+| `docs/seo-page-builder/roadmap.md` | page builder roadmap (last edited 2026-06-01; may be behind) |
+| `docs/archive/`                    | superseded handoffs and plans, kept as history               |
+| `.claude/specs/`                   | per-slice implementation specs                               |
