@@ -72,3 +72,8 @@ export function formatPacificDay(
   if (!date) return null;
   return (options.year ? DAY_YEAR : DAY).format(date);
 }
+
+/** Today's calendar day (YYYY-MM-DD) on the Pacific calendar. */
+export function pacificToday(now: Date = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: TIME_ZONE });
+}

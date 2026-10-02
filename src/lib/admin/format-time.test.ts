@@ -3,6 +3,7 @@ import {
   formatPacificDay,
   formatPacificStamp,
   formatPacificStampShort,
+  pacificToday,
 } from "./format-time";
 
 describe("admin time formatting", () => {
@@ -31,5 +32,11 @@ describe("admin time formatting", () => {
     expect(formatPacificDay(null)).toBeNull();
     expect(formatPacificDay("")).toBeNull();
     expect(formatPacificStamp("not a date")).toBeNull();
+  });
+
+  it("names today on the Pacific calendar, not the UTC one", () => {
+    // Sunday 6pm PDT is already Monday in UTC.
+    expect(pacificToday(new Date("2026-10-05T01:00:00Z"))).toBe("2026-10-04");
+    expect(pacificToday(new Date("2026-10-05T20:00:00Z"))).toBe("2026-10-05");
   });
 });

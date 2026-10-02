@@ -29,6 +29,7 @@ import { getSeoScorecard } from "@/lib/services/seo-scorecard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
+import { pacificToday } from "@/lib/admin/format-time";
 
 export const metadata: Metadata = {
   title: "SEO",
@@ -105,7 +106,7 @@ async function TabBody({
   params: SearchParams;
   canEdit: boolean;
 }) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = pacificToday();
   switch (tab) {
     case "overview": {
       const [data, scorecard] = await Promise.all([
