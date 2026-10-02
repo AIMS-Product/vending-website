@@ -67,8 +67,8 @@ export function useNow() {
 }
 
 /**
- * The start in the visitor's own zone, before the start only. Renders nothing
- * on the server and on a Central-time clock.
+ * The start in the visitor's own zone, before the start only. On the server
+ * and on a Central-time clock it renders an empty line of the same height.
  */
 export function LocalTimeLine({
   startsAt,
@@ -90,6 +90,13 @@ export function LocalTimeLine({
           ),
     [startsAt, mounted],
   );
-  if (now == null || now >= Date.parse(startsAt)) return null;
-  return text ? <p className={className}>{text}</p> : null;
+  if (now != null && now >= Date.parse(startsAt)) return null;
+  // The line's height is held from the server render on, so the zone text
+  // arriving after hydration never pushes the form (and its button) down.
+  // Central-time visitors keep the blank line: same layout for everyone.
+  return (
+    <p className={className} aria-hidden={text ? undefined : true}>
+      {text ?? "\u00a0"}
+    </p>
+  );
 }
