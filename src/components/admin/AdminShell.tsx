@@ -1,10 +1,23 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import { createPortal, useFormStatus } from "react-dom";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { signOut } from "@/app/admin/actions";
+import {
+  currentSidebarCollapsed,
+  saveSidebarCollapsed,
+  serverSidebarCollapsed,
+  subscribeSidebarCollapsed,
+} from "@/lib/admin/sidebar-preference";
 import { isViewerReadableHref } from "@/lib/admin/viewer-access";
 import {
   AdminIcon,
@@ -265,7 +278,13 @@ export function AdminShell({
   immersive = false,
   children,
 }: AdminShellProps) {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Remounts on every navigation (each page renders its own shell), so the
+  // choice lives outside the component. The server snapshot is expanded.
+  const sidebarCollapsed = useSyncExternalStore(
+    subscribeSidebarCollapsed,
+    currentSidebarCollapsed,
+    serverSidebarCollapsed,
+  );
   const activeLabel = getAdminActiveLabel(activeSection);
   const roleLabel = userRole ? formatAdminRole(userRole) : null;
   // Absent role means a caller that predates the viewer role; treat it as a
@@ -298,7 +317,7 @@ export function AdminShell({
             activeSection={activeSection}
             canEdit={canEdit}
             collapsed={sidebarCollapsed}
-            onToggleCollapsed={() => setSidebarCollapsed((current) => !current)}
+            onToggleCollapsed={() => saveSidebarCollapsed(!sidebarCollapsed)}
             roleLabel={roleLabel}
             userEmail={userEmail}
           />
