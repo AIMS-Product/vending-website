@@ -22,6 +22,10 @@
 const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin",
   "/admin/analytics",
+  "/admin/analytics/channels",
+  "/admin/analytics/months",
+  "/admin/analytics/video",
+  "/admin/analytics/youtube",
   "/admin/attribution",
   "/admin/bookings",
   "/admin/case-studies",
@@ -34,7 +38,6 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   // currently agrees with the system that owns it.
   "/admin/data",
   "/admin/forms",
-  "/admin/goals",
   "/admin/leads",
   "/admin/libraries",
   "/admin/links",

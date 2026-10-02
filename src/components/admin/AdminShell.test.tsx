@@ -35,31 +35,30 @@ function renderShell(
 }
 
 describe("AdminShell navigation", () => {
-  it("renders the Overview link first in both mobile and desktop Content navs", () => {
+  it("renders the Analytics link first in both mobile and desktop Content navs", () => {
     const html = renderShell("pages");
 
-    // The exact substring href="/admin" (with closing quote) only matches the
-    // Overview link — sibling hrefs like /admin/pages do not contain it. The
-    // mobile nav renders before the desktop sidebar and both consume the same
-    // contentSections array, so Overview appears exactly twice and precedes
-    // the first sibling (SEO pages) in each nav.
-    const overviewLinks = html.match(/href="\/admin"/g) ?? [];
-    expect(overviewLinks).toHaveLength(2);
-    expect(html).toContain("Overview");
-    expect(html.indexOf('href="/admin"')).toBeLessThan(
+    // /admin redirects to /admin/analytics, so the dashboard heads the nav.
+    // The mobile nav renders before the desktop sidebar and both consume the
+    // same contentSections array, so the link appears twice, each time ahead
+    // of the first sibling (SEO pages).
+    const analyticsLinks = html.match(/href="\/admin\/analytics"/g) ?? [];
+    expect(analyticsLinks).toHaveLength(2);
+    expect(html).not.toContain('href="/admin"');
+    expect(html.indexOf('href="/admin/analytics"')).toBeLessThan(
       html.indexOf('href="/admin/pages"'),
     );
-    expect(html.lastIndexOf('href="/admin"')).toBeLessThan(
+    expect(html.lastIndexOf('href="/admin/analytics"')).toBeLessThan(
       html.lastIndexOf('href="/admin/pages"'),
     );
   });
 
-  it("marks Overview as the active page when on /admin", () => {
-    const html = renderShell("overview");
+  it("marks Analytics as the active page on the dashboard", () => {
+    const html = renderShell("analytics");
 
-    const overviewLink = html.match(/<a[^>]*href="\/admin"[^>]*>/);
-    expect(overviewLink).not.toBeNull();
-    expect(overviewLink?.[0]).toContain('aria-current="page"');
+    const link = html.match(/<a[^>]*href="\/admin\/analytics"[^>]*>/);
+    expect(link).not.toBeNull();
+    expect(link?.[0]).toContain('aria-current="page"');
   });
 
   it("renders the Blog and news link in the Content nav", () => {
@@ -179,7 +178,6 @@ describe("AdminShell navigation for a read-only viewer", () => {
   it("renders every section a viewer may read", () => {
     const html = renderShell("overview", "viewer");
 
-    expect(html).toContain('href="/admin"');
     readable.forEach((href) => {
       expect(html).toContain(`href="${href}"`);
     });

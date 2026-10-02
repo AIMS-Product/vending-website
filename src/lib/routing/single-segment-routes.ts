@@ -12,7 +12,6 @@ import { getLegacyLeadRoute } from "@/lib/content/legacy-routes";
 // new page in production.
 export const APP_TOP_LEVEL_PAGE_SEGMENTS: ReadonlySet<string> = new Set([
   "about",
-  "admin",
   "book-now",
   "booking-ak-t5",
   "booking-internal-ltf",

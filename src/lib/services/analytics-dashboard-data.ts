@@ -64,7 +64,7 @@ async function attempt<T>(
 const PAGE = 1000;
 const MAX_ROWS = 60_000;
 
-export type DashboardCall = CloseCall & {
+type DashboardCall = CloseCall & {
   email: string | null;
   setter: string | null;
 };
@@ -116,7 +116,7 @@ export const readCalls = cache((from: string, to: string) =>
   }),
 );
 
-export type DashboardLead = {
+type DashboardLead = {
   /** Reporting-time-zone day the person first submitted. */
   day: string;
   channel: string;
@@ -154,16 +154,18 @@ export const readLeads = cache((from: string) =>
     );
     if (error) throw new Error(error.message);
     return collapseToLeads(rows)
-      .map((lead) => ({
-        day: reportingDay(new Date(lead.created_at)),
-        channel: resolveChannel(lead.utm_source, {
-          medium: lead.utm_medium,
-          capturedByChatbot:
-            !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
-        }).channel,
-        inClose: lead.close_sync_status === "synced",
-        createdAt: lead.created_at,
-      }))
+      .map(
+        (lead): DashboardLead => ({
+          day: reportingDay(new Date(lead.created_at)),
+          channel: resolveChannel(lead.utm_source, {
+            medium: lead.utm_medium,
+            capturedByChatbot:
+              !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
+          }).channel,
+          inClose: lead.close_sync_status === "synced",
+          createdAt: lead.created_at,
+        }),
+      )
       .filter((lead) => lead.day >= from);
   }),
 );
@@ -257,7 +259,7 @@ export async function readBookedOn(
   };
 }
 
-export type CacPoint = { month: string; label: string; cac: number | null };
+type CacPoint = { month: string; label: string; cac: number | null };
 
 /**
  * §10 blended CAC for the newest months that have typed inputs, oldest

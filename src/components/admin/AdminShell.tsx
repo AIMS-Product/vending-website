@@ -37,7 +37,6 @@ type AdminSection =
   | "chatbot"
   | "analytics"
   | "seo"
-  | "goals"
   | "cac"
   | "bookings"
   | "data"
@@ -95,11 +94,11 @@ const caseStudiesSection: AdminNavSection = {
 
 const contentSections: AdminNavSection[] = [
   {
-    id: "overview",
-    label: "Overview",
-    href: "/admin",
-    description: "Studio overview",
-    icon: "list",
+    id: "analytics",
+    label: "Analytics",
+    href: "/admin/analytics",
+    description: "Every channel, capture to sale",
+    icon: "search",
   },
   {
     id: "pages",
@@ -139,25 +138,11 @@ const contentSections: AdminNavSection[] = [
     icon: "message-square",
   },
   {
-    id: "analytics",
-    label: "Analytics",
-    href: "/admin/analytics",
-    description: "Reporting & conversion",
-    icon: "search",
-  },
-  {
     id: "seo",
     label: "SEO",
     href: "/admin/seo",
     description: "Search, AI Overviews, content plan, tasks",
     icon: "search",
-  },
-  {
-    id: "goals",
-    label: "Goals",
-    href: "/admin/goals",
-    description: "Targets, pace and actuals",
-    icon: "target",
   },
   {
     id: "cac",

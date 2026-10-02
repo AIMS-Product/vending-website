@@ -16,8 +16,11 @@ const ADMIN_APP_DIR = path.resolve(process.cwd(), "src/app/admin");
  * gets rendered as a link). A viewer reaches `leads/[id]` from the lead list.
  */
 const READ_ONLY_PAGES = [
-  "page.tsx",
   "analytics/page.tsx",
+  "analytics/channels/page.tsx",
+  "analytics/months/page.tsx",
+  "analytics/video/page.tsx",
+  "analytics/youtube/page.tsx",
   "attribution/page.tsx",
   "bookings/page.tsx",
   "case-studies/page.tsx",
@@ -29,7 +32,6 @@ const READ_ONLY_PAGES = [
   "data/page.tsx",
   "forms/page.tsx",
   "forms/[id]/page.tsx",
-  "goals/page.tsx",
   "leads/page.tsx",
   "leads/[id]/page.tsx",
   "libraries/page.tsx",

@@ -11,7 +11,7 @@ import { useState } from "react";
 export type TrendSeries = { name: string; data: number[]; color: string };
 
 /** An axis top that splits into four round steps (0, 60, 120, 180, 240). */
-export function niceMax(value: number): number {
+function niceMax(value: number): number {
   if (value <= 0) return 4;
   const raw = value / 4;
   const power = 10 ** Math.floor(Math.log10(raw));
@@ -25,7 +25,7 @@ function tick(value: number): string {
   return String(+value.toFixed(value < 10 ? 1 : 0));
 }
 
-export function ChartLegend({
+function ChartLegend({
   items,
 }: {
   items: ReadonlyArray<{ name: string; color: string }>;

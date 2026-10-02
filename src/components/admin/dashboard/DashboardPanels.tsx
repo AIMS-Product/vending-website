@@ -105,7 +105,7 @@ function sparkRange(window: DashboardWindow): DayRange {
 
 // ── Shared card chrome ──────────────────────────────────────────────────
 
-export function DashboardCard({
+function DashboardCard({
   title,
   source,
   action,

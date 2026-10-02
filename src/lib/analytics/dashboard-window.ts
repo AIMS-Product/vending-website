@@ -21,7 +21,7 @@ export const DASHBOARD_WINDOW_PRESETS = [
 export type DashboardWindowPreset = (typeof DASHBOARD_WINDOW_PRESETS)[number];
 export type DashboardWindowKey = DashboardWindowPreset | `custom:${string}`;
 
-export const DEFAULT_DASHBOARD_WINDOW: DashboardWindowPreset = "30d";
+const DEFAULT_DASHBOARD_WINDOW: DashboardWindowPreset = "30d";
 
 export const DASHBOARD_WINDOW_LABELS: Record<DashboardWindowPreset, string> = {
   today: "Today",
