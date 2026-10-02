@@ -110,15 +110,51 @@ A manual run against production writes production data.
 
 ## 5. Monitoring
 
-| Signal                    | Where                                                  | Notes                                                                                                                          |
-| ------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
-| Server and browser errors | Sentry **(outside the repo: project and alert rules)** | Initialises only when `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` is set. 10% trace sampling outside development.                  |
-| Lead and no-book alerts   | Slack incoming webhook `SLACK_WEBHOOK_URL`             | Posts to `#vp-site-leads` (the channel is bound to the webhook in Slack, outside the repo).                                    |
-| Nightly data audit        | `/admin/data`, Slack on failure, EOD/EOW email         | A passing audit is silent. Details and tolerances: `docs/marketing/data-audit.md`.                                             |
-| Per-tab data trust bar    | Top of every analytics tab                             | A number is "Unverified" unless its audit check is in the latest run and passed. `AGENTS.md` Learnings, "Every analytics tab". |
-| Connector health          | `channel_sync_runs`                                    | `error` holds failures or `skipped: <why>` only. Any other text marks the run failed. Use `console.warn` for notes.            |
-| CSP violations            | Server logs, `csp report-only violation`               | One log line per distinct directive and blocked host per instance.                                                             |
-| Vercel runtime logs       | Vercel dashboard **(outside the repo)**                | Cron invocations and their responses appear here.                                                                              |
+| Signal                    | Where                                                  | Notes                                                                                                                                                                               |
+| ------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Server and browser errors | Sentry **(outside the repo: project and alert rules)** | Initialises only when `SENTRY_DSN` / `NEXT_PUBLIC_SENTRY_DSN` is set. 10% trace sampling outside development. Events carry `environment` (`VERCEL_ENV`) and `release` (commit SHA). |
+| Cron and route failures   | Sentry, tags `cron:<job>` or `route:<name>`            | See "Failure visibility" below. Only the error class and stack are sent, never the message.                                                                                         |
+| Uptime                    | `GET /api/health`                                      | See "Uptime monitor" below.                                                                                                                                                         |
+| Lead and no-book alerts   | Slack incoming webhook `SLACK_WEBHOOK_URL`             | Posts to `#vp-site-leads` (the channel is bound to the webhook in Slack, outside the repo).                                                                                         |
+| Nightly data audit        | `/admin/data`, Slack on failure, EOD/EOW email         | A passing audit is silent. Details and tolerances: `docs/marketing/data-audit.md`.                                                                                                  |
+| Per-tab data trust bar    | Top of every analytics tab                             | A number is "Unverified" unless its audit check is in the latest run and passed. `AGENTS.md` Learnings, "Every analytics tab".                                                      |
+| Connector health          | `channel_sync_runs`                                    | `error` holds failures or `skipped: <why>` only. Any other text marks the run failed. Use `console.warn` for notes.                                                                 |
+| CSP violations            | Server logs, `csp report-only violation`               | One log line per distinct directive and blocked host per instance.                                                                                                                  |
+| Vercel runtime logs       | Vercel dashboard **(outside the repo)**                | Cron invocations and their responses appear here.                                                                                                                                   |
+
+### Uptime monitor
+
+Point the monitor (UptimeRobot, Better Stack, Vercel Checks, anything that polls HTTP) at:
+
+| URL                                          | Method     | Expect                                                 | Interval  |
+| -------------------------------------------- | ---------- | ------------------------------------------------------ | --------- |
+| `https://www.vendingpreneurs.com/api/health` | GET / HEAD | `200`, body `{"ok":true,"sha":"…","env":"production"}` | 1 minute  |
+| `https://www.vendingpreneurs.com/`           | GET        | `200`                                                  | 5 minutes |
+
+`/api/health` is a liveness probe only: no database call, no secret, no third-party call, so it is
+free to poll and exposes nothing but the short commit SHA and the environment name. Alert after two
+consecutive failures. A green probe means the deployment is serving; it does **not** mean leads are
+reaching Close. For that, watch the `close_sync_events` backlog (section 6); `close-sync` is not
+reported to Sentry (see the coverage table below). The SHA identifies the release: compare it with the latest `main` commit after a
+deploy, and with the Sentry `release` tag when triaging an error.
+
+### Failure visibility
+
+Every cron route catches its own errors and answers a generic `500`, so Vercel's request-error hook
+(and therefore Sentry) never sees them. The `src/lib/observability/` helpers close that gap:
+`reportCronException` (thrown error) and `reportCronRunFailure` (a run that finished but a connector
+or send failed). `reportRouteError` does the same for non-cron API routes that catch and answer 500.
+All three send the error class, the job or route name and stack frames only, never the message, and
+never throw.
+
+Set one Sentry alert rule (outside the repo): "any new event with tag `cron` or `route`" to the team
+channel, and one for a regression in `release`. Without a DSN the helpers do nothing.
+
+Coverage by cron:
+
+| Reported to Sentry on failure                                                                                                                                                                                                                                              | Not reported to Sentry (report-only, see why)                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `scheduled-publishing`, `chatbot-learning`, `chatbot-digest`, `no-book-alert`, `bitly-sync`, `ga4-sync`, `channel-sync`, `ghl-sync`, `metricool-sync`, `youtube-analytics-sync`, `search-console-sync`, `data-audit`, `data-report`, `seo-ranks`, `seo-ai`, `seo-triggers` | `close-sync`, `close-lead-funnel-sync`, `qualification-lifecycle`, `pre-call-notes`, `chatbot-booking-reconcile` (Close and lead-flow writers; left unchanged on purpose). Their failures show as a non-2xx in Vercel logs, and `close_sync_events` for the outbox. |
 
 ## 6. Common incidents
 

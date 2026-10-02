@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { rejectUnlessCron, runFailed } from "@/lib/seo/cron-auth";
 import { runSeoTriggers } from "@/lib/services/seo-trigger-job";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -13,11 +17,14 @@ export async function GET(request: Request) {
   try {
     const result = await runSeoTriggers();
     const failed = runFailed(result.connector);
+    if (failed)
+      await reportCronRunFailure("seo-triggers", result.connector.connector);
     return NextResponse.json(
       { ok: !failed, ...result },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("seo-triggers", error);
     console.error("seo trigger runner failed", {
       message: error instanceof Error ? error.message : undefined,
     });

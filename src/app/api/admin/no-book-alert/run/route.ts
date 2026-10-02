@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { runNoBookAlertCron } from "@/lib/services/no-book-alert";
+import { reportCronException } from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
     const result = await runNoBookAlertCron();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
+    await reportCronException("no-book-alert", error);
     console.error("no-book alert runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });

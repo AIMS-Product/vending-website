@@ -52,6 +52,7 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from "@/lib/public-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 /**
  * The server holds the authoritative transcript (chatbot_conversations.messages,
@@ -158,6 +159,7 @@ export async function POST(request: Request) {
       { client },
     );
   } catch (error) {
+    await reportRouteError("chatbot-chat-load-conversation", error);
     console.error("chatbot: could not load conversation", {
       error: error instanceof Error ? error.message : "unknown error",
     });
@@ -323,6 +325,7 @@ export async function POST(request: Request) {
         { client },
       );
     } catch (error) {
+      await reportRouteError("chatbot-chat-persist-turn", error);
       console.error("chatbot: could not persist conversation turn", {
         conversationId: conversation.id,
         error: error instanceof Error ? error.message : "unknown error",

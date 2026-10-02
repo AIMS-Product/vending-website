@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { syncGa4PageViews } from "@/lib/services/ga4-page-view-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -73,6 +77,12 @@ export async function GET(request: Request) {
       Boolean(config.GA4_SERVICE_ACCOUNT_JSON && config.GA4_PROPERTY_ID) &&
       !result.connected;
     const ok = result.failed === 0 && !brokenKey;
+    if (!ok) {
+      await reportCronRunFailure(
+        "ga4-sync",
+        brokenKey ? "service account unreadable" : "chunks failed",
+      );
+    }
     return NextResponse.json(
       {
         ok,
@@ -87,6 +97,7 @@ export async function GET(request: Request) {
     // Class only, like the Bitly runner. A GA4 auth failure's message can
     // carry parts of the service-account key, and this log is not a place for
     // it. The sync logs its own per-chunk detail already.
+    await reportCronException("ga4-sync", error);
     console.error("ga4 sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });

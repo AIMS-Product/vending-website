@@ -6,6 +6,7 @@ import {
   alertOnAuditFailure,
   storeAuditRun,
 } from "@/lib/services/data-audit-store";
+import { reportCronException } from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
       alerted,
     });
   } catch (error) {
+    await reportCronException("data-audit", error);
     console.error("data audit runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

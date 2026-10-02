@@ -2,6 +2,10 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { runChatbotLearningPass } from "@/lib/chatbot/learning/run";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,6 +38,9 @@ export async function GET(request: Request) {
 
   try {
     const result = await runChatbotLearningPass();
+    // ok: false answers 200 with the error text in the body; make it visible.
+    if (!result.ok)
+      await reportCronRunFailure("chatbot-learning", "pass reported ok: false");
     return NextResponse.json({
       ok: result.ok,
       conversationsScanned: result.conversationsScanned,
@@ -46,6 +53,7 @@ export async function GET(request: Request) {
       error: result.error,
     });
   } catch (error) {
+    await reportCronException("chatbot-learning", error);
     console.error("chatbot learning runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });
