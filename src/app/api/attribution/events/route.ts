@@ -9,13 +9,37 @@ import { recordVideoView } from "@/lib/services/lead-video-views";
 import { recordBookingSession } from "@/lib/services/calendly-booking-sessions";
 import { recordPopupEvent } from "@/lib/services/popups";
 
+/**
+ * Bounds on the free-form map, which is spread straight into the money-page
+ * forward. The browser client sends about 35 keys; 60 leaves room for event
+ * extras. An over-long value (a very long referrer URL) is cut rather than
+ * rejected so the beacon still lands.
+ */
+const MAX_PROPERTY_KEYS = 60;
+const MAX_PROPERTY_KEY_LENGTH = 100;
+const MAX_PROPERTY_VALUE_LENGTH = 2000;
+/** The money-page ingest answers in well under a second when it is healthy. */
+const FORWARD_TIMEOUT_MS = 5_000;
+
 const attributionEventSchema = z.object({
   event_type: z.enum(ATTRIBUTION_EVENT_TYPES),
   external_id: z.string().trim().min(1).max(300),
-  occurred_at: z.string().trim().min(1).max(80),
+  occurred_at: z.iso.datetime({ offset: true }),
   vp_session_id: z.string().trim().min(1).max(160),
   properties: z
-    .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+    .record(
+      z.string().max(MAX_PROPERTY_KEY_LENGTH),
+      z.union([
+        z
+          .string()
+          .transform((value) => value.slice(0, MAX_PROPERTY_VALUE_LENGTH)),
+        z.number(),
+        z.boolean(),
+      ]),
+    )
+    .refine((value) => Object.keys(value).length <= MAX_PROPERTY_KEYS, {
+      message: `At most ${MAX_PROPERTY_KEYS} properties`,
+    })
     .default({}),
 });
 type AttributionEventPayload = z.output<typeof attributionEventSchema>;
@@ -220,6 +244,8 @@ async function forwardAttributionEvent(
           ...payload.properties,
         },
       }),
+      // A hung ingest host must not hold every page-view beacon open.
+      signal: AbortSignal.timeout(FORWARD_TIMEOUT_MS),
     });
 
     if (!response.ok) {

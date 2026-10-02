@@ -190,6 +190,61 @@ describe("attribution event route", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("rejects an occurred_at that is not a datetime", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const response = await POST(
+      eventRequest({ body: { ...payload, occurred_at: "yesterday-ish" } }),
+    );
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a properties map with too many keys", async () => {
+    const fetchMock = vi.spyOn(globalThis, "fetch");
+    const properties = Object.fromEntries(
+      Array.from({ length: 61 }, (_, index) => [`key_${index}`, "v"]),
+    );
+    const response = await POST(
+      eventRequest({ body: { ...payload, properties } }),
+    );
+    expect(response.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("cuts an over-long property value instead of dropping the beacon", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(new Response("{}", { status: 200 }));
+    const response = await POST(
+      eventRequest({
+        body: {
+          ...payload,
+          properties: {
+            ...payload.properties,
+            latest_referrer: "r".repeat(5000),
+          },
+        },
+      }),
+    );
+    expect(response.status).toBe(200);
+    const forwarded = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(forwarded.properties.latest_referrer).toHaveLength(2000);
+  });
+
+  it("gives the downstream forward a deadline and reports a hung ingest as undelivered", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new DOMException("timed out", "TimeoutError"));
+
+    const response = await POST(eventRequest());
+
+    expect(response.status).toBe(202);
+    expect(await response.json()).toEqual({ ok: true, delivered: false });
+    expect(fetchMock.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    expect(warn).toHaveBeenCalled();
+  });
+
   it("rejects events without the matching first-party session cookie", async () => {
     await expectUnauthorizedEvent(eventRequest({ cookie: "vp_sid=other" }));
   });
