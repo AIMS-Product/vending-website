@@ -112,6 +112,10 @@ export function verifyCalendlySignature(
     .update(`${parsed.timestamp}.${rawBody}`)
     .digest("hex");
 
+  // Buffer.from(hex) silently drops a trailing odd nibble and stops at the
+  // first non-hex character, so only an exact 64-char hex digest is compared.
+  if (!/^[0-9a-f]{64}$/i.test(parsed.signature)) return false;
+
   const expectedBuffer = Buffer.from(expectedHex, "hex");
   const actualBuffer = Buffer.from(parsed.signature, "hex");
   if (

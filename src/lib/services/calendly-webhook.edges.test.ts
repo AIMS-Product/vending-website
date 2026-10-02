@@ -84,19 +84,27 @@ describe("signature encodings", () => {
     ).toBe(false);
   });
 
-  // Buffer.from(hex) silently drops a trailing odd nibble, so a correct
-  // signature with ONE extra hex character appended decodes to the same 32
-  // bytes and verifies. Not exploitable on its own (the caller still needs the
-  // HMAC), but the verifier is more lenient than the format. Left as-is: the
-  // webhook path is off limits for behaviour changes in this pass.
-  it.fails(
-    "rejects a correct signature with one extra trailing hex character",
-    () => {
-      expect(
-        verifyCalendlySignature(BODY, `t=${SIGNED_AT},v1=${good}a`, KEY, NOW),
-      ).toBe(false);
-    },
-  );
+  // Buffer.from(hex) silently drops a trailing odd nibble, so the verifier
+  // checks the exact 64-char format before decoding.
+  it("rejects a correct signature with one extra trailing hex character", () => {
+    expect(
+      verifyCalendlySignature(BODY, `t=${SIGNED_AT},v1=${good}a`, KEY, NOW),
+    ).toBe(false);
+    expect(
+      verifyCalendlySignature(BODY, `t=${SIGNED_AT},v1=${good}zz`, KEY, NOW),
+    ).toBe(false);
+  });
+
+  it("still accepts an upper-case hex signature", () => {
+    expect(
+      verifyCalendlySignature(
+        BODY,
+        `t=${SIGNED_AT},v1=${good.toUpperCase()}`,
+        KEY,
+        NOW,
+      ),
+    ).toBe(true);
+  });
 
   it("does not let a signature for one body authenticate another, byte for byte", () => {
     const header = `t=${SIGNED_AT},v1=${good}`;

@@ -141,11 +141,33 @@ export async function getBookedPace(
     booked,
     capacity,
     siteFormsRead: siteChannels !== null,
-    newBooked: readBookedMetric("newBookedOn", metricInput),
-    context: CONTEXT_METRICS.map((key) => readBookedMetric(key, metricInput)),
+    newBooked: unlessDisconnected(
+      readBookedMetric("newBookedOn", metricInput),
+      connected,
+    ),
+    context: CONTEXT_METRICS.map((key) =>
+      unlessDisconnected(readBookedMetric(key, metricInput), connected),
+    ),
     trailing,
     review: mappingReviewState(),
     connected,
+  };
+}
+
+/**
+ * A metric read from tables that could not be loaded is a dash, never zero:
+ * a broken read must not look like a day nobody booked anything. Same rule
+ * the trailing series and grids already follow.
+ */
+function unlessDisconnected(
+  result: BookedMetricResult,
+  connected: boolean,
+): BookedMetricResult {
+  if (connected) return result;
+  return {
+    ...result,
+    value: null,
+    unavailableReason: "Bookings data could not be read just now.",
   };
 }
 

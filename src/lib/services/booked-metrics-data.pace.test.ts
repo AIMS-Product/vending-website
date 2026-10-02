@@ -183,30 +183,9 @@ describe("getBookedPace", () => {
     expect(pace.trailing.every((entry) => entry.value === null)).toBe(true);
   });
 
-  // /admin/goals tells the reader "every number below shows a dash (no data)
-  // rather than zero" when `connected` is false, and the trailing series and
-  // both grids do. The headline `newBooked` is the exception: it is computed
-  // from the empty input rather than nulled, so the "New calls booked" panel
-  // reads 0 (and "-25 against goal") during an outage, which is exactly the
-  // broken-read-looks-like-an-empty-day case the rest of the loader avoids.
-  // Left as-is: counting logic is off limits for behaviour changes here.
-  it.fails(
-    "shows no headline number when the tables could not be read",
-    async () => {
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      const { client } = fakeClient({
-        calendly_bookings: {
-          error: { message: "permission denied", code: "42501" },
-        },
-      });
-
-      const pace = await getBookedPace({ client, now: NOW });
-
-      expect(pace.newBooked.value).toBeNull();
-    },
-  );
-
-  it("documents today's behaviour for that outage: the headline reads 0", async () => {
+  // /admin/goals promises a dash (no data) rather than zero when the tables
+  // cannot be read; the headline and context numbers follow that rule too.
+  it("shows no headline number when the tables could not be read", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const { client } = fakeClient({
       calendly_bookings: {
@@ -217,7 +196,20 @@ describe("getBookedPace", () => {
     const pace = await getBookedPace({ client, now: NOW });
 
     expect(pace.connected).toBe(false);
-    expect(pace.newBooked.value).toBe(0);
+    expect(pace.newBooked.value).toBeNull();
+    expect(pace.newBooked.unavailableReason).toEqual(expect.any(String));
+    expect(pace.context.every((row) => row.value === null)).toBe(true);
+  });
+
+  it("keeps the headline number when the tables read fine", async () => {
+    const { client } = fakeClient({
+      calendly_bookings: { rows: [booking()] },
+    });
+
+    const pace = await getBookedPace({ client, now: NOW });
+
+    expect(pace.connected).toBe(true);
+    expect(pace.newBooked.value).toEqual(expect.any(Number));
   });
 
   it("is disconnected when the Close mirror fails too, even if bookings read fine", async () => {
