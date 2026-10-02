@@ -25,9 +25,19 @@ const historyRequestSchema = z.object({
   sessionId: z.string().trim().min(8).max(200),
 });
 
-// One shape for every "nothing to hydrate" case (disabled, bad sessionId, no
-// matching conversation) — the widget treats all three identically.
+// One shape for the "nothing to hydrate" cases that are errors (disabled, bad
+// sessionId) — the widget treats them identically.
 const NOT_FOUND_RESPONSE = { message: "Not found." };
+
+// A session with no conversation row yet is the normal state for every new
+// visitor (the widget asks on each page load). Answer 200 with an empty
+// transcript so the browser console does not log a failed request per visit.
+const NO_CONVERSATION_RESPONSE = {
+  messages: [],
+  status: "none",
+  captured: false,
+  bookingUrl: null,
+};
 
 export async function GET(request: Request) {
   const config = await loadChatbotConfig();
@@ -61,7 +71,9 @@ export async function GET(request: Request) {
 
   if (error) return chatbotUnavailableResponse("history", error);
   if (!data) {
-    return Response.json(NOT_FOUND_RESPONSE, { status: 404 });
+    return Response.json(NO_CONVERSATION_RESPONSE, {
+      headers: { "Cache-Control": "no-store" },
+    });
   }
 
   return Response.json(
