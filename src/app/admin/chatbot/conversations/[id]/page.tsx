@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
   AdminIcon,
+  adminPanelClass,
   adminSecondaryButtonClass,
 } from "@/components/admin/AdminUi";
 import { ChatbotConversationDetail } from "@/components/admin/ChatbotConversationDetail";
@@ -11,6 +12,21 @@ import { adminGetConversationDetail } from "@/lib/services/chatbot-admin";
 import { requireReadAccess } from "@/lib/supabase/auth";
 
 type Params = { id: string };
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const backLink = (
+  <Link
+    href="/admin/chatbot/conversations"
+    className={adminSecondaryButtonClass}
+  >
+    <span aria-hidden="true">
+      <AdminIcon icon="list" />
+    </span>
+    All conversations
+  </Link>
+);
 
 export const metadata: Metadata = {
   title: "Conversation detail",
@@ -26,9 +42,35 @@ export default async function AdminChatbotConversationPage({
     requireReadAccess(),
     params,
   ]);
-  // A load failure (table not provisioned, or a transient DB error) reads as
-  // "no such conversation" rather than a hard error page.
-  const conversation = await adminGetConversationDetail(id).catch(() => null);
+  // The id column is a uuid, so anything else can never match a row; asking
+  // the database would only turn a bad link into a load error.
+  if (!UUID_PATTERN.test(id)) notFound();
+
+  let conversation: Awaited<ReturnType<typeof adminGetConversationDetail>>;
+  try {
+    conversation = await adminGetConversationDetail(id);
+  } catch (error) {
+    // Not "no such conversation": a transient database error must not tell the
+    // admin the chat was deleted. Logged, and the page offers a reload.
+    console.warn("chatbot conversation detail failed", {
+      id,
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+    return (
+      <AdminShell
+        activeSection="chatbot"
+        eyebrow="Site chatbot"
+        title="Conversation"
+        userEmail={user.email}
+        userRole={role}
+        actions={backLink}
+      >
+        <p className={`${adminPanelClass} p-4 text-sm`} role="alert">
+          This conversation could not be loaded just now. Reload to try again.
+        </p>
+      </AdminShell>
+    );
+  }
   if (!conversation) notFound();
 
   return (
@@ -43,17 +85,7 @@ export default async function AdminChatbotConversationPage({
       description="Full transcript, review flags, and handoff status."
       userEmail={user.email}
       userRole={role}
-      actions={
-        <Link
-          href="/admin/chatbot/conversations"
-          className={adminSecondaryButtonClass}
-        >
-          <span aria-hidden="true">
-            <AdminIcon icon="list" />
-          </span>
-          All conversations
-        </Link>
-      }
+      actions={backLink}
     >
       <ChatbotConversationDetail conversation={conversation} />
     </AdminShell>
