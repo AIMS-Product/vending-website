@@ -40,10 +40,17 @@ describe("GET /api/chatbot/history", () => {
     mocks.result = { data: null, error: null };
   });
 
-  it("answers 404 when there is no such conversation", async () => {
+  it("answers 200 with an empty transcript when there is no such conversation", async () => {
     const response = await GET(request());
 
-    expect(response.status).toBe(404);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toEqual({
+      messages: [],
+      status: "none",
+      captured: false,
+      bookingUrl: null,
+    });
   });
 
   it("answers 503 and logs when the database read fails", async () => {

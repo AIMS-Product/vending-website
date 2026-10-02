@@ -49,13 +49,19 @@ function Hero({ page }: { page: ContentPageData }) {
         <nav aria-label="Breadcrumb" className="mb-6">
           <ol className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
             <li>
-              <Link href="/" className="hover:text-brand-700">
+              <Link
+                href="/"
+                className="hover:text-brand-700 inline-flex min-h-6 items-center"
+              >
                 Home
               </Link>
             </li>
             <li aria-hidden>›</li>
             <li>
-              <Link href={page.parent.href} className="hover:text-brand-700">
+              <Link
+                href={page.parent.href}
+                className="hover:text-brand-700 inline-flex min-h-6 items-center"
+              >
                 {page.parent.label}
               </Link>
             </li>

@@ -287,7 +287,7 @@ function ResourcePageBlockView({
                 leadAttribution={leadAttribution}
                 linkContext={linkContext}
                 linkMode={linkMode}
-                className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
+                className="mt-4 inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
               >
                 Watch video
               </ResourceLink>
@@ -437,7 +437,7 @@ function ResourcePageBlockView({
                     leadAttribution={leadAttribution}
                     linkContext={linkContext}
                     linkMode={linkMode}
-                    className="mt-4 inline-flex text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
+                    className="mt-4 inline-flex min-h-6 items-center text-sm font-black text-[#066a99] uppercase hover:text-[#111111]"
                   >
                     {cardGridLinkLabel(card)}
                   </ResourceLink>

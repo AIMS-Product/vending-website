@@ -37,10 +37,10 @@ function QuoteCard({ quote }: { quote: CaseStudyQuote }) {
           />
         </div>
         <div className="min-w-0">
-          <h3 className="truncate text-base font-black text-[#111111] uppercase">
+          <h3 className="text-base font-black break-words text-[#111111] uppercase">
             {quote.name}
           </h3>
-          <p className="truncate text-sm font-semibold text-slate-600">
+          <p className="text-sm font-semibold break-words text-slate-600">
             {quote.role}
           </p>
         </div>

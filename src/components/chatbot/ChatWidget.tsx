@@ -221,7 +221,7 @@ export function ChatWidget() {
   // Session id + transcript rehydration. The conversation row is already
   // authoritative server-side (see conversation-store.ts) — this just reads
   // it back so a page navigation doesn't wipe what the visitor already said.
-  // A brand-new session id 404s harmlessly (no row yet).
+  // A brand-new session id answers 200 with an empty transcript (no row yet).
   useEffect(() => {
     if (chatHidden) return;
     const sessionId = readOrCreateSessionId();

@@ -312,7 +312,7 @@ export function PopupCard({
           <button
             type="button"
             onClick={onClose}
-            className="self-center text-sm text-[#6b7280] underline underline-offset-2 hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:outline-none"
+            className="inline-flex min-h-10 items-center self-center px-3 text-sm text-[#6b7280] underline underline-offset-2 hover:text-[#111111] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:outline-none"
           >
             {popup.dismissText}
           </button>
