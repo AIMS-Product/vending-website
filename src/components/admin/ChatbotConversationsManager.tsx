@@ -404,6 +404,7 @@ function SearchForm({
         name="q"
         defaultValue={q}
         placeholder="Search name, email, or opening message"
+        aria-label="Search conversations"
         className="border-ui-line-strong bg-ui-surface text-ui-text focus:border-ui-accent focus:ring-ui-accent/15 rounded-ui w-72 border px-2.5 py-1.5 text-sm outline-none focus:ring-2"
       />
       <button
