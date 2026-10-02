@@ -136,6 +136,8 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "seo_monthly_reviews", // a form
     "dataforseo_spend", // the rank job's own cost ledger
     "seo_baselines", // Day 0, frozen once by scripts/seo-day0.mjs
+    "cac_months", // CAC inputs, typed in by hand on /admin/cac
+    "cac_routes", // CAC inputs, typed in by hand on /admin/cac
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([
@@ -163,6 +165,13 @@ describe("tab to feed mapping matches what each loader reads", () => {
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
+    dashboard: [
+      "analytics-dashboard-data",
+      "channel-report",
+      "close-wins",
+      "booked-metrics-data",
+      "cac-report-data",
+    ],
   };
 
   for (const [tab, files] of Object.entries(SCOPED_LOADERS)) {
