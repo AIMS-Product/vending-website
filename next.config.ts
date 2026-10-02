@@ -166,6 +166,13 @@ const nextConfig: NextConfig = {
         destination: "/about",
         permanent: true,
       },
+      // The v2 design was promoted to the homepage. A real 308 here (not a
+      // redirect() inside a page, which streams as a 200 meta refresh).
+      {
+        source: "/home-v2",
+        destination: "/",
+        permanent: true,
+      },
       // The apply funnel now lives at /contact — keep the old slug alive.
       {
         source: "/apply",

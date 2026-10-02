@@ -1,7 +1,7 @@
 /**
- * Copy that exists only on the /home-v2 redesign preview. Shared copy
- * (hero body, benefits, accelerator, final CTA, testimonials) still comes
- * from ./home and ./case-studies so the two homepages never drift.
+ * Homepage copy for the redesigned sections (hero, ticker, stats band, and
+ * the rest of home-v2/*). Shared copy (hero body, benefits, accelerator,
+ * final CTA, testimonials) comes from ./home and ./case-studies.
  */
 
 type HeroTitleSegment = {
