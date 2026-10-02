@@ -130,7 +130,7 @@ export function CloseWeekTab({
                 >
                   <th scope="row" className={TD_LEFT}>
                     <Link
-                      href={`/admin/analytics?tab=close&week=${entry.key}`}
+                      href={`/admin/analytics/months?week=${entry.key}#weeks`}
                       className="hover:underline"
                     >
                       {weekLabel(entry)}

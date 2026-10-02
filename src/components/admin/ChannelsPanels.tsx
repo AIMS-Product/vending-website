@@ -44,10 +44,10 @@ export function channelsHref(
   includeInternal: boolean,
   channel?: string | null,
 ) {
-  const params = new URLSearchParams({ range, tab: "channels" });
+  const params = new URLSearchParams({ range });
   if (includeInternal) params.set("internal", "1");
   if (channel) params.set("channel", channel);
-  return `/admin/analytics?${params.toString()}`;
+  return `/admin/analytics/channels?${params.toString()}`;
 }
 
 export function ChannelsTab({

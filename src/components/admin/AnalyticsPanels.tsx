@@ -603,6 +603,13 @@ function LegendDot({ fill, label }: { fill: string; label: string }) {
   );
 }
 
+/** The analytics views that live on their own path under /admin/analytics. */
+export const ANALYTICS_VIEW_PATHS: Readonly<Record<string, string>> = {
+  channels: "/admin/analytics/channels",
+  youtube: "/admin/analytics/youtube",
+  video: "/admin/analytics/video",
+};
+
 function analyticsHref(
   range: AdminAnalyticsRangeKey,
   includeInternal: boolean,
@@ -610,8 +617,7 @@ function analyticsHref(
 ): string {
   const params = new URLSearchParams({ range });
   if (includeInternal) params.set("internal", "1");
-  if (tab && tab !== "overview") params.set("tab", tab);
-  return `/admin/analytics?${params.toString()}`;
+  return `${ANALYTICS_VIEW_PATHS[tab ?? ""] ?? "/admin/analytics"}?${params.toString()}`;
 }
 
 function formatNumber(value: number): string {
