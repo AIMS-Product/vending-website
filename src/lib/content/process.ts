@@ -839,5 +839,3 @@ export function processNeighbours(slug: string): ReadonlyArray<PageRelated> {
   }
   return cards;
 }
-
-export { PARENT as processParent };
