@@ -216,12 +216,19 @@ export function ChatWidget() {
   // Session id + transcript rehydration. The conversation row is already
   // authoritative server-side (see conversation-store.ts) — this just reads
   // it back so a page navigation doesn't wipe what the visitor already said.
-  // A brand-new session id 404s harmlessly (no row yet).
-  useEffect(() => {
+    useEffect(() => {
     if (chatHidden) return;
+    const isNewSession = !hasStoredSessionId();
     const sessionId = readOrCreateSessionId();
     sessionIdRef.current = sessionId;
     ensureVisitorCookie();
+
+    // A session id minted a moment ago has no server row, so asking would only
+    // log a 404 in every first visitor's console.
+    if (isNewSession) {
+      setHistoryLoaded(true);
+      return;
+    }
 
     let cancelled = false;
     fetch(`/api/chatbot/history?sessionId=${encodeURIComponent(sessionId)}`)
@@ -989,6 +996,14 @@ export function ChatWidget() {
       )}
     </div>
   );
+}
+
+function hasStoredSessionId(): boolean {
+  try {
+    return Boolean(window.sessionStorage.getItem(SESSION_STORAGE_KEY));
+  } catch {
+    return false;
+  }
 }
 
 function readOrCreateSessionId(): string {
