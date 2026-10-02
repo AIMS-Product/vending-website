@@ -11,7 +11,12 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.mjs"],
+    include: [
+      "src/**/*.test.{ts,tsx}",
+      "scripts/**/*.test.mjs",
+      // mikehoffmann.co newsletter app: no test runner of its own.
+      "apps/mike-newsletter/src/**/*.test.{ts,tsx}",
+    ],
     // Satisfy `src/lib/config.ts`'s Zod schema at module load. The clients
     // themselves are never instantiated in tests — auth.test.ts injects
     // mock Supabase clients — so these placeholders never hit the network.
