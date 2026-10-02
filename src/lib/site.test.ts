@@ -13,6 +13,16 @@ describe("pageOpenGraph", () => {
     });
   });
 
+  it("carries the default 1200x630 share image", () => {
+    expect(pageOpenGraph("A", "a", "/a").images).toEqual([
+      expect.objectContaining({
+        url: "/opengraph-image.png",
+        width: 1200,
+        height: 630,
+      }),
+    ]);
+  });
+
   it("gives two pages different og:url values", () => {
     const a = pageOpenGraph("A", "a", "/a");
     const b = pageOpenGraph("B", "b", "/b");

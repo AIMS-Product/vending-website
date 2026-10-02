@@ -13,6 +13,7 @@ import {
   newsArticleStructuredData,
   newsStructuredData,
 } from "@/lib/news/structured-data";
+import { defaultOgImage } from "@/lib/site";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
@@ -44,7 +45,8 @@ export async function generateMetadata({
     openGraph: {
       title: post.title,
       description: post.excerpt ?? undefined,
-      images: post.cover_url ? [post.cover_url] : undefined,
+      url: `/news/${post.slug}`,
+      images: post.cover_url ? [post.cover_url] : [defaultOgImage],
       type: "article",
       publishedTime: post.published_at ?? undefined,
     },
