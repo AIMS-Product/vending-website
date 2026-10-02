@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
     })),
     createAdminClient: vi.fn(() => ({ from })),
     headers: vi.fn(),
+    checkPublicRateLimit: vi.fn(),
     resetPasswordForEmail,
     maybeSingle,
     eq,
@@ -32,6 +33,11 @@ vi.mock("@/lib/supabase/admin", () => ({
 
 vi.mock("next/headers", () => ({
   headers: mocks.headers,
+}));
+
+vi.mock("@/lib/public-rate-limit", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/public-rate-limit")>()),
+  checkPublicRateLimit: mocks.checkPublicRateLimit,
 }));
 
 function formData(email: string) {
@@ -53,6 +59,7 @@ describe("requestPasswordReset", () => {
         "x-forwarded-proto": "https",
       }),
     );
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
     mocks.maybeSingle.mockResolvedValue({
       data: { email: "admin@example.com", role: "admin" },
@@ -135,5 +142,41 @@ describe("requestPasswordReset", () => {
     });
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+  it("refuses a throttled request before the allowlist lookup", async () => {
+    mocks.checkPublicRateLimit.mockResolvedValue(false);
+
+    const result = await requestPasswordReset(
+      { status: "idle" },
+      formData("admin@example.com"),
+    );
+
+    expect(result).toEqual({
+      status: "error",
+      message:
+        "Too many submissions from this connection. Wait a few minutes and try again.",
+    });
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
+      "admin_password_reset",
+      { ip: null, email: "admin@example.com" },
+    );
+    expect(mocks.from).not.toHaveBeenCalled();
+    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+  });
+
+  it("never logs the address when the reset email fails", async () => {
+    const spy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.resetPasswordForEmail.mockResolvedValue({
+      data: null,
+      error: { message: "smtp down" },
+    });
+
+    await requestPasswordReset(
+      { status: "idle" },
+      formData("admin@example.com"),
+    );
+
+    expect(JSON.stringify(spy.mock.calls)).not.toContain("admin@example.com");
+    spy.mockRestore();
   });
 });

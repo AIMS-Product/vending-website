@@ -56,6 +56,17 @@ const LIMITS = {
   // conversations. Tight on purpose: two sends is the intended ceiling for a
   // real conversation, four covers a returning visitor over a day.
   chatbot_resource_email: { windowMs: 24 * 60 * 60 * 1000, max: 4 },
+  // Admin sign-in. Supabase's own per-IP auth limit only ever sees Vercel's
+  // egress IP (signInWithPassword runs server-side), so this is the real
+  // brute-force budget. Keyed by IP + email: rotating either alone buys
+  // nothing. A locked-out admin waits 15 minutes; that is the trade.
+  admin_login: { windowMs: 15 * 60 * 1000, max: 10 },
+  // The shared guest viewer, across every IP. Looser than admin_login
+  // because the whole team shares one account, but it caps a distributed
+  // guess at the one password-only account.
+  admin_login_guest: { windowMs: 15 * 60 * 1000, max: 30 },
+  // Each accepted request emails a reset link.
+  admin_password_reset: { windowMs: 60 * 60 * 1000, max: 5 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;
