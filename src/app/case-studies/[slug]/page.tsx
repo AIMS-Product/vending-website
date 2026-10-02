@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/case-studies";
 import { renderMarkdown } from "@/lib/markdown";
 import { caseStudyStructuredData } from "@/lib/case-studies/structured-data";
+import { jsonLdHtml } from "@/lib/json-ld";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
@@ -79,13 +80,13 @@ export default async function CaseStudyPage({
       {structuredData && (
         <script
           type="application/ld+json"
-          // Serialised server-side from our own columns, never from user input.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          // CMS fields feed this, so jsonLdHtml escapes `<`.
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(structuredData) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbs) }}
       />
       <CaseStudyArticle caseStudy={caseStudy} html={html} related={related} />
       <FinalCta />

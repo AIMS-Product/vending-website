@@ -8,7 +8,11 @@ import {
   listPublishedSlugs,
 } from "@/lib/services/news";
 import { renderMarkdown } from "@/lib/markdown";
-import { newsStructuredData } from "@/lib/news/structured-data";
+import { jsonLdHtml } from "@/lib/json-ld";
+import {
+  newsArticleStructuredData,
+  newsStructuredData,
+} from "@/lib/news/structured-data";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
 
 type Params = { slug: string };
@@ -63,16 +67,22 @@ export default async function NewsArticlePage({
   ]);
   return (
     <>
+      {/* CMS titles and bodies feed these, so jsonLdHtml escapes `<`. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: jsonLdHtml(newsArticleStructuredData(post)),
+        }}
+      />
       {structuredData && (
         <script
           type="application/ld+json"
-          // Serialised server-side from our own columns, never from user input.
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: jsonLdHtml(structuredData) }}
         />
       )}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbs) }}
+        dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbs) }}
       />
       <NewsArticle post={post} html={html} />
       <FinalCta />

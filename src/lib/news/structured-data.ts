@@ -1,15 +1,14 @@
+import { absoluteUrl, siteName } from "@/lib/site";
+
 /**
- * FAQPage only.
+ * FAQPage and Article markup for news posts.
  *
  * News bodies are plain markdown with no FAQ column, so the questions are read
  * back out of the body using the house convention: a heading whose text is
  * "Frequently asked questions", then alternating `**Question?**` / answer
  * paragraph pairs until the next heading. A post that does not follow the
- * convention simply emits no schema.
- *
- * We deliberately emit nothing else here. Article/BreadcrumbList markup would
- * be a separate claim, and FAQPage is the one that earns the People Also Ask
- * and AI Overview placements these pillar posts are written for.
+ * convention simply emits no FAQPage schema. The Article block describes the
+ * post itself; BreadcrumbList is built by the page.
  */
 
 const FAQ_HEADING = /^#{2,3}\s+frequently asked questions\s*$/i;
@@ -63,6 +62,40 @@ function stripMarkdown(text: string): string {
     .replace(/\*([^*]+)\*/g, "$1")
     .replace(/`([^`]+)`/g, "$1")
     .trim();
+}
+
+export type ArticlePost = {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  cover_url: string | null;
+  published_at: string | null;
+};
+
+/**
+ * Article markup for a published news post: headline, description, dates,
+ * image and publisher, all read from the post's own columns. Optional fields
+ * are omitted rather than emitted empty.
+ */
+export function newsArticleStructuredData(post: ArticlePost) {
+  const url = absoluteUrl(`/news/${post.slug}`);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": `${url}#article`,
+    headline: post.title,
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    publisher: {
+      "@type": "Organization",
+      "@id": absoluteUrl("/#organization"),
+      name: siteName,
+    },
+    ...(post.excerpt ? { description: post.excerpt } : {}),
+    ...(post.published_at
+      ? { datePublished: new Date(post.published_at).toISOString() }
+      : {}),
+    ...(post.cover_url ? { image: [absoluteUrl(post.cover_url)] } : {}),
+  };
 }
 
 export function newsStructuredData(body: string) {
