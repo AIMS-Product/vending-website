@@ -7,8 +7,8 @@ the repository and is left as an owner task in section 3.
 ## 1. Basics
 
 - **Engine:** Supabase (Postgres, Auth, Storage). The production project reference and region
-  are not in the repository; they are in the Supabase dashboard and the Vercel environment
-  (`NEXT_PUBLIC_SUPABASE_URL`). `supabase/config.toml` holds local-development settings only
+  are recorded in the Supabase dashboard and the Vercel environment (`NEXT_PUBLIC_SUPABASE_URL`).
+  `supabase/config.toml` holds local-development settings only
   (`project_id = "vending-website"`).
 - **Migrations:** 102 SQL files in `supabase/migrations/` (first `20260501042413_init_news_cms.sql`,
   latest `20261001120000_close_sync_kit_subscribe.sql`) plus `APPLY-IN-SQL-EDITOR.md`.

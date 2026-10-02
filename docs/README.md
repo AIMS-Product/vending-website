@@ -48,6 +48,7 @@ saying so; do not treat them as instructions.
 | `scripts/`                                                         | Tooling             | Operational and one-off scripts                                                   |
 | `docs/`                                                            | Docs                | This folder                                                                       |
 | `.husky/`                                                          | Tooling             | Git hooks: pre-commit lint and typecheck, pre-push branch guard                   |
+| `.github/`                                                         | Tooling             | CI workflow (typecheck, lint, test, npm audit) and Dependabot config              |
 | `.claude/`, `.agents/`                                             | Agent tooling       | Agent skills and rules; `.claude/specs/` holds about 90 per-slice specs           |
 | `evals/`                                                           | Test data           | Chatbot opening-exchange fixtures                                                 |
 | `plans/`                                                           | Historical evidence | Agent feature graphs, run logs and screenshots (about 50 MB). Not read at runtime |

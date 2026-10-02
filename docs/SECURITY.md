@@ -9,8 +9,8 @@ project environment.
 ## 1. Reporting a vulnerability
 
 Email the site owner or the engineering contact for Vendingpreneurs privately; do not open a
-public issue with exploit detail. **(Owner to fill in the monitored security contact address
-before this file is published externally.)**
+public issue with exploit detail. **(Owner: add a monitored security contact address here. This
+repository is public, so this file is already published.)**
 
 ## 2. Authentication and authorization
 
@@ -64,7 +64,8 @@ The full route table is in [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Rate limiting** (`src/lib/public-rate-limit.ts`): sliding windows per action, keyed on request
   IP and, where relevant, a SHA-256 of the lowercased email. Hit rows are kept 24 hours and pruned
   by the Close sync cron. The limiter **fails open** by design (a database outage must not drop
-  leads), except for the chatbot's resource-email action, which fails closed. The backing table
+  leads), except the chatbot's resource-email budget and the masterclass registration
+  reservation (`reservePublicRateLimit`), which fail closed. The backing table
   comes from migration `20260801090000_public_request_hits.sql`, which is applied by hand; if it is
   missing, limits are not enforced. Confirm it exists in production **(outside the repo)**.
 - The chatbot has a global daily cap and a per-IP new-conversation budget (`input-budget.ts`,
@@ -152,20 +153,14 @@ covered is **(outside the repo)**.
 
 ## 7. Dependency and hardening status (2026-10-02)
 
-`npm audit --package-lock-only --omit=dev` on `main` reports 13 findings in production
-dependencies: 1 critical, 6 high, 4 moderate, 2 low. Fixes are available for all of them.
-
-- **Critical:** `next`. The advisory range (`9.3.4-canary.0` to `16.3.5`) covers the pinned
-  `16.2.6` and also `16.2.11`, the target named in `docs/archive/HANDOFF-HARDENING.md`, so that target is stale:
-  take the patched version from `npm audit fix` output, then verify the proxy contract on a
-  preview (`/about/` returns 308; `POST /api/ph/e/` returns 200; `/admin` redirects when signed
-  out). A proxy bypass alone does not expose data because every admin page and action checks the
-  session itself (section 2.1).
-- **High:** `brace-expansion`, `browserslist`, `fast-uri`, `nanoid`, `postcss`, `sharp`
-  (libvips). Mostly build-time or image-pipeline packages.
-- No dependency upgrade is part of the documentation change that introduced this section.
-- **No CI and no branch protection in the repository.** No `.github/` directory exists. Branch
-  protection is **(outside the repo)** and should be confirmed. Local Husky hooks are the only gate.
+- **Dependencies:** `npm audit --package-lock-only --omit=dev` on `main` at `2ddfba8` reports no
+  findings in production dependencies. `next` is on 16.3.8 (#94). Dependabot
+  (`.github/dependabot.yml`) opens weekly grouped updates for the root app, `apps/mike-newsletter`
+  and GitHub Actions.
+- **CI:** `.github/workflows/ci.yml` runs typecheck, lint and tests, plus
+  `npm audit --omit=dev --audit-level=high`, on every pull request into `main` and every push to
+  it. `next build` is not part of CI; Vercel builds every PR. Branch protection (whether CI is
+  required before merge) is **(outside the repo)** and should be confirmed in GitHub settings.
 - **Report-only CSP** (section 4).
 - **Hand-applied migrations:** security-relevant tables such as the rate-limit table depend on an
   operator having applied the SQL; there is no migration ledger in the repo yet.

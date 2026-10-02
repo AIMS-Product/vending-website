@@ -8,8 +8,8 @@ deployment only if it was created after the change.
 
 Notes on `.env.example`:
 
-- It does **not** list every variable. 39 runtime variables read by the code are absent from
-  it (Calendly, cron, reporting, ingest, GA4, GHL, Metricool, YouTube, Kit, masterclass,
+- It does **not** list every variable. About 40 runtime variables read by the code are absent
+  from it (Calendly, cron, reporting, ingest, GA4, GHL, Metricool, YouTube, Kit, masterclass,
   tracking flags and others); this document is the complete list. `.env.example` is an env
   file and was deliberately left untouched by the change that added this document.
 - `NEXT_PUBLIC_GA_ID` appears in `.env.example` but nothing reads it (GA4 loads through Google
@@ -180,9 +180,11 @@ Set by Vercel or the toolchain; not configured by hand.
 | `VERCEL_ENV`, `NEXT_PUBLIC_VERCEL_ENV`, `VERCEL_URL` | Environment labels (Sentry, PostHog, hidden internal pages) and password-reset / invite link origin |
 | `ALLOW_NEXT_BUILD_WITH_RUNNING_SERVER`               | Override for `scripts/guard-next-build.mjs`; leave unset                                            |
 
-Script-only variables (`SMOKE_BASE_URL`, `QA_BYPASS`, `YOUTUBE_API_KEY`, `ALLOW_REMOTE_PURGE`, the
-`PLAYWRIGHT_*` and `CHATBOT_REPLAY*` variables and others) are documented in
-[scripts/README.md](../scripts/README.md).
+Script and test-only variables are not listed here. The ones that change what a script touches
+(`SMOKE_BASE_URL`, `QA_BYPASS`, `YOUTUBE_API_KEY`, `ALLOW_REMOTE_PURGE`) are in
+[scripts/README.md](../scripts/README.md); the rest (`PLAYWRIGHT_*`, `BLOCK_PREVIEW_*`,
+`SMOKE_SCREENSHOT_DIR`, `CHATBOT_REPLAY*` for `src/lib/chatbot/replay/replay.live.test.ts`) are
+read near the top of the file that uses them.
 
 ## 8. The newsletter app (`apps/mike-newsletter`)
 

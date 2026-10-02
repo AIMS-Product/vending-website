@@ -171,8 +171,9 @@ Full procedure, rollback and incident checks are in `docs/RUNBOOK.md`. The rules
   moment they deploy. Verify on preview against the real Close org first.
 - Rollback: re-promote the previous production deployment of this app in Vercel. DNS does not
   change. The Webflow rollback proxy was retired at the 2026-07-27 cutover.
-- There is no CI workflow in this repository; run typecheck, lint, test and build locally
-  before merging.
+- CI (`.github/workflows/ci.yml`) runs typecheck, lint, test and a production `npm audit` on
+  every PR into `main`. It does not run `next build`; run that locally or rely on the Vercel
+  preview build.
 
 ## Further reading
 
