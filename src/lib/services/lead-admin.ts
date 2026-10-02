@@ -9,6 +9,7 @@ import {
 } from "@/lib/json-access";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Json, Tables } from "@/types/database";
+import { ADMIN_LEAD_LIST_LIMIT } from "@/lib/admin/lead-list-limit";
 
 type LeadRow = Tables<"lead_submissions">;
 type SessionRow = Tables<"qualification_sessions">;
@@ -167,7 +168,7 @@ export async function adminListLeads(
     .from("lead_submissions")
     .select(LEAD_FIELDS)
     .order("created_at", { ascending: false })
-    .limit(100);
+    .limit(ADMIN_LEAD_LIST_LIMIT);
 
   if (input.lifecycleStatus && input.lifecycleStatus !== "all") {
     query = query.eq("lifecycle_status", input.lifecycleStatus);

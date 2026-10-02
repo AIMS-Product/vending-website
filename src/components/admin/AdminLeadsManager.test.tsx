@@ -105,6 +105,28 @@ const detail: AdminLeadDetail = {
 };
 
 describe("AdminLeadsManager", () => {
+  it("says the list is capped when it holds the newest 100 leads", () => {
+    const many = Array.from({ length: 100 }, (_, i) => ({
+      ...lead,
+      id: `lead_${i}`,
+    }));
+    const props = {
+      activeLifecycleStatus: "all",
+      activeCloseSyncStatus: "all",
+      activeCallStatus: "all",
+    };
+    const capped = renderToStaticMarkup(
+      <AdminLeadsManager leads={many} {...props} />,
+    );
+    expect(capped).toContain("Showing the 100 most recent leads");
+    expect(capped).toContain("latest leads, filter to narrow");
+
+    const short = renderToStaticMarkup(
+      <AdminLeadsManager leads={many.slice(0, 3)} {...props} />,
+    );
+    expect(short).not.toContain("most recent leads");
+  });
+
   it("renders lead identity, lifecycle, sync state, source attribution, and filters", () => {
     const html = renderToStaticMarkup(
       <AdminLeadsManager
