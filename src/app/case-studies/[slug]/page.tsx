@@ -13,6 +13,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { caseStudyStructuredData } from "@/lib/case-studies/structured-data";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
+import { defaultOgImage } from "@/lib/site";
 
 type Params = { slug: string };
 
