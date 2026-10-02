@@ -9,6 +9,7 @@ import {
   type Popup,
   type PopupTemplateFields,
 } from "@/lib/content/popups";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, Tables } from "@/types/database";
 
@@ -195,25 +196,36 @@ export async function adminDeletePopup(
 }
 
 /**
- * Event totals per popup id for the stat tiles. Aggregated in code: the
- * events table is young and PostgREST aggregates are not enabled on this
- * project.
+ * Event totals per popup id for the stat tiles. Aggregated in code (PostgREST
+ * aggregates are not enabled on this project), reading every page: the API
+ * caps one response at 1,000 rows, so an unpaged read would count an
+ * arbitrary 1,000-event sample once the table grows past that.
  */
-// ponytail: fetches up to 100k event rows and counts in JS; swap for a SQL
-// view/RPC when popup volume makes that window real.
 export async function adminPopupEventTotals(
   deps: ServiceDeps = {},
 ): Promise<Map<string, PopupEventTotals>> {
   const client = serviceClient(deps);
-  const { data, error } = await client
-    .from("popup_events")
-    .select("popup_id, event_type")
-    .limit(100_000);
+  const { rows: data, error } = await readAllPages<{
+    popup_id: string;
+    event_type: string;
+  }>((from, to, count) =>
+    client
+      .from("popup_events")
+      .select("popup_id, event_type", { count })
+      .order("id")
+      .range(from, to),
+  );
 
-  if (error) throw new PopupServiceError("Could not load popup stats.");
+  if (error) {
+    console.error("popup event totals read failed", {
+      code: error.code,
+      message: error.message,
+    });
+    throw new PopupServiceError("Could not load popup stats.");
+  }
 
   const totals = new Map<string, PopupEventTotals>();
-  for (const row of data ?? []) {
+  for (const row of data) {
     const entry = totals.get(row.popup_id) ?? {
       shown: 0,
       ctaClicked: 0,

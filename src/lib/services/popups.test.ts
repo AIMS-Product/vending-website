@@ -66,6 +66,34 @@ function stubClient(result: { data: unknown; error: unknown }): PopupsClient {
   return { from: () => builder } as unknown as PopupsClient;
 }
 
+/**
+ * popup_events stand-in that honours `.range()` and caps each response at
+ * 1,000 rows the way PostgREST does on this project.
+ */
+function pagedEventsClient(
+  rows: Array<{ popup_id: string; event_type: string }>,
+  failure: { message: string; code?: string } | null = null,
+): PopupsClient {
+  const builder = {
+    select: (_columns: string, options?: { count?: "exact" }) => {
+      const exact = options?.count === "exact";
+      return {
+        order: () => ({
+          range: (from: number, to: number) =>
+            Promise.resolve({
+              data: failure
+                ? null
+                : rows.slice(from, Math.min(to + 1, from + 1000)),
+              count: exact ? rows.length : null,
+              error: failure,
+            }),
+        }),
+      };
+    },
+  };
+  return { from: () => builder } as unknown as PopupsClient;
+}
+
 describe("popups service", () => {
   it("carries the targeting columns through to the renderer shape", async () => {
     const client = stubClient({
@@ -173,15 +201,12 @@ describe("popups service", () => {
   });
 
   it("aggregates event totals per popup and overall", async () => {
-    const client = stubClient({
-      data: [
-        { popup_id: "a", event_type: "popup_shown" },
-        { popup_id: "a", event_type: "popup_shown" },
-        { popup_id: "a", event_type: "popup_cta_clicked" },
-        { popup_id: "b", event_type: "popup_dismissed" },
-      ],
-      error: null,
-    });
+    const client = pagedEventsClient([
+      { popup_id: "a", event_type: "popup_shown" },
+      { popup_id: "a", event_type: "popup_shown" },
+      { popup_id: "a", event_type: "popup_cta_clicked" },
+      { popup_id: "b", event_type: "popup_dismissed" },
+    ]);
 
     const totals = await adminPopupEventTotals({ client });
 
@@ -198,6 +223,45 @@ describe("popups service", () => {
       converted: 0,
       dismissed: 1,
     });
+  });
+
+  it("counts every event past the 1,000-row API cap", async () => {
+    const events = [
+      ...Array.from({ length: 1500 }, () => ({
+        popup_id: "a",
+        event_type: "popup_shown",
+      })),
+      ...Array.from({ length: 700 }, () => ({
+        popup_id: "a",
+        event_type: "popup_converted",
+      })),
+      ...Array.from({ length: 300 }, () => ({
+        popup_id: "b",
+        event_type: "popup_shown",
+      })),
+    ];
+
+    const totals = await adminPopupEventTotals({
+      client: pagedEventsClient(events),
+    });
+
+    expect(totals.get("a")).toEqual({
+      shown: 1500,
+      ctaClicked: 0,
+      converted: 700,
+      dismissed: 0,
+    });
+    expect(totals.get("b")?.shown).toBe(300);
+  });
+
+  it("raises a service error when the events read fails", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const client = pagedEventsClient([], { message: "boom", code: "XX000" });
+
+    await expect(adminPopupEventTotals({ client })).rejects.toThrow(
+      PopupServiceError,
+    );
+    error.mockRestore();
   });
 
   it("records only popup event types and never throws on failure", async () => {
