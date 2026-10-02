@@ -602,25 +602,29 @@ export async function adminGetConversationDetail(
   if (error) throw new ChatbotAdminError("Could not load this conversation.");
   if (!conversation) return null;
 
-  const { data: flagRows, error: flagsError } = await client
-    .from("chatbot_conversation_flags")
-    .select("id, conversation_id, flag, note, created_at")
-    .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: false });
+  // Independent of each other (both need only the conversation row), so they
+  // run together; the flags error is still checked before anything else.
+  const [flagsResult, bookedEventLinks] = await Promise.all([
+    client
+      .from("chatbot_conversation_flags")
+      .select("id, conversation_id, flag, note, created_at")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false }),
+    // A chat that booked from its own calendar without ever giving the bot
+    // contact details carries no lead_submission_id; its Calendly booking
+    // does. Recovered first so the linked-lead panel, the first-touch line and
+    // the credit chip all read the same lead the Booked list resolves.
+    fetchBookedEventLinks(client, [
+      {
+        id: conversation.id,
+        booked_event_uri: conversation.booked_event_uri ?? null,
+      },
+    ]),
+  ]);
+  const { data: flagRows, error: flagsError } = flagsResult;
   if (flagsError) {
     throw new ChatbotAdminError("Could not load this conversation's flags.");
   }
-
-  // A chat that booked from its own calendar without ever giving the bot
-  // contact details carries no lead_submission_id; its Calendly booking does.
-  // Recovered first so the linked-lead panel, the first-touch line and the
-  // credit chip all read the same lead the Booked list resolves.
-  const bookedEventLinks = await fetchBookedEventLinks(client, [
-    {
-      id: conversation.id,
-      booked_event_uri: conversation.booked_event_uri ?? null,
-    },
-  ]);
   const leadId = effectiveLeadId(conversation, bookedEventLinks);
 
   const [linkedLead, booking, attributionSource] = await Promise.all([
