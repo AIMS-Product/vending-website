@@ -15,6 +15,7 @@ import {
 } from "@/components/admin/AdminUi";
 import { POPUP_TEMPLATES, type Popup } from "@/lib/content/popups";
 import type { AdminPopup, PopupEventTotals } from "@/lib/services/popups";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 const initialActionState: PopupActionState = { status: "idle" };
 
@@ -267,9 +268,5 @@ function describeDelivery(popup: Popup): string {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPacificDay(iso, { year: true }) ?? "Unknown";
 }

@@ -14,6 +14,7 @@ import type {
   AdminChatbotTouchBucket,
   ChatbotConversationOutcome,
 } from "@/lib/services/chatbot-admin";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 const FLAG_LABELS: Record<ChatbotFlag, string> = {
   quality_good: "Good quality",
@@ -376,11 +377,7 @@ function FirstTouchCell({ touch }: { touch: AdminChatbotTouch | null }) {
 }
 
 function formatDay(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPacificDay(iso, { year: true }) ?? "Unknown";
 }
 
 function SearchForm({

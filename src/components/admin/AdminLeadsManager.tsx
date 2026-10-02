@@ -23,6 +23,7 @@ import type {
   AdminLeadDetail,
   AdminLeadListItem,
 } from "@/lib/services/lead-admin";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 const initialActionState: LeadAdminActionState = { status: "idle" };
 
@@ -853,12 +854,7 @@ function formatSummaryValue(value: unknown): string {
 }
 
 function formatDate(value: string | null | undefined) {
-  if (!value) return null;
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  return formatPacificDay(value, { year: true });
 }
 
 function formatStatus(value: string) {

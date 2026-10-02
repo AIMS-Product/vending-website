@@ -11,6 +11,7 @@ import type {
   VideoEngagementReport,
   VideoWatcherRow,
 } from "@/lib/services/video-engagement-report";
+import { formatPacificDay } from "@/lib/admin/format-time";
 
 /**
  * Pre-call video engagement, for people who booked a call.
@@ -329,9 +330,5 @@ function formatDuration(seconds: number): string {
 }
 
 function formatDay(value: string | null): string {
-  if (!value) return "—";
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime())
-    ? "—"
-    : parsed.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return formatPacificDay(value) ?? "—";
 }
