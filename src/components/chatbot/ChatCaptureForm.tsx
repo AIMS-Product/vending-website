@@ -110,7 +110,11 @@ export function ChatCaptureForm({
         />
       </label>
 
-      {error ? <p className="text-xs font-bold text-red-600">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-xs font-bold text-red-600">
+          {error}
+        </p>
+      ) : null}
 
       <div className="flex items-center gap-2">
         <button

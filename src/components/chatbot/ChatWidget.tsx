@@ -7,6 +7,8 @@ import {
   suppressesChatTeaser,
 } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
+import { trapTabKey } from "@/lib/a11y/focus-trap";
+import { useIsMobileViewport } from "@/lib/a11y/use-mobile-viewport";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
 import {
   VP_CHAT_VISITOR_COOKIE_MAX_AGE_SECONDS,
@@ -179,6 +181,9 @@ export function ChatWidget() {
     null,
   );
   const panelRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const wasOpenRef = useRef(false);
+  const isMobile = useIsMobileViewport();
 
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   // Admin pages and the webinar funnel never render the widget: on the
@@ -273,10 +278,28 @@ export function ChatWidget() {
     panelRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
+      // Below 640px the panel covers the whole screen, so Tab must not reach
+      // the page links hidden behind it. On desktop the panel stays non-modal.
+      else if (event.key === "Tab" && isMobile)
+        trapTabKey(event, panelRef.current);
     };
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen]);
+  }, [open, setOpen, isMobile]);
+
+  // Closing unmounts the panel, which would drop focus to <body>; hand it to
+  // the launcher that replaces it. Skipped on first render so a page load with
+  // the panel already closed never steals focus.
+  useEffect(() => {
+    if (open) {
+      wasOpenRef.current = true;
+      return;
+    }
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      launcherRef.current?.focus();
+    }
+  }, [open]);
 
   const needsGate = config?.captureMode === "pre_chat" && !captured;
 
@@ -903,7 +926,7 @@ export function ChatWidget() {
         <div
           ref={panelRef}
           role="dialog"
-          aria-modal="false"
+          aria-modal={isMobile ? "true" : "false"}
           aria-label={`Chat with ${config.personaName}`}
           tabIndex={-1}
           className={cn(
@@ -955,7 +978,10 @@ export function ChatWidget() {
                 </div>
               ) : null}
               {error ? (
-                <p className="px-4 pb-1 text-xs font-bold text-red-600">
+                <p
+                  role="alert"
+                  className="px-4 pb-1 text-xs font-bold text-red-600"
+                >
                   {error}
                 </p>
               ) : null}
@@ -977,6 +1003,7 @@ export function ChatWidget() {
         </div>
       ) : (
         <LauncherButton
+          buttonRef={launcherRef}
           brandColor={brandColor}
           personaName={config.personaName}
           avatarUrl={config.avatarUrl}

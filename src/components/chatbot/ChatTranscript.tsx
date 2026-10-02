@@ -53,13 +53,18 @@ export function ChatTranscript({
         />
       ))}
       {streamingText !== null ? (
-        <MessageBubble
-          message={{ role: "assistant", content: streamingText }}
-          personaName={personaName}
-          avatarUrl={avatarUrl}
-          brandColor={brandColor}
-          isStreaming
-        />
+        // Hidden from the live region while chunks arrive: screen readers
+        // would queue every fragment and then read the finished message
+        // again. The completed bubble that replaces it is announced once.
+        <div aria-hidden="true">
+          <MessageBubble
+            message={{ role: "assistant", content: streamingText }}
+            personaName={personaName}
+            avatarUrl={avatarUrl}
+            brandColor={brandColor}
+            isStreaming
+          />
+        </div>
       ) : null}
       {toolStatus === "finding_times" ? (
         <PendingLine
@@ -189,10 +194,8 @@ function TypingIndicator({
   brandColor: string;
 }) {
   return (
-    <div
-      className="flex items-end gap-2"
-      aria-label={`${personaName} is typing`}
-    >
+    <div className="flex items-end gap-2" role="status">
+      <span className="sr-only">{`${personaName} is typing`}</span>
       <PersonaAvatar
         personaName={personaName}
         avatarUrl={avatarUrl}
