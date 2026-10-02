@@ -4,12 +4,14 @@ import {
   useActionState,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type DragEvent,
   type ReactNode,
 } from "react";
 import Image from "next/image";
+import { useModalFocus } from "@/lib/a11y/use-modal-focus";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -964,7 +966,10 @@ export function AddMediaModal({ onClose }: { onClose: () => void }) {
     <ModalShell title="Upload media" onClose={onClose}>
       <form id="add-media" action={formAction} className="space-y-4">
         {state.status === "error" && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p
+            role="alert"
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700"
+          >
             {state.message}
           </p>
         )}
@@ -1149,6 +1154,7 @@ function AssetEditorModal({
     <ModalShell title={`Edit ${asset.title}`} onClose={onClose} wide>
       {state.status !== "idle" && (
         <p
+          role={state.status === "error" ? "alert" : "status"}
           className={`mb-4 rounded-lg px-3 py-2 text-sm ${
             state.status === "error"
               ? "bg-red-50 text-red-700"
@@ -1353,6 +1359,9 @@ function ModalShell({
   wide?: boolean;
   children: ReactNode;
 }) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalFocus(dialogRef);
+
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") onClose();
@@ -1370,6 +1379,7 @@ function ModalShell({
       }}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-modal-title"

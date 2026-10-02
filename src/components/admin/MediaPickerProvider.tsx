@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import Image from "next/image";
+import { useModalFocus } from "@/lib/a11y/use-modal-focus";
 import { createMediaAssetFromEditor } from "@/app/admin/media/actions";
 import {
   AdminIcon,
@@ -258,6 +259,8 @@ function MediaPickerModal({
   const [isUploading, startUploadTransition] = useTransition();
   const [isSaving, startSaveTransition] = useTransition();
   const [isDropActive, setIsDropActive] = useState(false);
+  const dialogRef = useRef<HTMLElement>(null);
+  useModalFocus(dialogRef);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -360,6 +363,7 @@ function MediaPickerModal({
       }}
     >
       <section
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="media-picker-title"

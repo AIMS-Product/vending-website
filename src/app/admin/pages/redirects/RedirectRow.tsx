@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { useModalFocus } from "@/lib/a11y/use-modal-focus";
 import {
   adminDangerButtonClass,
   adminInputClass,
@@ -215,13 +216,24 @@ function RedirectDeleteDialog({
     deleteBuilderRedirectAction,
     initialState,
   );
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalFocus(dialogRef);
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby={titleId}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6"
+      tabIndex={-1}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-4 py-6 outline-none"
     >
       <div className="border-ui-line w-full max-w-sm rounded-lg border bg-white p-5 text-left shadow-xl">
         <h2 id={titleId} className="text-ui-text text-base font-semibold">

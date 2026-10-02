@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useModalFocus } from "@/lib/a11y/use-modal-focus";
 import { BlockVariantPreviewSkeleton } from "@/components/admin/SeoPageBlockVariantPreview";
 import type { PageBlock } from "@/lib/page-builder/blocks";
 import {
@@ -29,6 +30,8 @@ export function BlockPicker({
     blockPickerOptions[0]?.type ?? "rich_text",
   );
   const variantPanelRef = useRef<HTMLDivElement | null>(null);
+  const dialogRef = useRef<HTMLDialogElement | null>(null);
+  useModalFocus(dialogRef, isOpen);
   const selectedOption =
     blockPickerOptions.find((option) => option.type === selectedType) ??
     blockPickerOptions[0];
@@ -78,6 +81,7 @@ export function BlockPicker({
             }}
           >
             <dialog
+              ref={dialogRef}
               open
               className="animate-in fade-in slide-in-from-top-2 border-ui-line rounded-ui-lg bg-ui-surface shadow-ui-raised ring-ui-text/5 mx-auto flex max-h-[calc(100dvh-2rem)] w-full max-w-6xl flex-col overflow-hidden border p-4 ring-1 sm:p-5"
               aria-modal="true"
@@ -86,12 +90,12 @@ export function BlockPicker({
             >
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
-                  <h4
+                  <h2
                     id="block-picker-title"
                     className="text-ui-text text-base font-semibold"
                   >
                     Add page content
-                  </h4>
+                  </h2>
                   <p
                     id="block-picker-description"
                     className="text-ui-text-subtle mt-1 text-sm"
