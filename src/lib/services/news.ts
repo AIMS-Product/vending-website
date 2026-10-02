@@ -1,6 +1,5 @@
 import "server-only";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { config } from "@/lib/config";
 import type { Database } from "@/types/database";
@@ -43,7 +42,10 @@ export async function listPublishedPosts({
   limit = 20,
   offset = 0,
 }: { limit?: number; offset?: number } = {}) {
-  const supabase = await createClient();
+  // The cookie-free anon client, like every other public read here: the
+  // cookie-bound server client calls cookies(), which makes /news dynamic and
+  // switches off its `revalidate`.
+  const supabase = getBuildTimeClient();
   const { data, error } = await supabase
     .from("news_posts")
     .select(PUBLIC_FIELDS)
@@ -52,8 +54,11 @@ export async function listPublishedPosts({
     .range(offset, offset + limit - 1);
 
   if (error) {
+    // Throw rather than return []: an empty list renders "More stories coming
+    // soon" over published articles and serves an empty RSS feed, while a throw
+    // lets ISR keep the last good page.
     console.error("listPublishedPosts failed", error);
-    return [];
+    throw new Error("Could not load published news posts.");
   }
   return data ?? [];
 }
