@@ -29,7 +29,7 @@ export function CohortBanner() {
       href={cohortBannerHref}
       className="flex min-h-11 items-center justify-center gap-2 border-b-2 border-[#111111] bg-[#111111] px-5 text-center text-sm font-bold text-white hover:underline focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:outline-none focus-visible:ring-inset"
     >
-      {text && (
+      {text ? (
         <>
           <span>{text}</span>
           <span className="hidden text-[#55b8e8] sm:inline">
@@ -39,6 +39,10 @@ export function CohortBanner() {
             →
           </span>
         </>
+      ) : (
+        // Server HTML and the first client paint have no count yet. Without a
+        // name the link is the first focusable element and reads as empty.
+        <span className="sr-only">Book your call</span>
       )}
     </Link>
   );
