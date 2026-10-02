@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminShell } from "@/components/admin/AdminShell";
 import {
@@ -8,6 +9,11 @@ import { adminListBuilderRedirects } from "@/lib/services/seo-pages";
 import { requireReadAccess } from "@/lib/supabase/auth";
 import { RedirectCreateForm } from "./RedirectCreateForm";
 import { RedirectRow } from "./RedirectRow";
+
+export const metadata: Metadata = {
+  title: "Redirects",
+  robots: { index: false, follow: false },
+};
 
 const SUCCESS_MESSAGES: Record<string, string> = {
   created: "Redirect created.",
