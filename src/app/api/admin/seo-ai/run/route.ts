@@ -5,6 +5,10 @@ import {
   syncSeoAi,
   type AiEngine,
 } from "@/lib/services/seo-ai-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -26,11 +30,14 @@ export async function GET(request: Request) {
   try {
     const result = await syncSeoAi({ engine: engine as AiEngine });
     const failed = runFailed(result.connector);
+    if (failed)
+      await reportCronRunFailure("seo-ai", result.connector.connector);
     return NextResponse.json(
       { ok: !failed, ...result },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("seo-ai", error);
     console.error("seo ai runner failed", {
       message: error instanceof Error ? error.message : undefined,
     });

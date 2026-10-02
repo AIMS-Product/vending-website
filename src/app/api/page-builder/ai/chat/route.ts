@@ -5,6 +5,7 @@ import {
   generateOpenAiPageBuilderChatResponse,
 } from "@/lib/services/openai-page-builder-chat";
 import { canEditAdmin, getAuthorizedAdmin } from "@/lib/supabase/auth";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_REQUESTS_PER_WINDOW = 30;
@@ -71,6 +72,7 @@ export async function POST(request: Request) {
       );
     }
 
+    await reportRouteError("page-builder-ai-chat", error);
     console.error("page builder AI chat failed", error);
     return Response.json(
       { message: "Could not complete the page builder request." },

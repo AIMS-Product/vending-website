@@ -6,6 +6,7 @@ import {
   isAdminAnalyticsRangeKey,
 } from "@/lib/services/admin-analytics-range";
 import { getChannelsTab } from "@/lib/services/channel-report";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -60,6 +61,7 @@ export async function GET(request: Request) {
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
+    await reportRouteError("reporting-channels", error);
     console.error("reporting api: channels failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { rejectUnlessCron, runFailed } from "@/lib/seo/cron-auth";
 import { syncSeoRanks } from "@/lib/services/seo-rank-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,11 +27,14 @@ export async function GET(request: Request) {
   try {
     const result = await syncSeoRanks({ full, collectOnly });
     const failed = runFailed(result.connector);
+    if (failed)
+      await reportCronRunFailure("seo-ranks", result.connector.connector);
     return NextResponse.json(
       { ok: !failed, ...result },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("seo-ranks", error);
     console.error("seo rank runner failed", {
       message: error instanceof Error ? error.message : undefined,
     });

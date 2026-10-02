@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { syncSearchConsole } from "@/lib/services/search-console-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -74,11 +78,14 @@ export async function GET(request: Request) {
         run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
       ),
     );
+    if (failed)
+      await reportCronRunFailure("search-console-sync", "connector failed");
     return NextResponse.json(
       { ok: !failed, ...result },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("search-console-sync", error);
     console.error("search console sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

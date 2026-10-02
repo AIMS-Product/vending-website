@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { syncBitlyClicks } from "@/lib/services/bitly-click-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -86,8 +90,15 @@ export async function GET(request: Request) {
     const everyLinkRefused =
       result.scanned > 0 && result.invalid === result.scanned;
     const ok = result.failed === 0 && !everyLinkRefused;
+    if (!ok) {
+      await reportCronRunFailure(
+        "bitly-sync",
+        everyLinkRefused ? "every link refused" : "links failed",
+      );
+    }
     return NextResponse.json({ ok, ...result }, { status: ok ? 200 : 500 });
   } catch (error) {
+    await reportCronException("bitly-sync", error);
     console.error("bitly sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });

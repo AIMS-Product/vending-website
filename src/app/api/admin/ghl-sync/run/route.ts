@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { syncGhl } from "@/lib/services/ghl-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,11 +75,18 @@ export async function GET(request: Request) {
       (run) =>
         run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
     );
+    if (failed.length > 0) {
+      await reportCronRunFailure(
+        "ghl-sync",
+        failed.map((run) => run.connector).join(", "),
+      );
+    }
     return NextResponse.json(
       { ok: failed.length === 0, ...result },
       { status: failed.length === 0 ? 200 : 500 },
     );
   } catch (error) {
+    await reportCronException("ghl-sync", error);
     console.error("ghl sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

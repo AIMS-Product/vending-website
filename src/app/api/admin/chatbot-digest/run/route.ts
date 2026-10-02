@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { runChatbotDigestCron } from "@/lib/chatbot/learning/digest";
+import { reportCronException } from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,6 +37,7 @@ export async function GET(request: Request) {
     const result = await runChatbotDigestCron();
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
+    await reportCronException("chatbot-digest", error);
     console.error("chatbot digest runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });

@@ -8,6 +8,10 @@ import {
 } from "@/lib/services/metricool-sync";
 import { syncSocialAccounts } from "@/lib/services/social-account-sync";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 /** Account series restate for a few days; re-read the last ten. */
 const SOCIAL_WINDOW_DAYS = 10;
@@ -88,11 +92,14 @@ export async function GET(request: Request) {
         run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
       ),
     );
+    if (failed)
+      await reportCronRunFailure("metricool-sync", "connector failed");
     return NextResponse.json(
       { ok: !failed, ...result, accounts },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("metricool-sync", error);
     console.error("metricool sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

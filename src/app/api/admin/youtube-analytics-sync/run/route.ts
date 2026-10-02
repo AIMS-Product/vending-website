@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { syncYouTubeAnalytics } from "@/lib/services/youtube-analytics-sync";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,11 +75,14 @@ export async function GET(request: Request) {
     const failed = Boolean(
       run.error && !run.error.startsWith("skipped:") && run.rowsWritten === 0,
     );
+    if (failed)
+      await reportCronRunFailure("youtube-analytics-sync", run.connector);
     return NextResponse.json(
       { ok: !failed, ...result },
       { status: failed ? 500 : 200 },
     );
   } catch (error) {
+    await reportCronException("youtube-analytics-sync", error);
     console.error("youtube analytics sync runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

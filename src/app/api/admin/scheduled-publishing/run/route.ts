@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { adminRunScheduledSeoPagePublishing } from "@/lib/services/seo-page-scheduler";
+import { reportCronException } from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
       })),
     });
   } catch (error) {
+    await reportCronException("scheduled-publishing", error);
     console.error("scheduled publishing runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });

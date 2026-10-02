@@ -7,6 +7,7 @@ import {
 } from "@/lib/services/admin-analytics-range";
 import { kpiReportToCsv } from "@/lib/services/kpi-report";
 import { getKpiTab } from "@/lib/services/kpi-report-data";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -71,6 +72,7 @@ export async function GET(request: Request) {
       { headers: { "cache-control": "no-store" } },
     );
   } catch (error) {
+    await reportRouteError("reporting-kpi", error);
     console.error("reporting api: kpi failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,

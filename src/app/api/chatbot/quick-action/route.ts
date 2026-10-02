@@ -21,6 +21,7 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from "@/lib/public-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 /**
  * A widget quick action that stays in the chat: "Book a call" opens the
@@ -137,6 +138,7 @@ export async function POST(request: Request) {
       { headers: { "Cache-Control": "no-store" } },
     );
   } catch (error) {
+    await reportRouteError("chatbot-quick-action", error);
     console.error("chatbot quick action failed", {
       error: error instanceof Error ? error.message : "unknown error",
     });

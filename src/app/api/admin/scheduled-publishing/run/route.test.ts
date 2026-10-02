@@ -72,9 +72,7 @@ describe("scheduled publishing cron route", () => {
 
   it("returns a safe failed summary when the scheduler throws", async () => {
     const schedulerError = new Error("connection string leaked");
-    mocks.runScheduledSeoPagePublishing.mockRejectedValue(
-      schedulerError,
-    );
+    mocks.runScheduledSeoPagePublishing.mockRejectedValue(schedulerError);
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);

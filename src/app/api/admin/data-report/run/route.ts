@@ -3,6 +3,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { config } from "@/lib/config";
 import { sendDataReport } from "@/lib/services/data-report-data";
+import {
+  reportCronException,
+  reportCronRunFailure,
+} from "@/lib/observability/cron-failure";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,6 +71,13 @@ export async function GET(request: Request) {
 
   try {
     const result = await sendDataReport(options);
+    // A failed send answers 200 with ok: false; make it visible.
+    if (!result.sent && !options.dryRun) {
+      await reportCronRunFailure(
+        "data-report",
+        `${options.period ?? "default"} report not sent`,
+      );
+    }
     return NextResponse.json({
       ok: result.sent || Boolean(options.dryRun),
       period: result.period,
@@ -78,6 +89,7 @@ export async function GET(request: Request) {
       text: result.report.text,
     });
   } catch (error) {
+    await reportCronException("data-report", error);
     console.error("data report runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
       message: error instanceof Error ? error.message : undefined,
