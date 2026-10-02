@@ -35,10 +35,16 @@ function buildCalendlyClient({
   matchingLead = null,
   leadSelectError = null,
   upsertError = null,
+  insertedRows = [{ invitee_uri: "inserted" }],
+  updatedRows = [] as Array<{ invitee_uri: string }>,
+  updateError = null,
 }: {
   matchingLead?: { id: string } | null;
   leadSelectError?: Record<string, unknown> | null;
   upsertError?: Record<string, unknown> | null;
+  insertedRows?: Array<{ invitee_uri: string }>;
+  updatedRows?: Array<{ invitee_uri: string }>;
+  updateError?: Record<string, unknown> | null;
 } = {}) {
   const maybeSingle = vi
     .fn()
@@ -48,17 +54,44 @@ function buildCalendlyClient({
   const eq = vi.fn().mockReturnValue({ order });
   const select = vi.fn().mockReturnValue({ eq });
 
-  const upsert = vi.fn().mockResolvedValue({ error: upsertError });
+  // The cancellation path awaits upsert() directly; the booking path chains
+  // .select() to learn whether a row was inserted (ON CONFLICT DO NOTHING).
+  const upsertSelect = vi.fn().mockResolvedValue({
+    data: upsertError ? null : insertedRows,
+    error: upsertError,
+  });
+  const upsert = vi.fn((_row: Record<string, unknown>, _options?: unknown) =>
+    Object.assign(Promise.resolve({ error: upsertError }), {
+      select: upsertSelect,
+    }),
+  );
+  const updateSelect = vi
+    .fn()
+    .mockResolvedValue({ data: updatedRows, error: updateError });
+  const neq = vi.fn().mockReturnValue({ select: updateSelect });
+  const updateEq = vi.fn().mockReturnValue({ neq });
+  const update = vi.fn().mockReturnValue({ eq: updateEq });
 
   const from = vi.fn((table: string) => {
     if (table === "lead_submissions") return { select };
-    if (table === "calendly_bookings") return { upsert };
+    if (table === "calendly_bookings") return { upsert, update };
     throw new Error(`Unexpected table: ${table}`);
   });
 
   return {
     client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
-    mocks: { from, select, eq, order, limit, maybeSingle, upsert },
+    mocks: {
+      from,
+      select,
+      eq,
+      order,
+      limit,
+      maybeSingle,
+      upsert,
+      update,
+      updateEq,
+      neq,
+    },
   };
 }
 
@@ -70,7 +103,11 @@ describe("recordCalendlyBooking", () => {
 
     const result = await recordCalendlyBooking(client, createdEvent);
 
-    expect(result).toEqual({ ok: true, bookingMatchedLead: true });
+    expect(result).toEqual({
+      ok: true,
+      bookingMatchedLead: true,
+      applied: true,
+    });
     expect(mocks.eq).toHaveBeenCalledWith("email", "jane@example.com");
     expect(mocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -82,7 +119,7 @@ describe("recordCalendlyBooking", () => {
         lead_submission_id: "lead-1",
         utm_source: "google",
       }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
   });
 
@@ -93,7 +130,11 @@ describe("recordCalendlyBooking", () => {
 
     const result = await recordCalendlyBooking(client, canceledEvent);
 
-    expect(result).toEqual({ ok: true, bookingMatchedLead: true });
+    expect(result).toEqual({
+      ok: true,
+      bookingMatchedLead: true,
+      applied: true,
+    });
     expect(mocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         invitee_uri: canceledEvent.inviteeUri,
@@ -102,7 +143,7 @@ describe("recordCalendlyBooking", () => {
         cancel_reason: "Schedule conflict",
         lead_submission_id: "lead-1",
       }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
     const upsertedRow = mocks.upsert.mock.calls[0][0];
     expect(typeof upsertedRow.canceled_at).toBe("string");
@@ -113,10 +154,14 @@ describe("recordCalendlyBooking", () => {
 
     const result = await recordCalendlyBooking(client, createdEvent);
 
-    expect(result).toEqual({ ok: true, bookingMatchedLead: false });
+    expect(result).toEqual({
+      ok: true,
+      bookingMatchedLead: false,
+      applied: true,
+    });
     expect(mocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ lead_submission_id: null }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
   });
 
@@ -131,7 +176,11 @@ describe("recordCalendlyBooking", () => {
 
     const result = await recordCalendlyBooking(client, eventWithoutEmail);
 
-    expect(result).toEqual({ ok: true, bookingMatchedLead: false });
+    expect(result).toEqual({
+      ok: true,
+      bookingMatchedLead: false,
+      applied: true,
+    });
     expect(mocks.select).not.toHaveBeenCalled();
   });
 
@@ -154,7 +203,7 @@ describe("recordCalendlyBooking", () => {
           payload: { created_at: "2026-08-20T09:00:00.000Z" },
         },
       }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
   });
 
@@ -169,7 +218,7 @@ describe("recordCalendlyBooking", () => {
 
     expect(mocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ raw_payload: rawPayload }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
   });
 
@@ -184,7 +233,7 @@ describe("recordCalendlyBooking", () => {
 
     expect(mocks.upsert).toHaveBeenCalledWith(
       expect.objectContaining({ raw_payload: { source: "embed_postmessage" } }),
-      { onConflict: "invitee_uri" },
+      expect.objectContaining({ onConflict: "invitee_uri" }),
     );
   });
 
@@ -206,6 +255,76 @@ describe("recordCalendlyBooking", () => {
 
     await expect(recordCalendlyBooking(client, createdEvent)).rejects.toThrow(
       "Could not store Calendly booking.",
+    );
+  });
+  // These option assertions are the contract with Postgres: ignoreDuplicates
+  // is ON CONFLICT DO NOTHING, and the follow-up update is filtered on
+  // status <> 'canceled'. The fakes cannot prove the database honours them.
+  it("inserts a new booking without overwriting an existing row", async () => {
+    const { client, mocks } = buildCalendlyClient();
+
+    await recordCalendlyBooking(client, createdEvent);
+
+    expect(mocks.upsert).toHaveBeenCalledWith(expect.anything(), {
+      onConflict: "invitee_uri",
+      ignoreDuplicates: true,
+    });
+    expect(mocks.update).not.toHaveBeenCalled();
+  });
+
+  it("refreshes an existing booked row, but never a cancelled one", async () => {
+    const { client, mocks } = buildCalendlyClient({
+      insertedRows: [],
+      updatedRows: [{ invitee_uri: createdEvent.inviteeUri }],
+    });
+
+    const result = await recordCalendlyBooking(client, createdEvent);
+
+    expect(result.applied).toBe(true);
+    expect(mocks.update).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "booked" }),
+    );
+    expect(mocks.updateEq).toHaveBeenCalledWith(
+      "invitee_uri",
+      createdEvent.inviteeUri,
+    );
+    expect(mocks.neq).toHaveBeenCalledWith("status", "canceled");
+  });
+
+  it("reports a late booking event for a cancelled invitee as not applied", async () => {
+    const { client } = buildCalendlyClient({
+      insertedRows: [],
+      updatedRows: [],
+    });
+
+    const result = await recordCalendlyBooking(client, createdEvent);
+
+    expect(result).toEqual({
+      ok: true,
+      bookingMatchedLead: false,
+      applied: false,
+    });
+  });
+
+  it("throws when the refresh of an existing booking fails", async () => {
+    const { client } = buildCalendlyClient({
+      insertedRows: [],
+      updateError: { message: "boom" },
+    });
+
+    await expect(recordCalendlyBooking(client, createdEvent)).rejects.toThrow(
+      "Could not store Calendly booking.",
+    );
+  });
+
+  it("still lets a cancellation overwrite a booking", async () => {
+    const { client, mocks } = buildCalendlyClient();
+
+    await recordCalendlyBooking(client, canceledEvent);
+
+    expect(mocks.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({ status: "canceled" }),
+      { onConflict: "invitee_uri" },
     );
   });
 });

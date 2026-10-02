@@ -29,7 +29,10 @@ export async function POST(request: Request) {
     }
 
     const client = createAdminClient();
-    await recordCalendlyBooking(client, event);
+    const recorded = await recordCalendlyBooking(client, event);
+    // A booking event for an invitee already cancelled: nothing changed, so
+    // there is nothing to attribute. 200 so Calendly stops redelivering.
+    if (!recorded.applied) return Response.json({ ok: true });
 
     // Chat attribution runs after the booking is safely recorded and never
     // fails the webhook: a retry storm caused by a bookkeeping error would

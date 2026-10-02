@@ -67,7 +67,11 @@ describe("POST /api/webhooks/calendly", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.signingKey.value = SIGNING_KEY;
-    mocks.recordCalendlyBooking.mockResolvedValue(undefined);
+    mocks.recordCalendlyBooking.mockResolvedValue({
+      ok: true,
+      bookingMatchedLead: false,
+      applied: true,
+    });
   });
 
   it("records the booking for a correctly signed event", async () => {
