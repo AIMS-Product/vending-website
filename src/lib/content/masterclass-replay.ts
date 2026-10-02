@@ -243,13 +243,13 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     steps: [
       { label: "Watch the replay" },
       {
-        label: "Set up call below to get your free advisory call",
+        label: "Book your free advisory call below",
         target: "cta",
       },
     ],
     hero: null,
     cta: READY_TO_BUILD,
-    closing: { label: "I am ready for my free advisory call", target: "cta" },
+    closing: { label: "Book my free advisory call", target: "cta" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
   adnb: {
@@ -268,7 +268,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
       paragraphs: [
         {
           lines: [
-            "Most people don't book a strategy call because they're still trying to figure out whether this business makes sense for their situation.",
+            "Not sure yet whether vending makes sense for your situation?",
           ],
         },
         { lines: ["That's exactly what the call is for."], weight: "black" },
@@ -286,13 +286,13 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
         },
         {
           lines: [
-            "The replay won't be available forever, but the bigger question is whether you want clarity on whether this opportunity is right for you.",
+            "The replay comes down soon. The call is where you get a straight answer for your own situation.",
           ],
         },
       ],
       action: { kind: "calendly", calendlyUrl: REPLAY_ADVISORY_CALENDLY },
     },
-    closing: { label: "BOOK YOUR FREE STRATEGY CALL", target: "cta" },
+    closing: { label: "Book my free advisory call", target: "cta" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
   meta: {
@@ -306,9 +306,9 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
       "After you watch the replay, reserve your free advisory call. We'll answer your questions, learn about your goals, and help you decide whether building a vending business is the right fit for you.",
     ],
     steps: [],
-    hero: { label: "RESERVE MY FREE ADVISORY CALL", target: "cta" },
+    hero: { label: "Book my free advisory call", target: "cta" },
     cta: READY_TO_BUILD,
-    closing: { label: "Reserve my free advisory call", target: "cta" },
+    closing: { label: "Book my free advisory call", target: "cta" },
     testimonialVideos: META_TESTIMONIAL_VIDEOS,
   },
   advisory: {

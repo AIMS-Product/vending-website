@@ -128,8 +128,11 @@ export const hero = {
   headline: "Exact Course Anthony Used to exceed 120k$ in monthly revenue",
   highlight: "120k$",
   availability: "Now Available For Instant Access",
-  /** GHL's line above the offer on its thank-you flow. */
-  teaserHeadline: "Grab this bonus before the webinar",
+  /**
+   * Above the offer on /masterclass-confirmed. GHL said "Grab this bonus",
+   * but the Playbook is paid ($67), so "bonus" read as free. Process copy.
+   */
+  teaserHeadline: "Get a head start before the webinar",
   teaserBullets: [
     "Find it. Decide on a location in minutes with the same parking/availability/visibility checks Mike runs on every spot, before you spend a dollar on a machine.",
     "Close it. Walk in with Mike's own scripts, so the conversation with a property manager feels like offering an amenity, not begging for space.",

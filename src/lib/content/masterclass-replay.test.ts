@@ -142,13 +142,23 @@ describe("masterclass replay content", () => {
   it("links the DNA booking step and closes meta with a CTA to the form", () => {
     expect(replayVariants.dna.steps.map((s) => s.label)).toEqual([
       "Watch the replay",
-      "Set up call below to get your free advisory call",
+      "Book your free advisory call below",
     ]);
     expect(replayVariants.dna.steps[1].target).toBe("cta");
     expect(replayVariants.meta.closing).toEqual({
-      label: "Reserve my free advisory call",
+      label: "Book my free advisory call",
       target: "cta",
     });
+  });
+
+  it("names the call one way on every variant: a free advisory call", () => {
+    const copy = JSON.stringify(replayVariants).toLowerCase();
+    expect(copy).not.toContain("strategy call");
+    for (const key of ["dna", "adnb", "meta"] as const) {
+      expect(replayVariants[key].closing?.label).toBe(
+        "Book my free advisory call",
+      );
+    }
   });
 
   it("expires the Sunday before the event at 9 PM America/Chicago", () => {
