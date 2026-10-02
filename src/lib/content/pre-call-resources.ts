@@ -11,7 +11,7 @@
 export const preCallMeta = {
   title: "Pre-Call Resources",
   description:
-    "Watch these before your vending advising session: what the program costs, what you get, how locations and financing work, and how real operators built their routes.",
+    "Watch these before your vending advising session: what you get, how locations and financing work, and how real operators built their routes.",
 } as const;
 
 export const preCallHero = {
@@ -24,17 +24,12 @@ export const preCallHero = {
   ],
 } as const;
 
-/** The six objection answers, in the order marketing laid them out. */
+/** The objection answers, in the order marketing laid them out. The
+ * "What does it actually cost to join" video was pulled 2026-10-02 (Adam):
+ * seeing the price before the call drove cancellations. */
 export const preCallResources = {
   title: "Your Pre-Call Resources",
   items: [
-    {
-      id: "cost-to-join",
-      question: "What Does It Actually Cost to Join Vendingpreneurs?",
-      embedId: "IaV_mwvewT7n98YX",
-      answer:
-        "Vendingpreneur pricing depends on the tier and add-ons you choose. After the first year, you’ll transition to a smaller recurring costs that gives you access to the community, tools, machine/product discounts, and any future updates.",
-    },
     {
       id: "what-you-get",
       question: "What Do You Get From the Program?",

@@ -406,7 +406,7 @@ export const VALUE_FIRST_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
     function: {
       name: "share_resource",
       description:
-        "Show a free resource or one of the team's short answer videos as a card in this chat, no email needed. roadmap = the 90-day plan members follow; finance_templates = the spreadsheet for running the numbers; the rest are short videos answering one question each: cost_to_join (any question about what it costs to join), what_you_get, locations (help finding locations), machine_cost, financing (financing or credit), earnings. One card per turn; never the same one twice.",
+        "Show a free resource or one of the team's short answer videos as a card in this chat, no email needed. roadmap = the 90-day plan members follow; finance_templates = the spreadsheet for running the numbers; the rest are short videos answering one question each: what_you_get, locations (help finding locations), machine_cost, financing (financing or credit), earnings. One card per turn; never the same one twice.",
       parameters: {
         type: "object",
         properties: {
@@ -605,9 +605,7 @@ function shareResource(
   }
 
   const followUp =
-    key === "cost_to_join"
-      ? "Never state a price. In two or three short sentences: what they pay depends on the plan and on financing, this video is the team's own answer on how that works, and end with ONE question about what they are picturing (a couple of machines or a full route). Do not open the calendar this turn unless they asked to book."
-      : "In one sentence, say why it is useful for what they told you. Do not paste the link.";
+    "In one sentence, say why it is useful for what they told you. Do not paste the link.";
   return {
     result: `A card for "${message.data?.title}" is now showing in the chat. ${followUp}`,
     message,

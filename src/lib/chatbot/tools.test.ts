@@ -522,18 +522,13 @@ describe("value-first tools", () => {
     expect(outcome.message).toBeUndefined();
   });
 
-  it("share_resource shows the cost video card and tells the model not to price or push the calendar", async () => {
+  it("share_resource no longer offers the pulled cost video", async () => {
     const outcome = await runChatbotTool(
       "share_resource",
       JSON.stringify({ resource: "cost_to_join" }),
       makeContext({ valueFirst: true }),
     );
-    expect(outcome.message).toMatchObject({
-      kind: "shared_resource",
-      data: { key: "cost_to_join", url: "/pre-call-resources#cost-to-join" },
-    });
-    expect(outcome.result).toContain("Never state a price");
-    expect(outcome.result).toContain("Do not open the calendar");
+    expect(outcome.message).toBeUndefined();
   });
 
   it("share_resource never repeats a card", async () => {

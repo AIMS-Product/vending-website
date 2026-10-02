@@ -273,7 +273,7 @@ function toolsSection(hasSeenCalendar: boolean, valueFirst = false): string {
     ...(valueFirst
       ? [
           "- share_case_study: shows a real member's story as a card in this chat. Describe what they told you (job, family, schedule, goal, worry) and the server picks the closest member. Never name a member or type a case-study link yourself; the card carries both.",
-          "- share_resource: shows the 90-day roadmap, the finance templates, or one of the team's short answer videos (cost_to_join, what_you_get, locations, machine_cost, financing, earnings) as a card in this chat, no email needed. One card per reply, never the same one twice.",
+          "- share_resource: shows the 90-day roadmap, the finance templates, or one of the team's short answer videos (what_you_get, locations, machine_cost, financing, earnings) as a card in this chat, no email needed. One card per reply, never the same one twice.",
         ]
       : []),
   ].join("\n");

@@ -167,7 +167,6 @@ export function sharedResourceMessage(
  * is turned on (the price rule: no number in chat, text or email).
  */
 const PRE_CALL_VIDEO_KEYS: Record<string, string> = {
-  "cost-to-join": "cost_to_join",
   "what-you-get": "what_you_get",
   "securing-locations": "locations",
   "machine-cost": "machine_cost",
@@ -176,7 +175,6 @@ const PRE_CALL_VIDEO_KEYS: Record<string, string> = {
 };
 
 export const PRE_CALL_VIDEO_KEY_LIST = [
-  "cost_to_join",
   "what_you_get",
   "locations",
   "machine_cost",

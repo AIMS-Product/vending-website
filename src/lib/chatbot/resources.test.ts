@@ -66,14 +66,14 @@ describe("sharedResourceMessage", () => {
 
   it("shares a pre-call video by key, linking to it on the page", () => {
     const message = sharedResourceMessage(
-      "cost_to_join",
+      "what_you_get",
       { label: "Video answer", via: "model", emailCaptured: false },
       now,
     );
     expect(message?.data).toMatchObject({
-      key: "cost_to_join",
-      title: "What Does It Actually Cost to Join Vendingpreneurs?",
-      url: "/pre-call-resources#cost-to-join",
+      key: "what_you_get",
+      title: "What Do You Get From the Program?",
+      url: "/pre-call-resources#what-you-get",
       via: "model",
     });
   });
