@@ -148,7 +148,7 @@ export function AdminLeadForwardingManager({
                 <span className={adminLabelClass}>Forwarding is on</span>
                 <span className="text-ui-text-muted block text-sm">
                   {settings.updatedAt
-                    ? `Last changed ${formatPacificStamp(settings.updatedAt)}${
+                    ? `Last changed ${formatPacificStamp(settings.updatedAt) ?? "at an unknown time"}${
                         settings.updatedBy ? ` by ${settings.updatedBy}` : ""
                       }.`
                     : "Not configured yet."}

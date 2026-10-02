@@ -136,8 +136,8 @@ export default async function AdminGoalsPage({
           migration and run the hourly sync once. */}
       {report.connected ? null : (
         <p className={`${adminPanelClass} mb-4 p-4 text-sm`}>
-          Our copy of Close is not available yet, so every actual shows a dash
-          (no data) rather than zero. It fills in after the next hourly update.
+          Our copy of Close could not be read, so every actual shows a dash (no
+          data) rather than zero.
         </p>
       )}
 
