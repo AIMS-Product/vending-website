@@ -306,4 +306,16 @@ describe("requestIp", () => {
     ).toBe("203.0.113.9");
     expect(requestIp(new Headers())).toBeNull();
   });
+
+  it("drops anything that is not an IP address, so it never reaches a query filter", () => {
+    expect(
+      requestIp(new Headers({ "x-real-ip": "1.2.3.4,email_hash.neq.x" })),
+    ).toBeNull();
+    expect(
+      requestIp(new Headers({ "x-forwarded-for": "not-an-ip" })),
+    ).toBeNull();
+    expect(requestIp(new Headers({ "x-real-ip": "2001:db8::1" }))).toBe(
+      "2001:db8::1",
+    );
+  });
 });

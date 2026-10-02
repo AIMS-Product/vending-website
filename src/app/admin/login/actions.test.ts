@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => {
     })),
     createAdminClient: vi.fn(() => ({ from })),
     redirect: vi.fn(),
+    checkPublicRateLimit: vi.fn(),
     signInWithPassword,
     getUser,
     signOut,
@@ -37,6 +38,18 @@ vi.mock("@/lib/supabase/admin", () => ({
 vi.mock("next/navigation", () => ({
   redirect: mocks.redirect,
 }));
+
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "x-real-ip": "203.0.113.7" }),
+}));
+
+vi.mock("@/lib/public-rate-limit", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/public-rate-limit")>()),
+  checkPublicRateLimit: mocks.checkPublicRateLimit,
+}));
+
+const THROTTLED =
+  "Too many submissions from this connection. Wait a few minutes and try again.";
 
 function formData({
   email = " Admin@Example.com ",
@@ -62,6 +75,7 @@ describe("loginWithPassword", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.ADMIN_GUEST_EMAIL;
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.signInWithPassword.mockResolvedValue({ error: null });
     mocks.getUser.mockResolvedValue({
       data: {
@@ -131,6 +145,38 @@ describe("loginWithPassword", () => {
     expect(mocks.redirect).not.toHaveBeenCalled();
   });
 
+  it("spends the sign-in budget keyed by IP and normalized email", async () => {
+    await loginWithPassword({ status: "idle" }, formData());
+
+    expect(mocks.checkPublicRateLimit.mock.calls).toEqual([
+      ["admin_login_ip", { ip: "203.0.113.7" }],
+      ["admin_login_email", { ip: null, email: "admin@example.com" }],
+    ]);
+  });
+
+  it("refuses a throttled sign-in without calling Supabase", async () => {
+    mocks.checkPublicRateLimit.mockResolvedValue(false);
+
+    const result = await loginWithPassword({ status: "idle" }, formData());
+
+    expect(result).toEqual({
+      status: "error",
+      message: THROTTLED,
+      email: "admin@example.com",
+    });
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+
+  it("does not spend budget on fields that fail validation", async () => {
+    await loginWithPassword(
+      { status: "idle" },
+      formData({ email: "bad", password: "x" }),
+    );
+
+    expect(mocks.checkPublicRateLimit).not.toHaveBeenCalled();
+  });
+
   it("signs out and rejects users without app access", async () => {
     mocks.maybeSingle.mockResolvedValue({ data: null, error: null });
 
@@ -149,16 +195,17 @@ describe("loginWithPassword", () => {
 describe("loginWithPassword as guest", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.ADMIN_GUEST_EMAIL = " Team@Vendingpreneurs.com ";
+    process.env.ADMIN_GUEST_EMAIL = " Guest@Example.test ";
+    mocks.checkPublicRateLimit.mockResolvedValue(true);
     mocks.signInWithPassword.mockResolvedValue({ error: null });
     mocks.getUser.mockResolvedValue({
-      data: { user: { id: "u-guest", email: "team@vendingpreneurs.com" } },
+      data: { user: { id: "u-guest", email: "guest@example.test" } },
       error: null,
     });
     mocks.maybeSingle.mockResolvedValue({
       data: {
         user_id: "u-guest",
-        email: "team@vendingpreneurs.com",
+        email: "guest@example.test",
         role: "viewer",
         added_at: new Date().toISOString(),
       },
@@ -174,7 +221,7 @@ describe("loginWithPassword as guest", () => {
     await loginWithPassword({ status: "idle" }, guestFormData());
 
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
-      email: "team@vendingpreneurs.com",
+      email: "guest@example.test",
       password: "vending1234",
     });
     expect(mocks.redirect).toHaveBeenCalledWith("/admin");
@@ -187,7 +234,7 @@ describe("loginWithPassword as guest", () => {
     await loginWithPassword({ status: "idle" }, data);
 
     expect(mocks.signInWithPassword).toHaveBeenCalledWith({
-      email: "team@vendingpreneurs.com",
+      email: "guest@example.test",
       password: "vending1234",
     });
   });
@@ -227,5 +274,47 @@ describe("loginWithPassword as guest", () => {
     expect(mocks.signOut).toHaveBeenCalled();
     expect(result?.status).toBe("error");
     expect(mocks.redirect).not.toHaveBeenCalled();
+  });
+  it("checks the per-IP budget, then the shared guest budget", async () => {
+    await loginWithPassword({ status: "idle" }, guestFormData());
+
+    expect(mocks.checkPublicRateLimit.mock.calls).toEqual([
+      ["admin_login_ip", { ip: "203.0.113.7" }],
+      ["admin_login_email", { ip: null, email: "guest@example.test" }],
+      ["admin_login_guest", { ip: null, email: "guest@example.test" }],
+    ]);
+  });
+
+  it("refuses a throttled IP before spending the shared guest budget", async () => {
+    mocks.checkPublicRateLimit.mockResolvedValueOnce(false);
+
+    const result = await loginWithPassword({ status: "idle" }, guestFormData());
+
+    expect(result).toEqual({ status: "error", message: THROTTLED, email: "" });
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledTimes(1);
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it("refuses when the shared guest budget is spent, without echoing the address", async () => {
+    mocks.checkPublicRateLimit
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const result = await loginWithPassword({ status: "idle" }, guestFormData());
+
+    expect(result).toEqual({ status: "error", message: THROTTLED, email: "" });
+    expect(mocks.signInWithPassword).not.toHaveBeenCalled();
+  });
+  it("spends the guest budget when the shared address is typed into the email form", async () => {
+    await loginWithPassword(
+      { status: "idle" },
+      formData({ email: "guest@example.test" }),
+    );
+
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
+      "admin_login_guest",
+      { ip: null, email: "guest@example.test" },
+    );
   });
 });

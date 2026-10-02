@@ -1,5 +1,6 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import {
@@ -7,10 +8,16 @@ import {
   normalizeAdminNextPath,
 } from "@/lib/supabase/auth-redirects";
 import { getAuthorizedAdmin } from "@/lib/supabase/auth";
+import {
+  checkPublicRateLimit,
+  requestIp,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/public-rate-limit";
 import { createClient } from "@/lib/supabase/server";
 
 export type LoginState =
-  { status: "idle" } | { status: "error"; message: string; email: string };
+  | { status: "idle" }
+  | { status: "error"; message: string; email: string };
 
 const loginSchema = z.object({
   email: z.preprocess(
@@ -57,6 +64,10 @@ export async function loginWithPassword(
       return { status: "error", message: "Enter the password.", email: "" };
     }
 
+    if (!(await signInAllowed(email))) {
+      return { status: "error", message: TOO_MANY_REQUESTS_MESSAGE, email: "" };
+    }
+
     // Guests get no email back in the error state: there is no email field
     // to repopulate, and echoing the shared address would leak it.
     return signIn({ email, password, next: nextPath, echoEmail: "" });
@@ -76,6 +87,14 @@ export async function loginWithPassword(
       status: "error",
       message: parsed.error.issues[0]?.message ?? "Invalid login fields.",
       email: submittedEmail,
+    };
+  }
+
+  if (!(await signInAllowed(parsed.data.email))) {
+    return {
+      status: "error",
+      message: TOO_MANY_REQUESTS_MESSAGE,
+      email: parsed.data.email,
     };
   }
 
@@ -129,4 +148,19 @@ async function signIn({
   }
 
   redirect(normalizeAdminNextPath(next));
+}
+
+/**
+ * Per-IP first, so one noisy IP is refused before it spends an account's
+ * budget. The guest budget also applies when someone types the shared
+ * address into the email form, so the two routes share one allowance.
+ */
+async function signInAllowed(email: string): Promise<boolean> {
+  const ip = requestIp(await headers());
+  if (!(await checkPublicRateLimit("admin_login_ip", { ip }))) return false;
+  if (!(await checkPublicRateLimit("admin_login_email", { ip: null, email }))) {
+    return false;
+  }
+  if (email !== guestEmail()) return true;
+  return checkPublicRateLimit("admin_login_guest", { ip: null, email });
 }

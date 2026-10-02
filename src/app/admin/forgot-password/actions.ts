@@ -7,6 +7,11 @@ import {
   resolveAuthEmailOrigin,
 } from "@/lib/supabase/auth-redirects";
 import { publicConfig } from "@/lib/config";
+import {
+  checkPublicRateLimit,
+  requestIp,
+  TOO_MANY_REQUESTS_MESSAGE,
+} from "@/lib/public-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -30,6 +35,20 @@ export async function requestPasswordReset(
     return { status: "error", message: "Enter a valid email address." };
   }
 
+  // Throttled before the allowlist lookup and for every address alike, so the
+  // refusal says nothing about whether the email has an account.
+  const allowed =
+    (await checkPublicRateLimit("admin_password_reset_ip", {
+      ip: requestIp(await headers()),
+    })) &&
+    (await checkPublicRateLimit("admin_password_reset_email", {
+      ip: null,
+      email: parsed.data,
+    }));
+  if (!allowed) {
+    return { status: "error", message: TOO_MANY_REQUESTS_MESSAGE };
+  }
+
   const hasAccess = await hasAdminEmailAccess(parsed.data);
   if (hasAccess) {
     const supabase = await createClient();
@@ -41,10 +60,8 @@ export async function requestPasswordReset(
     });
 
     if (error) {
-      console.error("requestPasswordReset failed", {
-        email: parsed.data,
-        error,
-      });
+      // No address in the log: it is PII and the error carries the cause.
+      console.error("requestPasswordReset failed", { error: error.message });
     }
   }
 
@@ -60,7 +77,9 @@ async function hasAdminEmailAccess(email: string) {
     .maybeSingle();
 
   if (error) {
-    console.error("admin password reset lookup failed", { email, error });
+    console.error("admin password reset lookup failed", {
+      error: error.message,
+    });
     return false;
   }
 

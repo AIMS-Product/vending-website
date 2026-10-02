@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { isIP } from "node:net";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
@@ -56,6 +57,19 @@ const LIMITS = {
   // conversations. Tight on purpose: two sends is the intended ceiling for a
   // real conversation, four covers a returning visitor over a day.
   chatbot_resource_email: { windowMs: 24 * 60 * 60 * 1000, max: 4 },
+  // Admin sign-in through our server actions. Split by IP and by email (like
+  // the masterclass budgets) so no single IP can spend an account's whole
+  // budget and lock a real admin out. Every attempt counts, successes too.
+  // This only covers our forms: Supabase's own auth endpoints are reachable
+  // with the public anon key, so Supabase's auth rate limits and password
+  // strength remain the backstop for direct calls.
+  admin_login_ip: { windowMs: 15 * 60 * 1000, max: 20 },
+  admin_login_email: { windowMs: 15 * 60 * 1000, max: 30 },
+  // The shared guest viewer, across every IP and both sign-in routes.
+  admin_login_guest: { windowMs: 15 * 60 * 1000, max: 30 },
+  // Each accepted request emails a reset link.
+  admin_password_reset_ip: { windowMs: 60 * 60 * 1000, max: 10 },
+  admin_password_reset_email: { windowMs: 60 * 60 * 1000, max: 10 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;
@@ -294,7 +308,9 @@ function hashEmail(email: string | null | undefined) {
  */
 export function requestIp(headers: Headers): string | null {
   const realIp = headers.get("x-real-ip")?.trim();
-  if (realIp) return realIp;
-  const forwarded = headers.get("x-forwarded-for")?.split(",")[0]?.trim();
-  return forwarded || null;
+  const candidate =
+    realIp || headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  // Only a well-formed address reaches the PostgREST filter: anything else
+  // would error the query, and most budgets fail open on error.
+  return candidate && isIP(candidate) ? candidate : null;
 }
