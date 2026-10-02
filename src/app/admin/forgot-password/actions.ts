@@ -37,10 +37,14 @@ export async function requestPasswordReset(
 
   // Throttled before the allowlist lookup and for every address alike, so the
   // refusal says nothing about whether the email has an account.
-  const allowed = await checkPublicRateLimit("admin_password_reset", {
-    ip: requestIp(await headers()),
-    email: parsed.data,
-  });
+  const allowed =
+    (await checkPublicRateLimit("admin_password_reset_ip", {
+      ip: requestIp(await headers()),
+    })) &&
+    (await checkPublicRateLimit("admin_password_reset_email", {
+      ip: null,
+      email: parsed.data,
+    }));
   if (!allowed) {
     return { status: "error", message: TOO_MANY_REQUESTS_MESSAGE };
   }

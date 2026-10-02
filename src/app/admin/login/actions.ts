@@ -64,13 +64,7 @@ export async function loginWithPassword(
       return { status: "error", message: "Enter the password.", email: "" };
     }
 
-    // Per IP first, then the account-wide guest budget, so one noisy IP is
-    // refused before it can spend the whole team's guest allowance.
-    const ip = await clientIp();
-    const allowed =
-      (await checkPublicRateLimit("admin_login", { ip })) &&
-      (await checkPublicRateLimit("admin_login_guest", { ip: null, email }));
-    if (!allowed) {
+    if (!(await signInAllowed(email))) {
       return { status: "error", message: TOO_MANY_REQUESTS_MESSAGE, email: "" };
     }
 
@@ -96,11 +90,7 @@ export async function loginWithPassword(
     };
   }
 
-  const allowed = await checkPublicRateLimit("admin_login", {
-    ip: await clientIp(),
-    email: parsed.data.email,
-  });
-  if (!allowed) {
+  if (!(await signInAllowed(parsed.data.email))) {
     return {
       status: "error",
       message: TOO_MANY_REQUESTS_MESSAGE,
@@ -160,6 +150,17 @@ async function signIn({
   redirect(normalizeAdminNextPath(next));
 }
 
-async function clientIp(): Promise<string | null> {
-  return requestIp(await headers());
+/**
+ * Per-IP first, so one noisy IP is refused before it spends an account's
+ * budget. The guest budget also applies when someone types the shared
+ * address into the email form, so the two routes share one allowance.
+ */
+async function signInAllowed(email: string): Promise<boolean> {
+  const ip = requestIp(await headers());
+  if (!(await checkPublicRateLimit("admin_login_ip", { ip }))) return false;
+  if (!(await checkPublicRateLimit("admin_login_email", { ip: null, email }))) {
+    return false;
+  }
+  if (email !== guestEmail()) return true;
+  return checkPublicRateLimit("admin_login_guest", { ip: null, email });
 }

@@ -157,8 +157,8 @@ describe("requestPasswordReset", () => {
         "Too many submissions from this connection. Wait a few minutes and try again.",
     });
     expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
-      "admin_password_reset",
-      { ip: null, email: "admin@example.com" },
+      "admin_password_reset_ip",
+      { ip: null },
     );
     expect(mocks.from).not.toHaveBeenCalled();
     expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
@@ -178,5 +178,22 @@ describe("requestPasswordReset", () => {
 
     expect(JSON.stringify(spy.mock.calls)).not.toContain("admin@example.com");
     spy.mockRestore();
+  });
+  it("checks the per-email budget after the per-IP one", async () => {
+    mocks.checkPublicRateLimit
+      .mockResolvedValueOnce(true)
+      .mockResolvedValueOnce(false);
+
+    const result = await requestPasswordReset(
+      { status: "idle" },
+      formData("admin@example.com"),
+    );
+
+    expect(result.status).toBe("error");
+    expect(mocks.checkPublicRateLimit).toHaveBeenLastCalledWith(
+      "admin_password_reset_email",
+      { ip: null, email: "admin@example.com" },
+    );
+    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
   });
 });
