@@ -271,12 +271,12 @@ describe("resolveChatTouch", () => {
   const index = buildChatIndex([
     {
       id: "68ead512",
-      capturedEmail: "Mindfulobserveruc@gmail.com",
+      capturedEmail: "Lead-B@example.com",
       createdAt: "2026-09-11T12:37:29.000Z",
     },
     {
       id: "later-chat",
-      capturedEmail: "mindfulobserveruc@gmail.com",
+      capturedEmail: "lead-b@example.com",
       createdAt: "2026-09-20T09:00:00.000Z",
     },
   ]);
@@ -284,7 +284,7 @@ describe("resolveChatTouch", () => {
   it("finds the chat that came before the booking, whatever the casing", () => {
     const touch = resolveChatTouch(
       {
-        inviteeEmail: "mindfulobserveruc@gmail.com",
+        inviteeEmail: "lead-b@example.com",
         bookedAt: "2026-09-12T14:22:18.000Z",
         utmContent: null,
       },
@@ -299,7 +299,7 @@ describe("resolveChatTouch", () => {
   it("ignores a chat that only happened after the call was booked", () => {
     const touch = resolveChatTouch(
       {
-        inviteeEmail: "mindfulobserveruc@gmail.com",
+        inviteeEmail: "lead-b@example.com",
         bookedAt: "2026-09-01T00:00:00.000Z",
         utmContent: null,
       },
@@ -312,7 +312,7 @@ describe("resolveChatTouch", () => {
   it("marks the chat as the booker when the booking carries its tag", () => {
     const touch = resolveChatTouch(
       {
-        inviteeEmail: "mindfulobserveruc@gmail.com",
+        inviteeEmail: "lead-b@example.com",
         bookedAt: "2026-09-12T14:22:18.000Z",
         utmContent: "68ead512",
       },

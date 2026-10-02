@@ -182,7 +182,7 @@ back. Three things wait on it:
 
 ## 6. Open questions for Adam
 
-- `Nathan Wirth · nrwirthdesign@gmail.com` — real lead or Kody's test? Kept
+- `Lead A · lead-a@example.com` — real lead or Kody's test? Kept
   deliberately; deletion is irreversible.
 - Confirm with Stephen before he deletes the five `SK - UTM *` lead fields.
   The site no longer writes them (proven), but deleting a Close field destroys
