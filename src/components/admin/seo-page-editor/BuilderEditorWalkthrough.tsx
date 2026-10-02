@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useLayoutEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { useModalFocus } from "@/lib/a11y/use-modal-focus";
 import type { SeoPageEditorController } from "@/components/admin/seo-page-editor/useSeoPageEditorController";
 import { computeWalkthroughCardPlacement } from "@/components/admin/seo-page-editor/walkthrough-card-position";
 import {
@@ -169,9 +176,27 @@ function WalkthroughOverlay({
   onSkip: () => void;
 }) {
   const targetRect = useWalkthroughTarget(targetKey, retryKey);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // The tour's own controls come and go as the target is found, so focus the
+  // dialog itself rather than a button that may be replaced.
+  useModalFocus(dialogRef, true, "container");
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onSkip();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [onSkip]);
 
   return (
-    <div className="fixed inset-0 z-[80]" role="dialog" aria-modal="true">
+    <div
+      ref={dialogRef}
+      className="fixed inset-0 z-[80] outline-none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="builder-walkthrough-title"
+      tabIndex={-1}
+    >
       <button
         type="button"
         aria-label="Skip walkthrough"
@@ -207,7 +232,12 @@ function WalkthroughOverlay({
             <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
               Quick tour · Step {step} of 3
             </p>
-            <h3 className="text-ui-text mt-2 text-lg font-semibold">{title}</h3>
+            <h3
+              id="builder-walkthrough-title"
+              className="text-ui-text mt-2 text-lg font-semibold"
+            >
+              {title}
+            </h3>
             <p className="text-ui-text-muted mt-2 text-sm leading-6">{body}</p>
             <div className="mt-5 flex items-center justify-between gap-3">
               <button
@@ -263,7 +293,12 @@ function WalkthroughCard({
         <p className="text-ui-accent text-xs font-semibold tracking-wider uppercase">
           Quick tour · Step {step} of 3
         </p>
-        <h3 className="text-ui-text mt-2 text-lg font-semibold">{title}</h3>
+        <h3
+          id="builder-walkthrough-title"
+          className="text-ui-text mt-2 text-lg font-semibold"
+        >
+          {title}
+        </h3>
         <p className="text-ui-text-muted mt-2 text-sm leading-6">{body}</p>
         <div className="mt-5 flex items-center justify-between gap-3">
           <button

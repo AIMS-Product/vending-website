@@ -14,7 +14,7 @@ export function TestimonialsV2() {
   return (
     <section
       id="success-stories"
-      className="scroll-mt-24 bg-white px-5 py-24 lg:px-10 lg:py-32"
+      className="bg-white px-5 py-24 lg:px-10 lg:py-32"
     >
       <div className="mx-auto max-w-[1500px]">
         <div className="text-center">

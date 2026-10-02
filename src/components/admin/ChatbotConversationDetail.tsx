@@ -365,7 +365,9 @@ function NotePanel({
 
   return (
     <section className={adminCardClass}>
-      <h2 className={adminSectionTitleClass}>Reviewer note</h2>
+      <h2 id="reviewer-note-title" className={adminSectionTitleClass}>
+        Reviewer note
+      </h2>
       <p className="text-ui-text-subtle mt-1 text-xs">
         {mostRecentFlag
           ? `Attaches to the "${FLAG_LABELS[mostRecentFlag.flag]}" flag.`
@@ -375,6 +377,7 @@ function NotePanel({
         <input type="hidden" name="conversationId" value={conversationId} />
         <textarea
           name="note"
+          aria-labelledby="reviewer-note-title"
           rows={3}
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -477,6 +480,7 @@ function HandoffPanel({
           value={reason}
           onChange={(event) => setReason(event.target.value)}
           placeholder="Why does this need a human?"
+          aria-label="Reason for hand-off"
           className={adminInputClass}
         />
         <div className="flex items-center gap-3">

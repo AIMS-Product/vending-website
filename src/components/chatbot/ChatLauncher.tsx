@@ -6,6 +6,7 @@
  * everything.
  */
 
+import type { Ref } from "react";
 import Link from "next/link";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 import { quickActionBehavior } from "@/lib/chatbot/quick-actions";
@@ -45,7 +46,7 @@ export function PanelHeader({
         ) : null}
         <div>
           <p className="text-sm font-black text-[#111111]">{personaName}</p>
-          <p className="flex items-center gap-1 text-[11px] leading-none text-[#111111]/75">
+          <p className="flex items-center gap-1 text-xs leading-none text-[#111111]">
             <span
               aria-hidden="true"
               className="h-1.5 w-1.5 rounded-full bg-[#22c55e]"
@@ -184,11 +185,14 @@ export function StarterQuestionChips({
 }
 
 export function LauncherButton({
+  buttonRef,
   brandColor,
   personaName,
   avatarUrl,
   onClick,
 }: {
+  /** Lets ChatWidget return focus here when the panel closes. */
+  buttonRef?: Ref<HTMLButtonElement>;
   brandColor: string;
   personaName: string;
   avatarUrl: string | null;
@@ -196,6 +200,7 @@ export function LauncherButton({
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onClick}
       aria-label={`Open chat with ${personaName}`}

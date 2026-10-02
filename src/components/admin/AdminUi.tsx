@@ -44,10 +44,10 @@ export const adminCardClass =
   "rounded-ui-lg border border-ui-line bg-ui-surface p-4 shadow-ui";
 
 export const adminInputClass =
-  "mt-1.5 w-full rounded-ui border border-ui-line-strong bg-ui-surface px-2.5 py-1.5 text-sm text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
+  "mt-1.5 w-full rounded-ui border border-ui-field-border bg-ui-surface px-2.5 py-1.5 text-sm text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
 
 export const adminTextareaClass =
-  "mt-1.5 w-full rounded-ui border border-ui-line-strong bg-ui-surface px-2.5 py-1.5 text-sm leading-6 text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
+  "mt-1.5 w-full rounded-ui border border-ui-field-border bg-ui-surface px-2.5 py-1.5 text-sm leading-6 text-ui-text transition outline-none placeholder:text-ui-text-subtle focus:border-ui-accent focus:ring-2 focus:ring-ui-accent/15";
 
 /** Put on <thead> of a table wrapped with <FreezeTableHead />: paints header cells so rows never show through. */
 export const adminStickyHeadClass =

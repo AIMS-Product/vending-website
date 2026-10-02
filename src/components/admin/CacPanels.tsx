@@ -113,6 +113,7 @@ export function CacMonthControls({ report }: { report: CacReport }) {
       </button>
       {state.status !== "idle" ? (
         <p
+          role={state.status === "saved" ? "status" : "alert"}
           className={`pb-1.5 text-sm ${state.status === "saved" ? "text-ui-ok" : "text-ui-bad"}`}
         >
           {state.message}
@@ -306,10 +307,15 @@ function RouteRow({ row }: { row: CacRouteRow }) {
             {pending ? "Saving" : "Save"}
           </button>
         ) : state.status === "saved" ? (
-          <span className="text-ui-ok text-[11px]">Saved</span>
+          <span role="status" className="text-ui-ok text-[11px]">
+            Saved
+          </span>
         ) : null}
         {state.status === "conflict" || state.status === "error" ? (
-          <p className="text-ui-bad mt-1 text-left text-[11px] leading-tight">
+          <p
+            role="alert"
+            className="text-ui-bad mt-1 text-left text-[11px] leading-tight"
+          >
             {state.message}
           </p>
         ) : null}

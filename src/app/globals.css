@@ -42,10 +42,13 @@
   --ui-sidebar: #fafbfc;
   --ui-line: #e5e8ed;
   --ui-line-strong: #d3d8e0;
+  /* Border of a text field: the only visible edge of the control, so it needs
+     3:1 against the surface (WCAG 1.4.11). 3.71:1 on surface, 3.52:1 on canvas. */
+  --ui-field-border: #7c8492;
 
   --ui-text: #12161f;
   --ui-text-muted: #5b6472;
-  --ui-text-subtle: #8a92a1;
+  --ui-text-subtle: #67707e;
 
   --ui-accent: #0b63f6;
   --ui-accent-hover: #0a56d6;
@@ -97,6 +100,7 @@
   --color-ui-sidebar: var(--ui-sidebar);
   --color-ui-line: var(--ui-line);
   --color-ui-line-strong: var(--ui-line-strong);
+  --color-ui-field-border: var(--ui-field-border);
   --color-ui-text: var(--ui-text);
   --color-ui-text-muted: var(--ui-text-muted);
   --color-ui-text-subtle: var(--ui-text-subtle);
@@ -237,6 +241,17 @@ body:has([data-hide-site-footer="true"]) > footer {
   display: none !important;
 }
 
+/* The sticky site header (about 82px) and the fixed chat launcher would cover a
+   control that keyboard focus or an anchor jump scrolls to the edge of the
+   viewport (WCAG 2.4.11). Pages without the header (admin, booking funnels)
+   keep a zero top offset. */
+html:has(body > header) {
+  scroll-padding-top: 6rem;
+}
+html {
+  scroll-padding-bottom: 5.5rem;
+}
+
 @keyframes brand-marquee {
   from {
     transform: translateX(0);
@@ -254,6 +269,14 @@ body:has([data-hide-site-footer="true"]) > footer {
   .brand-marquee {
     animation: none;
   }
+}
+
+/* "Pause animations" (MotionToggle) stops every looping decoration on the
+   page: both marquees and the floating hero badges (WCAG 2.2.2). */
+html[data-motion="paused"] .brand-marquee,
+html[data-motion="paused"] .v2-marquee,
+html[data-motion="paused"] .v2-float {
+  animation-play-state: paused;
 }
 
 /* Catch-all for reduced motion: transitions and animations the components
@@ -351,12 +374,12 @@ body:has([data-hide-site-footer="true"]) > footer {
   color: inherit;
 }
 .news-prose a {
-  color: var(--brand-500);
+  color: var(--brand-700);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .news-prose a:hover {
-  color: var(--brand-600);
+  color: var(--color-ink);
 }
 .news-prose ul,
 .news-prose ol {

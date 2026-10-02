@@ -77,7 +77,7 @@ function PreCallResources() {
         <div className="mt-14 space-y-20">
           {preCallResources.items.map((item) => (
             // The id is the anchor the chat's video cards link to.
-            <article key={item.id} id={item.id} className="scroll-mt-24">
+            <article key={item.id} id={item.id}>
               <h3 className="mx-auto max-w-[28ch] text-center text-[clamp(1.4rem,2.4vw,1.9rem)] leading-[1.15] font-black text-balance text-[#111111]">
                 {item.question}
               </h3>

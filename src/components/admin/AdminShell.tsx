@@ -532,9 +532,9 @@ function AdminDesktopBrand({ collapsed }: { collapsed: boolean }) {
         </span>
       ) : (
         <div className="min-w-0">
-          <h2 className="text-ui-text truncate text-sm font-semibold">
+          <p className="text-ui-text truncate text-sm font-semibold">
             Vendingpreneurs
-          </h2>
+          </p>
           <p className="text-ui-text-subtle text-xs">Studio</p>
         </div>
       )}

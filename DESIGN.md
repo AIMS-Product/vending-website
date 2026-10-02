@@ -96,19 +96,20 @@ Defined in `src/app/globals.css`, exposed as Tailwind utilities
 (`bg-ui-surface`, `text-ui-text-muted`, `border-ui-line`, `rounded-ui`,
 `shadow-ui`). Never write raw hex in an admin component.
 
-| Token                               | Value     | Use                                            |
-| ----------------------------------- | --------- | ---------------------------------------------- |
-| `--ui-canvas`                       | `#f6f7f9` | page background, table header fill, hover rows |
-| `--ui-surface`                      | `#fdfdfe` | cards, tables, sidebar items, inputs           |
-| `--ui-sidebar`                      | `#fafbfc` | sidebar, one step cooler than content          |
-| `--ui-line`                         | `#e5e8ed` | every divider and card border                  |
-| `--ui-line-strong`                  | `#d3d8e0` | input and button borders                       |
-| `--ui-text`                         | `#12161f` | primary text                                   |
-| `--ui-text-muted`                   | `#5b6472` | descriptions, secondary rows                   |
-| `--ui-text-subtle`                  | `#8a92a1` | eyebrows, captions, placeholders               |
-| `--ui-accent`                       | `#0b63f6` | primary button, active nav, links              |
-| `--ui-accent-soft`                  | `#eef4ff` | active nav fill                                |
-| `--ui-ok` / `warn` / `bad` / `idle` |           | status dots only                               |
+| Token                               | Value     | Use                                                |
+| ----------------------------------- | --------- | -------------------------------------------------- |
+| `--ui-canvas`                       | `#f6f7f9` | page background, table header fill, hover rows     |
+| `--ui-surface`                      | `#fdfdfe` | cards, tables, sidebar items, inputs               |
+| `--ui-sidebar`                      | `#fafbfc` | sidebar, one step cooler than content              |
+| `--ui-line`                         | `#e5e8ed` | every divider and card border                      |
+| `--ui-line-strong`                  | `#d3d8e0` | button borders, dividers (labelled controls)       |
+| `--ui-field-border`                 | `#7c8492` | text field borders, 3:1 on surface (WCAG 1.4.11)   |
+| `--ui-text`                         | `#12161f` | primary text                                       |
+| `--ui-text-muted`                   | `#5b6472` | descriptions, secondary rows                       |
+| `--ui-text-subtle`                  | `#67707e` | eyebrows, captions, placeholders, 4.5:1 on surface |
+| `--ui-accent`                       | `#0b63f6` | primary button, active nav, links                  |
+| `--ui-accent-soft`                  | `#eef4ff` | active nav fill                                    |
+| `--ui-ok` / `warn` / `bad` / `idle` |           | status dots only                                   |
 
 Neutrals are tinted a few points toward the accent hue. Nothing is `#000` or
 `#fff`.

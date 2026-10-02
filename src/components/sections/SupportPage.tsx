@@ -75,7 +75,7 @@ export function SupportPage({
                   <li key={item} className="flex items-start gap-4">
                     <span
                       aria-hidden
-                      className="border-ink bg-brand-600 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black text-white"
+                      className="border-ink bg-brand-700 flex size-8 shrink-0 items-center justify-center rounded-full border-2 text-sm font-black text-white"
                     >
                       {index + 1}
                     </span>

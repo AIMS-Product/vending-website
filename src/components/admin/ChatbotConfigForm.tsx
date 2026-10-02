@@ -485,10 +485,12 @@ function StarterQuestionsEditor({
               )
             }
             placeholder="How does the program work?"
+            aria-label={`Starter question ${index + 1}`}
             className={`${adminInputClass} flex-1`}
           />
           <button
             type="button"
+            aria-label={`Remove starter question ${index + 1}`}
             onClick={() => onChange(value.filter((_, i) => i !== index))}
             className="text-ui-text-subtle text-xs font-medium hover:text-red-600"
           >
@@ -537,16 +539,19 @@ function QuickActionsEditor({
                   update(index, { label: event.target.value })
                 }
                 placeholder="Book a call"
+                aria-label={`Quick action ${index + 1} label`}
                 className={`${adminInputClass} flex-1`}
               />
               <input
                 value={action.url}
                 onChange={(event) => update(index, { url: event.target.value })}
                 placeholder="/book-now"
+                aria-label={`Quick action ${index + 1} link`}
                 className={`${adminInputClass} flex-1`}
               />
               <button
                 type="button"
+                aria-label={`Remove quick action ${index + 1}`}
                 onClick={() => onChange(value.filter((_, i) => i !== index))}
                 className="text-ui-text-subtle shrink-0 text-xs font-medium hover:text-red-600"
               >

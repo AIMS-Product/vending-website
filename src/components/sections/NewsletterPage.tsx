@@ -56,7 +56,7 @@ export async function NewsletterPage({
 
           <div
             id="newsletter-signup"
-            className="border-ink rounded-card shadow-card scroll-mt-24 border-2 bg-white p-6 sm:p-8"
+            className="border-ink rounded-card shadow-card border-2 bg-white p-6 sm:p-8"
           >
             <NewsletterSignupForm
               action={startNewsletterSignup}
