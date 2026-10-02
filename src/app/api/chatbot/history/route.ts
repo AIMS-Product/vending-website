@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import { loadChatbotConfig } from "@/lib/chatbot/config";
+import { chatbotUnavailableResponse } from "@/lib/chatbot/db-unavailable";
 import { publicConfig } from "@/lib/config";
 import { toChatbotMessages } from "@/lib/chatbot/conversation-store";
 import {
@@ -52,12 +53,13 @@ export async function GET(request: Request) {
   }
 
   const client = createAdminClient();
-  const { data } = await client
+  const { data, error } = await client
     .from("chatbot_conversations")
     .select("id,messages,status,captured_name,captured_email,captured_phone")
     .eq("session_id", parsed.data.sessionId)
     .maybeSingle();
 
+  if (error) return chatbotUnavailableResponse("history", error);
   if (!data) {
     return Response.json(NOT_FOUND_RESPONSE, { status: 404 });
   }

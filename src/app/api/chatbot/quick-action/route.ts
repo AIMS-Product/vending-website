@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { loadChatbotConfig } from "@/lib/chatbot/config";
 import { VP_CHAT_VISITOR_COOKIE_NAME } from "@/lib/chatbot/constants";
+import { chatbotUnavailableResponse } from "@/lib/chatbot/db-unavailable";
 import {
   loadOrCreateConversation,
   persistConversationTurn,
@@ -68,11 +69,14 @@ export async function POST(request: Request) {
   const client = createAdminClient();
 
   // Creating a conversation spends the same budgets a first chat turn does.
-  const { data: existing } = await client
+  const { data: existing, error: existingError } = await client
     .from("chatbot_conversations")
     .select("id")
     .eq("session_id", sessionId)
     .maybeSingle();
+  if (existingError) {
+    return chatbotUnavailableResponse("quick-action", existingError);
+  }
   if (!existing) {
     const allowed =
       (await isUnderChatbotDailyCap()) &&
