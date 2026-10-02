@@ -33,12 +33,12 @@ use inside this repository, and none of them is Pacific.
 
 | Surface                     | Day boundary                      | Week definition                           | Implemented at                     |
 | --------------------------- | --------------------------------- | ----------------------------------------- | ---------------------------------- |
-| Close mirror, month to date | UTC calendar date                 | n/a                                       | `close-mtd-funnel-data.ts:36`      |
-| Close mirror, week view     | UTC calendar date                 | **Friday to Thursday**                    | `close-week-view.ts:75-83`         |
-| Channel spine writes        | UTC (`toISOString().slice(0,10)`) | n/a                                       | `channel-sync.ts:772-774`          |
-| Channel report windows      | UTC date strings                  | n/a                                       | `channel-report.ts:568-570`        |
+| Close mirror, month to date | UTC calendar date                 | n/a                                       | `close-mtd-funnel-data.ts:35`      |
+| Close mirror, week view     | UTC calendar date                 | **Friday to Thursday**                    | `close-week-view.ts:77-85`         |
+| Channel spine writes        | UTC (`toISOString().slice(0,10)`) | n/a                                       | `channel-sync.ts:788-790`          |
+| Channel report windows      | UTC date strings                  | n/a                                       | `channel-report.ts:597-599`        |
 | Analytics week selector     | UTC                               | **Monday to Sunday**, complete weeks only | `admin-analytics-range.ts:164-178` |
-| Booked-call metrics         | **America/New_York**              | n/a                                       | `booked-metrics.ts:39`             |
+| Booked-call metrics         | **America/New_York**              | n/a                                       | `booked-metrics.ts:45`             |
 
 Two consequences worth stating plainly:
 
@@ -52,17 +52,17 @@ Two consequences worth stating plainly:
 Boundary inclusiveness:
 
 - Close mirror: inclusive at both ends, `.gte(from).lte(today)` on the booked date
-  (`close-mtd-funnel-data.ts:51-52`).
+  (`close-mtd-funnel-data.ts:50-51`).
 - Channel spine reads: inclusive at both ends, `.gte("day", startDay).lte("day", endDay)`
-  (`channel-report.ts:350-351`).
+  (`channel-report.ts:358-359`).
 - Site lead reads: half-open, `>= start 00:00:00Z` and `< (end + 1 day) 00:00:00Z`
-  (`channel-report.ts:308, 316-320`).
+  (`channel-report.ts:316, 324-328`).
 - Custom ranges: inclusive of both days, width capped at 1,096 days
   (`admin-analytics-range.ts:41, 122`).
-- Setter credit: half-open on the end, `[since, until)` (`call-credit-data.ts:187`).
+- Setter credit: half-open on the end, `[since, until)` (`call-credit-data.ts:209`).
 
 Cron schedules are UTC, as Vercel runs them. `close-lead-funnel-sync` runs hourly at minute 5;
-`channel-sync` runs at 11:10 UTC, which is 4:10 Pacific (`vercel.json:45-62`).
+`channel-sync` runs at 11:10 UTC, which is 4:10 Pacific (the `channel-sync/run` entry in `vercel.json`).
 
 ---
 
@@ -113,7 +113,7 @@ Dimension normalisation (`channel-daily.ts:84-104`): `source` and `medium` are l
 trimmed; `campaign` and `content` are trimmed but keep their case; a blank value becomes the literal
 `(not set)`.
 
-Columns read by the channel report (`channel-report.ts:348-349`):
+Columns read by the channel report (`channel-report.ts:356-357`):
 `spend, impressions, reach, clicks, visits, leads, booked, showed, won, revenue`.
 
 **`thankyou_visits` is carried by the type and by `METRIC_KEYS` but is not in that select list**
@@ -127,7 +127,7 @@ rate built on it is always null. This is a defect, not a definition.
 ### The SteelTrap rule — Close mirror only
 
 A first call is excluded when the lead's **current** status or funnel matches
-(`close-week-view.ts:31-33, 105-110`):
+(`close-week-view.ts:31-33, 107-112`):
 
 | Kind   | Literal values matched                 |
 | ------ | -------------------------------------- |
@@ -135,7 +135,7 @@ A first call is excluded when the lead's **current** status or funnel matches
 | Funnel | `ltf - quiz funnel`                    |
 
 Status matching strips a leading emoji and spacing first, so `🔻 Canceled (by Lead)` matches
-(`close-week-view.ts:98-103`). The exclusion is applied **before** the booked, showed and qualified
+(`close-week-view.ts:100-105`). The exclusion is applied **before** the booked, showed and qualified
 split, so an excluded call appears in no stage (`close-mtd-funnel.ts:118-121`). The count of excluded
 calls is printed on screen rather than absorbed.
 
@@ -165,19 +165,21 @@ reason our Won and Booked will not equal theirs. See section 13.
 ### Internal and test leads
 
 Excluded from the site-lead collapse and from the Calendly source count unless the "include internal"
-toggle is on (`channel-report.ts:438-442`).
+toggle is on (`channel-report.ts:446-450`).
 
 ### Lane 2 funnels — booked-call metrics
 
-`Reactivation Scrapers`, `Reactivation Email`, `Sales Reactivation` are counted separately from
-marketing in the booked-calls view (`booked-calls.ts:36-40, 152-154`), and excluded from the "new
-calls booked" daily metric (`booked-metrics.ts:318, 477`).
+`Reactivation Scrapers` and `Sales Reactivation` (Lane 2, the `outbound` group; `groupOf` in
+`close-monthly-funnel.ts`) are counted separately from marketing in the booked-calls view
+(`booked-calls.ts:143-150`) and excluded from the "new calls booked" daily metric
+(`booked-metrics.ts:318, 477`). `Reactivation Email` is marketing in both: it used to be in the
+booked-calls reactivation list and was moved out in commit `8a125af` (2026-09-22).
 
 ---
 
 ## 4. Acquisition: leads, contacts, total captured
 
-`applyLeadDefinition` (`channel-report.ts:238-294`) splits one acquired population in two. This is
+`applyLeadDefinition` (`channel-report.ts:244-302`) splits one acquired population in two. This is
 the most misread area of the dashboard.
 
 | Term               | Definition                                                                         | Typical week |
@@ -186,7 +188,7 @@ the most misread area of the dashboard.
 | **Contact**        | Everyone else acquired: webinar registration, off-site form fill, ManyChat contact | ~1,200       |
 | **Total captured** | leads + contacts                                                                   | ~1,300       |
 
-The rule, per stored row (`channel-report.ts:265-272`):
+The rule, per stored row (`channel-report.ts:271-278`):
 
 - If the row's key is one a site lead was ever recorded under, it is a **leads** row and its value is
   the counted site-lead figure (zero if only repeats or test emails landed there).
@@ -195,15 +197,15 @@ The rule, per stored row (`channel-report.ts:265-272`):
 
 Keys with counted leads but no stored row are appended as synthetic rows with every other metric
 explicitly null, so leads acquired today count before the nightly connector writes them
-(`channel-report.ts:274-293`).
+(`channel-report.ts:280-301`).
 
 **Total captured is not a stored metric.** It exists only inside the Book % and cost-per-signup
-formulas (`channel-report-rollup.ts:345-348, 456-459`).
+formulas (`channel-report-rollup.ts:361-364, 463-466`).
 
 **A silent degradation to know about.** If the `channel_daily` read fails, the whole tab reports
 disconnected. But if only the `lead_submissions` read fails, `fetchFacts` returns the stored rows
 **unmodified** — the leads-versus-contacts split never runs, `contacts` is undefined everywhere, and
-Book % then denominates on the raw `channel_daily.leads` column (`channel-report.ts:212`). Nothing on
+Book % then denominates on the raw `channel_daily.leads` column (`channel-report.ts:218`). Nothing on
 screen says so.
 
 ---
@@ -228,8 +230,8 @@ differently. This matters more than any formula in this document.
 
 | Writer                      | Source value written       | Day credited to                 | Ref                          |
 | --------------------------- | -------------------------- | ------------------------------- | ---------------------------- |
-| `leads`, lead-matched       | the lead's `utm_source`    | the day the **lead arrived**    | `channel-sync.ts:703`        |
-| `leads`, Calendly unmatched | the booking's `utm_source` | the day the call was **booked** | `channel-sync.ts:558`        |
+| `leads`, lead-matched       | the lead's `utm_source`    | the day the **lead arrived**    | `channel-sync.ts:719`        |
+| `leads`, Calendly unmatched | the booking's `utm_source` | the day the call was **booked** | `channel-sync.ts:569`        |
 | `manychat-ingest`           | `manychat`                 | the event timestamp             | `manychat-ingest.ts:128-129` |
 | `webinar-ingest`            | —                          | **writes no bookings**          | `webinar-ingest.ts:203`      |
 
@@ -239,7 +241,7 @@ them. On 2026-09-08 the spine read 74 where Calendly and the webinar record both
 CTA bookings therefore arrive under the source `internal-webinar` from the Calendly path, not from the
 webinar connector.
 
-> `REPORTING.md` §3 currently cites `channel-confidence.ts:94` as the list of booking writers. That
+> `REPORTING.md` §3 currently cites `channel-confidence.ts:94` (line 98 at `faac091`) as the list of booking writers. That
 > constant is `METRIC_CONNECTORS`, which only names a likely cause when a metric is missing, and it
 > still lists `webinar-ingest` under `booked`. It is not a writer list. Correct that before relying on it.
 
@@ -248,20 +250,20 @@ dates the same booking on the booking day. Bookings mature one to six days after
 systems displace 30 to 41 bookings across a week boundary and will never agree week-on-week at the
 edges. This is a definitional difference, not a defect.
 
-Cancellations never reach the spine: only `status = 'booked'` rows are read (`channel-sync.ts:545`),
-and a cancellation rewrites the row's status (`calendly-bookings.ts:120`). Deduplication is by
-Calendly `invitee_uri` (`calendly-bookings.ts:37`), so webhook retries cannot double-count.
+Cancellations never reach the spine: only `status = 'booked'` rows are read (`channel-sync.ts:556`),
+and a cancellation rewrites the row's status (`calendly-bookings.ts:128`). Deduplication is by
+Calendly `invitee_uri` (`calendly-bookings.ts:45`), so webhook retries cannot double-count.
 
 **Stale rows.** The spine is append-and-update; nothing deletes. When a booking's assigned day moves,
 `clearMovedBookingRows` blanks the outcome on the old day, but only for links the run actually wrote
-and only when a newer day for the same link exists in the same run (`channel-sync.ts:625-672`). A row
+and only when a newer day for the same link exists in the same run (`channel-sync.ts:636-688`). A row
 the sync stops generating keeps its last value forever. This was worth 90 phantom bookings before it
 was fixed on 2026-09-21; 88 cleared, 2 remain on links with no surviving booking anywhere.
 
 ### Booked-call metrics — seven named measures
 
 These are distinct on purpose, because "booked" has at least two useful meanings
-(`booked-metrics.ts:94-181`). Bookings are dated by Calendly's own
+(`booked-metrics.ts:93-180`). Bookings are dated by Calendly's own
 `raw_payload -> payload -> created_at`, never by our mirror row's `created_at`, which would pile a
 backfill onto the import date (`booked-metrics.ts:18-23`).
 
@@ -297,7 +299,7 @@ Won       = Close opportunities with status_type = won and date_won in the windo
 ```
 
 `isYes` accepts exactly one value: the string `yes`, trimmed and lower-cased
-(`close-week-view.ts:93-95`). Nothing else is truthy — not `true`, not `1`, not `y`. The MTD dashboard
+(`close-week-view.ts:95-97`). Nothing else is truthy — not `true`, not `1`, not `y`. The MTD dashboard
 accepts `true`, `yes` and `1`. Ours is the stricter of the two.
 
 **The stages do not nest, and we do not pretend they do.** 16 of September's 444 booked calls are
@@ -321,11 +323,11 @@ pipeline at all** — qualification exists only in the Close mirror. A show is t
 
 ## 7. Rate metrics
 
-Every rate in the channel pipeline goes through `pct` (`channel-report-rollup.ts:181-185`): null if
+Every rate in the channel pipeline goes through `pct` (`channel-report-rollup.ts:188-192`): null if
 either side is null or the denominator is zero, otherwise one decimal place. **A zero denominator
 produces null, never zero.** Likewise, a metric total is the sum of observed values and is null when
 nothing in the group was observed, which is not the same as zero
-(`channel-report-rollup.ts:162-171`).
+(`channel-report-rollup.ts:169-178`).
 
 ### Book %
 
@@ -334,39 +336,39 @@ seen        = rows where leads is observed, or contacts is observed, or source =
 Book %      = Σ booked over seen  ÷  Σ (leads ?? 0) + (contacts ?? 0) over seen  × 100
 ```
 
-(`channel-report-rollup.ts:338-350`.) Bookings are denominated on **everyone the channel acquired**,
+(`channel-report-rollup.ts:354-366`.) Bookings are denominated on **everyone the channel acquired**,
 leads plus contacts — not on site leads alone. Denominating on leads alone published the Webinar
 channel at 300%, because 4,037 registrations sat in contacts and were skipped.
 
 Rows carrying a booking but no audience of their own are handled by source
-(`channel-report-rollup.ts:296-313`):
+(`channel-report-rollup.ts:303-320`):
 
 - `source == "internal-webinar"` — the night-of and replay CTAs, shown inside the room. Everyone
   clicking had already registered and is already counted in contacts, so these bookings join the
   numerator and add nothing to the denominator. This is an exact literal source match and the only
   special-cased source string in the pipeline.
 - Everything else with no audience is a genuine direct link. It is disclosed separately as
-  `directBooked` and **never folded into the rate** (`channel-report-rollup.ts:440-451`).
+  `directBooked` and **never folded into the rate** (`channel-report-rollup.ts:328-329, 456-458`).
 
 A regression bar is pinned in the tests: channels with no contacts must not move when this logic
 changes — YouTube 62.5%, Google Ads 49.5%, Chatbot 53.7%, Newsletter 50%
-(`channel-report-rollup.test.ts:139-144`).
+(`channel-report-rollup.test.ts:176-181`).
 
 ### Other channel rates
 
 | Rate               | Formula                                            | Coverage guard | Ref                                |
 | ------------------ | -------------------------------------------------- | -------------- | ---------------------------------- |
-| Lead % (opt-in)    | leads ÷ visits, over rows where visits is observed | yes            | `channel-report-rollup.ts:363-368` |
-| Win %              | won ÷ booked, over rows where booked is observed   | no             | `channel-report-rollup.ts:438`     |
-| Funnel stage share | stage ÷ last non-null prior stage                  | no             | `channel-report-rollup.ts:376-410` |
+| Lead % (opt-in)    | leads ÷ visits, over rows where visits is observed | yes            | `channel-report-rollup.ts:379-384` |
+| Win %              | won ÷ booked, over rows where booked is observed   | no             | `channel-report-rollup.ts:454`     |
+| Funnel stage share | stage ÷ last non-null prior stage                  | no             | `channel-report-rollup.ts:392-426` |
 
-`ofObservedPct` (`channel-report-rollup.ts:272-291`) denominates on every row where the denominator is
+`ofObservedPct` (`channel-report-rollup.ts:279-298`) denominates on every row where the denominator is
 observed, counting a denominator row with no numerator as zero. With the coverage guard on, the result
 is nulled when the numerator visible on those rows is less than half the numerator across all rows —
 a defence against key mismatch quietly understating a rate.
 
 **Show rate is not a per-channel field.** It exists only as a funnel-stage share, where the stage
-order is visits → leads → booked → showed → won (`channel-report-rollup.ts:90-96`). Because the
+order is visits → leads → booked → showed → won (`channel-report-rollup.ts:97-103`). Because the
 previous stage is the last one with a non-null total, a stage's denominator can silently fall back
 further up the funnel when an intermediate total is unobserved.
 
@@ -379,7 +381,7 @@ Won                   = no rate over booked; always null
 ```
 
 (`close-mtd-funnel.ts:92-94, 167, 176, 185`.) Note that the panel's per-funnel table rounds to a whole
-percent and shows an em dash at a zero denominator (`CloseMtdFunnelPanel.tsx:35-37`), so the same
+percent and shows an em dash at a zero denominator (`CloseMtdFunnelPanel.tsx:34-36`), so the same
 underlying rate appears at two precisions on one screen.
 
 ---
@@ -391,7 +393,7 @@ Deal revenue = Close opportunity value ÷ 100        (Close stores cents)
 Revenue      = Σ deal revenue over won deals in the window
 ```
 
-(`close-wins.ts:201`, `close-mtd-funnel.ts:133`.) A null value in Close stays null rather than being
+(`close-wins.ts:247`, `close-mtd-funnel.ts:133`.) A null value in Close stays null rather than being
 coerced, and such a deal still counts as a win while adding nothing to revenue. Those deals are
 counted and named on screen as unvalued (`close-mtd-funnel.ts:190`). Money is displayed as whole
 dollars with thousands separators.
@@ -407,17 +409,17 @@ revenue-per-close is computed in the channel pipeline.
 
 A row is attributed by its own stored dimensions; there is no first-touch or last-touch model applied
 at read time. Grouping is a flat equality group on one of `channel`, `campaign`, `content` or
-`destination` (`channel-report-rollup.ts:118, 494-498`).
+`destination` (`channel-report-rollup.ts:125, 501-505`).
 
 **Channel labels are recomputed live, with one exception.** For every row whose stored channel is not
 in `PROGRAM_CHANNELS` (which contains only `Webinar`), the channel is re-derived from source and
-medium at read time and overwritten if it differs (`channel-report-rollup.ts:66-76`). A mapping change
+medium at read time and overwritten if it differs (`channel-report-rollup.ts:66-82`). A mapping change
 therefore re-labels historical rows without a backfill. Rows already tagged `Webinar` are frozen.
 
 Rows where only visits or reach were observed are moved out of the main table into a tail section
-rather than presented as channels with no outcomes (`channel-report-rollup.ts:464-470, 514-516`).
+rather than presented as channels with no outcomes (`channel-report-rollup.ts:471-477, 521-523`).
 
-Cost metrics (`channel-report-rollup.ts:428-459`):
+Cost metrics (`channel-report-rollup.ts:444-466`):
 
 ```
 Cost per lead   = spend ÷ leads          null when either is absent, and when leads is 0
@@ -429,7 +431,7 @@ A spend total of exactly zero is treated as unobserved rather than free. Cost pe
 only in the shape where registrations outnumber site leads, which is the webinar case.
 
 Read caps, which matter when judging whether a figure could have been truncated: pages of 1,000 rows
-up to 200,000 rows per query (`channel-report.ts:54-56`), upserts in chunks of 500
+up to 200,000 rows per query (`channel-report.ts:57-59`), upserts in chunks of 500
 (`channel-daily.ts:74`).
 
 ---
@@ -448,7 +450,7 @@ CAC              = total cost ÷ closes used           null when closes is absen
 ```
 
 Rounded to two decimals. Observed spend is summed from `channel_daily` over the **full calendar
-month**, not the elapsed window (`cac-report-data.ts:140-155`), while the fixed cost is prorated to
+month**, not the elapsed window (`cac-report-data.ts:142-178`), while the fixed cost is prorated to
 days elapsed. Those two bases differ, by design, but a mid-month CAC mixes them.
 
 Where a typed spend and an observed spend both exist and differ by more than a dollar, the gap is
@@ -614,18 +616,30 @@ definitions.
 
 | Defect                                                    | Consequence                                                                | Ref                                                     |
 | --------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------- |
-| `thankyou_visits` is not in the channel select list       | Always unobserved on this path; any rate on it is null                     | `channel-report.ts:348-349`                             |
-| A failed `lead_submissions` read degrades silently        | Book % denominates on raw stored leads with no notice                      | `channel-report.ts:212`                                 |
-| `METRIC_CONNECTORS` lists `webinar-ingest` under `booked` | Names a connector that writes no bookings when a gap is explained          | `channel-confidence.ts:94`                              |
-| Two week conventions inside one app                       | Friday–Thursday on the Close tab, Monday–Sunday in the selector            | `close-week-view.ts:75`, `admin-analytics-range.ts:168` |
+| `thankyou_visits` is not in the channel select list       | Always unobserved on this path; any rate on it is null                     | `channel-report.ts:356-357`                             |
+| A failed `lead_submissions` read degrades silently        | Book % denominates on raw stored leads with no notice                      | `channel-report.ts:218`                                 |
+| `METRIC_CONNECTORS` lists `webinar-ingest` under `booked` | Names a connector that writes no bookings when a gap is explained          | `channel-confidence.ts:98`                              |
+| Two week conventions inside one app                       | Friday–Thursday on the Close tab, Monday–Sunday in the selector            | `close-week-view.ts:77`, `admin-analytics-range.ts:168` |
 | Three day boundaries across pipelines                     | UTC, UTC, and New York                                                     | see section 1                                           |
-| Two roundings of one rate on one screen                   | One decimal at stage level, whole percent in the table below it            | `close-mtd-funnel.ts:92`, `CloseMtdFunnelPanel.tsx:35`  |
-| Mid-month CAC mixes bases                                 | Fixed cost prorated to days elapsed, spend summed over the full month      | `cac-report.ts:175`, `cac-report-data.ts:144`           |
+| Two roundings of one rate on one screen                   | One decimal at stage level, whole percent in the table below it            | `close-mtd-funnel.ts:92`, `CloseMtdFunnelPanel.tsx:34`  |
+| Mid-month CAC mixes bases                                 | Fixed cost prorated to days elapsed, spend summed over the full month      | `cac-report.ts:175`, `cac-report-data.ts:142-178`       |
 | Two bookings on broken links                              | Real bookings, wrong attribution; the nightly check ignores them by design | `REPORTING.md` §3                                       |
 | Close custom fields resolved by label                     | Renaming a field in Close breaks the hourly sync                           | `close-lead-funnel-sync.ts:51-77`                       |
 
 ---
 
-Last verified against the code on 2026-09-21. Every line reference in this document was read at that
-commit. When a formula changes, this file changes with it in the same commit, or it becomes the most
+Last verified against the code on 2026-09-21, at commit `9349a9e`. Every line reference in this
+document was read at that commit. Read the code as this document describes it with
+`git show 9349a9e:<path>`.
+
+Re-checked 2026-10-02 against `main` at `faac091`: every `file:line` reference whose cited lines
+were unchanged since `9349a9e` was re-pointed to its current line by diffing the two commits. The
+references below cover code that changed underneath them, so the prose around them was not
+re-verified and needs a human re-read before it is relied on: `channel-report.ts:244-302` and
+`280-301` (`applyLeadDefinition`), `channel-report-rollup.ts:66-82`, `328-329, 456-458`
+(`directBooked`, now computed through `isSkippedFormBooking`) and `444-466`, `channel-sync.ts:636-688`,
+and `cac-report-data.ts:142-178` (`observedSpend` now pages the whole month instead of one
+5,000-row read). The "Lane 2 funnels" note was corrected for `8a125af`.
+
+When a formula changes, this file changes with it in the same commit, or it becomes the most
 expensive kind of documentation.
