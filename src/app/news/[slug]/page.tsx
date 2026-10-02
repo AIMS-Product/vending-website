@@ -40,7 +40,7 @@ export async function generateMetadata({
     openGraph: {
       title: post.title,
       description: post.excerpt ?? undefined,
-      images: post.cover_url ? [post.cover_url] : undefined,
+      images: [post.cover_url ?? "/og/default.png"],
       type: "article",
       publishedTime: post.published_at ?? undefined,
     },

@@ -29,6 +29,13 @@ const inter = Inter({
   display: "optional",
 });
 
+const DEFAULT_OG_IMAGE = {
+  url: "/og/default.png",
+  width: 1200,
+  height: 630,
+  alt: "Vendingpreneurs: start and scale a vending machine business",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -42,9 +49,12 @@ export const metadata: Metadata = {
     description:
       "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
     siteName: "Vendingpreneurs",
-    url: "/",
+    // No `url` here: child pages without their own openGraph inherit this
+    // object whole, so a "/" url made every inner page claim the homepage.
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
+  twitter: { card: "summary_large_image", images: [DEFAULT_OG_IMAGE.url] },
 };
 
 export default async function RootLayout({
