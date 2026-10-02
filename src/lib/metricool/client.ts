@@ -129,6 +129,18 @@ type RawPost = {
 
 type TypedRow = Record<string, unknown>;
 
+/** True only for an https URL on the same origin as the Metricool API. */
+function isMetricoolUrl(candidate: string): boolean {
+  try {
+    const parsed = new URL(candidate);
+    return (
+      parsed.protocol === "https:" && parsed.origin === new URL(BASE_URL).origin
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function createMetricoolClient(options: {
   apiKey: string;
   userId: string;
@@ -204,9 +216,11 @@ export function createMetricoolClient(options: {
         });
       }
       const next = body.page?.next;
-      // The spec types `next` as a string and says nothing more. A full URL
-      // is followed; anything else ends the walk rather than guessing.
-      if (!next || !/^https?:\/\//.test(next)) break;
+      // The spec types `next` as a string and says nothing more. A full URL on
+      // Metricool's own origin is followed; anything else ends the walk rather
+      // than guessing. Every request carries the API key, so a `next` naming
+      // another host (or plain http) must never be fetched.
+      if (!next || !isMetricoolUrl(next)) break;
       url = next;
     }
     return posts;

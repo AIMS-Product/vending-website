@@ -144,6 +144,35 @@ describe("createMetricoolClient", () => {
       2,
     );
   });
+
+  it.each([
+    "https://evil.example.com/api/v2/analytics/brand-summary/posts?cursor=2",
+    "http://app.metricool.com/api/v2/analytics/brand-summary/posts?cursor=2",
+    "https://app.metricool.com.evil.example/api/v2/analytics/brand-summary/posts",
+  ])("never sends the API key to a foreign page.next (%s)", async (next) => {
+    const { fetchImpl, calls } = buildFetch((url) =>
+      url.includes("brand-summary")
+        ? { status: 200, body: { data: [post("p1")], page: { next } } }
+        : { status: 200, body: { data: [] } },
+    );
+    const client = createMetricoolClient({
+      apiKey: "secret-key",
+      userId: "u1",
+      fetchImpl,
+    });
+    const posts = await client.fetchPosts({
+      blogId: "b1",
+      from: "2026-09-01",
+      to: "2026-09-11",
+    });
+    expect(posts.map((row) => row.id)).toEqual(["p1"]);
+    expect(
+      calls.every((c) => c.url.startsWith("https://app.metricool.com/")),
+    ).toBe(true);
+    expect(calls.filter((c) => c.url.includes("brand-summary"))).toHaveLength(
+      1,
+    );
+  });
 });
 
 function post(id: string) {
