@@ -20,8 +20,9 @@ Webflow rollback proxy that previously answered on those hosts (identified by th
 Public-domain behavior is now app behavior: treat a wrong response on
 `www.vendingpreneurs.com` as a real bug, not as legacy Webflow noise.
 
-Rollback path if production must be reverted: re-promote the last rollback-proxy
-production deployment. DNS does not change in either direction.
+Rollback path if production must be reverted: re-promote the previous production
+deployment of this app in Vercel. DNS does not change. The Webflow rollback proxy
+is retired and is no longer a valid rollback target. See `docs/RUNBOOK.md`.
 
 <!-- END:domain-cutover-rules -->
 
@@ -35,7 +36,8 @@ Production is live. Pushes to `main` publish to the custom domains.
   `vercel --prod` from a working tree.
 - Verify a deployment on its own `*.vercel.app` URL before promoting anything to
   the custom domains.
-- Leads flow to Close CRM from production on a 10-minute cron. Changes to
+- Leads flow to Close CRM from production every 2 minutes (`vercel.json`), plus an
+  `after()` drain on each submit. Changes to
   `src/lib/close/*` or the qualification intake path are customer-visible the
   moment they deploy — verify on preview against the real Close org first.
 
