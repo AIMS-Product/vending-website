@@ -118,10 +118,10 @@ function HeroBadge({ badge, className, delay }: HeroBadgeProps) {
       className={`v2-float absolute hidden flex-col items-start rounded-[10px] border-2 border-[#111111] bg-white px-4 py-2.5 shadow-[5px_5px_0_#111111] sm:flex ${className}`}
       style={{ "--v2-tilt": badge.tilt, "--v2-delay": delay } as CSSProperties}
     >
-      <span className="v2-display text-2xl leading-none text-[#d6531f]">
+      <span className="v2-display text-brand-700 text-2xl leading-none">
         {badge.value}
       </span>
-      <span className="mt-1 text-[11px] font-black tracking-wide text-[#111111] uppercase">
+      <span className="mt-1 text-xs font-black tracking-wide text-[#111111] uppercase">
         {badge.label}
       </span>
     </div>
