@@ -30,6 +30,7 @@ export async function generateBuilderPageMetadata(
       title,
       description: page.meta_description ?? undefined,
       type: "article",
+      images: ["/og/default.png"],
     },
   };
 }

@@ -27,6 +27,9 @@ export function CohortBanner() {
   return (
     <Link
       href={cohortBannerHref}
+      // Until the seat count is computed in the browser the link has no text;
+      // an unnamed focusable link fails WCAG 2.4.4 / 4.1.2.
+      aria-label={text ? undefined : "Book your call"}
       className="flex min-h-11 items-center justify-center gap-2 border-b-2 border-[#111111] bg-[#111111] px-5 text-center text-sm font-bold text-white hover:underline focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:outline-none focus-visible:ring-inset"
     >
       {text && (

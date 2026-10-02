@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
-import { ChatWidget } from "@/components/chatbot/ChatWidget";
+import { ChatWidgetLoader } from "@/components/chatbot/ChatWidgetLoader";
 import {
   TrackingNoscript,
   TrackingScripts,
@@ -12,7 +12,7 @@ import { SkipOnAdmin } from "@/components/tracking/SkipOnAdmin";
 import { FormTracker } from "@/components/tracking/FormTracker";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { SitePopup } from "@/components/site/SitePopup";
+import { SitePopupLoader } from "@/components/site/SitePopupLoader";
 import { loadSitePopups } from "@/lib/services/popups";
 import { siteUrl } from "@/lib/site";
 import { siteStructuredData } from "@/lib/site-structured-data";
@@ -29,6 +29,13 @@ const inter = Inter({
   display: "optional",
 });
 
+const DEFAULT_OG_IMAGE = {
+  url: "/og/default.png",
+  width: 1200,
+  height: 630,
+  alt: "Vendingpreneurs: start and scale a vending machine business",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
@@ -42,9 +49,12 @@ export const metadata: Metadata = {
     description:
       "Mentorship, tools, and exclusive discounts to launch and scale a profitable vending machine business.",
     siteName: "Vendingpreneurs",
-    url: "/",
+    // No `url` here: child pages without their own openGraph inherit this
+    // object whole, so a "/" url made every inner page claim the homepage.
     type: "website",
+    images: [DEFAULT_OG_IMAGE],
   },
+  twitter: { card: "summary_large_image", images: [DEFAULT_OG_IMAGE.url] },
 };
 
 export default async function RootLayout({
@@ -75,12 +85,12 @@ export default async function RootLayout({
         <Footer />
         <AttributionSessionTracker />
         <FormTracker />
-        <SitePopup popups={popups} />
+        <SitePopupLoader popups={popups} />
         <SkipOnAdmin>
           <TrackingScripts />
         </SkipOnAdmin>
         <TrackingNoscript />
-        <ChatWidget />
+        <ChatWidgetLoader />
         <Analytics />
         <SpeedInsights />
       </body>

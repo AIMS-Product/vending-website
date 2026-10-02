@@ -25,7 +25,7 @@ const VP_QUALIFICATION_FORM_ID = "a1b2c3d4-0000-4000-8000-000000000001";
 
 export default function VpQuizPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-8 px-5 py-16">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col justify-center gap-8 px-5 py-16">
       <header className="grid gap-3">
         <p className="text-sm font-black text-[#0b63f6] uppercase">
           Vendingpreneurs
@@ -46,6 +46,6 @@ export default function VpQuizPage() {
         intent="qualification"
         submitLabel="See if I qualify"
       />
-    </main>
+    </div>
   );
 }

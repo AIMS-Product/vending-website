@@ -55,6 +55,8 @@ if (posthogKey && !window.location.pathname.startsWith("/admin")) {
       api_host: `${window.location.origin}/api/ph`,
       ui_host: "https://us.posthog.com",
       defaults: "2026-08-30",
+      // No PostHog surveys are used; skips the 28 KB surveys.js bundle.
+      disable_surveys: true,
       // Nobody is identified: visitors stay anonymous in PostHog and join to
       // our tables on the vp_session_id property, not on a person profile.
       person_profiles: "identified_only",

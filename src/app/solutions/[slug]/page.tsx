@@ -36,6 +36,7 @@ export async function generateMetadata({
       description,
       url: `/solutions/${solution.slug}`,
       type: "website",
+      images: ["/og/default.png"],
     },
   };
 }

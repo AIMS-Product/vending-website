@@ -50,7 +50,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${caseStudy.member_name}: ${caseStudy.title}`,
       description: caseStudy.excerpt ?? undefined,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage ?? "/og/default.png"],
       type: "article",
       publishedTime: caseStudy.published_at ?? undefined,
     },
