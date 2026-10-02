@@ -24,6 +24,7 @@ import type { BookingCredit } from "@/lib/chatbot/booking-credit";
 import { CHATBOT_FLAGS, type ChatbotFlag } from "@/lib/chatbot/flags";
 import { parseChatLinks } from "@/lib/chatbot/parse-chat-links";
 import type { AdminChatbotConversationDetail } from "@/lib/services/chatbot-admin";
+import { formatPacificStampShort } from "@/lib/admin/format-time";
 
 const initialState: ChatbotActionState = { status: "idle" };
 
@@ -643,10 +644,5 @@ function BookingStamp({
 }
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatPacificStampShort(iso) ?? "Unknown";
 }

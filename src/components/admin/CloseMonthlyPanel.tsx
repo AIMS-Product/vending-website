@@ -22,6 +22,7 @@ import {
   type MonthlyMonth,
 } from "@/lib/services/close-monthly-funnel";
 import type { CloseMonthlyReport } from "@/lib/services/close-monthly-funnel-data";
+import { formatPacificStamp } from "@/lib/admin/format-time";
 
 /**
  * Sources down the side, months across the top, in the shape of the sheet the
@@ -274,7 +275,7 @@ export function CloseMonthlyPanel({
             <>
               Our copy of Close last updated{" "}
               <time dateTime={report.mirrorSyncedAt}>
-                {new Date(report.mirrorSyncedAt).toLocaleString("en-US")}
+                {formatPacificStamp(report.mirrorSyncedAt)}
               </time>
               . It updates every hour.
             </>

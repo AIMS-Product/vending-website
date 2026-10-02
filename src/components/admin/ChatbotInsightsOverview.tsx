@@ -11,6 +11,7 @@ import type {
   AdminChatbotRange,
   ChatbotInsightsKpis,
 } from "@/lib/services/chatbot-insights";
+import { formatPacificStampShort } from "@/lib/admin/format-time";
 
 export function ChatbotInsightsOverview({
   range,
@@ -150,10 +151,5 @@ function LastRunPanel({
 }
 
 function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatPacificStampShort(iso) ?? "Unknown";
 }
