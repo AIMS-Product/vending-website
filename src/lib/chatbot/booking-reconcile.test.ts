@@ -82,16 +82,38 @@ function buildFakeSupabase({
             }),
           }),
         }),
-        upsert: async (row: { invitee_uri: string }) => {
+        upsert: (
+          row: { invitee_uri: string },
+          options?: { ignoreDuplicates?: boolean },
+        ) => {
           calls.upserts.push(row);
-          if (
+          const failed =
             upsertShouldFailForUri &&
-            row.invitee_uri === upsertShouldFailForUri
-          ) {
-            return { error: { message: "boom" } };
-          }
-          return { error: null };
+            row.invitee_uri === upsertShouldFailForUri;
+          const result = { error: failed ? { message: "boom" } : null };
+          const skipped =
+            options?.ignoreDuplicates &&
+            existingBookingUris.has(row.invitee_uri);
+          return Object.assign(Promise.resolve(result), {
+            select: async () => ({
+              data: failed || skipped ? [] : [{ invitee_uri: row.invitee_uri }],
+              error: result.error,
+            }),
+          });
         },
+        update: (row: { invitee_uri: string }) => ({
+          eq: () => ({
+            neq: () => ({
+              select: async () => {
+                calls.updates.push(row);
+                return {
+                  data: [{ invitee_uri: row.invitee_uri }],
+                  error: null,
+                };
+              },
+            }),
+          }),
+        }),
       };
     }
 

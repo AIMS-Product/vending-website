@@ -19,6 +19,12 @@ export const CALENDLY_BOOKED_AT_PATH = "raw_payload->payload->>created_at";
 export type RecordCalendlyBookingResult = {
   ok: true;
   bookingMatchedLead: boolean;
+  /**
+   * False when a booking event arrived for an invitee already cancelled and
+   * was ignored. Calendly gives a rescheduled call a new invitee, so a
+   * cancelled invitee is final; callers skip follow-on work for it.
+   */
+  applied: boolean;
 };
 
 export class CalendlyBookingServiceError extends Error {
@@ -40,15 +46,56 @@ export async function recordCalendlyBooking(
   const leadSubmissionId = await findMatchingLeadId(client, event.inviteeEmail);
   const row = buildBookingRow(event, leadSubmissionId);
 
-  const { error } = await client
-    .from("calendly_bookings")
-    .upsert(row, { onConflict: "invitee_uri" });
+  const bookingMatchedLead = Boolean(leadSubmissionId);
 
-  if (error) {
-    throw new CalendlyBookingServiceError("Could not store Calendly booking.");
+  if (row.status === "canceled") {
+    const { error } = await client
+      .from("calendly_bookings")
+      .upsert(row, { onConflict: "invitee_uri" });
+    if (error) {
+      throw new CalendlyBookingServiceError(
+        "Could not store Calendly booking.",
+      );
+    }
+    return { ok: true, bookingMatchedLead, applied: true };
   }
 
-  return { ok: true, bookingMatchedLead: Boolean(leadSubmissionId) };
+  return {
+    ok: true,
+    bookingMatchedLead,
+    applied: await storeBooked(client, row),
+  };
+}
+
+/**
+ * Calendly retries failed deliveries for a day and does not promise order, so
+ * a booking event can land after its cancellation. Insert if new; otherwise
+ * update only a row that is not cancelled, so a late booking event can never
+ * bring a cancelled call back. Returns whether the row was written.
+ */
+async function storeBooked(
+  client: CalendlyBookingClient,
+  row: CalendlyBookingInsert,
+): Promise<boolean> {
+  const inserted = await client
+    .from("calendly_bookings")
+    .upsert(row, { onConflict: "invitee_uri", ignoreDuplicates: true })
+    .select("invitee_uri");
+  if (inserted.error) {
+    throw new CalendlyBookingServiceError("Could not store Calendly booking.");
+  }
+  if ((inserted.data ?? []).length > 0) return true;
+
+  const updated = await client
+    .from("calendly_bookings")
+    .update(row)
+    .eq("invitee_uri", row.invitee_uri)
+    .neq("status", "canceled")
+    .select("invitee_uri");
+  if (updated.error) {
+    throw new CalendlyBookingServiceError("Could not store Calendly booking.");
+  }
+  return (updated.data ?? []).length > 0;
 }
 
 async function findMatchingLeadId(

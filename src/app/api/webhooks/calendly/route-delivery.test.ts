@@ -49,20 +49,57 @@ vi.mock("@/lib/supabase/admin", () => ({
         return chain;
       }
       if (table === "calendly_bookings") {
+        const write = (row: StoredRow) => {
+          mocks.order.push("upsert");
+          mocks.upsertCalls.push({ row });
+          if (mocks.upsertError.value)
+            return { error: mocks.upsertError.value };
+          mocks.store.set(row.invitee_uri, row);
+          return { error: null };
+        };
         return {
+          // Postgres semantics: plain upsert = last write wins on the
+          // conflict column; ignoreDuplicates = ON CONFLICT DO NOTHING, and
+          // .select() returns only the rows actually inserted.
           upsert(
             row: StoredRow,
-            options: { onConflict: string },
-          ): Promise<{ error: { message: string } | null }> {
-            mocks.order.push("upsert");
-            mocks.upsertCalls.push({ row, options });
-            if (mocks.upsertError.value) {
-              return Promise.resolve({ error: mocks.upsertError.value });
-            }
-            // Last write wins on the conflict column, as Postgres does.
+            options: { onConflict: string; ignoreDuplicates?: boolean },
+          ) {
             expect(options.onConflict).toBe("invitee_uri");
-            mocks.store.set(row.invitee_uri, row);
-            return Promise.resolve({ error: null });
+            const exists = mocks.store.has(row.invitee_uri);
+            const result =
+              options.ignoreDuplicates && exists
+                ? { error: null, skipped: true }
+                : { ...write(row), skipped: false };
+            return Object.assign(Promise.resolve({ error: result.error }), {
+              select: () =>
+                Promise.resolve({
+                  data:
+                    result.error || result.skipped
+                      ? []
+                      : [{ invitee_uri: row.invitee_uri }],
+                  error: result.error,
+                }),
+            });
+          },
+          update(row: StoredRow) {
+            return {
+              eq: (_column: string, uri: string) => ({
+                neq: (_status: string, notValue: string) => ({
+                  select: () => {
+                    const current = mocks.store.get(uri);
+                    if (!current || current.status === notValue) {
+                      return Promise.resolve({ data: [], error: null });
+                    }
+                    const { error } = write(row);
+                    return Promise.resolve({
+                      data: error ? null : [{ invitee_uri: uri }],
+                      error,
+                    });
+                  },
+                }),
+              }),
+            };
           },
         };
       }
@@ -166,34 +203,36 @@ describe("redelivery", () => {
     expect(raw.payload.created_at).toBe("2026-09-18T12:00:00.000000Z");
   });
 
-  // Calendly retries a delivery that got a non-2xx for up to a day, and does
-  // not promise ordering. A `created` that failed once (say, a database blip
-  // answered 500) and is retried AFTER the `canceled` arrived overwrites the
-  // cancellation: the upsert is unconditional last-write-wins on invitee_uri.
-  // The live booking the guest cancelled then counts as booked and shows up on
-  // the call sheet. Recorded here as a known gap, not fixed: the webhook path
-  // is off limits for behaviour changes in this pass.
-  it.fails(
-    "does not resurrect a cancelled booking when a late invitee.created is redelivered",
-    async () => {
-      await deliver(payload("invitee.created"));
-      await deliver(payload("invitee.canceled"));
-      await deliver(payload("invitee.created"));
-
-      expect(mocks.store.get(INVITEE_URI)?.status).toBe("canceled");
-    },
-  );
-
-  it("documents today's behaviour for that reordering: the late created wins", async () => {
+  // Calendly retries a delivery that got a non-2xx for up to a day and does
+  // not promise ordering, so a `created` retried AFTER the `canceled` must
+  // not bring the cancelled call back onto the call sheet.
+  it("does not resurrect a cancelled booking when a late invitee.created is redelivered", async () => {
     await deliver(payload("invitee.created"));
     await deliver(payload("invitee.canceled"));
+    const response = await deliver(payload("invitee.created"));
+
+    expect(response.status).toBe(200);
+    expect(mocks.store.get(INVITEE_URI)).toMatchObject({
+      status: "canceled",
+      cancel_reason: "Schedule conflict",
+    });
+  });
+
+  it("runs no chat attribution for a booking event it ignored", async () => {
+    await deliver(payload("invitee.canceled"));
+    mocks.applyAttribution.mockClear();
+
     await deliver(payload("invitee.created"));
 
-    expect(mocks.store.get(INVITEE_URI)).toMatchObject({
-      status: "booked",
-      canceled_at: null,
-      cancel_reason: null,
-    });
+    expect(mocks.applyAttribution).not.toHaveBeenCalled();
+  });
+
+  it("still refreshes a booked row when invitee.created is redelivered", async () => {
+    await deliver(payload("invitee.created"));
+    await deliver(payload("invitee.created"));
+
+    expect(mocks.store.get(INVITEE_URI)?.status).toBe("booked");
+    expect(mocks.applyAttribution).toHaveBeenCalledTimes(2);
   });
 });
 

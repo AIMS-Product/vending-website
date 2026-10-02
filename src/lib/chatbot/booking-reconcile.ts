@@ -174,14 +174,32 @@ function createDryRunClient(real: ReconcileClient): ReconcileClient {
       const builder = (real.from as (t: string) => object)(table);
       return new Proxy(builder, {
         get(target, prop, receiver) {
-          if (prop === "upsert") return noopResult;
-          if (prop === "update") return () => ({ eq: noopResult });
+          if (prop === "upsert" || prop === "update") return noopWrite;
           return Reflect.get(target, prop, receiver);
         },
       });
     },
     rpc: noopResult,
   } as unknown as ReconcileClient;
+}
+
+/**
+ * A write that touches nothing: awaitable as-is, and every filter or
+ * `.select()` chained onto it (upsert().select(), update().eq().neq()...)
+ * returns the same no-op, so callers may shape their writes freely.
+ */
+function noopWrite(): PromiseLike<{ data: null; error: null }> {
+  const result = { data: null, error: null } as const;
+  const chain = {
+    then: (
+      onFulfilled?: (value: typeof result) => unknown,
+      onRejected?: (reason: unknown) => unknown,
+    ) => Promise.resolve(result).then(onFulfilled, onRejected),
+    select: () => chain,
+    eq: () => chain,
+    neq: () => chain,
+  };
+  return chain as PromiseLike<{ data: null; error: null }>;
 }
 
 async function processInvitee(
