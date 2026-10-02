@@ -61,7 +61,10 @@ export function Countdown({
 }) {
   const now = useSyncExternalStore(subscribeToSeconds, readSecond, readNothing);
 
-  if (now == null) return <div className="h-[84px]" aria-hidden />;
+  // Before mount: the same boxes, invisible, so the timer arriving never
+  // moves the page (a fixed-height stand-in shifted it 8px and, in a row
+  // layout, slid its neighbours sideways).
+  if (now == null) return <TimerBoxes values={[0, 0, 0, 0]} placeholder />;
   const state = countdownPhase(now, startsAt, endsAt, expiredLabel);
   if (state.phase !== "counting") {
     if (state.phase === "none") return null;
@@ -71,30 +74,47 @@ export function Countdown({
   }
   const { left } = state;
 
-  const parts = UNITS.map(([label, short, ms, wrap]) => ({
-    label,
-    short,
-    value: Math.floor(left / ms) % wrap,
-  }));
+  return (
+    <TimerBoxes
+      values={UNITS.map(([, , ms, wrap]) => Math.floor(left / ms) % wrap)}
+      label={label}
+    />
+  );
+}
 
+function TimerBoxes({
+  values,
+  label,
+  placeholder = false,
+}: {
+  values: number[];
+  label?: string;
+  placeholder?: boolean;
+}) {
   return (
     <div
-      className="flex gap-2 sm:gap-3"
-      role="timer"
-      aria-live="off"
-      {...timerLabelProps(label)}
+      className={
+        placeholder ? "invisible flex gap-2 sm:gap-3" : "flex gap-2 sm:gap-3"
+      }
+      {...(placeholder
+        ? { "aria-hidden": true }
+        : {
+            role: "timer",
+            "aria-live": "off" as const,
+            ...timerLabelProps(label),
+          })}
     >
-      {parts.map(({ label, short, value }) => (
+      {UNITS.map(([unit, short], index) => (
         <div
-          key={label}
+          key={unit}
           className="rounded-control border-ink shadow-card flex w-16 flex-col items-center border-2 bg-white py-2.5 sm:w-24"
         >
           <span className="text-ink text-3xl font-black tabular-nums">
-            {String(value).padStart(2, "0")}
+            {String(values[index]).padStart(2, "0")}
           </span>
           <span className="text-eyebrow text-xs font-black tracking-[0.12em] uppercase">
             <span className="sm:hidden">{short}</span>
-            <span className="hidden sm:inline">{label}</span>
+            <span className="hidden sm:inline">{unit}</span>
           </span>
         </div>
       ))}
