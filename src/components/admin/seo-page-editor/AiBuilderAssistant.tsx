@@ -1519,7 +1519,10 @@ export function DocumentImportPanel({
           </p>
         ) : null}
         {uploadError ? (
-          <p className="rounded-ui-lg bg-ui-bad-fill text-ui-bad-ink ring-ui-bad-fill px-3 py-2 text-xs font-medium ring-1">
+          <p
+            role="alert"
+            className="rounded-ui-lg bg-ui-bad-fill text-ui-bad-ink ring-ui-bad-fill px-3 py-2 text-xs font-medium ring-1"
+          >
             {uploadError}
           </p>
         ) : null}

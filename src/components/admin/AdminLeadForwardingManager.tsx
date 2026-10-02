@@ -465,12 +465,15 @@ function Banner({
   children: React.ReactNode;
 }) {
   const tones = {
-    good: "border-ui-good/25 bg-ui-good-fill text-ui-good-ink",
+    good: "border-ui-ok/25 bg-ui-ok-fill text-ui-ok-ink",
     bad: "border-ui-bad/25 bg-ui-bad-fill text-ui-bad-ink",
     warn: "border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink",
   } as const;
   return (
     <section
+      // Save and error results arrive after an action, so they are announced;
+      // the static "read-only" warning is not.
+      role={tone === "bad" ? "alert" : tone === "good" ? "status" : undefined}
       className={cn("rounded-ui-lg border px-4 py-3 text-sm", tones[tone])}
     >
       {children}
