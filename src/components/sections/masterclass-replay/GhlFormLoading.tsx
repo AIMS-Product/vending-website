@@ -301,7 +301,7 @@ export function FormAction({
 
 function SubmitBar() {
   return (
-    <div className="rounded-control flex h-[42px] w-full items-center justify-center gap-2 bg-[var(--brand-700)]/15 text-sm font-semibold text-[var(--brand-700)]">
+    <div className="rounded-control bg-brand-50 text-brand-700 flex h-[42px] w-full items-center justify-center gap-2 text-sm font-semibold">
       <svg
         viewBox="0 0 24 24"
         fill="none"
