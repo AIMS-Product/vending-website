@@ -1,8 +1,11 @@
 import "server-only";
 
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
 import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
+import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { Database } from "@/types/database";
 import {
   buildCacReport,
   type CacMonthInput,
@@ -132,21 +135,42 @@ const monthLabel = (month: string) =>
  * the elapsed window: the workbook's variable spend is month-to-date and a partial
  * month already shows as partial in the data.
  */
-async function observedSpend(
-  client: ReturnType<typeof createAdminClient>,
+export async function observedSpend(
+  client: Pick<SupabaseClient<Database>, "from">,
   month: string,
 ): Promise<Map<string, number>> {
   const end = `${month.slice(0, 7)}-${String(lastDay(month)).padStart(2, "0")}`;
-  const { data, error } = await client
-    .from("channel_daily")
-    .select("channel,source,spend")
-    .gte("day", month)
-    .lte("day", end)
-    .not("spend", "is", null)
-    .limit(5000);
+  // One response is capped at 1,000 rows, and a month of campaign-level spend
+  // can pass that. A short read would understate spend, so page the whole month.
+  const { rows, error } = await readAllPages<{
+    channel: string;
+    source: string;
+    spend: number | null;
+  }>((from, to, count) =>
+    client
+      .from("channel_daily")
+      .select("channel,source,spend", { count })
+      .gte("day", month)
+      .lte("day", end)
+      .not("spend", "is", null)
+      .order("day")
+      .order("channel")
+      .order("source")
+      .order("medium")
+      .order("campaign")
+      .order("content")
+      .order("destination")
+      .range(from, to),
+  );
   const totals = new Map<string, number>();
-  if (error || !data) return totals;
-  for (const row of data) {
+  if (error) {
+    console.error("cac observed spend read failed", {
+      code: error.code,
+      message: error.message,
+    });
+    return totals;
+  }
+  for (const row of rows) {
     if (row.spend == null) continue;
     const key = `${row.channel}|${row.source}`;
     totals.set(key, (totals.get(key) ?? 0) + row.spend);

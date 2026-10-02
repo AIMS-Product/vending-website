@@ -1,5 +1,7 @@
 import "server-only";
 
+import { fetchWithTimeout } from "@/lib/fetch-timeout";
+
 /**
  * Minimal Bitly v4 client — only the two reads the click sync needs.
  *
@@ -50,17 +52,25 @@ export function createBitlyClient({
     path: string,
     init: { method?: "GET" | "POST"; body?: unknown } = {},
   ): Promise<T> {
-    const response = await fetchImpl(`${baseUrl}${path}`, {
-      method: init.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        Accept: "application/json",
-        ...(init.body !== undefined
-          ? { "Content-Type": "application/json" }
-          : {}),
+    const response = await fetchWithTimeout(
+      fetchImpl,
+      `${baseUrl}${path}`,
+      {
+        method: init.method ?? "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: "application/json",
+          ...(init.body !== undefined
+            ? { "Content-Type": "application/json" }
+            : {}),
+        },
+        ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
       },
-      ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
-    });
+      {
+        label: "Bitly",
+        onTimeout: (timeout) => new BitlyApiError(504, timeout.message),
+      },
+    );
 
     if (!response.ok) {
       // Body text is kept short: Bitly echoes the request, and the whole thing

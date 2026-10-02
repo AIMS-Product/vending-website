@@ -25,6 +25,7 @@ import {
   type WebinarEventRow,
   type WebinarsReport,
 } from "@/lib/services/team-report";
+import { logReadFailure } from "@/lib/services/read-failure";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -305,9 +306,13 @@ async function fetchWebinarEvents(
     let result = await read(`${base},booked_ever,booked_calls`);
     if (result.error) result = await read(`${base},booked_ever`);
     if (result.error) result = await read(base);
-    if (result.error) return [];
+    if (result.error) {
+      logReadFailure("team webinar events", result.error);
+      return [];
+    }
     return (result.data ?? []) as unknown as WebinarEventRow[];
-  } catch {
+  } catch (error) {
+    logReadFailure("team webinar events", error);
     return [];
   }
 }

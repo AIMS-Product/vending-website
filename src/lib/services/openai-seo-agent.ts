@@ -2,6 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
+import { fetchWithTimeout, LLM_TIMEOUT_MS } from "@/lib/fetch-timeout";
 import {
   proposedBlockHasSourceSupport,
   validateAiPageProposal,
@@ -184,33 +185,43 @@ export async function generateOpenAiSeoProposalFromSources(
   const promptVersion = input.promptVersion ?? SEO_AGENT_PROMPT_VERSION;
   const promptPayload = buildPromptPayload(input);
 
-  const response = await (deps.fetchFn ?? fetch)(OPENAI_RESPONSES_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model,
-      instructions: seoAgentInstructions(),
-      input: JSON.stringify(promptPayload),
-      reasoning: { effort: input.reasoningEffort ?? "medium" },
-      max_output_tokens: 6000,
-      store: false,
-      metadata: {
-        page_id: input.page.id,
-        prompt_version: promptVersion,
+  const response = await fetchWithTimeout(
+    deps.fetchFn ?? fetch,
+    OPENAI_RESPONSES_URL,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
       },
-      text: {
-        format: {
-          type: "json_schema",
-          name: "seo_page_proposal",
-          strict: true,
-          schema: aiPageProposalJsonSchema,
+      body: JSON.stringify({
+        model,
+        instructions: seoAgentInstructions(),
+        input: JSON.stringify(promptPayload),
+        reasoning: { effort: input.reasoningEffort ?? "medium" },
+        max_output_tokens: 6000,
+        store: false,
+        metadata: {
+          page_id: input.page.id,
+          prompt_version: promptVersion,
         },
-      },
-    }),
-  });
+        text: {
+          format: {
+            type: "json_schema",
+            name: "seo_page_proposal",
+            strict: true,
+            schema: aiPageProposalJsonSchema,
+          },
+        },
+      }),
+    },
+    {
+      label: "OpenAI",
+      timeoutMs: LLM_TIMEOUT_MS,
+      onTimeout: (timeout) =>
+        new SeoAgentGenerationError(timeout.message, { status: 504 }),
+    },
+  );
 
   const payload = await readOpenAiResponse(response);
   if (!response.ok) throw generationErrorFromPayload(response.status, payload);

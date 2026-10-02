@@ -1,6 +1,8 @@
 import "server-only";
 
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
+import { readAllPages } from "@/lib/services/paged-read";
+import { logReadFailure } from "@/lib/services/read-failure";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import {
@@ -115,32 +117,54 @@ async function fetchWebinars(
         .limit(500);
     let { data, error } = await read(`${base},booked_calls`);
     if (error) ({ data, error } = await read(base));
-    if (error) return [];
+    if (error) {
+      logReadFailure("kpi webinar events", error);
+      return [];
+    }
     return (data ?? []) as unknown as WebinarEventRow[];
-  } catch {
+  } catch (error) {
+    logReadFailure("kpi webinar events", error);
     return [];
   }
 }
 
-async function fetchEmailSnapshots(
+/**
+ * Every daily snapshot in range. Paged because the API caps one response at
+ * 1,000 rows and ~60 workflows produce that in about 16 days: an unpaged read
+ * kept only the earliest days, so the last-minus-first difference came out low.
+ */
+export async function fetchEmailSnapshots(
   client: ReportClient,
   startDay: string,
   endDay: string,
 ): Promise<EmailSnapshotRow[]> {
   try {
-    const { data, error } = await client
-      .from("ghl_email_stats")
-      .select(
-        "snapshot_day,workflow_id,workflow_name,sent,delivered,opened,clicked,replied",
-      )
-      .gte("snapshot_day", startDay)
-      .lte("snapshot_day", endDay)
-      .order("snapshot_day")
-      // A year of daily snapshots for ~60 workflows.
-      .limit(25_000);
-    if (error) return [];
-    return (data ?? []) as EmailSnapshotRow[];
-  } catch {
+    const { rows, error } = await readAllPages<EmailSnapshotRow>(
+      (from, to, count) =>
+        client
+          .from("ghl_email_stats")
+          .select(
+            "snapshot_day,workflow_id,workflow_name,sent,delivered,opened,clicked,replied",
+            { count },
+          )
+          .gte("snapshot_day", startDay)
+          .lte("snapshot_day", endDay)
+          .order("snapshot_day")
+          .order("workflow_id")
+          .range(from, to),
+    );
+    if (error) {
+      console.error("kpi email snapshots read failed", {
+        code: error.code,
+        message: error.message,
+      });
+      return [];
+    }
+    return rows;
+  } catch (error) {
+    console.error("kpi email snapshots read threw", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return [];
   }
 }

@@ -3,7 +3,6 @@ import {
   SETTER_NAMES,
   setsCalls,
   setterBookingUrl,
-  setterTag,
   buildCalendlyDirectory,
   buildChatIndex,
   resolveChatTouch,

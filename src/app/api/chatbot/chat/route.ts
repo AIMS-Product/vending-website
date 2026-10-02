@@ -15,6 +15,10 @@ import {
 } from "@/lib/chatbot/input-budget";
 import { VP_CHAT_VISITOR_COOKIE_NAME } from "@/lib/chatbot/constants";
 import {
+  CHATBOT_UNAVAILABLE_MESSAGE,
+  chatbotUnavailableResponse,
+} from "@/lib/chatbot/db-unavailable";
+import {
   loadOrCreateConversation,
   persistConversationTurn,
   prospectSummaryFrom,
@@ -107,7 +111,7 @@ export async function POST(request: Request) {
 
   if (!(await isUnderChatbotDailyCap())) {
     return Response.json(
-      { message: "Chat is temporarily unavailable. Try again shortly." },
+      { message: CHATBOT_UNAVAILABLE_MESSAGE },
       { status: 503 },
     );
   }
@@ -119,11 +123,12 @@ export async function POST(request: Request) {
   // limit above. Kept outside the global 2000/day cap check: that cap is the
   // outer valve for total volume; this one stops a single IP from tripping
   // it alone by spinning up new conversations.
-  const { data: existingConversation } = await client
+  const { data: existingConversation, error: existingError } = await client
     .from("chatbot_conversations")
     .select("id")
     .eq("session_id", sessionId)
     .maybeSingle();
+  if (existingError) return chatbotUnavailableResponse("chat", existingError);
   if (!existingConversation) {
     const allowedNewConversation = await checkPublicRateLimit(
       "chatbot_new_conversation",

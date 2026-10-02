@@ -113,7 +113,7 @@ export async function loadOrCreateConversation(
 }
 
 async function recallVisitor(client: ConversationClient, visitorHash: string) {
-  const { data } = await client
+  const { data, error } = await client
     .from("chatbot_conversations")
     .select("captured_name,captured_email,captured_phone")
     .eq("visitor_hash", visitorHash)
@@ -121,6 +121,15 @@ async function recallVisitor(client: ConversationClient, visitorHash: string) {
     .order("last_message_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  // Recall only saves the visitor re-typing their details, so a failed read
+  // starts the chat unprefilled rather than failing it. It is still logged.
+  if (error) {
+    console.error("chatbot: visitor recall read failed", {
+      code: error.code,
+      message: error.message,
+    });
+    return null;
+  }
   return data ?? null;
 }
 

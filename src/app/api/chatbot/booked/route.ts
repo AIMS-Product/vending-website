@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import { applyChatbotBookingAttribution } from "@/lib/chatbot/booking-attribution";
 import { stampChatbotBookingOnCloseLead } from "@/lib/chatbot/close-booking-note";
+import { chatbotUnavailableResponse } from "@/lib/chatbot/db-unavailable";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import { config } from "@/lib/config";
 import {
@@ -60,11 +61,14 @@ export async function POST(request: Request) {
   const { sessionId, inviteeUri } = parsed.data;
 
   const client = createAdminClient();
-  const { data: conversation } = await client
+  const { data: conversation, error: conversationError } = await client
     .from("chatbot_conversations")
     .select("id")
     .eq("session_id", sessionId)
     .maybeSingle();
+  if (conversationError) {
+    return chatbotUnavailableResponse("booked", conversationError);
+  }
   if (!conversation) return Response.json(NOT_FOUND, { status: 404 });
 
   let event: CalendlyWebhookEvent;

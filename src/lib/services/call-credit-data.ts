@@ -285,25 +285,42 @@ async function fetchCloseSetters(
 /**
  * Every chat that ever left an address, indexed by it.
  *
- * The whole table is a few hundred rows, so this is one read rather than a
- * lookup per booking. ponytail: page it if the chat ever outgrows a single
- * request.
+ * Paged: one response is capped at 1,000 rows, and a short read here would
+ * quietly drop chat credit for every booking past the cut.
  */
-async function fetchChatIndex(client: CallCreditClient): Promise<ChatIndex> {
+export async function fetchChatIndex(
+  client: CallCreditClient,
+): Promise<ChatIndex> {
   try {
-    const { data, error } = await client
-      .from("chatbot_conversations")
-      .select("id,captured_email,created_at")
-      .not("captured_email", "is", null)
-      .limit(5000);
-    if (error) return new Map();
-    const rows: ChatConversationRow[] = (data ?? []).map((row) => ({
+    const { rows: data, error } = await readAllPages<{
+      id: string;
+      captured_email: string | null;
+      created_at: string;
+    }>((from, to, count) =>
+      client
+        .from("chatbot_conversations")
+        .select("id,captured_email,created_at", { count })
+        .not("captured_email", "is", null)
+        .order("id")
+        .range(from, to),
+    );
+    if (error) {
+      console.error("call credit chat index read failed", {
+        code: error.code,
+        message: error.message,
+      });
+      return new Map();
+    }
+    const rows: ChatConversationRow[] = data.map((row) => ({
       id: row.id,
       capturedEmail: row.captured_email,
       createdAt: row.created_at,
     }));
     return buildChatIndex(rows);
-  } catch {
+  } catch (error) {
+    console.error("call credit chat index read threw", {
+      message: error instanceof Error ? error.message : String(error),
+    });
     return new Map();
   }
 }

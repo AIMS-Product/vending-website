@@ -12,10 +12,7 @@ import {
   type ChatbotConfigInput,
   type ChatbotQuickAction,
 } from "@/lib/chatbot/config";
-import {
-  runChatbotCatchUpDigest,
-  sendProfileEmailForConversation,
-} from "@/lib/chatbot/learning/digest";
+import { runChatbotCatchUpDigest } from "@/lib/chatbot/learning/digest";
 import { runChatbotLearningPass } from "@/lib/chatbot/learning/run";
 import {
   adminCountMissedLeadCatchUp,
