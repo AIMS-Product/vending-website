@@ -111,6 +111,9 @@ export default async function AdminChatbotConversationsPage({
     console.warn("chatbot conversations list failed", {
       error: error instanceof Error ? error.message : "unknown error",
     });
+    // Operator note: this fires when the chatbot tables are missing, i.e. the
+    // chatbot migrations have not been applied to this environment. The page
+    // copy stays plain English for the reader.
     loadError = true;
   }
 
@@ -136,8 +139,8 @@ export default async function AdminChatbotConversationsPage({
     >
       {loadError ? (
         <p className="text-ui-text-muted mb-5 text-sm">
-          The chatbot tables aren&apos;t provisioned in this environment yet —
-          this list will populate once the migration is applied.
+          Chatbot conversations aren&apos;t available in this environment yet.
+          They will appear here once the chatbot is switched on for it.
         </p>
       ) : null}
       <ChatbotConversationsManager
