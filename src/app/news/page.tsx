@@ -5,14 +5,19 @@ import { FinalCta } from "@/components/sections/FinalCta";
 import Link from "next/link";
 import { listPublishedPosts } from "@/lib/services/news";
 import { listResourceGuides } from "@/lib/services/seo-page-public";
+import { pageOpenGraph } from "@/lib/site";
+
+const TITLE = "News";
+const DESCRIPTION =
+  "Vending industry insights, location strategies, and program updates from Vendingpreneurs.";
 
 export const metadata: Metadata = {
-  title: "News",
-  description:
-    "Vending industry insights, location strategies, and program updates from Vendingpreneurs.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: {
     canonical: "/news",
   },
+  openGraph: pageOpenGraph(TITLE, DESCRIPTION, "/news"),
 };
 
 /** Fall back to ISR every 60s in production so newly published posts appear without a redeploy. */

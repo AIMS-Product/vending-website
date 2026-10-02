@@ -17,14 +17,19 @@ import {
   TAG_AXES,
   type Facet,
 } from "@/lib/case-studies/index-filters";
+import { pageOpenGraph } from "@/lib/site";
 
 export const revalidate = 60;
 
+const TITLE = "Case Studies";
+const DESCRIPTION =
+  "Vendingpreneurs members share how they went from zero vending experience to a working route — video stories and written testimonials in their own words.";
+
 export const metadata: Metadata = {
-  title: "Case Studies",
-  description:
-    "Vendingpreneurs members share how they went from zero vending experience to a working route — video stories and written testimonials in their own words.",
+  title: TITLE,
+  description: DESCRIPTION,
   alternates: { canonical: "/case-studies" },
+  openGraph: pageOpenGraph(TITLE, DESCRIPTION, "/case-studies"),
 };
 
 export default async function CaseStudiesPage({

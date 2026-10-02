@@ -10,6 +10,7 @@ import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { StatsBand } from "@/components/sections/home-v2/StatsBand";
 import { TestimonialsV2 } from "@/components/sections/home-v2/TestimonialsV2";
 import { TickerStrip } from "@/components/sections/home-v2/TickerStrip";
+import { pageOpenGraph, siteDescription } from "@/lib/site";
 import { SupabaseAuthErrorRedirect } from "./SupabaseAuthErrorRedirect";
 import "./home-v2.css";
 
@@ -25,15 +26,18 @@ const anton = Anton({
 
 export const revalidate = 300;
 
+const TITLE = "Vendingpreneurs: Start and Scale a Vending Machine Business";
+
 export const metadata: Metadata = {
   // The layout default is just the brand, which only competes on brand
   // searches (baseline audit 2026-09-28). Absolute: no " | Vendingpreneurs".
   title: {
-    absolute: "Vendingpreneurs: Start and Scale a Vending Machine Business",
+    absolute: TITLE,
   },
   alternates: {
     canonical: "/",
   },
+  openGraph: pageOpenGraph(TITLE, siteDescription, "/"),
 };
 
 export default function Home() {

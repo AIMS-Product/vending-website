@@ -6,6 +6,7 @@ import {
   buildLeadAttribution,
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
+import { pageOpenGraph } from "@/lib/site";
 import { applyVslStructuredData } from "@/lib/site-structured-data";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "/contact",
   },
+  openGraph: pageOpenGraph(applyMeta.title, applyMeta.description, "/contact"),
 };
 
 export default async function ContactPage({
