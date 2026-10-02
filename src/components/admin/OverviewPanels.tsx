@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AdminViewerLink } from "@/components/admin/AdminViewerLink";
+import { BROKEN_FEED_STATUSES } from "@/lib/admin/feed-freshness";
 import { isViewerReadableHref } from "@/lib/admin/viewer-access";
 import {
   AdminBar,
@@ -486,9 +487,6 @@ export function NeedsAttention({
     </section>
   );
 }
-
-/** A connector in one of these states is not reporting; the page says so. */
-const BROKEN_FEED_STATUSES = new Set(["failed", "stale", "never", "empty"]);
 
 function buildAttentionItems(
   overview: AdminOverview,

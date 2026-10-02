@@ -9,6 +9,7 @@ import {
   PerformanceRead,
   StudioStrip,
 } from "@/components/admin/OverviewPanels";
+import { feedFreshness } from "@/lib/admin/feed-freshness";
 import { getAdminOverview } from "@/lib/services/admin-overview";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { parseAdminAnalyticsRange } from "@/lib/services/admin-analytics-range";
@@ -46,7 +47,7 @@ export default async function AdminOverviewPage({
   const { report } = channels;
   const moves = rankChannelMoves(report.rows);
   const canEdit = canEditAdmin(role);
-  const syncedSince = oldestSync(channels.syncHealth);
+  const freshness = feedFreshness(channels.syncHealth);
 
   // The funnel's own booked share, which is measured only on links carrying
   // both stages. Taken only when the stage above it really is Lead: when no
@@ -71,8 +72,17 @@ export default async function AdminOverviewPage({
         <p className="text-ui-text-subtle text-xs">
           {channels.range.label} ({channels.range.startDay} to{" "}
           {channels.range.endDay}).{" "}
-          {syncedSince ? (
-            <>Every data feed updated since {syncedSince}. </>
+          {freshness.behind > 0 ? (
+            <span className="text-ui-warn font-medium">
+              {freshness.behind} of {freshness.total} data feeds{" "}
+              {freshness.behind === 1 ? "is" : "are"} behind
+              {freshness.since
+                ? `; the rest updated since ${freshness.since}`
+                : ""}
+              . See Needs attention below.{" "}
+            </span>
+          ) : freshness.since ? (
+            <>Every data feed updated since {freshness.since}. </>
           ) : null}
           A dash means we have no data for it, which is different from zero.
         </p>
@@ -142,30 +152,6 @@ export default async function AdminOverviewPage({
       </div>
     </AdminShell>
   );
-}
-
-const SYNC_TIME = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/Los_Angeles",
-  month: "short",
-  day: "numeric",
-  hour: "numeric",
-  minute: "2-digit",
-});
-
-/**
- * When the stalest healthy feed last finished, in Pacific time: every number
- * on the page is at least this fresh. The newest would almost always be the
- * hourly Close sync and say nothing about GA4 or Metricool.
- */
-function oldestSync(
-  rows: readonly { status: string; finishedAt: string | null }[],
-): string | null {
-  const oldest = rows
-    .filter((row) => row.status === "ok" && row.finishedAt)
-    .map((row) => row.finishedAt!)
-    .sort()
-    .at(0);
-  return oldest ? `${SYNC_TIME.format(new Date(oldest))} PT` : null;
 }
 
 function singleParam(value: string | string[] | undefined): string | undefined {
