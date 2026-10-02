@@ -5,6 +5,7 @@ import {
   adminGetLeadDetail,
   adminListLeads,
   adminRetryCloseSyncEvent,
+  clampLeadPage,
   LeadAdminServiceError,
 } from "./lead-admin";
 import type { Database, Tables } from "@/types/database";
@@ -230,6 +231,8 @@ class FakeQuery {
   private orderKey: string | null = null;
   private orderAscending = true;
   private limitCount: number | null = null;
+  private rangeBounds: [number, number] | null = null;
+  private headCount = false;
   private deleteMode = false;
 
   constructor(
@@ -237,7 +240,13 @@ class FakeQuery {
     private state: FakeState,
   ) {}
 
-  select() {
+  select(_columns?: string, opts?: { count?: string; head?: boolean }) {
+    if (opts?.count === "exact" && opts.head) this.headCount = true;
+    return this;
+  }
+
+  range(from: number, to: number) {
+    this.rangeBounds = [from, to];
     return this;
   }
 
@@ -332,6 +341,14 @@ class FakeQuery {
       resolve({ data: matched, error: null });
       return;
     }
+    if (this.headCount) {
+      resolve({
+        data: null,
+        count: this.rows().length,
+        error: null,
+      } as never);
+      return;
+    }
     resolve({ data: this.rows(), error: null });
   }
 
@@ -356,6 +373,9 @@ class FakeQuery {
         const compared = String(av ?? "").localeCompare(String(bv ?? ""));
         return this.orderAscending ? compared : -compared;
       });
+    }
+    if (this.rangeBounds && !this.headCount) {
+      rows = rows.slice(this.rangeBounds[0], this.rangeBounds[1] + 1);
     }
     if (this.limitCount != null) rows = rows.slice(0, this.limitCount);
     return rows;
@@ -403,13 +423,13 @@ describe("adminListLeads", () => {
       ],
     });
 
-    const booked = await adminListLeads({
+    const { leads: booked } = await adminListLeads({
       client: fake.client,
       callStatus: "booked",
     });
     expect(booked.map((lead) => lead.id)).toEqual(["booked"]);
 
-    const notBooked = await adminListLeads({
+    const { leads: notBooked } = await adminListLeads({
       client: fake.client,
       callStatus: "not_booked",
     });
@@ -419,13 +439,16 @@ describe("adminListLeads", () => {
       client: fake.client,
       callStatus: "all",
     });
-    expect(all).toHaveLength(3);
+    expect(all.leads).toHaveLength(3);
+    expect(all.total).toBe(3);
   });
 
   it("lists lead identity, lifecycle, sync, source, UTM, variant, and qualification state", async () => {
     const fake = buildClient();
 
-    await expect(adminListLeads({ client: fake.client })).resolves.toEqual([
+    await expect(
+      adminListLeads({ client: fake.client }).then((result) => result.leads),
+    ).resolves.toEqual([
       expect.objectContaining({
         id: "lead_1",
         fullName: "Jane Buyer",
@@ -467,8 +490,68 @@ describe("adminListLeads", () => {
         lifecycleStatus: "qualification_pending",
         closeSyncStatus: "failed",
         client: fake.client,
-      }),
+      }).then((result) => result.leads),
     ).resolves.toEqual([expect.objectContaining({ id: "lead_1" })]);
+  });
+
+  it("pages past the first 100 with an exact total and counts sync issues across all leads", async () => {
+    const leads = Array.from({ length: 230 }, (_, i) =>
+      makeLead({
+        id: `lead_${String(i).padStart(3, "0")}`,
+        email: `lead${i}@example.com`,
+        // Newest first: higher index = later created_at.
+        created_at: new Date(Date.UTC(2026, 0, 1, 0, 0, i)).toISOString(),
+        close_sync_status: i % 50 === 0 ? "failed" : "synced",
+      }),
+    );
+    const fake = buildClient({ leads });
+
+    const first = await adminListLeads({ client: fake.client });
+    expect(first.total).toBe(230);
+    expect(first.page).toBe(1);
+    expect(first.leads).toHaveLength(100);
+    expect(first.leads[0]?.id).toBe("lead_229");
+    // 0, 50, 100, 150, 200 are failed: five across ALL pages, not just page 1.
+    expect(first.syncIssueTotal).toBe(5);
+
+    const third = await adminListLeads({ client: fake.client, page: 3 });
+    expect(third.page).toBe(3);
+    expect(third.leads).toHaveLength(30);
+    expect(third.leads[0]?.id).toBe("lead_029");
+
+    // A stale ?page= beyond the last page is clamped, not an empty screen.
+    const beyond = await adminListLeads({ client: fake.client, page: 99 });
+    expect(beyond.page).toBe(3);
+    expect(beyond.leads).toHaveLength(30);
+
+    const filtered = await adminListLeads({
+      client: fake.client,
+      closeSyncStatus: "failed",
+    });
+    expect(filtered.total).toBe(5);
+    expect(filtered.syncIssueTotal).toBe(5);
+  });
+
+  it("returns an empty page with zero totals when nothing matches", async () => {
+    const fake = buildClient({ leads: [] });
+    await expect(adminListLeads({ client: fake.client })).resolves.toEqual({
+      leads: [],
+      total: 0,
+      page: 1,
+      pageSize: 100,
+      syncIssueTotal: 0,
+    });
+  });
+});
+
+describe("clampLeadPage", () => {
+  it("keeps pages inside 1..last and survives junk input", () => {
+    expect(clampLeadPage(0, 250)).toBe(1);
+    expect(clampLeadPage(-4, 250)).toBe(1);
+    expect(clampLeadPage(2.7, 250)).toBe(2);
+    expect(clampLeadPage(9, 250)).toBe(3);
+    expect(clampLeadPage(Number.NaN, 250)).toBe(1);
+    expect(clampLeadPage(5, 0)).toBe(1);
   });
 });
 

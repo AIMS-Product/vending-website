@@ -12,7 +12,7 @@ import {
  */
 export default function AdminNotFound() {
   return (
-    <AdminShell activeSection="overview" title="Not found">
+    <AdminShell activeSection="overview" title="Not found" roleUnknown>
       <div className={`${adminPanelClass} px-6 py-10 text-center`}>
         <h2 className="text-ui-text text-base font-semibold">
           That record does not exist or was deleted

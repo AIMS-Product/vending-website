@@ -69,7 +69,7 @@ function printHelp() {
 Read-only checks for launch-critical rendered behavior:
   - RSS canonical host is ${CANONICAL_HOST}
   - Homepage includes LCP wordmark priority and contrast fixes
-  - Case study video posters use compressed JPEGs
+  - Case study video posters (rendered on /) use compressed JPEGs
   - Cron routes reject unauthenticated requests with 401, proving CRON_SECRET is configured
 `);
 }
@@ -122,7 +122,16 @@ async function checkHome() {
 // fallow-ignore-next-line complexity
 async function checkCaseStudies() {
   const response = await getPath("/case-studies");
-  const html = response.body;
+  record({
+    name: "case studies returns 200",
+    ok: response.status === 200,
+    detail: `status=${response.status}`,
+  });
+
+  // The video testimonial posters render on the home page (TestimonialsV2),
+  // not on /case-studies, which lists written stories only.
+  const home = await getPath("/");
+  const html = home.body;
   const missingJpegs = POSTER_NAMES.filter(
     (name) => !html.includes(`poster-${name}.jpg`),
   );
@@ -131,17 +140,12 @@ async function checkCaseStudies() {
   );
 
   record({
-    name: "case studies returns 200",
-    ok: response.status === 200,
-    detail: `status=${response.status}`,
-  });
-  record({
     name: "case studies use compressed JPEG posters",
     ok: missingJpegs.length === 0 && pngs.length === 0,
     detail:
       missingJpegs.length || pngs.length
         ? `missing jpg=${missingJpegs.join(",") || "none"} png=${pngs.join(",") || "none"}`
-        : "all posters are jpg",
+        : "all posters are jpg (checked on /)",
   });
 }
 

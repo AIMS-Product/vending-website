@@ -5,7 +5,7 @@ Branch: `fix/setter-booking-credit`
 ## What Connor saw
 
 Connor George (setter) reported a second lead that "booked through the
-chatbot": B, mindfulobserveruc@gmail.com. What actually happened:
+chatbot": B, lead-b@example.com. What actually happened:
 
 - B chatted on /booking-t5-socials on Sep 11 (Instagram in-app browser) and did
   not book. The chat captured her as a lead; Close tagged her `chatbot` as the

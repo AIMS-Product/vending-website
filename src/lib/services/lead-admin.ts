@@ -160,16 +160,30 @@ const RETRYABLE_EVENT_STATUSES = new Set([
   "dead_letter",
 ]);
 
-export async function adminListLeads(
-  input: AdminListLeadsInput & ServiceDeps = {},
-): Promise<AdminLeadListItem[]> {
-  const client = serviceClient(input);
-  let query = client
-    .from("lead_submissions")
-    .select(LEAD_FIELDS)
-    .order("created_at", { ascending: false })
-    .limit(ADMIN_LEAD_LIST_LIMIT);
+const SYNC_ISSUE_STATUSES = ["failed", "needs_review", "dead_letter"] as const;
 
+export type AdminLeadsPage = {
+  leads: AdminLeadListItem[];
+  /** Leads matching the active filters, across every page. */
+  total: number;
+  /** 1-based page actually served (an out-of-range request is clamped). */
+  page: number;
+  pageSize: number;
+  /** Leads whose Close sync needs attention, across ALL leads and filters. */
+  syncIssueTotal: number;
+};
+
+type LeadFilterable<Q> = {
+  eq: (column: string, value: string) => Q;
+  is: (column: string, value: null) => Q;
+  not: (column: string, operator: string, value: null) => Q;
+};
+
+function applyLeadFilters<Q extends LeadFilterable<Q>>(
+  initial: Q,
+  input: AdminListLeadsInput,
+): Q {
+  let query = initial;
   if (input.lifecycleStatus && input.lifecycleStatus !== "all") {
     query = query.eq("lifecycle_status", input.lifecycleStatus);
   }
@@ -185,12 +199,60 @@ export async function adminListLeads(
       .is("call_booked_at", null)
       .not("call_reconciled_at", "is", null);
   }
+  return query;
+}
 
-  const { data, error } = await query;
+export function clampLeadPage(requested: number, total: number): number {
+  const lastPage = Math.max(1, Math.ceil(total / ADMIN_LEAD_LIST_LIMIT));
+  if (!Number.isFinite(requested)) return 1;
+  return Math.min(Math.max(1, Math.floor(requested)), lastPage);
+}
+
+export async function adminListLeads(
+  input: AdminListLeadsInput & ServiceDeps & { page?: number } = {},
+): Promise<AdminLeadsPage> {
+  const client = serviceClient(input);
+
+  // Counts first: the exact total drives pagination (and clamps a stale
+  // ?page=) and the sync-issues tile must cover every lead, not one page.
+  const [filteredCount, syncIssueCount] = await Promise.all([
+    applyLeadFilters(
+      client
+        .from("lead_submissions")
+        .select("id", { count: "exact", head: true }),
+      input,
+    ),
+    client
+      .from("lead_submissions")
+      .select("id", { count: "exact", head: true })
+      .in("close_sync_status", [...SYNC_ISSUE_STATUSES]),
+  ]);
+  if (filteredCount.error || syncIssueCount.error) {
+    throw new LeadAdminServiceError("Could not list leads.");
+  }
+  const total = filteredCount.count ?? 0;
+  const syncIssueTotal = syncIssueCount.count ?? 0;
+  const page = clampLeadPage(input.page ?? 1, total);
+  const empty: AdminLeadsPage = {
+    leads: [],
+    total,
+    page,
+    pageSize: ADMIN_LEAD_LIST_LIMIT,
+    syncIssueTotal,
+  };
+  if (!total) return empty;
+
+  const from = (page - 1) * ADMIN_LEAD_LIST_LIMIT;
+  const { data, error } = await applyLeadFilters(
+    client.from("lead_submissions").select(LEAD_FIELDS),
+    input,
+  )
+    .order("created_at", { ascending: false })
+    .range(from, from + ADMIN_LEAD_LIST_LIMIT - 1);
   if (error) throw new LeadAdminServiceError("Could not list leads.");
 
   const leads = (data ?? []) as LeadRow[];
-  if (!leads.length) return [];
+  if (!leads.length) return empty;
 
   const leadIds = leads.map((lead) => lead.id);
   const [sessions, events] = await Promise.all([
@@ -202,13 +264,16 @@ export async function adminListLeads(
     events.filter((event) => !NON_CLOSE_EVENT_TYPES.has(event.event_type)),
   );
 
-  return leads.map((lead) =>
-    mapLeadListItem(
-      lead,
-      latestSessionByLead.get(lead.id) ?? null,
-      latestEventByLead.get(lead.id) ?? null,
+  return {
+    ...empty,
+    leads: leads.map((lead) =>
+      mapLeadListItem(
+        lead,
+        latestSessionByLead.get(lead.id) ?? null,
+        latestEventByLead.get(lead.id) ?? null,
+      ),
     ),
-  );
+  };
 }
 
 export async function adminGetLeadDetail(

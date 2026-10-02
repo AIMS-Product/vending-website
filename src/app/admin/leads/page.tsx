@@ -13,6 +13,7 @@ type SearchParams = {
   lifecycle?: string | string[];
   sync?: string | string[];
   call?: string | string[];
+  page?: string | string[];
 };
 
 export const metadata: Metadata = {
@@ -32,10 +33,12 @@ export default async function AdminLeadsPage({
   const lifecycleStatus = singleParam(params.lifecycle) ?? "all";
   const closeSyncStatus = singleParam(params.sync) ?? "all";
   const callStatus = singleParam(params.call) ?? "all";
-  const leads = await adminListLeads({
+  const requestedPage = Number.parseInt(singleParam(params.page) ?? "1", 10);
+  const result = await adminListLeads({
     lifecycleStatus,
     closeSyncStatus,
     callStatus,
+    page: Number.isNaN(requestedPage) ? 1 : requestedPage,
   });
 
   return (
@@ -56,7 +59,11 @@ export default async function AdminLeadsPage({
       }
     >
       <AdminLeadsManager
-        leads={leads}
+        leads={result.leads}
+        total={result.total}
+        page={result.page}
+        pageSize={result.pageSize}
+        syncIssueTotal={result.syncIssueTotal}
         activeLifecycleStatus={lifecycleStatus}
         activeCloseSyncStatus={closeSyncStatus}
         activeCallStatus={callStatus}

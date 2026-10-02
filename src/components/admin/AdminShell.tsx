@@ -262,6 +262,12 @@ type AdminShellProps = {
   description?: string;
   userEmail?: string | null;
   userRole?: string | null;
+  /**
+   * Fallback screens (error boundary, not-found) cannot know who is signed in
+   * and must not fetch auth in a client boundary. Set this to show the
+   * least-privileged nav instead of the full editor nav.
+   */
+  roleUnknown?: boolean;
   actions?: ReactNode;
   immersive?: boolean;
   children: ReactNode;
@@ -274,6 +280,7 @@ export function AdminShell({
   description,
   userEmail,
   userRole,
+  roleUnknown = false,
   actions,
   immersive = false,
   children,
@@ -289,7 +296,7 @@ export function AdminShell({
   const roleLabel = userRole ? formatAdminRole(userRole) : null;
   // Absent role means a caller that predates the viewer role; treat it as a
   // full admin so the nav does not silently shrink for everyone.
-  const canEdit = userRole !== "viewer";
+  const canEdit = userRole !== "viewer" && !roleUnknown;
 
   return (
     <div
