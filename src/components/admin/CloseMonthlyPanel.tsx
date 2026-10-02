@@ -23,6 +23,7 @@ import {
 } from "@/lib/services/close-monthly-funnel";
 import type { CloseMonthlyReport } from "@/lib/services/close-monthly-funnel-data";
 import { formatPacificStamp } from "@/lib/admin/format-time";
+import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
  * Sources down the side, months across the top, in the shape of the sheet the
@@ -34,10 +35,6 @@ const TH = "px-2.5 py-2 text-right font-semibold whitespace-nowrap";
 const TD = "px-2.5 py-2 text-right tabular-nums whitespace-nowrap";
 const STICKY =
   "bg-ui-surface border-ui-line sticky left-0 z-10 min-w-[13rem] border-r px-4 py-2 text-left";
-
-function money(value: number): string {
-  return value === 0 ? "$0" : `$${Math.round(value).toLocaleString("en-US")}`;
-}
 
 /** A rate, or a dash when there is nothing behind it to divide. */
 function rate(part: number, whole: number): string {

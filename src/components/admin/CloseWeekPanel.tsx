@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/close-week-view";
 import type { CloseWeekReport } from "@/lib/services/close-week-view-data";
 import { formatPacificStamp } from "@/lib/admin/format-time";
+import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
  * The week as Close (and SteelTrap) count it: every first call on the
@@ -34,10 +35,6 @@ function weekLabel(week: CloseWeek): string {
 
 function pct(part: number, whole: number): string {
   return whole > 0 ? `${Math.round((part / whole) * 100)}%` : "—";
-}
-
-function money(value: number): string {
-  return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
 function Cells({ row }: { row: Omit<CloseWeekRow, "label"> }) {
