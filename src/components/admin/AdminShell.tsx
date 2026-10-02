@@ -286,7 +286,10 @@ export function AdminShell({
   return (
     <div
       data-admin-ui
-      className="bg-ui-canvas text-ui-text min-h-screen overflow-x-hidden"
+      // clip, not hidden: overflow-x-hidden turns this into a scroll
+      // container, and the sidebar's sticky top-0 then sticks to a box that
+      // never scrolls, so the nav scrolled away with the page.
+      className="bg-ui-canvas text-ui-text min-h-screen overflow-x-clip"
     >
       {!immersive && (
         <AdminMobileNav
