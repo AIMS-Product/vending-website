@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { cn } from "@/lib/utils";
 
 const CENTRAL = "America/Chicago";
 
@@ -38,7 +39,7 @@ function wallClock(time: number, timeZone: string) {
 }
 
 /**
- * "That's 8:30 PM your time (EDT)" for a visitor outside Central time; null
+ * "Your time: 8:30 PM EDT" for a visitor outside Central time; null
  * when their clock already reads the Central time, or the date is unreadable.
  * Names the weekday when the visitor's day differs from Central's.
  */
@@ -59,7 +60,18 @@ export function localTimeText(
   if (local.time === central.time && local.weekday === central.weekday)
     return null;
   const day = local.weekday === central.weekday ? "" : `${local.weekday} `;
-  return `That's ${day}${local.time} your time (${local.zone})`;
+  // Short on purpose: the line never wraps (see LocalTimeLine), and the
+  // longest zone ("Wed 2:15 PM GMT+13:45") must fit a 320px form card.
+  return `Your time: ${day}${local.time} ${local.zone}`;
+}
+
+/** The line's text: the zone text only once mounted and before the start. */
+export function shownLocalTime(
+  now: number | null,
+  startsAt: string,
+  text: string | null,
+): string | null {
+  return now != null && now < Date.parse(startsAt) ? text : null;
 }
 
 export function useNow() {
@@ -67,8 +79,9 @@ export function useNow() {
 }
 
 /**
- * The start in the visitor's own zone, before the start only. On the server
- * and on a Central-time clock it renders an empty line of the same height.
+ * The start in the visitor's own zone, before the start only. On the server,
+ * on a Central-time clock and from the start on it renders an empty line of
+ * the same height.
  */
 export function LocalTimeLine({
   startsAt,
@@ -90,13 +103,18 @@ export function LocalTimeLine({
           ),
     [startsAt, mounted],
   );
-  if (now != null && now >= Date.parse(startsAt)) return null;
-  // The line's height is held from the server render on, so the zone text
-  // arriving after hydration never pushes the form (and its button) down.
-  // Central-time visitors keep the blank line: same layout for everyone.
+  // The line is held in every state, server and client alike: before the
+  // start it carries the zone text (once mounted), otherwise it stays blank.
+  // So neither the text arriving after hydration nor the start passing ever
+  // moves the form or the calendar buttons. One line only (truncate), so a
+  // long zone name cannot add a second line on a narrow phone.
+  const shown = shownLocalTime(now, startsAt, text);
   return (
-    <p className={className} aria-hidden={text ? undefined : true}>
-      {text ?? "\u00a0"}
+    <p
+      className={cn("truncate", className)}
+      aria-hidden={shown ? undefined : true}
+    >
+      {shown ?? "\u00a0"}
     </p>
   );
 }
