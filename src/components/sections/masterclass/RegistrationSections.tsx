@@ -359,7 +359,7 @@ export function StoryList({
 }
 
 /**
- * The close: the GHL "Your freedom starts here" block with the date and a
+ * The close: a decision-support heading with the date and a
  * live countdown, who it is for, then one CTA back to the form in the hero.
  */
 export function FitSection({

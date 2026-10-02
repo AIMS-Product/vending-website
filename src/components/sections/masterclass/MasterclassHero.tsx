@@ -5,9 +5,11 @@ import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
 import {
   WATCH_HEADING_ID,
-  masterclassHero,
+  heroForAngle,
+  hostCopy,
   masterclassTakeaways,
 } from "@/lib/content/masterclass";
+import type { MasterclassEvent } from "@/lib/services/masterclass-event";
 
 /** Brand-700 check disc, the same mark the Fit cards use. */
 export function CheckDisc() {
@@ -57,8 +59,17 @@ function splitTakeaway(text: string): [string, string] {
  * takeaways and the form. Its own component (not ApplyHero) because the
  * masterclass left column is a takeaway list, not a paragraph.
  */
-export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
-  const copy = masterclassHero;
+export function MasterclassHero({
+  aside,
+  angle,
+  stats,
+}: {
+  aside: React.ReactNode;
+  /** `?angle=` from the ad URL; unknown or missing reads the default hero. */
+  angle?: string;
+  stats: MasterclassEvent["anthony"];
+}) {
+  const copy = heroForAngle(angle);
   // One block per sentence, so the second always starts its own line.
   const sentences = copy.headline.match(/[^.]+\.\s*/g) ?? [copy.headline];
   return (
@@ -82,7 +93,7 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
           headline. From lg the copy is top-anchored in column 1 (a fixed top
           row, a flexible bottom one) so form validation growing column 2
           never moves it, and the form spans every row of column 2. */}
-      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 pt-3 pb-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
+      <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 gap-x-14 px-5 pt-3 pb-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,440px)] lg:grid-rows-[auto_auto_auto_auto_auto_auto_auto_1fr] lg:px-10 lg:py-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase lg:col-start-1 lg:row-start-2 lg:max-w-[620px]">
           {copy.eyebrow}
         </p>
@@ -111,11 +122,25 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
         </p>
         <div
           id={APPLY_QUIZ_ANCHOR}
-          className="mt-2 w-full min-w-0 scroll-mt-6 self-start lg:col-start-2 lg:row-span-7 lg:row-start-1 lg:mt-0"
+          className="mt-2 w-full min-w-0 scroll-mt-6 self-start lg:col-start-2 lg:row-span-8 lg:row-start-1 lg:mt-0"
         >
           {aside}
         </div>
-        <div className="mt-8 max-w-[620px] lg:col-start-1 lg:row-start-5 lg:mt-6">
+        {/* After the form in reading order, so on phones the submit stays on
+            the first screen; from lg it sits beside the form. */}
+        {stats ? (
+          <p className="text-ink mt-5 text-sm font-bold sm:text-[15px] lg:col-start-1 lg:row-start-5 lg:mt-4 lg:max-w-[620px]">
+            <span className="text-eyebrow font-black tracking-[0.1em] uppercase">
+              {copy.proofLead}:
+            </span>{" "}
+            {stats.locations} {hostCopy.statLabels.locations.toLowerCase()}
+            {" · "}
+            {stats.machines} {hostCopy.statLabels.machines.toLowerCase()}
+            {" · "}
+            {stats.revenue} {hostCopy.statLabels.revenue.toLowerCase()}
+          </p>
+        ) : null}
+        <div className="mt-8 max-w-[620px] lg:col-start-1 lg:row-start-6 lg:mt-6">
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             On the call
           </p>
@@ -142,7 +167,7 @@ export function MasterclassHero({ aside }: { aside: React.ReactNode }) {
         <SaveSeatLink
           href={`#${APPLY_VSL_ANCHOR}`}
           focusId={WATCH_HEADING_ID}
-          className="group text-ink mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:col-start-1 lg:row-start-6"
+          className="group text-ink mt-7 inline-flex items-center gap-3 justify-self-start text-[15px] font-black tracking-[0.02em] uppercase lg:col-start-1 lg:row-start-7"
         >
           <span className="bg-brand-600 flex size-11 items-center justify-center rounded-full text-white shadow-[3px_3px_0_#111111] transition-transform group-hover:translate-y-0.5">
             <PlayIcon className="size-4 translate-x-px" />

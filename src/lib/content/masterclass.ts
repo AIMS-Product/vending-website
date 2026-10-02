@@ -186,6 +186,8 @@ export const masterclassHero = {
   /** Highlighted with a left-to-right sweep (Adam, 2026-10-01). */
   highlight: "Your business can't.",
   videoCue: "Watch Anthony's story",
+  /** Beside the form from lg, under it on phones (the submit stays on the first screen). */
+  proofLead: "Active operator",
   /** Under the phone field. True to the GHL texts: link at T-15m and T-0. */
   phoneHint: "We text your Zoom link and a 15-minute reminder.",
   /** Sticky bottom bar (phones and desktop, once past the hero). */
@@ -228,12 +230,48 @@ export function stickyEventLine(
   return short ? `${day}\n${clock} CT` : `${day} · ${clock} CT · Free`;
 }
 
-/** The four check-mark takeaways from the GHL registration page, verbatim. */
+/**
+ * Ad-matched hero variants, picked by `?angle=` on the ad's URL. The default
+ * (no or unknown angle) is the approved ownership headline above. Each
+ * variant keeps the rest of the page identical so a split test isolates the
+ * hero. Copy from the 2026-10-02 CRO review (Liana), trimmed.
+ */
+export const masterclassHeroAngles = {
+  capital: {
+    headline: "Invest in a vending route, not just a machine.",
+    highlight: "not just a machine.",
+    subheadline:
+      "See the startup costs, locations and weekly work to know before you invest",
+  },
+  location: {
+    headline: "Don't buy the vending machine yet.",
+    highlight: "yet.",
+    subheadline:
+      "Learn why the location, its foot traffic and the agreement should decide the machine you buy, not the other way around",
+  },
+} as const;
+
+export type HeroAngle = keyof typeof masterclassHeroAngles;
+
+/** The hero copy for an ad angle; anything unrecognised gets the default. */
+export function heroForAngle(angle: string | null | undefined) {
+  const variant =
+    angle && Object.hasOwn(masterclassHeroAngles, angle)
+      ? masterclassHeroAngles[angle as HeroAngle]
+      : null;
+  return variant ? { ...masterclassHero, ...variant } : masterclassHero;
+}
+
+/**
+ * What the call covers, as decisions a buyer is weighing. Grounded in the
+ * deck's own sections (where the money comes from, foot traffic, a realistic
+ * first route, the three pillars). Text before " - " renders bold.
+ */
 export const masterclassTakeaways = [
-  "The real decisions, real timeline, and real obstacles vending operators navigate to build successful routes.",
-  "The three-pillar system that makes this repeatable - the framework every operator uses, whether they're building one machine or scaling a route.",
-  "Real numbers on what's actually possible - pulled directly from Anthony and operators in the community. Not theory. Real results from real people.",
-  "Clarity on whether this is right for you - can you realistically execute this? What would success look like for YOUR situation? What's the real cost of entry?",
+  "Where the money comes from - what you own, what it costs to start, and what a realistic first route looks like.",
+  "Location before machine - why foot traffic and the location agreement decide which machine you buy, and what to do when a spot underperforms.",
+  "The three-pillar system behind every route - with real numbers from Anthony and members. Not theory.",
+  "Whether it fits your life - the capital, the weekly hours and the work involved, so you can decide before you spend a dollar.",
 ] as const;
 
 export const SMS_CONSENT_TEXT =
@@ -306,11 +344,11 @@ export const MASTERCLASS_DISCLAIMER =
   "Earnings may vary and are not guaranteed. Outcomes depend on effort, market, and execution.";
 
 export const fitCopy = {
-  /** The GHL closing headline ("Your Freedom Starts Here"). */
-  heading: "Your freedom starts here",
-  highlight: "freedom",
-  /** Verbatim from the GHL closing block. */
-  subheading: "Learn how to launch a profitable vending business",
+  /** Decision support, not the GHL "Your freedom starts here" (CRO review 2026-10-02). */
+  heading: "Know if vending belongs in your plans",
+  highlight: "your plans",
+  subheading:
+    "Leave knowing the capital, locations, equipment and weekly work behind a route. If it fits, you'll know the next step. If not, you'll know before you spend a dollar.",
   forTitle: "This is for you if",
   notForTitle: "Skip it if",
   cta: "Save my free seat",
@@ -490,13 +528,16 @@ export const coverCopy = {
 };
 
 export const fitFor = [
-  "You want income you own, not another job",
+  "You want to build something you own, not another job or gig",
+  "You have savings, income, credit or financing to fund a route",
   "You can give it 5–10 hours a week",
-  "You want something real and built to last",
+  "You'll check a location before you buy a machine",
 ] as const;
 
 export const notFitFor = [
-  "You want overnight results with zero work",
+  "You need vending to pay you right away",
+  "You want to start with little or no capital",
+  "You expect it to be fully passive from day one",
   "You won't put in real effort for the first 90 days",
 ] as const;
 

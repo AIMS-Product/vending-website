@@ -74,6 +74,8 @@ export default async function MasterclassPage({
       <RevealObserver />
       <CountdownBanner startsAt={event.startsAt} renderedAt={renderedAt} />
       <MasterclassHero
+        angle={typeof params.angle === "string" ? params.angle : undefined}
+        stats={event.anthony}
         aside={
           <RegistrationForm
             attribution={attribution}
