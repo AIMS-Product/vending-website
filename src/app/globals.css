@@ -355,12 +355,12 @@ body:has([data-hide-site-footer="true"]) > footer {
   color: inherit;
 }
 .news-prose a {
-  color: var(--brand-500);
+  color: var(--brand-700);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
 .news-prose a:hover {
-  color: var(--brand-600);
+  color: var(--color-ink);
 }
 .news-prose ul,
 .news-prose ol {
