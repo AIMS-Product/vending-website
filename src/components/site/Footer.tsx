@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { CopyrightLine } from "./CopyrightLine";
 import { SocialLinks } from "./SocialLinks";
 import { Wordmark } from "./Wordmark";
 import { footerColumns, type NavItem } from "@/lib/content/nav";
@@ -53,6 +54,7 @@ export function Footer() {
           ))}
         </nav>
       </div>
+      <CopyrightLine className="mx-auto mt-10 max-w-[1500px] text-sm font-semibold text-slate-600" />
     </footer>
   );
 }
