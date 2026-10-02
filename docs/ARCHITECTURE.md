@@ -145,7 +145,7 @@ rate limited by `checkPublicRateLimit` except `config`. The learning pass
   booking-session link). First-party check plus per-IP rate limit; it is not authenticated.
 - `POST /api/admin/manychat-ingest` and `POST /api/admin/webinar-ingest`: bearer-secret
   receivers for ManyChat flows and the `vp-webinars` GitHub Action. They answer 503 when their
-  secret is unset. Payload limits: 30 s / 60 s `maxDuration`, small body caps in the handlers.
+  secret is unset. Both reject bodies over a size cap (`MAX_BODY_BYTES`) before parsing.
 - `POST /api/csp-report`: collector for the report-only CSP; writes nothing to the database.
 - The masterclass funnel (`/masterclass*`) registers people through GHL; it uses
   `MASTERCLASS_SESSION_SECRET`, `GHL_WRITE_TOKEN` and the `WESCALE_GHL_*` variables.
