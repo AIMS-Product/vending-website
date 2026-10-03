@@ -119,6 +119,21 @@ describe("dashboard metrics", () => {
     ).toBe(2);
   });
 
+  it("counts plan actuals only in months the plan covers", () => {
+    const q3 = { startDay: "2026-07-01", endDay: "2026-09-30" };
+    expect(windowPlanTarget(q3)).toBe(619);
+    expect(
+      planBooked(
+        [
+          call({ leadId: "a", bookedDate: "2026-07-15" }),
+          call({ leadId: "b", bookedDate: "2026-08-15" }),
+          call({ leadId: "c", bookedDate: "2026-09-15" }),
+        ],
+        q3,
+      ),
+    ).toBe(1);
+  });
+
   it("puts calls with no setter last", () => {
     const rows = bySetter([
       { ...call({ leadId: "a" }), setter: null },

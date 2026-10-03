@@ -125,6 +125,13 @@ function daysInMonth(month: string): number {
  * month's target times the share of that month's days inside the window,
  * plan channels only. Null when no month in the window has a target.
  */
+/** True when at least one plan channel has a target for this `YYYY-MM`. */
+export function monthHasPlan(month: string): boolean {
+  return GOAL_CHANNELS.some(
+    (channel) => targetForMonth(channel, month) !== null,
+  );
+}
+
 export function windowPlanTarget(range: DayRange): number | null {
   const daysPerMonth = new Map<string, number>();
   for (const day of daysBetween(range)) {
@@ -146,7 +153,9 @@ export function windowPlanTarget(range: DayRange): number | null {
 
 /**
  * Actuals on the plan's own basis (§11): every first call in a plan channel,
- * cancellations included, no SteelTrap rule.
+ * cancellations included, no SteelTrap rule. Only days in a month with a
+ * target count, so a window reaching back before the plan compares like
+ * with like (Q3 counted July and August against September's target: 297%).
  */
 export function planBooked(
   calls: readonly CloseCall[],
@@ -155,7 +164,12 @@ export function planBooked(
   const seen = new Set<string>();
   let count = 0;
   for (const call of calls) {
-    if (!inRange(call.bookedDate, range) || seen.has(call.leadId)) continue;
+    if (
+      !inRange(call.bookedDate, range) ||
+      !monthHasPlan(call.bookedDate.slice(0, 7)) ||
+      seen.has(call.leadId)
+    )
+      continue;
     seen.add(call.leadId);
     if (PLAN_KEYS.has(channelKeyForFunnel(call.funnel) ?? "")) count += 1;
   }

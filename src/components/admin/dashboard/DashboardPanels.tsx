@@ -33,6 +33,7 @@ import {
   inRange,
   keptCalls,
   LEADS_RECORDED_FROM,
+  monthHasPlan,
   planBooked,
   sameDayLastWeek,
   showRateHeld,
@@ -801,7 +802,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
           <p className="text-ui-text-muted mt-1 text-xs tabular-nums">
             {target === null
               ? "The booking plan starts in September 2026; no target for this window."
-              : `Plan channels booked ${num(plan)} against a target of ${num(target)} for these days (cancellations included, as the plan counts them).`}
+              : `Plan channels booked ${num(plan)} against a target of ${num(target)} for ${monthHasPlan(window.startDay.slice(0, 7)) ? "these days" : "the days the plan covers (it starts September 2026)"} (cancellations included, as the plan counts them).`}
           </p>
           {share !== null ? (
             <div className="mt-3">
