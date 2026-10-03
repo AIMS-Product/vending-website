@@ -183,7 +183,7 @@ const SPINE: readonly FeedKey[] = [
   "manychat",
 ];
 
-export type TrustScope = AnalyticsTabKey | "data" | "seo";
+export type TrustScope = AnalyticsTabKey | "dashboard" | "data" | "seo";
 
 /**
  * THE map of tab to the feeds its loader reads. Read off each tab's data
@@ -227,6 +227,9 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   exec: ["site-leads", "ga4-pages", "close", "metricool-ads"],
   // kpi-report-data.ts: spine facts, Close, GHL email, webinars, Calendly
   kpi: [...SPINE, "close", "calendly", "site-leads"],
+  // analytics-dashboard-data.ts: Close mirror, site leads, Calendly, the
+  // spine (captures, spend) through channel-report, Close wins, CAC inputs
+  dashboard: [...SPINE, "close", "calendly", "site-leads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
   // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
@@ -665,6 +668,8 @@ export type TrustBarModel = {
   feedCount: number;
   /** Feeds that have never delivered data. Not in `asOf`, `problems` or the tone. */
   notConnected: FeedVerdict[];
+  /** Every feed this scope reads, healthy or not, for a per-source list. */
+  feeds: FeedVerdict[];
   audit: AuditVerdict;
   flags: UnverifiedFlag[];
 };
@@ -704,6 +709,7 @@ export function buildTrustBar(input: {
     problems,
     feedCount: connected.length,
     notConnected,
+    feeds: verdicts,
     audit: judgeAudit(input.run, input.now, input.auditError ?? null),
     flags: unverifiedFlags(
       input.scope,

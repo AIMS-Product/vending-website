@@ -34,6 +34,15 @@ describe("ChannelLogo", () => {
     expect(render("Lane 2")).not.toContain("<img");
   });
 
+  it("gives a person in a mixed column no mark, and no brand by substring", () => {
+    const mixed = (label: string) =>
+      renderToStaticMarkup(<ChannelLogo label={label} fallback="none" />);
+    expect(mixed("Charlie Ingram")).toBe("");
+    expect(mixed("Nikita Rao")).toBe("");
+    expect(mixed("Youtube")).toContain("youtube.svg");
+    expect(mixed("Internal webinar")).toContain("<svg");
+  });
+
   it("keeps an aligned slot for a label it does not know", () => {
     expect(render("Something new")).toContain("rounded-full");
   });

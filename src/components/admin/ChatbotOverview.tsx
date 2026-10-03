@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {
+  AdminBar,
   AdminDeltaChip,
   AdminIcon,
   type AdminIconName,
@@ -8,9 +9,9 @@ import {
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import {
-  ChatbotTrendChart,
-  Sparkline,
-} from "@/components/admin/ChatbotTrendChart";
+  DailyBarChart,
+  MiniBars,
+} from "@/components/admin/dashboard/DashboardCharts";
 import type {
   ChatbotAnalytics,
   ChatbotAnalyticsMetric,
@@ -61,7 +62,7 @@ export function ChatbotOverview({
       <KpiCards analytics={analytics} funnel={funnel} range={range} />
 
       <div className="grid gap-4 xl:grid-cols-12">
-        <div className="grid gap-4 xl:col-span-8">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 xl:col-span-8">
           <TrendCard analytics={analytics} />
           <JourneyCard
             funnel={funnel}
@@ -69,7 +70,7 @@ export function ChatbotOverview({
             splitExact={analytics.attributionSplitTrustworthy}
           />
         </div>
-        <div className="grid gap-4 xl:col-span-4">
+        <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 xl:col-span-4">
           <NeedsYouCard kpis={kpis} />
           <AskCard analytics={analytics} outcomes={outcomes} />
           <QuickActionsCard counts={outcomes.quickActions} />
@@ -224,7 +225,13 @@ function KpiCards({
           </div>
           <p className="text-ui-text-muted mt-2 text-xs">{card.caption}</p>
           {card.spark ? (
-            <Sparkline values={card.spark} tone={card.tone} />
+            <div className="mt-3">
+              <MiniBars
+                data={card.spark}
+                height={36}
+                color={card.tone === "ok" ? "var(--ui-ok)" : "var(--ui-accent)"}
+              />
+            </div>
           ) : (
             <div className="mt-3 h-10" aria-hidden="true" />
           )}
@@ -268,36 +275,42 @@ function Delta({ metric }: { metric: ChatbotAnalyticsMetric }) {
 
 function TrendCard({ analytics }: { analytics: ChatbotAnalytics }) {
   const rows = analytics.dailyTrend;
+  const prior = analytics.dailyTrendPrior.slice(0, rows.length);
   const total = rows.reduce((s, r) => s + r.count, 0);
-  const priorTotal = analytics.dailyTrendPrior.reduce((s, r) => s + r.count, 0);
+  const priorTotal = prior.reduce((s, r) => s + r.count, 0);
   return (
     <section className={adminCardClass} aria-label="Conversations over time">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className={adminSectionTitleClass}>Conversations over time</h2>
-          <p className="text-ui-text-muted mt-0.5 text-xs">
-            Chats started per day, last 30 days against the prior 30 (dashed).
-            Hover any day for the exact counts.
-          </p>
-        </div>
-        <div className="text-ui-text-muted flex items-center gap-4 text-xs tabular-nums">
-          <span className="flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="bg-ui-accent inline-block h-0.5 w-4 rounded-full"
-            />
-            {total} this period
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span
-              aria-hidden="true"
-              className="border-ui-line-strong inline-block w-4 border-t border-dashed"
-            />
-            {priorTotal} prior
-          </span>
-        </div>
-      </div>
-      <ChatbotTrendChart rows={rows} prior={analytics.dailyTrendPrior} />
+      <h2 className={adminSectionTitleClass}>Conversations over time</h2>
+      <p className="text-ui-text-muted mt-0.5 mb-3 text-xs">
+        Chats started per day, each beside the same day of the period before.
+        Hover any day for the exact counts.
+      </p>
+      {rows.length < 2 ? (
+        <p className="text-ui-text-subtle text-xs">Not enough days yet.</p>
+      ) : (
+        <DailyBarChart
+          height={200}
+          labels={rows.map((r) =>
+            new Date(`${r.date}T00:00:00Z`).toLocaleDateString("en-US", {
+              month: "short",
+              day: "numeric",
+              timeZone: "UTC",
+            }),
+          )}
+          series={[
+            {
+              name: `${total} this period`,
+              data: rows.map((r) => r.count),
+              color: "var(--ui-chart-1)",
+            },
+            {
+              name: `${priorTotal} the period before`,
+              data: rows.map((_, i) => prior[i]?.count ?? 0),
+              color: "var(--ui-chart-10)",
+            },
+          ]}
+        />
+      )}
     </section>
   );
 }
@@ -661,11 +674,13 @@ function AskCard({
           No opening messages in this window yet.
         </p>
       ) : (
-        <ol className="mt-3 grid gap-2.5">
+        <ol className="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2.5">
           {questions.map((row) => (
             <li key={row.label} className="grid gap-1 text-xs">
-              <div className="flex items-baseline justify-between gap-3">
-                <span className="text-ui-text truncate">{row.label}</span>
+              <div className="flex min-w-0 items-baseline justify-between gap-3">
+                <span className="text-ui-text min-w-0 truncate">
+                  {row.label}
+                </span>
                 <span className="text-ui-text font-semibold whitespace-nowrap tabular-nums">
                   {row.count}
                   <span className="text-ui-text-subtle ml-1.5 font-normal">
@@ -673,13 +688,7 @@ function AskCard({
                   </span>
                 </span>
               </div>
-              <div className="bg-ui-canvas h-1.5 w-full overflow-hidden rounded-full">
-                <div
-                  className="bg-ui-accent h-full rounded-full"
-                  style={{ width: `max(3px, ${(row.count / sum) * 100}%)` }}
-                  aria-hidden="true"
-                />
-              </div>
+              <AdminBar share={row.count / sum} />
             </li>
           ))}
         </ol>

@@ -77,18 +77,40 @@ export function SeoMissing() {
   );
 }
 
-export function MoverTable({ title, rows }: { title: string; rows: Mover[] }) {
+export function MoverTable({
+  title,
+  rows,
+  bare = false,
+}: {
+  title: string;
+  rows: Mover[];
+  /** Inside another panel: no frame, no visible title. */
+  bare?: boolean;
+}) {
   return (
-    <div className={adminPanelClass}>
-      <h3 className="text-ui-text border-ui-line border-b px-4 py-2.5 text-sm font-semibold">
-        {title}
-      </h3>
+    <div className={bare ? "" : adminPanelClass}>
+      {bare ? null : (
+        <h3 className="text-ui-text border-ui-line border-b px-4 py-2.5 text-sm font-semibold">
+          {title}
+        </h3>
+      )}
       {rows.length === 0 ? (
         <p className="text-ui-text-subtle px-4 py-3 text-xs">
           Nothing moved by 20+ impressions.
         </p>
       ) : (
         <table className="w-full table-fixed text-sm">
+          <thead>
+            <tr className="text-ui-text-subtle text-left text-xs">
+              <th className="w-3/5 px-4 pt-2 pb-1 font-medium">
+                <span className="sr-only">{title}</span>
+              </th>
+              <th className="px-2 pt-2 pb-1 text-right font-medium">
+                Impressions
+              </th>
+              <th className="px-4 pt-2 pb-1 text-right font-medium">Change</th>
+            </tr>
+          </thead>
           <tbody className="divide-ui-line divide-y">
             {rows.map((m) => (
               <tr key={m.key}>

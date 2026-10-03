@@ -39,6 +39,7 @@ use inside this repository, and none of them is Pacific.
 | Channel report windows      | UTC date strings                  | n/a                                       | `channel-report.ts:597-599`        |
 | Analytics week selector     | UTC                               | **Monday to Sunday**, complete weeks only | `admin-analytics-range.ts:164-178` |
 | Booked-call metrics         | **America/New_York**              | n/a                                       | `booked-metrics.ts:45`             |
+| Analytics dashboard         | **America/New_York** (same zone)  | n/a; windows are today, 7d, 30d, MTD, QTD | `dashboard-window.ts`              |
 
 Two consequences worth stating plainly:
 
@@ -48,6 +49,11 @@ Two consequences worth stating plainly:
 - **Our two week definitions disagree with each other.** The Close week view runs Friday to Thursday;
   the analytics week selector runs Monday to Sunday. The MTD dashboard and the weekly scorecard use
   Monday to Sunday. Any week-on-week comparison must name which week it means.
+
+The analytics dashboard (`/admin/analytics`, §16) adopts the booked-call measures' zone rather than
+adding a fourth: "today", every window and every lead day are New York days. Close mirror dates are
+plain calendar dates and are read as they are; the channel spine stays UTC-dated, and the one card that
+reads it (Captured, in the channel flow) says so on screen.
 
 Boundary inclusiveness:
 
@@ -372,6 +378,17 @@ order is visits → leads → booked → showed → won (`channel-report-rollup.
 previous stage is the last one with a non-null total, a stage's denominator can silently fall back
 further up the funnel when an intermediate total is unobserved.
 
+### Show rate, calls held (dashboard)
+
+```
+Show rate = showed ÷ booked, over first calls dated in the window AND before today
+```
+
+(`showRateHeld`, `dashboard-metrics.ts`.) Same field and same SteelTrap rule as the Close mirror rate
+below, but a call dated today or later has not had its chance to show and is left out of both sides.
+Without that, every window ending today reads low each morning: on 2026-10-02 the 30-day window held
+20 calls with no outcome logged yet.
+
 ### Close mirror rates
 
 ```
@@ -481,6 +498,12 @@ month's target, not a compounded range. September totals 619; Q4 totals 2,226.
 calls for August; the same workbook's Booked Call Summary says 523, and 523 is what Close returns
 exactly (`channel-targets.ts:12-24`). The 821 reconciles with no measure we can reproduce, so the
 three competing totals derived from it are rendered as superseded rather than encoded.
+
+**Window target** (dashboard, `windowPlanTarget`): for a window that is not a whole month, each month's
+target times the share of that month's days inside the window, summed over the plan channels and
+rounded once at the end. A whole month equals its §11 target exactly (September 619, October 676).
+Actuals against it are counted on the plan's basis, not the SteelTrap rule: every first call in a plan
+channel, cancellations included (`planBooked`).
 
 Funnels outside the plan roll up to "Other funnels" and carry no goal. Leads with no funnel in Close
 are counted but never allocated to a channel (`channel-targets.ts:106-115`).
@@ -625,6 +648,41 @@ definitions.
 | Mid-month CAC mixes bases                                 | Fixed cost prorated to days elapsed, spend summed over the full month      | `cac-report.ts:175`, `cac-report-data.ts:142-178`       |
 | Two bookings on broken links                              | Real bookings, wrong attribution; the nightly check ignores them by design | `REPORTING.md` §3                                       |
 | Close custom fields resolved by label                     | Renaming a field in Close breaks the hourly sync                           | `close-lead-funnel-sync.ts:51-77`                       |
+
+---
+
+## 16. Analytics dashboard (`/admin/analytics`)
+
+One page over the definitions above. What each card counts:
+
+| Card                 | Number                      | Definition                                                                                                                                                                                                                             |
+| -------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Today strip          | Calls booked today          | §5 "New calls booked", New York day                                                                                                                                                                                                    |
+|                      | First calls on the calendar | §5 "First calls on calendar"                                                                                                                                                                                                           |
+|                      | Leads in today              | §4 site leads, people, by New York day of first submission                                                                                                                                                                             |
+|                      | Showed so far               | §6, rep-logged `yes` on calls dated today; no-show and not-logged-yet beside it                                                                                                                                                        |
+| KPI strip            | Leads                       | §4 site leads (people), window vs prior window of equal length                                                                                                                                                                         |
+|                      | Booked calls                | §5 Close mirror after §3, split marketing / Sales reactivation (Lane 2 funnels)                                                                                                                                                        |
+|                      | Show rate                   | §7 "Show rate, calls held"                                                                                                                                                                                                             |
+|                      | Revenue won                 | §8, Close opportunities by `date_won` in the window (a period, not a cohort)                                                                                                                                                           |
+|                      | CAC                         | §10 blended CAC for the newest month that has typed inputs, named on the tile                                                                                                                                                          |
+| Channel flow         | Captured                    | §4 leads + contacts on the spine, by channel, UTC days                                                                                                                                                                                 |
+|                      | Booked → Showed → Qualified | §5, §6: the window's Close first calls, each stage as Close records it; never inferred from a later stage                                                                                                                              |
+|                      | Won                         | **Cohort won**: of those calls, leads with a won Close opportunity dated on or after the window's first day. Read from the opportunity (the furthest stage reached), not the lead's current status. Revenue is those deals' value (§8) |
+|                      | Booked ÷ captured           | **Flow booking ratio**: the window's first calls over the window's captures. Two populations in one window, so a ratio, not a conversion; the later rates are over booked (§7)                                                         |
+| Bookings             | Total, by channel           | Same as the KPI; channel by Close funnel                                                                                                                                                                                               |
+|                      | By setter                   | §12 rule 5, Close's setter field, with "No setter recorded" shown                                                                                                                                                                      |
+|                      | Against plan                | §11 window target vs plan actuals                                                                                                                                                                                                      |
+| Cost per booked call | Per channel, per month      | §9 cost per booked over the spine; complete months only in the trend, the running month shown "so far"                                                                                                                                 |
+| Trend                | Leads, booked calls per day | §4 by arrival day; §5 Close first calls by the day they are dated                                                                                                                                                                      |
+
+Channels are the bands in `FLOW_CHANNELS` (`channel-flow.ts`), mapping both vocabularies, spine
+channel labels and Close funnel names, onto one list. Chatbot captures sit in Website & search, where
+Close files a chat-booked call (13 of 18 matched calls on 2026-10-02 had funnel Website).
+
+Cohort won differs from the month-over-month grid's won, which reads the lead's current status
+"Closed / Won" (`isWonCall`): a lead whose status moved on after the sale drops out there and stays
+here.
 
 ---
 

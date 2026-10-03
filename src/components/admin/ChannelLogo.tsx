@@ -84,6 +84,8 @@ const OWNED: Record<string, string> = {
     "M3 4h18a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-7v2h3v2H7v-2h3v-2H3a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1Zm1 2v9h16V6H4Zm8 1.5a2 2 0 1 1 0 4 2 2 0 0 1 0-4ZM8.5 14a3.5 3.5 0 0 1 7 0h-7Z",
   // A VSL is a video: a play button.
   vsl: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-2 6 6 4-6 4V8Z",
+  // An AI assistant (ChatGPT, an LLM index): a sparkle, not a vendor mark.
+  ai: "M12 2l1.9 6.1L20 10l-6.1 1.9L12 18l-1.9-6.1L4 10l6.1-1.9L12 2Zm7 12 .9 2.1L22 17l-2.1.9L19 20l-.9-2.1L16 17l2.1-.9L19 14Z",
   // A low-ticket or internal funnel is drawn as one.
   funnel: "M3 4h18l-7 8v6l-4 2v-8L3 4Z",
 };
@@ -98,28 +100,46 @@ const OWNED_MATCHERS: Array<[RegExp, string]> = [
   [/^all channels/, "all"],
   [/^lane 2|setter|reactivation scraper|sales reactivation/, "phone"],
   [/side hustle|podcast|\bshn\b/, "podcast"],
+  [/chatgpt|\bllm\b|\bai (assistant|answer|mode)/, "ai"],
   [/chatbot|chat\b/, "chatbot"],
   [/webinar/, "webinar"],
   [/\bvsl\b|video sales/, "vsl"],
   [/low ticket|\bltf\b|funnel/, "funnel"],
   [/form|ghl|typeform/, "form"],
-  [/email|newsletter/, "email"],
+  [/email|newsletter|marketing reactivation/, "email"],
   [/website|organic|direct|seo|landing/, "website"],
 ];
 
 /** The brand file for a label, or null when the label is not a brand we hold. */
-export function brandFor(label: string): Brand | null {
+export function brandFor(
+  label: string,
+  { wholeWords = false }: { wholeWords?: boolean } = {},
+): Brand | null {
   const key = label.trim().toLowerCase();
   const exact = EXACT_BRANDS[key];
   if (exact) return exact;
-  const brand = BRAND_KEYS.find((name) => key.includes(name));
+  const brand = BRAND_KEYS.find((name) =>
+    wholeWords ? ` ${key} `.includes(` ${name} `) : key.includes(name),
+  );
   return brand ? BRANDS[brand]! : null;
 }
 
-export function ChannelLogo({ label }: { label: string }) {
+export function ChannelLogo({
+  label,
+  fallback = "dot",
+}: {
+  label: string;
+  /**
+   * What an unknown label gets. "none" is for a column that mixes channels
+   * with people ("Set by": YouTube, or a setter's name): a person gets no mark.
+   */
+  fallback?: "dot" | "none";
+}) {
   const key = label.trim().toLowerCase();
 
-  const brand = brandFor(label);
+  // A column that mixes people with channels matches brands as whole words,
+  // so a setter called Nikita never gets Kit's mark.
+  const brand = brandFor(label, { wholeWords: fallback === "none" });
   if (brand) {
     return (
       // Vendor artwork served as the file it is: `unoptimized` so the SVG's
@@ -142,6 +162,7 @@ export function ChannelLogo({ label }: { label: string }) {
     );
   }
 
+  if (fallback === "none") return null;
   // No mark, but still an aligned slot: a ragged first column is harder to
   // scan than a missing logo.
   return (

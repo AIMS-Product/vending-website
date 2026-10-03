@@ -176,7 +176,7 @@ function unlessDisconnected(
  * out of the webhook payload. The mirror's `created_at` is read only to bound
  * the query — it is our insert time and must never date a booking.
  */
-async function fetchBookings(
+export async function fetchBookings(
   client: Client,
   fromDay: string,
 ): Promise<BookingRow[] | null> {
@@ -248,7 +248,9 @@ async function fetchBookings(
 }
 
 /** Mirrored Close leads, for the funnel name and the scheduled first-call date. */
-async function fetchFunnels(client: Client): Promise<FunnelRow[] | null> {
+export async function fetchFunnels(
+  client: Client,
+): Promise<FunnelRow[] | null> {
   const { rows, error } = await readAllPages<{
     email: string | null;
     funnel: string | null;

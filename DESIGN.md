@@ -145,6 +145,10 @@ Shadows: `--shadow-ui` (everything), `--shadow-ui-raised` (dialogs). Two only.
 - **Density over decoration.** Table rows at `py-2.5`. Fourteen-plus rows on a
   1440px screen.
 - **No dark mode. No emojis.** Icons come from `AdminIcon`.
+- **Chart series use `--ui-chart-1` to `--ui-chart-10`,** led by the brand blues, each at 3:1 or
+  better on `--ui-surface`. One channel keeps one colour on every chart (`FLOW_COLORS`). Charts are
+  hand-drawn SVG (`components/admin/dashboard/`), no chart library: marks are SVG with non-scaling
+  strokes, all text is HTML. Axes round to four clean steps.
 
 ## Where the system lives
 

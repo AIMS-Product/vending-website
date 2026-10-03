@@ -74,6 +74,20 @@
   --ui-idle: #8a92a1;
   --ui-idle-fill: #f1f5f9;
   --ui-idle-ink: #334155;
+
+  /* Channel series on admin charts (DESIGN.md "Chart series"). Led by the
+     brand blues; every hue holds 3:1 on --ui-surface so a band reads as a
+     mark, not a tint. Grid lines use --ui-line. */
+  --ui-chart-1: #1f72a5;
+  --ui-chart-2: #d1453b;
+  --ui-chart-3: #8b5cf6;
+  --ui-chart-4: #2a8fcc;
+  --ui-chart-5: #2f9e6e;
+  --ui-chart-6: #4f46e5;
+  --ui-chart-7: #c27a0e;
+  --ui-chart-8: #0f766e;
+  --ui-chart-9: #475569;
+  --ui-chart-10: #8a92a1;
 }
 
 @theme inline {

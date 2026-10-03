@@ -14,9 +14,17 @@ import { C, n, Delta, MoverTable, PointsDelta } from "./shared";
 function Scorecard({ data }: { data: SeoScorecard }) {
   const { day0, current } = data;
   return (
-    <section className={adminCardClass}>
-      <h2 className="text-ui-text text-sm font-semibold">Scorecard vs Day 0</h2>
-      <p className="text-ui-text-subtle mt-1 text-xs">
+    <details className={`${adminCardClass} group`}>
+      <summary className="text-ui-text flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold">
+        Scorecard vs Day 0, with the 30, 60 and 90-day targets
+        <span className="text-ui-text-subtle text-xs font-normal group-open:hidden">
+          Show
+        </span>
+        <span className="text-ui-text-subtle hidden text-xs font-normal group-open:inline">
+          Hide
+        </span>
+      </summary>
+      <p className="text-ui-text-subtle mt-2 text-xs">
         {day0
           ? `Day 0 frozen ${day0.day}. Now = the 28 days (7 for the north star) through ${data.asOf ?? "n/a"}; ranks from the newest DataForSEO pull. Targets are 30, 60 and 90 days after Day 0.`
           : "Day 0 is not frozen yet: paste APPLY-IN-SQL-EDITOR.md section 9, then run scripts/seo-day0.mjs --write."}
@@ -71,7 +79,7 @@ function Scorecard({ data }: { data: SeoScorecard }) {
           </tbody>
         </table>
       </div>
-    </section>
+    </details>
   );
 }
 
@@ -134,121 +142,52 @@ export function SeoOverviewTab({
         lastYear={data.lastYear}
         brandShare={data.brandShareCurrent}
       />
-      <Scorecard data={scorecard} />
-      <p className="text-ui-text-subtle text-xs">
-        Search Console web search, final data through {data.asOf ?? "n/a"}. The
-        property holds data from {days[0] ?? "n/a"}; a year-back comparison
-        appears once a year of history exists. Dashed amber lines mark the
-        Webflow to Next.js cutover (2026-07-27) and each /resources publish.
-      </p>
       <section className={adminCardClass}>
         <h2 className="text-ui-text text-sm font-semibold">
-          Impressions and clicks
-        </h2>
-        <SeoTrendChart
-          ariaLabel="Google impressions and clicks per day"
-          days={days}
-          markers={data.markers}
-          series={[
-            {
-              label: "Impressions",
-              color: C.accent,
-              values: data.daily.map((d) => d.impressions),
-            },
-            {
-              label: "Clicks",
-              color: C.ok,
-              values: data.daily.map((d) => d.clicks),
-            },
-          ]}
-        />
-      </section>
-      <section className={adminCardClass}>
-        <h2 className="text-ui-text text-sm font-semibold">
-          Branded vs non-branded impressions
+          Google impressions
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           Branded = searches for Vendingpreneurs, Mike Hoffman and their
-          misspellings. Non-branded includes queries Google anonymizes.
+          misspellings; non-branded includes queries Google anonymizes. Dashed
+          lines mark the Webflow to Next.js cutover (2026-07-27) and each
+          /resources publish.
         </p>
         <SeoTrendChart
-          ariaLabel="Branded and non-branded impressions per day, stacked"
+          ariaLabel="Google impressions, branded and non-branded, stacked"
+          bars
           stacked
           days={days}
           markers={data.markers}
           series={[
             {
-              label: "Branded",
+              label: "Non-branded",
               color: C.accent,
-              values: data.daily.map((d) => d.brandImpressions),
+              values: data.daily.map((d) => d.impressions - d.brandImpressions),
             },
             {
-              label: "Non-branded",
-              color: C.idle,
-              values: data.daily.map((d) => d.impressions - d.brandImpressions),
+              label: "Branded",
+              color: "var(--ui-chart-7)",
+              values: data.daily.map((d) => d.brandImpressions),
             },
           ]}
         />
       </section>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <section className={adminCardClass}>
-          <h2 className="text-ui-text text-sm font-semibold">
-            Average position
-          </h2>
-          <SeoTrendChart
-            width={560}
-            ariaLabel="Average Google position per day, 1 at the top"
-            invert
-            days={days}
-            markers={data.markers}
-            series={[
-              {
-                label: "Position",
-                color: C.accent,
-                values: data.daily.map((d) => d.position),
-              },
-            ]}
-          />
-        </section>
-        <section className={adminCardClass}>
-          <h2 className="text-ui-text text-sm font-semibold">
-            Live /resources pages
-          </h2>
-          {data.livePagesByDay.length === 0 ? (
-            <p className="text-ui-text-muted mt-3 text-sm">
-              None published yet. The first P1 piece is due this week (Content
-              Plan tab).
-            </p>
-          ) : (
-            <SeoTrendChart
-              width={560}
-              ariaLabel="Live /resources pages over time"
-              days={data.livePagesByDay.map((p) => p.day)}
-              series={[
-                {
-                  label: "Live pages",
-                  color: C.ok,
-                  values: data.livePagesByDay.map((p) => p.count),
-                },
-              ]}
-            />
-          )}
-          <p className="text-ui-text-subtle mt-2 text-xs">
-            Published in the page builder. Search Console indexing is checked
-            per URL (Content Plan).
-          </p>
-        </section>
-      </div>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <MoverTable
-          title="Pages that moved most (28 days vs prior 28)"
-          rows={data.movers.pages}
-        />
-        <MoverTable
-          title="Queries that moved most"
-          rows={data.movers.queries}
-        />
-      </div>
+      <section aria-labelledby="seo-moved">
+        <h2 id="seo-moved" className="text-ui-text mb-3 text-sm font-semibold">
+          What changed, last 28 days against the 28 before
+        </h2>
+        <div className="grid gap-5 lg:grid-cols-2">
+          <MoverTable title="Pages" rows={data.movers.pages} />
+          <MoverTable title="Queries" rows={data.movers.queries} />
+        </div>
+      </section>
+      <Scorecard data={scorecard} />
+      <p className="text-ui-text-subtle text-xs">
+        Search Console web search, final data through {data.asOf ?? "n/a"}. The
+        property holds data from {days[0] ?? "n/a"}; a year-back comparison
+        appears once a year of history exists. Live /resources pages and their
+        indexing are on the Content Plan tab.
+      </p>
     </div>
   );
 }

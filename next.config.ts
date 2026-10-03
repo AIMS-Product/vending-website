@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 import { securityHeaders } from "./src/lib/security-headers";
 import { FUNNEL_REDIRECTS } from "./src/lib/content/funnel-redirects";
+import { ADMIN_ANALYTICS_REDIRECTS } from "./src/lib/admin/analytics-redirects";
 
 const legacyLeadRedirects = [
   {
@@ -152,6 +153,11 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Admin analytics consolidation (2026-10): the overview, goals page
+      // and fifteen analytics tabs folded into one dashboard. A redirect
+      // keeps the query, so only tabs with their own page are matched; any
+      // other ?tab= simply lands on the dashboard, which ignores it.
+      ...ADMIN_ANALYTICS_REDIRECTS,
       {
         source: "/login",
         destination: "/admin/login",

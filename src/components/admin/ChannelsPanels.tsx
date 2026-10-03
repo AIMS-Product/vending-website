@@ -39,15 +39,15 @@ import {
  * A null is rendered as "—" with "No data" on hover. It is never a zero.
  */
 
-export function channelsHref(
+function channelsHref(
   range: AdminAnalyticsRangeKey,
   includeInternal: boolean,
   channel?: string | null,
 ) {
-  const params = new URLSearchParams({ range, tab: "channels" });
+  const params = new URLSearchParams({ range });
   if (includeInternal) params.set("internal", "1");
   if (channel) params.set("channel", channel);
-  return `/admin/analytics?${params.toString()}`;
+  return `/admin/analytics/channels?${params.toString()}`;
 }
 
 export function ChannelsTab({
@@ -616,7 +616,7 @@ const CHECK_LABEL: Record<CheckStatus, string> = {
   info: "Note",
 };
 
-export function ConfidencePanel({ report }: { report: ConfidenceReport }) {
+function ConfidencePanel({ report }: { report: ConfidenceReport }) {
   return (
     <section className={adminCardClass} aria-label="Data confidence">
       <div className="flex flex-wrap items-baseline gap-3">
@@ -744,7 +744,7 @@ function CoverageGaps({ report }: { report: ConfidenceReport }) {
   );
 }
 
-export function GoingOutTable({
+function GoingOutTable({
   canEdit,
   rows,
   days,
@@ -804,7 +804,13 @@ export function GoingOutTable({
                     </a>
                   </td>
                   <td className="text-ui-text py-2.5 pr-3">
-                    {row.utm_source}
+                    <span className="inline-flex items-center gap-1.5 align-middle">
+                      <ChannelLogo
+                        label={row.utm_source ?? ""}
+                        fallback="none"
+                      />
+                      {row.utm_source}
+                    </span>
                     <span className="text-ui-text-subtle">
                       {" "}
                       · {row.utm_medium}
@@ -844,13 +850,7 @@ export function GoingOutTable({
   );
 }
 
-export function FixLinksPanel({
-  rows,
-  days,
-}: {
-  rows: FixLinkRow[];
-  days: number;
-}) {
+function FixLinksPanel({ rows, days }: { rows: FixLinkRow[]; days: number }) {
   return (
     <section className={adminCardClass} aria-label="Fix these links">
       <h2 className={adminEyebrowClass}>Fix these links</h2>
@@ -867,8 +867,9 @@ export function FixLinksPanel({
           {rows.map((row) => (
             <li key={row.post_id} className="py-2.5 text-[0.8125rem]">
               <div className="flex items-baseline gap-2">
-                <span className="text-ui-text font-medium capitalize">
-                  {row.network}
+                <span className="text-ui-text inline-flex items-center gap-1.5 self-center font-medium capitalize">
+                  <ChannelLogo label={row.network} />
+                  {row.network === "twitter" ? "X" : row.network}
                 </span>
                 <span className="text-ui-text-subtle text-xs">
                   {String(row.published_at).slice(0, 10)}
@@ -923,7 +924,7 @@ const HEALTH_LABEL: Record<SyncHealthRow["status"], string> = {
   never: "Never ran",
 };
 
-export function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
+function SyncHealthPanel({ rows }: { rows: SyncHealthRow[] }) {
   return (
     <section className={adminCardClass} aria-label="Connector health">
       <h2 className={adminEyebrowClass}>Data feeds</h2>

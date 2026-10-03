@@ -76,12 +76,14 @@ describe("tab to feed mapping matches what each loader reads", () => {
    * files without adding its feed to TAB_FEEDS fails here.
    */
   const LOADERS: Record<AnalyticsTabKey, readonly string[]> = {
-    overview: ["admin-analytics"],
-    acquisition: ["admin-analytics"],
-    pages: ["admin-analytics"],
-    quality: ["admin-analytics"],
-    journeys: ["channel-journeys-data"],
-    map: ["funnel-map"],
+    // Retired 2026-10 (folded into the dashboard): no loader reads these.
+    overview: [],
+    acquisition: [],
+    pages: [],
+    quality: [],
+    // Retired 2026-10 (folded into the dashboard): no loader reads these.
+    journeys: [],
+    map: [],
     channels: ["channel-report", "close-wins"],
     youtube: ["youtube-attribution"],
     video: [
@@ -89,13 +91,13 @@ describe("tab to feed mapping matches what each loader reads", () => {
       "pre-call-engagement",
       "call-credit-data",
     ],
-    booked: ["booked-calls-data"],
+    booked: [],
     close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
     mom: ["close-monthly-funnel-data", "close-monthly-leads", "close-wins"],
-    won: ["close-won-deals", "close-wins"],
-    exec: ["funnel-executive", "funnel-monthly-data", "close-wins"],
+    won: [],
+    exec: [],
     kpi: ["kpi-report-data", "call-credit-data", "channel-report"],
-    funnels: ["funnel-monthly-data"],
+    funnels: [],
   };
 
   /** Table read -> the feed that keeps it current. */
@@ -136,6 +138,8 @@ describe("tab to feed mapping matches what each loader reads", () => {
     "seo_monthly_reviews", // a form
     "dataforseo_spend", // the rank job's own cost ledger
     "seo_baselines", // Day 0, frozen once by scripts/seo-day0.mjs
+    "cac_months", // CAC inputs, typed in by hand on /admin/cac
+    "cac_routes", // CAC inputs, typed in by hand on /admin/cac
   ]);
 
   const SPINE_FEEDS = new Set<FeedKey>([
@@ -163,6 +167,13 @@ describe("tab to feed mapping matches what each loader reads", () => {
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
+    dashboard: [
+      "analytics-dashboard-data",
+      "channel-report",
+      "close-wins",
+      "booked-metrics-data",
+      "cac-report-data",
+    ],
   };
 
   for (const [tab, files] of Object.entries(SCOPED_LOADERS)) {
