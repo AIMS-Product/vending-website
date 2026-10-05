@@ -263,13 +263,12 @@ export function heroForAngle(angle: string | null | undefined) {
 }
 
 /**
- * What the call covers, as decisions a buyer is weighing. Grounded in the
- * deck's own sections (where the money comes from, foot traffic, a realistic
- * first route, the three pillars). Text before " - " renders bold.
+ * What the call covers. Team wording (2026-10-05), only the bold/body
+ * separator normalised to " - ". Text before " - " renders bold.
  */
 export const masterclassTakeaways = [
-  "Where the money comes from - what you own, what it costs to start, and what a realistic first route looks like.",
-  "Location before machine - why foot traffic and the location agreement decide which machine you buy, and what to do when a spot underperforms.",
+  "How you can become your own boss - how you don't need a ton of capital like Real Estate for a cash flowing asset such as Vending. Also, how you don't need any Vending experience to get started.",
+  "How Vending Routes work - what you own, what it costs to start, and what multiples you can get if you want to sell it.",
   "The three-pillar system behind every route - with real numbers from Anthony and members. Not theory.",
   "Whether it fits your life - the capital, the weekly hours and the work involved, so you can decide before you spend a dollar.",
 ] as const;

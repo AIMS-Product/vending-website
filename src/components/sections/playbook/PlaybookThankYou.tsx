@@ -22,6 +22,8 @@ export function PlaybookThankYouBreakout() {
       }
       return;
     }
+    // ?preview=1 is the team-review link: look without counting a sale.
+    if (new URLSearchParams(window.location.search).has("preview")) return;
     trackPlaybookPurchase();
   }, []);
   return null;

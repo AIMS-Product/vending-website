@@ -1192,7 +1192,7 @@ export const SWAP_ROWS: readonly SwapRow[] = [
     today:
       "GHL /playbook ($67, anchor $199) and GHL /checkout (Stripe, name prefilled, ad UTMs carried).",
     after:
-      "vendingpreneurs.com/playbook; checkout stays on GHL /checkout with the same prefill and UTMs.",
+      "vendingpreneurs.com/playbook and vendingpreneurs.com/playbook/checkout (GHL order form embedded, same $67 product and UTMs), then vendingpreneurs.com/playbook/thank-you.",
     change:
       "Kody must approve the member figures (Anthony 45 locations, 79 machines, $102K) by Mon Oct 5, or ship GHL-verbatim wording. Purchase and delivery stay in GHL. GHL pages stay up as the fallback until two clean webinars.",
     owner: "Kody",
@@ -1629,7 +1629,7 @@ export const READINESS = {
     {
       area: "Drop-off tracking",
       status: "green",
-      line: "Every step reaches PostHog and GA4: page views, form started, form errors (with the reason), registered, top-bar and sticky-bar clicks, calendar adds, Playbook clicks, checkout clicks. Checked on the live site Thu Oct 1.",
+      line: "Every step reaches PostHog and GA4: page views, form started, form errors (with the reason), registered, top-bar and sticky-bar clicks, calendar adds, Playbook clicks, checkout clicks, and Playbook purchases (thank-you page, from Mon Oct 5). Checked on the live site Thu Oct 1.",
     },
     {
       area: "Webinar dashboard",

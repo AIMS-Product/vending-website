@@ -53,7 +53,7 @@ export const reportCopy = {
       who: "Site",
       step: "Playbook offer ($67)",
       detail:
-        "Offer page on our site with a sticky buy bar; checkout and payment stay in GHL (Stripe), name prefilled.",
+        "Offer page on our site with a sticky buy bar, then our own checkout page with GHL's order form embedded. Payment, course access and the Meta Purchase stay in GHL; buyers land on our thank-you page.",
     },
     {
       who: "GHL",

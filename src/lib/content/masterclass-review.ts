@@ -32,7 +32,7 @@ export const reviewCopy = {
     },
     {
       title: "Open the Playbook offer",
-      body: "Click through the $67 Playbook offer to the checkout. Once you scroll past the top, a buy bar stays at the bottom of the screen. Your name carries into the checkout. Do not complete the purchase unless you mean it: it is a real card charge.",
+      body: "Click through the $67 Playbook offer to the checkout on our own site. Once you scroll past the top, a buy bar stays at the bottom of the screen. The checkout shows the order summary beside GoHighLevel's own order form (step 1 your details, step 2 card). Do not complete the purchase unless you mean it: it is a real card charge. After paying, buyers land on our thank-you page with the button into the Playbook.",
       cta: { label: "Open the Playbook page", href: `/playbook?${REVIEW_UTM}` },
     },
     {
@@ -84,7 +84,17 @@ export const reviewCopy = {
     {
       step: "Playbook offer",
       detail:
-        "The $67 offer page on our site; checkout and payment stay on the GHL checkout (Stripe); name prefilled; email and phone entered at checkout.",
+        "The $67 offer page on our site, sticky buy bar, ad tracking (UTMs) kept on every buy button.",
+    },
+    {
+      step: "Checkout",
+      detail:
+        "vendingpreneurs.com/playbook/checkout: GHL's order form embedded (GHL step /checkout-embed, same $67 product, Stripe). GHL still takes the payment, grants the course (Webinar LTF workflow) and sends Meta the Purchase.",
+    },
+    {
+      step: "Thank-you",
+      detail:
+        "vendingpreneurs.com/playbook/thank-you: purchase recorded in GA4 and PostHog, button into the Notion Playbook (GHL used to send buyers straight to Notion).",
     },
     {
       step: "Meta",
@@ -103,6 +113,11 @@ export const reviewCopy = {
       href: "/masterclass-confirmed?first=Team",
     },
     { label: "Playbook offer ($67)", href: `/playbook?${REVIEW_UTM}` },
+    { label: "Checkout", href: `/playbook/checkout?${REVIEW_UTM}` },
+    {
+      label: "Thank-you page (preview)",
+      href: "/playbook/thank-you?preview=1",
+    },
     {
       label: "Replay: registered, did not attend",
       href: "/masterclass-replay-dna",
@@ -124,6 +139,10 @@ export const reviewCopy = {
     {
       label: "GHL original: Playbook offer",
       href: "https://webinar.vendingpreneurs.com/playbook",
+    },
+    {
+      label: "GHL original: checkout",
+      href: "https://webinar.vendingpreneurs.com/checkout",
     },
     {
       label: "GHL original: replay, did not attend",
