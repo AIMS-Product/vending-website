@@ -537,10 +537,19 @@ export function checkoutFrameHeight(
 
 export const checkoutPage = {
   eyebrow: "Secure checkout",
-  title: "You're one step from Mike's Playbook",
-  summaryTitle: "Your order",
-  itemName: "Mike Hoffmann's Playbook + 9 bonuses",
-  itemNote: "Instant digital access. One-time payment.",
+  title: "Get instant access to Mike's Playbook",
+  subtitle: "Two quick steps: your details, then payment.",
+  summaryTitle: "Order summary",
+  itemName: "Mike Hoffmann's Playbook",
+  itemNote: "Course + 9 bonuses · Instant digital access",
+  includedTitle: "Included",
+  totalLabel: "Total today",
+  trust: [
+    "Secure 256-bit encrypted checkout",
+    "Instant access after payment",
+    "One-time payment, no subscription",
+  ],
+  proofTitle: "From members who followed the Playbook",
   fallback: "Checkout not loading?",
   fallbackLink: "Open the secure checkout",
 };
