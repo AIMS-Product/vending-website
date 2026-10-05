@@ -326,6 +326,12 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect(response.headers.get("location")).toBeNull();
   });
 
+  it("serves the coded /playbook checkout pages and 404s other /playbook subpaths", async () => {
+    expect((await proxy(request("/playbook/checkout"))).status).toBe(200);
+    expect((await proxy(request("/playbook/thank-you"))).status).toBe(200);
+    expect((await proxy(request("/playbook/nope"))).status).toBe(404);
+  });
+
   it("lets configured custom-prefix pages without a redirect row render normally", async () => {
     const response = await proxy(
       request("/services/r3-services-proof-renamed"),

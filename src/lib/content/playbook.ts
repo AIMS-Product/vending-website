@@ -1,13 +1,21 @@
 /**
  * Mike Hoffmann's Playbook (the Profit Machine System) low-ticket offer,
  * rebuilt from the GHL page webinar.vendingpreneurs.com/playbook
- * (captured 2026-09-30). Payments stay in GHL: every buy CTA goes to the GHL
- * order form. Income figures and testimonials are the approved GHL wording,
+ * (captured 2026-09-30). Payments stay in GHL: every buy CTA goes to our
+ * /playbook/checkout page, which embeds GHL's own order form (funnel step
+ * "Checkout Embed (site iframe)", same $67 product) in an iframe. Income figures and testimonials are the approved GHL wording,
  * shortened by omission only, never reworded (including its own typos).
  */
 
 export const PLAYBOOK_PATH = "/playbook";
+export const PLAYBOOK_CHECKOUT_PATH = "/playbook/checkout";
+export const PLAYBOOK_THANK_YOU_PATH = "/playbook/thank-you";
+/** The full GHL checkout page, kept as the fallback link if the embed fails. */
 export const GHL_CHECKOUT_URL = "https://webinar.vendingpreneurs.com/checkout";
+/** The order-form-only GHL step embedded on /playbook/checkout. */
+export const GHL_EMBED_CHECKOUT_URL =
+  "https://webinar.vendingpreneurs.com/checkout-embed";
+export const GHL_CHECKOUT_ORIGIN = "https://webinar.vendingpreneurs.com";
 
 export const PRICE = {
   anchor: "$199",
@@ -70,7 +78,16 @@ export function pickPlaybookParams(params: SearchParams): URLSearchParams {
 const withQuery = (base: string, query: URLSearchParams) =>
   query.size ? `${base}?${query.toString()}` : base;
 
+/** Every buy button: our checkout page, carrying attribution and the name. */
 export const checkoutHref = (params: SearchParams = {}) =>
+  withQuery(PLAYBOOK_CHECKOUT_PATH, pickPlaybookParams(params));
+
+/** The iframe src on /playbook/checkout: the GHL order form, same params. */
+export const embedCheckoutSrc = (params: SearchParams = {}) =>
+  withQuery(GHL_EMBED_CHECKOUT_URL, pickPlaybookParams(params));
+
+/** The full GHL checkout, for the "trouble loading?" fallback link. */
+export const fallbackCheckoutHref = (params: SearchParams = {}) =>
   withQuery(GHL_CHECKOUT_URL, pickPlaybookParams(params));
 
 export const playbookHref = (params: SearchParams = {}) =>
@@ -496,3 +513,67 @@ export const finalOffer = {
 
 export const DISCLAIMER =
   "Results are not typical and are not a guarantee of your income. Figures shown reflect the experiences of specific individuals. Your results will vary based on effort, market and other factors.";
+
+/** The message the GHL embed step posts with its document height. */
+export const CHECKOUT_HEIGHT_MESSAGE = "vp-checkout-height";
+
+/**
+ * The iframe height from a postMessage, or null when the message is not ours:
+ * wrong origin, wrong shape, or a height outside a sane range.
+ */
+export function checkoutFrameHeight(
+  origin: string,
+  data: unknown,
+): number | null {
+  if (origin !== GHL_CHECKOUT_ORIGIN) return null;
+  if (typeof data !== "object" || data === null) return null;
+  const { type, height } = data as { type?: unknown; height?: unknown };
+  if (type !== CHECKOUT_HEIGHT_MESSAGE || typeof height !== "number") {
+    return null;
+  }
+  if (!Number.isFinite(height) || height < 200 || height > 6000) return null;
+  return Math.ceil(height);
+}
+
+export const checkoutPage = {
+  eyebrow: "Secure checkout",
+  title: "You're one step from Mike's Playbook",
+  summaryTitle: "Your order",
+  itemName: "Mike Hoffmann's Playbook + 9 bonuses",
+  itemNote: "Instant digital access. One-time payment.",
+  fallback: "Checkout not loading?",
+  fallbackLink: "Open the secure checkout",
+};
+
+export const thankYou = {
+  eyebrow: "Order confirmed",
+  title: "You're in. Welcome to the Playbook.",
+  body: "Your receipt is on its way to your inbox. Open the Playbook now and start with Chapter 1.",
+  cta: "Open Mike's Playbook",
+};
+
+/** Where the thank-you page sends buyers (GHL's old redirect target). */
+export const PLAYBOOK_ACCESS_URL =
+  "https://vending-playbook.notion.site/Start-Your-Vending-Business-2fe2a538321b801ba9cbf2982b694c7f";
+
+/** Posted by /playbook/thank-you when GHL lands it inside the checkout iframe. */
+export const CHECKOUT_COMPLETE_MESSAGE = "vp-checkout-complete";
+const SITE_ORIGIN = /^https:\/\/(www\.)?vendingpreneurs\.com$/;
+
+/**
+ * True when the framed thank-you page reports a finished checkout. The
+ * parent may be on the apex or www host (or a preview), so its own origin
+ * counts too.
+ */
+export function isCheckoutComplete(
+  origin: string,
+  ownOrigin: string,
+  data: unknown,
+): boolean {
+  if (origin !== ownOrigin && !SITE_ORIGIN.test(origin)) return false;
+  return (
+    typeof data === "object" &&
+    data !== null &&
+    (data as { type?: unknown }).type === CHECKOUT_COMPLETE_MESSAGE
+  );
+}

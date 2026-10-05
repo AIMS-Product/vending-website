@@ -165,3 +165,29 @@ export function masterclassFormErrorEvent(
     error_keys: errorKeys,
   };
 }
+
+export const PURCHASE_STORAGE_KEY = "vp_playbook_purchased";
+
+/**
+ * The /playbook/thank-you landing after GHL took payment. GHL is the record of
+ * the sale (and sends Meta its Purchase); these only give GA4 and PostHog the
+ * last funnel step. No order id or email: the redirect carries neither.
+ */
+export function playbookPurchaseEvents(utms: Record<string, string>) {
+  return {
+    posthog: { product: "playbook", value: 67, currency: "USD", ...utms },
+    dataLayer: {
+      event: "vp_playbook_purchase",
+      value: 67,
+      currency: "USD",
+      ...utms,
+    },
+  };
+}
+
+export function trackPlaybookPurchase() {
+  if (!claimOnce(window.sessionStorage, PURCHASE_STORAGE_KEY)) return;
+  const events = playbookPurchaseEvents(pickUtms(window.location.search));
+  captureEvent("playbook_purchased", events.posthog, SEND_NOW);
+  pushDataLayerEvent(events.dataLayer);
+}

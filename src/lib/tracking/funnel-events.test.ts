@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import {
   checkoutClickEvents,
+  playbookPurchaseEvents,
   masterclassFormErrorEvent,
   masterclassFormStartEvent,
   scrollCtaEvents,
@@ -143,6 +144,24 @@ describe("masterclass GA4 form events", () => {
       form_step: 1,
       reason: "validation",
       error_keys: ["email"],
+    });
+  });
+});
+
+describe("playbookPurchaseEvents", () => {
+  it("carries value, currency and UTMs only", () => {
+    const events = playbookPurchaseEvents({ utm_source: "fb" });
+    expect(events.posthog).toEqual({
+      product: "playbook",
+      value: 67,
+      currency: "USD",
+      utm_source: "fb",
+    });
+    expect(events.dataLayer).toEqual({
+      event: "vp_playbook_purchase",
+      value: 67,
+      currency: "USD",
+      utm_source: "fb",
     });
   });
 });

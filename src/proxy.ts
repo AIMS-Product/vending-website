@@ -73,7 +73,14 @@ const TWO_SEGMENT_ROUTED_ELSEWHERE = new Set<string>([
  * loading.tsx boundary streams as HTTP 200 (a soft 404). Checked pre-routing,
  * after Studio redirects, so the 404 status is still ours to set.
  */
+/** Coded two-segment pages outside any builder prefix. */
+const CODED_TWO_SEGMENT_PAGES = new Set<string>([
+  "/playbook/checkout",
+  "/playbook/thank-you",
+]);
+
 async function isMissingPublicPage(path: string): Promise<boolean> {
+  if (CODED_TWO_SEGMENT_PAGES.has(path)) return false;
   const segments = path.split("/").filter(Boolean);
   // The builder catch-all only serves /{prefix}/{slug}; every deeper public
   // path without its own branch above lands in its notFound().

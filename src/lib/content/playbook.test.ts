@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   GHL_CHECKOUT_URL,
+  GHL_EMBED_CHECKOUT_URL,
+  PLAYBOOK_CHECKOUT_PATH,
   PRICE,
+  checkoutFrameHeight,
   checkoutHref,
+  isCheckoutComplete,
+  embedCheckoutSrc,
+  fallbackCheckoutHref,
   finalOffer,
   host,
   opportunityQuotes,
@@ -16,16 +22,27 @@ describe("playbook offer", () => {
     expect(PRICE.today).toBe("$67");
   });
 
-  it("points every buy link at the GHL checkout", () => {
-    expect(checkoutHref()).toBe(GHL_CHECKOUT_URL);
-    const href = checkoutHref({ utm_source: "fb", email: "a@b.co" });
-    expect(href.startsWith(`${GHL_CHECKOUT_URL}?`)).toBe(true);
-    expect(new URL(href).origin).toBe("https://webinar.vendingpreneurs.com");
+  it("points every buy link at our checkout page, never email in the URL", () => {
+    expect(checkoutHref()).toBe(PLAYBOOK_CHECKOUT_PATH);
+    expect(checkoutHref({ utm_source: "fb", email: "a@b.co" })).toBe(
+      `${PLAYBOOK_CHECKOUT_PATH}?utm_source=fb`,
+    );
+  });
+
+  it("embeds the GHL order-form step and falls back to the full GHL checkout", () => {
+    expect(embedCheckoutSrc()).toBe(GHL_EMBED_CHECKOUT_URL);
+    const src = embedCheckoutSrc({ utm_source: "fb", email: "a@b.co" });
+    expect(src.startsWith(`${GHL_EMBED_CHECKOUT_URL}?`)).toBe(true);
+    expect(new URL(src).origin).toBe("https://webinar.vendingpreneurs.com");
+    expect(new URL(src).searchParams.get("email")).toBeNull();
+    expect(fallbackCheckoutHref({ utm_source: "fb" })).toBe(
+      `${GHL_CHECKOUT_URL}?utm_source=fb`,
+    );
   });
 
   it("carries UTMs and the name, never email or phone (PII stays out of URLs)", () => {
     const url = new URL(
-      checkoutHref({
+      embedCheckoutSrc({
         utm_source: "fb",
         fbclid: ["x1", "x2"],
         first_name: "Ann",
@@ -44,7 +61,7 @@ describe("playbook offer", () => {
 
   it("carries Google Ads click ids (gclid, gbraid, wbraid) to checkout", () => {
     const url = new URL(
-      checkoutHref({ gclid: "g1", gbraid: "b1", wbraid: "w1" }),
+      embedCheckoutSrc({ gclid: "g1", gbraid: "b1", wbraid: "w1" }),
     );
     expect(url.searchParams.get("gclid")).toBe("g1");
     expect(url.searchParams.get("gbraid")).toBe("b1");
@@ -71,7 +88,7 @@ describe("playbook offer", () => {
 
   it("drops a name that is really an email or phone", () => {
     const name = (full_name: string) =>
-      new URL(checkoutHref({ full_name })).searchParams.get("full_name");
+      new URL(embedCheckoutSrc({ full_name })).searchParams.get("full_name");
     expect(name("a@b.com")).toBeNull();
     expect(name("4155551234")).toBeNull();
     expect(name("x".repeat(81))).toBeNull();
@@ -106,5 +123,84 @@ describe("playbook offer", () => {
       "Jesse",
       "Madison",
     ]);
+  });
+});
+
+describe("checkoutFrameHeight", () => {
+  const ok = { type: "vp-checkout-height", height: 812.4 };
+  it("reads the height from the GHL embed", () => {
+    expect(checkoutFrameHeight("https://webinar.vendingpreneurs.com", ok)).toBe(
+      813,
+    );
+  });
+  it("ignores other origins, shapes and silly heights", () => {
+    expect(checkoutFrameHeight("https://evil.example", ok)).toBeNull();
+    expect(
+      checkoutFrameHeight("https://webinar.vendingpreneurs.com", "812"),
+    ).toBeNull();
+    expect(
+      checkoutFrameHeight("https://webinar.vendingpreneurs.com", {
+        type: "x",
+        height: 800,
+      }),
+    ).toBeNull();
+    expect(
+      checkoutFrameHeight("https://webinar.vendingpreneurs.com", {
+        ...ok,
+        height: 99999,
+      }),
+    ).toBeNull();
+    expect(
+      checkoutFrameHeight("https://webinar.vendingpreneurs.com", {
+        ...ok,
+        height: Number.NaN,
+      }),
+    ).toBeNull();
+  });
+});
+
+describe("isCheckoutComplete", () => {
+  const msg = { type: "vp-checkout-complete" };
+  it("accepts our hosts and the page's own origin", () => {
+    expect(
+      isCheckoutComplete(
+        "https://www.vendingpreneurs.com",
+        "https://vendingpreneurs.com",
+        msg,
+      ),
+    ).toBe(true);
+    expect(
+      isCheckoutComplete(
+        "https://vendingpreneurs.com",
+        "https://x.vercel.app",
+        msg,
+      ),
+    ).toBe(true);
+    expect(
+      isCheckoutComplete("https://x.vercel.app", "https://x.vercel.app", msg),
+    ).toBe(true);
+  });
+  it("rejects other origins and shapes", () => {
+    expect(
+      isCheckoutComplete(
+        "https://evil.example",
+        "https://vendingpreneurs.com",
+        msg,
+      ),
+    ).toBe(false);
+    expect(
+      isCheckoutComplete(
+        "https://www.vendingpreneurs.com",
+        "https://vendingpreneurs.com",
+        { type: "x" },
+      ),
+    ).toBe(false);
+    expect(
+      isCheckoutComplete(
+        "https://www.vendingpreneurs.com",
+        "https://vendingpreneurs.com",
+        null,
+      ),
+    ).toBe(false);
   });
 });
