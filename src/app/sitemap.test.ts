@@ -61,7 +61,12 @@ describe("sitemap", () => {
     expect(urls).toEqual(
       expect.arrayContaining(staticRoutes.map((r) => absoluteUrl(r.path))),
     );
-    expect(console.error).toHaveBeenCalledTimes(3);
+    for (const source of ["news", "case-studies", "seo-pages"]) {
+      expect(console.error).toHaveBeenCalledWith(
+        expect.stringContaining(`sitemap: ${source} read failed`),
+        expect.any(Error),
+      );
+    }
   });
 
   it("leaves held-back /solutions and /process pages out", async () => {
