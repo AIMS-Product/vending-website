@@ -16,11 +16,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // lastModified only where a real edit date exists (/resources pages).
   // Stamping every URL with the request time taught Google to ignore it.
   const now = new Date();
-  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
+  // One failed content read must not 500 the whole sitemap for crawlers:
+  // log it and drop only that source; static routes always go out.
+  const [news, caseStudies, seoPages] = await Promise.allSettled([
     listPublishedSlugs(),
     listPublishedCaseStudySlugs(),
     listSitemapSeoPages(),
   ]);
+  const slugs = valueOrEmpty("news", news);
+  const caseStudySlugs = valueOrEmpty("case-studies", caseStudies);
+  const resourcePages = valueOrEmpty("seo-pages", seoPages);
 
   return [
     ...staticRoutes.map((route) => ({
@@ -73,4 +78,13 @@ function validDateOrFallback(value: string | null | undefined, fallback: Date) {
   if (!value) return fallback;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
+function valueOrEmpty<T>(source: string, result: PromiseSettledResult<T[]>) {
+  if (result.status === "fulfilled") return result.value;
+  console.error(
+    `sitemap: ${source} read failed, omitting its URLs`,
+    result.reason,
+  );
+  return [];
 }
