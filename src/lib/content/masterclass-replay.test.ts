@@ -28,10 +28,10 @@ describe("masterclass replay content", () => {
     }
   });
 
-  it("uses the Vidalytics main video GHL embeds on every replay page", () => {
+  it("uses the Oct 6 Vidalytics replay on every replay page", () => {
     expect(REPLAY_MAIN_VIDEO).toEqual({
       kind: "vidalytics",
-      embedId: "cARihXjwCxR3xiJ0",
+      embedId: "kCZPjIsIjBmr7Z36",
     });
   });
 

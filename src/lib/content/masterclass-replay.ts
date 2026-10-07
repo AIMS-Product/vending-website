@@ -107,10 +107,14 @@ export const REPLAY_L1_BOOKING_CALENDLY =
 export const REPLAY_ADVISORY_CALENDLY =
   "https://calendly.com/d/cxwj-zxk-2z4/vending-route-advisory-call";
 
-/** The main replay, a Vidalytics embed on every GHL replay page. */
+/**
+ * The main replay: the Oct 6 2026 room (166 min), on every replay page. The
+ * previous embed (cARihXjwCxR3xiJ0, still on the GHL pages) shows "This Video
+ * Has Expired" from Vidalytics' own setting; the page countdown owns expiry.
+ */
 export const REPLAY_MAIN_VIDEO: ReplayVideo = {
   kind: "vidalytics",
-  embedId: "cARihXjwCxR3xiJ0",
+  embedId: "kCZPjIsIjBmr7Z36",
 };
 
 /** UI label over the Calendly booking heading (adnb); not offer copy. */
