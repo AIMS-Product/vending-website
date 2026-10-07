@@ -8,7 +8,8 @@ import type {
 
 /**
  * Source: vp-webinars/reports/2026-10-01-webinar-registration-comms-map.md
- * (Full copy + "Live verification 2026-10-01") and the Oct 6 decision register.
+ * (Full copy + "Live verification 2026-10-01"), the Oct 6 decision register and
+ * the Oct 13 full-cutover check (vp-webinars/event-log/2026-10-13.md, 2026-10-07).
  * Where the live section corrects timing or copy, the live version is used.
  * Placeholders: {first}, {webinar date}, {zoom link}, {registration email},
  * {link: where it goes}, {Q&A date}.
@@ -22,7 +23,7 @@ const ANTHONY_EMAIL = "Anthony Kolodziej";
 const UTM_ISSUE =
   "its short link still carries an old room's utm_content (sept15_end_cta or sept01), so replay and booking traffic is credited to the wrong event";
 const UTM_FIX =
-  "point the Bitly link at the Oct 6 room (oct06_end_cta or a per-room value)";
+  "point the Bitly link at the site replay page (vendingpreneurs.com/masterclass-replay-dna or -adnb) with this week's utm_content (oct06_end_cta until the Oct 13 room, then oct13_end_cta)";
 const EXPIRY_ISSUE =
   "the message says the replay comes down Sunday at 9 PM CT while the site and GHL countdown said 11 PM";
 const EXPIRY_FIX =
@@ -31,9 +32,9 @@ const EXPIRY_FIX =
 const UTM_FLAG: CommsFlag = {
   issue:
     "The short link in this message still carries an old room's utm_content, so replay and booking traffic is credited to the wrong event.",
-  fix: "Point the Bitly link at the Oct 6 room (oct06_end_cta or a per-room value).",
+  fix: "Point the Bitly link at the site replay page with this week's utm_content (oct06_end_cta until the Oct 13 room, then oct13_end_cta).",
   owner: "Ivan",
-  due: "Mon Oct 5",
+  due: "Wed Oct 7",
 };
 
 const CST_FLAG: CommsFlag = {
@@ -41,7 +42,7 @@ const CST_FLAG: CommsFlag = {
     "Earlier rooms printed the webinar time as 7:30 PM CST although the room is CDT.",
   fix: "The live custom value now reads CDT; confirm the sent email shows CDT and never CST.",
   owner: "Ivan",
-  due: "Mon Oct 5",
+  due: "Wed Oct 7",
 };
 
 export const COMMS_MESSAGES: readonly CommsMessage[] = [
@@ -148,7 +149,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
         "This Playbook-decline email went to nearly everyone 12 minutes after sign-up, saying they passed on a $47 offer when the Playbook is $67 and most had never seen it.",
       fix: "Keep it off: confirm in GHL that the step is removed or disabled, not just paused by a wait step.",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -283,6 +284,13 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     ),
     verbatim: true,
     links: ["Playbook page (GHL)"],
+    flag: {
+      issue:
+        "The Playbook link still goes to the GoHighLevel /playbook page, so these clicks skip the site page the board measures.",
+      fix: "Change the link in this email to vendingpreneurs.com/playbook (keep the utm parameters). Link only; the workflow stays as is.",
+      owner: "Ivan",
+      due: "Thu Oct 8",
+    },
   },
   {
     id: "S3",
@@ -347,6 +355,13 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     ),
     verbatim: true,
     links: ["Confirmation page (GHL)"],
+    flag: {
+      issue:
+        "The link still goes to the GoHighLevel confirmation page, not the site page people saw after signing up on the site.",
+      fix: "Change the link in this text to vendingpreneurs.com/masterclass-confirmed. Link only; the workflow stays as is.",
+      owner: "Ivan",
+      due: "Thu Oct 8",
+    },
   },
   {
     id: "E7",
@@ -395,7 +410,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
         "The day-before voicemail workflow is published but no voicemail was recorded at 24 hours before on any of the 495 Sept 29 contacts.",
       fix: "Confirm in GHL whether this voicemail is meant to send, and fix or retire the workflow.",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
 
@@ -493,7 +508,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
         "It promises 3 free live bonuses, but nobody has named the third one and the booked-call email lists only two.",
       fix: "Anthony names the third bonus and says whether the fast-action discount exists; then match this text, the confirmation page and the booked email.",
       owner: "Anthony",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -596,9 +611,9 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     flag: {
       issue:
         "The booking short link carries an old room's utm_content and its page anchor is cut off by one character, so it may not scroll to the booking section.",
-      fix: "Point the Bitly link at the Oct 6 room (oct06_end_cta) and repair the anchor.",
+      fix: "Point the Bitly link at vendingpreneurs.com/masterclass-replay-adnb with oct06_end_cta; the site page needs no anchor.",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -627,13 +642,6 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     ),
     verbatim: true,
     links: ["Q&A Zoom registration"],
-    flag: {
-      issue:
-        'The "Anthony Q&A" value is still set to Thursday, October 1 at 1:30pm with the Oct 1 Zoom link, so Oct 6 attendees would be sent to a Q&A that already happened.',
-      fix: 'Change "Anthony Q&A" to Thursday, October 8 at 1:30pm Central Time and "Q&A Link" to the new Oct 8 Zoom registration link.',
-      owner: "Ivan",
-      due: "Wed Oct 7, 1:30 PM CDT",
-    },
   },
   {
     id: "S12",
@@ -651,9 +659,9 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     flag: {
       issue:
         "It says the 90-Day Blueprint and Route Builder were delivered yesterday, but none of the attended emails contain them (only the booked email does), it goes out at 5:30 AM, and its short link has a stale utm_content.",
-      fix: 'Attach both to the "you were there" email or drop the claim, move the send to a daytime slot, and point the Bitly link at oct06_end_cta.',
+      fix: 'Attach both to the "you were there" email or drop the claim, move the send to a daytime slot, and point the Bitly link at the site replay page with oct06_end_cta.',
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -683,7 +691,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
       issue: EXPIRY_ISSUE + ", and " + UTM_ISSUE + ".",
       fix: "Keep 9 PM: " + EXPIRY_FIX + "; and " + UTM_FIX + ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -780,7 +788,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
       issue: EXPIRY_ISSUE + ", and " + UTM_ISSUE + ".",
       fix: "Keep 9 PM: " + EXPIRY_FIX + "; and " + UTM_FIX + ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -825,7 +833,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
       issue: EXPIRY_ISSUE + ", and " + UTM_ISSUE + ".",
       fix: "Keep 9 PM: " + EXPIRY_FIX + "; and " + UTM_FIX + ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -846,7 +854,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
       issue: EXPIRY_ISSUE + ", and " + UTM_ISSUE + ".",
       fix: "Keep 9 PM: " + EXPIRY_FIX + "; and " + UTM_FIX + ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -867,7 +875,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
       issue: EXPIRY_ISSUE + ", and " + UTM_ISSUE + ".",
       fix: "Keep 9 PM: " + EXPIRY_FIX + "; and " + UTM_FIX + ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -895,9 +903,9 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     flag: {
       issue:
         'The Sept 29 room sent "I thought I needed more time" in this slot\'s place, so it is unclear whether this email still sends, and its short link has a stale utm_content.',
-      fix: "Confirm the current missed-it email order in GHL, and point the Bitly link at oct06_end_cta.",
+      fix: "Confirm the current missed-it email order in GHL, and point the Bitly link at the site replay page with oct06_end_cta.",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -995,7 +1003,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
         UTM_FIX +
         ".",
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -1080,7 +1088,7 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
         'It promises three bonuses but lists two, and the live version has the typo "booking you call".',
       fix: 'Anthony names the third bonus (or the email says two) and the typo becomes "booking your call".',
       owner: "Ivan",
-      due: "Mon Oct 5",
+      due: "Wed Oct 7",
     },
   },
   {
@@ -1173,46 +1181,47 @@ export const SWAP_ROWS: readonly SwapRow[] = [
     today:
       "GHL page webinar.vendingpreneurs.com/home (form TsHS6bjzHkHakUa1ULxu); every ad points here.",
     after:
-      "vendingpreneurs.com/masterclass. Same GHL workflow fires, plus Zoom (+8s), Close (+10s) and Meta registration event.",
+      "vendingpreneurs.com/masterclass for every ad. Same GHL workflow fires, plus Zoom, Close and the Meta registration event.",
     change:
-      "Point one Meta ad set at /masterclass first as a split test; the rest stay on GHL. GHL pages stay up as the fallback until two clean webinars.",
-    owner: "Adam",
+      "Full switch for Tue Oct 13 (Adam, Oct 6). Liana moves all webinar ads on Wed Oct 7, after the Close zap is fixed and one test sign-up passes. GHL page stays up as the fallback.",
+    owner: "Liana",
   },
   {
     step: "Confirmation page",
-    today: "GHL /masterclass-thankyou-confirmation",
+    today:
+      "GHL /masterclass-thankyou-confirmation (also linked from the 24-hour text).",
     after:
       "vendingpreneurs.com/masterclass-confirmed (video, calendar buttons, 3 intake questions, Playbook offer).",
     change:
-      'Built and live. Open: the "show up live" bonus block waits on Anthony naming the third bonus. GHL page stays up as the fallback until two clean webinars.',
-    owner: "Site (done)",
+      "Live and showing Oct 13. The 24-hour text (S4) still links the GHL page: Ivan changes the link only.",
+    owner: "Ivan",
   },
   {
     step: "Playbook page + checkout",
     today:
-      "GHL /playbook ($67, anchor $199) and GHL /checkout (Stripe, name prefilled, ad UTMs carried).",
+      "GHL /playbook ($67, anchor $199) and GHL /checkout; the Saturday email (E27) links GHL /playbook.",
     after:
-      "vendingpreneurs.com/playbook and vendingpreneurs.com/playbook/checkout (GHL order form embedded, same $67 product and UTMs), then vendingpreneurs.com/playbook/thank-you.",
+      "vendingpreneurs.com/playbook, /playbook/checkout (GHL order form embedded, same $67 product), /playbook/thank-you.",
     change:
-      "Kody must approve the member figures (Anthony 45 locations, 79 machines, $102K) by Mon Oct 5, or ship GHL-verbatim wording. Purchase and delivery stay in GHL. GHL pages stay up as the fallback until two clean webinars.",
+      "Live. Proof figures disagree: the site says 45 locations, 79 machines, over 100k; GHL messages now say 47, 84, $116,352.88. Kody picks one set by Thu Oct 8; the site follows. Ivan points E27 at the site page. Purchase stays in GHL.",
     owner: "Kody",
   },
   {
     step: "Replay page: registered, did not attend",
     today:
-      "GHL /masterclass-replay-dna (scoring form, then Calendly consultation call), reached by the dna-replay and dna-sms-replay short links.",
+      "GHL /masterclass-replay-dna via the dna-replay, dna-sms-replay and dna-book-your-call short links (utm sept15_end_cta, sept01_end_cta).",
     after: "vendingpreneurs.com/masterclass-replay-dna",
     change:
-      "Stays on GHL for the Oct 6 week; retarget the short links only after Oct 6 runs clean. Replay expiry must read Sunday 9 PM CT. Check the scoring-form frame on a phone. GHL pages stay up as the fallback until two clean webinars.",
+      "Retarget the three Bitly links to the site page with utm_content oct06_end_cta (the Oct 6 replay week), then oct13_end_cta after Oct 13. Destination only; never edit GHL workflows. Expiry Sun 9 PM CT.",
     owner: "Ivan",
   },
   {
     step: "Replay page: attended, did not book",
     today:
-      "GHL /masterclass-replay-adnb (Calendly vending-route-advisory-call), reached by the adnb-replay, adnb-sms and adnb-booking-calendar short links.",
+      "GHL /masterclass-replay-adnb via the adnb-replay, adnb-sms and adnb-booking-calendar short links (utm sept01, cut-off anchor).",
     after: "vendingpreneurs.com/masterclass-replay-adnb",
     change:
-      "Stays on GHL for the Oct 6 week; retarget the short links only after Oct 6 runs clean. GHL pages stay up as the fallback until two clean webinars.",
+      "Retarget the three Bitly links to the site page with oct06_end_cta, no anchor. Destination only.",
     owner: "Ivan",
   },
   {
@@ -1220,8 +1229,8 @@ export const SWAP_ROWS: readonly SwapRow[] = [
     today: "GHL /masterclass-replay-meta (same scoring form).",
     after: "vendingpreneurs.com/masterclass-replay-meta",
     change:
-      "Meta retargeting audiences stay on the GHL page for the Oct 6 week; move after two clean webinars. GHL pages stay up as the fallback.",
-    owner: "Adam",
+      "Liana points the retargeting ads at the site page with the same UTMs as the registration ads, when she moves the registration ads.",
+    owner: "Liana",
   },
   {
     step: "Replay page: advisory team",
@@ -1229,358 +1238,201 @@ export const SWAP_ROWS: readonly SwapRow[] = [
       "GHL /masterclass-replay-advisory-team-798452 (replay only, sent by the sales team).",
     after: "vendingpreneurs.com/masterclass-replay-advisory",
     change:
-      "Sales team keeps sending the GHL link for the Oct 6 week; switch after two clean webinars. GHL pages stay up as the fallback.",
-    owner: "Team",
+      "Sales team sends the site link from Wed Oct 7. Pearl updates the saved reply.",
+    owner: "Pearl",
   },
   {
     step: "Night-of booking (/start)",
     today:
       "start-vending.com redirects to vendingpreneurs.com/start with utm_content oct06_end_cta.",
-    after: "Same: already on the site, already on Oct 6.",
+    after: "Same host, utm_content oct13_end_cta.",
     change:
-      "Nothing to swap. Confirm the redirect rolls to the next room after Oct 6 ends.",
-    owner: "Team",
+      "Roll the forwarding to oct13_end_cta before the room on Tue Oct 13 (after the Oct 6 booking window).",
+    owner: "Ivan",
   },
   {
     step: "Links in emails and texts (Bitly)",
     today:
-      "Six booking.vendingpreneurs.com short links go to GHL funnel pages and carry old utm_content values (sept15_end_cta, sept01).",
+      "Six booking.vendingpreneurs.com short links go to GHL replay pages with old utm_content; seven legacy links (masterclass, watch-the-replay, free-advisory-call and others) carry apr21 to July14 values.",
     after:
-      "Same short links, Oct 6 utm_content now; retarget to the site replay pages after two clean webinars.",
+      "The six go to the site replay pages with the week's utm_content; legacy links fixed or confirmed unused.",
     change:
-      "Fix the utm_content on all six links by Mon Oct 5 (adnb-booking-calendar also has a cut-off anchor). Do not edit GHL workflows; change the Bitly destination only.",
+      "Ivan retargets the six by Wed Oct 7 and lists which messages still use the legacy links.",
     owner: "Ivan",
   },
   {
     step: "Paid ads",
     today: "All Meta webinar ads send to the GHL /home page.",
     after:
-      "One ad set sends to vendingpreneurs.com/masterclass; the rest stay on GHL.",
+      "All webinar ads send to vendingpreneurs.com/masterclass with utm_source=meta&utm_medium={{adset.id}}&utm_campaign=VP-Masterclass&utm_content={{ad.id}}.",
     change:
-      "Adam decides one ad set or all; recommended one first, to read opt-in rate, then show rate, then booked rate. Needs the Meta Events Manager check first. GHL page stays up as the fallback.",
-    owner: "Adam",
+      "LAST step, Wed Oct 7. A URL change sends each ad back through review and can restart learning, so do it once, early in the week, never Monday.",
+    owner: "Liana",
   },
   {
     step: "Meta CAPI (Complete Registration)",
     today:
       'GHL workflow "Webinar Leads to Meta Complete Registration" fires on the webinar-registrant tag.',
     after:
-      "Site sign-ups tag the contact and fire the same workflow; no fbp/fbc on API-created contacts, so match quality is lower.",
+      "Site sign-ups get the same tag and fire the same workflow. No browser ids (fbp/fbc) on site contacts, so match quality may drop.",
     change:
-      "Open Meta Events Manager and confirm Complete Registration arrives from a site registration before any ad moves.",
-    owner: "Team",
+      "One test sign-up on the site with Events Manager open: Complete Registration arrives, note Event Match Quality. Before any ad moves.",
+    owner: "Liana",
   },
   {
     step: "Zoom, Close and Sheet zaps",
     today:
-      "Ivan's zaps (Particpate > GHL, Calendly > GHL, Zoom registrar, Close lead, Sheet row) hard-code the previous event and pipeline.",
+      "Zoom registrar is on Oct 13 (every new registrant gets an Oct 13 link). GHL to Close is still on the Oct 6 pipeline: 6 Oct 13 registrants have no Close lead.",
     after:
-      "Same zaps, fired by site registrations, rolled to the Oct 6 Zoom webinar and pipeline (production test proved Zoom +8s, Close +10s).",
+      "Every zap on the Oct 13 webinar (82546367729) and pipeline (5uuvIbBhU6oGD2JPrANk).",
     change:
-      "Ivan rolls both zaps to Oct 6 by Mon Oct 5; re-prove with one test registration afterwards. Nothing in GHL is turned off until two webinars run clean.",
+      "Ivan rolls the Close zap first thing Wed Oct 7 and backfills the missing leads; Sheet row checked; Particpate > GHL and Calendly > GHL rolled before the room.",
     owner: "Ivan",
   },
 ];
 
 export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
+  // -------------------------------------------------------------- decisions
   {
-    item: "Custom values checked for Oct 6: all correct except the Anthony Q&A date",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Read live from GHL; Q&A fix is on Ivan's list.",
+    item: "Proof figures: site (45 locations, 79 machines, over 100k) or GHL (47, 84, $116,352.88)",
+    owner: "Kody",
+    due: "Thu Oct 8",
+    status: "decision",
+    note: "GHL texts and emails already use 47 / 84 / $116,352.88; the site /playbook page and replay video title still use the older set.",
   },
   {
-    item: "Calendly > GHL zap: point it at the Oct 6 pipeline (bookings are going to Sept 29 right now)",
+    item: "Turn Zoom's reminder emails on for Oct 13 (1 week, 1 day, 1 hour) to match Oct 6",
+    owner: "Adam",
+    due: "Wed Oct 7",
+    status: "decision",
+    note: "Oct 13 has them off; Oct 6 had all three on. Yvonne in Zoom, or we set it by API on Adam's go.",
+  },
+  // ----------------------------------------------------------------- Ivan
+  {
+    item: "Roll the GHL to Close lead zap to the Oct 13 pipeline and backfill the leads it missed",
     owner: "Ivan",
-    due: "Fri Oct 2",
+    due: "Wed Oct 7, 9 AM CT",
     status: "open",
-    note: "6 Oct-6-era bookings already landed in the Sept 29 pipeline since Sept 30.",
+    note: "6 Oct 13 registrants since 7:41 PM CT Oct 6 have no Close lead; Zoom side already works.",
   },
   {
-    item: "Particpate > GHL zap: roll to the Oct 6 Zoom webinar (89802270705)",
+    item: "Change the event tag in workflow 1. New Lead > Form Submission Webinar from oct13-webinar to webinar-oct13",
     owner: "Ivan",
-    due: "Mon Oct 5",
+    due: "Wed Oct 7, 9 AM CT",
     status: "open",
-    note: "Without it, Oct 6 attendance never reaches GHL and the attended / missed-it messages do not split.",
+    note: "Every past week used webinar-<date> (webinar-oct6). The board and Close join read that name; we re-tag the early registrants after.",
   },
   {
-    item: "Check the other zaps (GHL to Close lead, Attended, RDNA) and GHL workflow triggers for hard-coded Sept 29 ids or form-only triggers",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Not visible by API; a human has to open each one.",
-  },
-  {
-    item: "Set Anthony Q&A custom value to Thursday Oct 8 and its Zoom registration link",
+    item: "Retarget the six booking short links to the site replay pages with oct06_end_cta",
     owner: "Ivan",
     due: "Wed Oct 7",
     status: "open",
-    note: "Today it says Thursday, October 1; the text goes out the morning after the room.",
+    note: "dna-replay, dna-sms-replay, dna-book-your-call to /masterclass-replay-dna; adnb-replay, adnb-sms, adnb-booking-calendar to /masterclass-replay-adnb. Destination only.",
   },
-
   {
-    item: "Verify vendingpreneurs.com in Meta Business Settings (DNS TXT at ClouDNS) and keep Complete Registration as the top event",
-    owner: "Adam",
-    due: "Fri Oct 2",
+    item: "Confirm the Sheet row zap writes Oct 13 registrants to an OCT 13 tab",
+    owner: "Ivan",
+    due: "Wed Oct 7",
     status: "open",
-    note: "Domain is not verified today.",
   },
   {
-    item: "Duplicate one ad set to vendingpreneurs.com/masterclass with clean UTMs",
-    owner: "Adam",
-    due: "Mon Oct 5",
+    item: "Change the link in the 24-hour text (S4) and the Saturday email (E27) to the site pages",
+    owner: "Ivan",
+    due: "Thu Oct 8",
     status: "open",
-    note: "utm_source=meta&utm_medium={{adset.id}}&utm_campaign=VP-Masterclass&utm_content={{ad.id}}; suggested ad set LLA 1%.",
+    note: "S4 to /masterclass-confirmed, E27 to /playbook. Links only.",
   },
   {
-    item: "One test sign-up on the new page while watching Meta Events Manager (Test Events)",
-    owner: "Adam",
-    due: "Mon Oct 5",
+    item: "Roll Particpate > GHL to Zoom 82546367729 and Calendly > GHL to the Oct 13 pipeline",
+    owner: "Ivan",
+    due: "Tue Oct 13, noon CT",
     status: "open",
-    note: "Proves the site sign-up reaches Meta as Complete Registration.",
+    note: "Calendly stays on Oct 6 until its 72-hour booking window closes.",
   },
   {
-    item: "Send the site's step events to GA4",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "The site sends them to GA4 itself; no Tag Manager change needed. Seen arriving from the live site.",
-  },
-  // ------------------------------------------------------------------ done
-  {
-    item: "Sign-up page tuned for phones",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Save-my-seat button on the first phone screen, sticky save-my-seat bar with a live countdown, a black countdown bar at the top like the homepage's, the visitor's own time in the form, a line on why we ask for the phone. Playbook page: sticky buy bar. Calendar adds and Playbook clicks are tracked.",
-  },
-  {
-    item: "16 review findings fixed and shipped",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Shipped to production on the site.",
-  },
-  {
-    item: "Production test registration passed, then deleted",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Confirmed Zoom +8s, Close +10s, Meta CAPI step finished.",
-  },
-  {
-    item: "CRON_SECRET and WEBINAR_INGEST_SECRET rotated",
-    owner: "Adam",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Rotated 2026-10-01.",
-  },
-  {
-    item: "Site replay expiry set to Sunday 9 PM CT",
-    owner: "Site (done)",
-    due: "Thu Oct 1",
-    status: "done",
-    note: "Matches the texts and emails; GHL's countdown still to change (see Ivan item).",
-  },
-
-  // -------------------------------------------------------------- blockers
-  {
-    item: "Swap scope: one Meta ad set to /masterclass for Oct 6, the rest on GHL",
-    owner: "Adam",
-    due: "Fri Oct 2",
-    status: "decision",
-    note: "Recommended: one ad set first; opt-in rate fell from 18.8% to 12.4%, so a split is the only way to learn.",
-  },
-  {
-    item: "Anthony's member figures: replace 98k / 77 machines / 120k with $102K, 45 locations, 79 machines",
-    owner: "Kody",
-    due: "Mon Oct 5",
-    status: "decision",
-    note: "Transcript-verified. If no answer by Mon Oct 5, ship GHL-verbatim wording unchanged.",
-  },
-
-  {
-    item: "Team review and sign-off, including a real iPhone and Android pass",
-    owner: "Adam",
-    due: "Fri Oct 2",
+    item: "Roll start-vending.com forwarding to oct13_end_cta",
+    owner: "Ivan",
+    due: "Tue Oct 13, noon CT",
     status: "open",
-    note: "Shared login on /masterclass-review; also collects Mike's and Anthony's answers.",
-  },
-
-  // ---------------------------------------------------------------- should
-  {
-    item: 'Mike\'s figures (102 machines / 100k vs 150+ / 200k vs "over a dozen")',
-    owner: "Kody",
-    due: "Mon Oct 5",
-    status: "decision",
-    note: "No evidence found; ask Mike for his current machines and monthly revenue. Default: GHL-verbatim.",
   },
   {
-    item: 'Michael D replay card: change "18 locations" to "18 machines"',
-    owner: "Kody",
-    due: "Mon Oct 5",
-    status: "decision",
-    note: "Only member-figure fix worth doing before Oct 6; others default to GHL-verbatim.",
-  },
-  {
-    item: "Disclaimers differ by page; shortened footer needs sign-off",
-    owner: "Kody",
-    due: "Mon Oct 5",
-    status: "decision",
-    note: "Send both strings with the member-figures table; default ship as is.",
-  },
-  {
-    item: "SMS consent: confirm one registrant with the box unchecked gets no text",
-    owner: "Team",
-    due: "Mon Oct 5",
+    item: "List which live messages still use the legacy short links (masterclass, watch-the-replay, free-advisory-call, ready-for-my-call, training-call)",
+    owner: "Ivan",
+    due: "Fri Oct 9",
     status: "open",
-    note: "Consent was blank on all Sept 1 registrants; suppression untested.",
+    note: "They carry apr21 to July14 utm_content, so their clicks credit old rooms.",
+  },
+  // ---------------------------------------------------------------- Liana
+  {
+    item: "Test sign-up on vendingpreneurs.com/masterclass with Events Manager open; note Event Match Quality",
+    owner: "Liana",
+    due: "Wed Oct 7",
+    status: "open",
+    note: "After Ivan's Close fix, so the same test proves GHL, Zoom, Close, Sheet and the board. We delete the test lead after.",
   },
   {
-    item: "Playbook bonus stack: which of the 5 + 9 bonuses are actually delivered",
-    owner: "Mike",
-    due: "Mon Oct 5",
-    status: "decision",
-    note: "No delivery record found. If unconfirmed, keep parity with the GHL page.",
+    item: "Move every webinar ad (and the retargeting ads) to the site pages with the standard UTMs",
+    owner: "Liana",
+    due: "Wed Oct 7",
+    status: "open",
+    note: "Last step. utm_source=meta&utm_medium={{adset.id}}&utm_campaign=VP-Masterclass&utm_content={{ad.id}}.",
+  },
+  // ---------------------------------------------------------------- others
+  {
+    item: "Send the domain verification code for vendingpreneurs.com from Business Manager",
+    owner: "Adam",
+    due: "Wed Oct 7",
+    status: "open",
+    note: "We add the TXT record at ClouDNS.",
+  },
+  {
+    item: "Sales team sends the site advisory replay link instead of the GHL one",
+    owner: "Pearl",
+    due: "Wed Oct 7",
+    status: "open",
+    note: "vendingpreneurs.com/masterclass-replay-advisory",
   },
   {
     item: "Name the third live bonus and say whether the fast-action discount exists",
     owner: "Anthony",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Text at 15 minutes before and the booked email both say three; the booked email lists two.",
-  },
-
-  {
-    item: "Re-prove the Zoom registrar and Close zap after Ivan's Monday roll with one test registration",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Adam names the contact; clean up with the test-lead cleanup script.",
-  },
-  {
-    item: 'Keep the "No hard feelings / passed on $47 OFFER" email off',
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Stopped firing Sept 30 (likely after an edit to the 2A email sequence); confirm in the GHL UI that the step is removed.",
-  },
-  {
-    item: "Remove test and team-review registrants from Close and reports",
-    owner: "Adam",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Run the test-lead cleanup script per team-review contact after sign-off.",
-  },
-  {
-    item: "Name who does the Tuesday night or Wednesday rollover to Oct 13",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "No automation; custom values, Zoom webinar, pipeline and zaps all need a hand roll.",
-  },
-  {
-    item: 'Vidalytics player settings ("Pearl VP Admin" label, unmute overlay)',
-    owner: "Team",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Account owner unassigned; no site change needed.",
-  },
-  {
-    item: "Open /masterclass-replay-dna on a phone and finish the scoring form through to Calendly",
-    owner: "Team",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "The frame height is fixed at 900px; confirm it does not clip.",
-  },
-  {
-    item: "First real site-referred Playbook purchase on Oct 6 lands in the LTF pipeline and fires LTF paid > Close",
-    owner: "Adam",
-    due: "Wed Oct 7",
-    status: "open",
-    note: "No test purchase (financial action); checkout never bought end to end from the site.",
-  },
-  {
-    item: "Split-test measurement: read opt-in rate, then show rate, then booked rate",
-    owner: "Adam",
-    due: "Fri Oct 2",
-    status: "decision",
-    note: "Opt-in rate is Meta registrations over landing-page views; red under 20%.",
-  },
-  {
-    item: "Rotate remaining keys: Supabase service-role (org owner), GHL, Metricool, Sentry",
-    owner: "Adam",
     due: "Fri Oct 9",
     status: "open",
-    note: "Do not block Oct 6; schedule this week.",
-  },
-
-  // ------------------------------------------------------------ Ivan fixes
-  {
-    item: 'Change "Anthony Q&A" to Thursday, October 8 at 1:30pm and set "Q&A Link" to the new Oct 8 Zoom registration',
-    owner: "Ivan",
-    due: "Wed Oct 7, 1:30 PM CDT",
-    status: "open",
-    note: "Both still point at the Oct 1 Q&A; the attended text goes out about 1:30 PM Wed Oct 7.",
+    note: "The 15-minute text promises three; the booked email lists two.",
   },
   {
-    item: "Fix utm_content on all six booking.vendingpreneurs.com short links (and the cut-off anchor on adnb-booking-calendar)",
-    owner: "Ivan",
-    due: "Mon Oct 5",
+    item: "Open /playbook/checkout and /masterclass-replay-dna on a phone and go through to the order form and Calendly (no purchase)",
+    owner: "Team",
+    due: "Thu Oct 8",
     status: "open",
-    note: "Currently sept15_end_cta or sept01; set to oct06_end_cta or a per-room value.",
+  },
+  // ------------------------------------------------------------------ done
+  {
+    item: "Oct 13 Zoom webinar created (82546367729, 7:30 PM CDT)",
+    owner: "Yvonne",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "Found and registered on the board 2026-10-07.",
   },
   {
-    item: "Fix the attended text that says the Blueprint and Route Builder were delivered, and move its 5:30 AM send to daytime",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: 'Attach both to the "you were there" email or drop the claim.',
+    item: "GHL custom values on Oct 13 (date, time, Q&A Thu Oct 8, AddEvent, Q&A link)",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "Read live; AddEvent opens the Oct 13 Zoom registration.",
   },
   {
-    item: 'Fix "booking you call" typo and the three-vs-two bonus count in the booked email',
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: 'Typo is in the live "Your call is booked" email.',
+    item: "New registrants land in the Oct 13 pipeline with an Oct 13 Zoom link",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "Checked on every registrant since the Oct 6 room.",
   },
   {
-    item: 'Change GHL\'s replay countdown from 11 PM to 9 PM and fix "tonight" in the Saturday email',
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: 'Site is done; the missed-it email says "Tonight" on a Saturday.',
-  },
-  {
-    item: "Confirm sent emails show CDT, never CST",
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Live custom values read CDT; older emails printed CST.",
-  },
-  {
-    item: 'Stop setters sending the manual "looks like we missed each other" text to people who attended',
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Went to 4 attendees at 38.6 hours after the Sept 29 start; wrong context.",
-  },
-  {
-    item: 'Confirm the day-before voicemail workflow and the missed-it email order ("I thought I needed more time")',
-    owner: "Ivan",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "No day-before voicemail seen; one missed-it email appears replaced.",
-  },
-
-  // ------------------------------------------------------------------ Adam
-  {
-    item: "Delete OCT 6 Sheet rows 18 and 21 and today's test row",
-    owner: "Adam",
-    due: "Mon Oct 5",
-    status: "open",
-    note: "Sheet owner must delete them; Adam's account is view-only.",
+    item: "Site pages live for Oct 13, drop-off tracking on (PostHog and GA4)",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "All nine pages return the live page; PostHog events and replays arrive.",
   },
 ];
 
@@ -1588,53 +1440,63 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
 export const COMMS_COPY = {
   messagesHeading: "Every message they get",
   messagesIntro:
-    "Everything GoHighLevel sends after someone registers, in the order they receive it, copied from messages that actually went out. The swap does not change any of these; they keep sending from GoHighLevel. Tap a message to read it in full. Anything in red needs fixing before Tue Oct 6 and names who fixes it.",
-  fixListHeading: "Fix before Oct 6",
+    "Everything GoHighLevel sends after someone registers, in the order they receive it, copied from messages that actually went out. The swap keeps every message in GoHighLevel; only the links inside them move to the site. Tap a message to read it in full. Anything in red needs fixing before Tue Oct 13 and names who fixes it.",
+  fixListHeading: "Fix before Oct 13",
   swapHeading: "What changes at the swap",
   swapIntro:
-    "Step by step: what runs today, what runs after the swap, and who makes the change. The GoHighLevel pages stay up as the fallback until two webinars run clean.",
-  checklistHeading: "Who does what before Oct 6",
+    "Step by step: what runs today, what runs from Oct 13, and who makes the change. The GoHighLevel pages stay up as the fallback; nothing in GoHighLevel is turned off.",
+  checklistHeading: "Who does what before Oct 13",
   checklistIntro:
-    "Your decisions first, then one short list per person, soonest first. Nothing switches until the red lines in \u201cCan we switch this week?\u201d are closed.",
+    "Decisions first, then one short list per person, soonest first. The ads move last, once the red lines in “Are we ready for Oct 13?” are closed.",
   jumpLinks: [
-    { href: "#readiness-heading", label: "Can we switch?" },
+    { href: "#readiness-heading", label: "Ready?" },
     { href: "#checklist-heading", label: "Who does what" },
     { href: "#messages-heading", label: "Every message" },
     { href: "#swap-map-heading", label: "What changes" },
   ],
 } as const;
 
-/** Health check 2026-10-01 (read-only audits of live systems). */
+/** Live check 2026-10-07 (vp-webinars/event-log/2026-10-13.md). */
 export const READINESS = {
-  heading: "Can we switch this week?",
+  heading: "Are we ready for Oct 13?",
   verdict:
-    "Yes, as a split test: one Meta ad set on the new page, the rest on GoHighLevel. Full switch after two clean webinars. The red rows below must be closed first.",
-  checkedOn: "Checked against the live systems on Thu Oct 1",
+    "Full switch for Tue Oct 13. Pages, Zoom, custom values and tracking are ready. Two red lines (Close zap, event tag) close Wednesday morning, then one test sign-up, then the ads move.",
+  checkedOn: "Checked against the live systems Tue Oct 6, 10 PM CT",
   rows: [
     {
-      area: "Registration to GHL, Zoom, Close",
+      area: "Zoom and GHL registration",
       status: "green",
-      line: "All 65 Oct 6 registrants have a Zoom link, a Zoom registration, an opportunity and a Close lead. A site test reached Zoom and Close within seconds.",
+      line: "Oct 13 webinar exists (7:30 PM CDT). Every registrant since the Oct 6 room is in the Oct 13 pipeline with an Oct 13 Zoom link.",
     },
     {
-      area: "Zapier",
+      area: "Close",
       status: "red",
-      line: "Calendly > GHL is filing bookings under Sept 29 right now, and Particpate > GHL still points at the Sept 29 Zoom room. Ivan, by Mon Oct 5 (Calendly first).",
+      line: "The GHL to Close zap is still on the Oct 6 pipeline: 6 Oct 13 registrants have no Close lead. Ivan, Wed 9 AM.",
+    },
+    {
+      area: "Event tag",
+      status: "red",
+      line: "The workflow tags oct13-webinar instead of webinar-oct13, so the board cannot count the room. Ivan renames it; we re-tag the early ones.",
+    },
+    {
+      area: "Messages and links",
+      status: "yellow",
+      line: "Custom values are on Oct 13. Six short links still go to GHL replay pages with old UTMs; the 24-hour text and Saturday email link GHL pages.",
     },
     {
       area: "Meta ads and tracking",
       status: "yellow",
-      line: "Pixel on every page and ads optimise for Complete Registration, which GHL sends server-side for every sign-up (no browser duplicates). Still to do: one ad set to the new page with clean UTMs (Adam or Liana), the domain verification code from Business Manager (Adam sends it, we add it), and one test sign-up seen in Events Manager (Liana).",
+      line: "Test sign-up in Events Manager and domain verification first; then Liana moves every ad with the standard UTMs.",
     },
     {
       area: "Drop-off tracking",
       status: "green",
-      line: "Every step reaches PostHog and GA4: page views, form started, form errors (with the reason), registered, top-bar and sticky-bar clicks, calendar adds, Playbook clicks, checkout clicks, and Playbook purchases (thank-you page, from Mon Oct 5). Checked on the live site Thu Oct 1.",
+      line: "PostHog and GA4 get every step: page views, form started, registered, calendar adds, Playbook and checkout clicks, purchases.",
     },
     {
-      area: "Webinar dashboard",
-      status: "green",
-      line: "Publishing again after the key rotation. Shows site vs GHL-page sign-ups, all three intake answers and Playbook views.",
+      area: "Zoom reminders",
+      status: "yellow",
+      line: "Zoom's own reminder emails are off for Oct 13 (on for Oct 6). Turn on to match.",
     },
   ],
 } as const;
