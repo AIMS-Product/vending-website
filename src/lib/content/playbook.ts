@@ -427,7 +427,7 @@ export const stories = {
     {
       name: "Anthony",
       photo: storyPhotos.anthony,
-      text: "Former real estate entrepreneur, Anthony, followed this same process to scale to 45 locations and 79 machines, generating over 100k in revenue in one month.",
+      text: "Former real estate entrepreneur, Anthony, followed this same process to scale to 47 locations and 84 machines, generating over $116K in revenue in one month.",
     },
     {
       name: "Jesse",

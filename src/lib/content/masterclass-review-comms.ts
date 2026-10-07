@@ -1203,8 +1203,8 @@ export const SWAP_ROWS: readonly SwapRow[] = [
     after:
       "vendingpreneurs.com/playbook, /playbook/checkout (GHL order form embedded, same $67 product), /playbook/thank-you.",
     change:
-      "Live. Proof figures disagree: the site says 45 locations, 79 machines, over 100k; GHL messages now say 47, 84, $116,352.88. Kody picks one set by Thu Oct 8; the site follows. Ivan points E27 at the site page. Purchase stays in GHL.",
-    owner: "Kody",
+      "Live, with Anthony's current figures (47 locations, 84 machines, $116K), matching the GHL emails. The Saturday email (E27) moves to the site page. Purchase stays in GHL.",
+    owner: "Ivan",
   },
   {
     step: "Replay page: registered, did not attend",
@@ -1293,20 +1293,6 @@ export const SWAP_ROWS: readonly SwapRow[] = [
 
 export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
   // -------------------------------------------------------------- decisions
-  {
-    item: "Proof figures: site (45 locations, 79 machines, over 100k) or GHL (47, 84, $116,352.88)",
-    owner: "Kody",
-    due: "Thu Oct 8",
-    status: "decision",
-    note: "GHL texts and emails already use 47 / 84 / $116,352.88; the site /playbook page and replay video title still use the older set.",
-  },
-  {
-    item: "Turn Zoom's reminder emails on for Oct 13 (1 week, 1 day, 1 hour) to match Oct 6",
-    owner: "Adam",
-    due: "Wed Oct 7",
-    status: "decision",
-    note: "Oct 13 has them off; Oct 6 had all three on. Yvonne in Zoom, or we set it by API on Adam's go.",
-  },
   // ----------------------------------------------------------------- Ivan
   {
     item: "Roll the GHL to Close lead zap to the Oct 13 pipeline and backfill the leads it missed",
@@ -1314,13 +1300,6 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     due: "Wed Oct 7, 9 AM CT",
     status: "open",
     note: "6 Oct 13 registrants since 7:41 PM CT Oct 6 have no Close lead; Zoom side already works.",
-  },
-  {
-    item: "Change the event tag in workflow 1. New Lead > Form Submission Webinar from oct13-webinar to webinar-oct13",
-    owner: "Ivan",
-    due: "Wed Oct 7, 9 AM CT",
-    status: "open",
-    note: "Every past week used webinar-<date> (webinar-oct6). The board and Close join read that name; we re-tag the early registrants after.",
   },
   {
     item: "Retarget the six booking short links to the site replay pages with oct06_end_cta",
@@ -1407,8 +1386,29 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
   },
   // ------------------------------------------------------------------ done
   {
+    item: "Anthony's figures match everywhere: 47 locations, 84 machines, $116,352.88",
+    owner: "Site (done)",
+    due: "Wed Oct 7",
+    status: "done",
+    note: "Site /playbook now uses the numbers Anthony's GHL emails already send.",
+  },
+  {
+    item: "Zoom reminder emails on for Oct 13 (1 week, 1 day, 1 hour), same as Oct 6",
+    owner: "Site (done)",
+    due: "Wed Oct 7",
+    status: "done",
+    note: "Set through the Zoom API and read back.",
+  },
+  {
+    item: "Board counts Oct 13 registrants under the tag GHL uses (oct13-webinar)",
+    owner: "Site (done)",
+    due: "Wed Oct 7",
+    status: "done",
+    note: "No workflow edit needed.",
+  },
+  {
     item: "Oct 13 Zoom webinar created (82546367729, 7:30 PM CDT)",
-    owner: "Yvonne",
+    owner: "Ivan",
     due: "Tue Oct 6",
     status: "done",
     note: "Found and registered on the board 2026-10-07.",
@@ -1460,8 +1460,8 @@ export const COMMS_COPY = {
 export const READINESS = {
   heading: "Are we ready for Oct 13?",
   verdict:
-    "Full switch for Tue Oct 13. Pages, Zoom, custom values and tracking are ready. Two red lines (Close zap, event tag) close Wednesday morning, then one test sign-up, then the ads move.",
-  checkedOn: "Checked against the live systems Tue Oct 6, 10 PM CT",
+    "Full switch for Tue Oct 13. Pages, Zoom, custom values and tracking are ready. One red line (the Close zap) closes Wednesday morning, then one test sign-up, then the ads move.",
+  checkedOn: "Checked against the live systems Tue Oct 6, 11 PM CT",
   rows: [
     {
       area: "Zoom and GHL registration",
@@ -1472,11 +1472,6 @@ export const READINESS = {
       area: "Close",
       status: "red",
       line: "The GHL to Close zap is still on the Oct 6 pipeline: 6 Oct 13 registrants have no Close lead. Ivan, Wed 9 AM.",
-    },
-    {
-      area: "Event tag",
-      status: "red",
-      line: "The workflow tags oct13-webinar instead of webinar-oct13, so the board cannot count the room. Ivan renames it; we re-tag the early ones.",
     },
     {
       area: "Messages and links",
@@ -1495,8 +1490,8 @@ export const READINESS = {
     },
     {
       area: "Zoom reminders",
-      status: "yellow",
-      line: "Zoom's own reminder emails are off for Oct 13 (on for Oct 6). Turn on to match.",
+      status: "green",
+      line: "Zoom's reminder emails are on for Oct 13 (1 week, 1 day, 1 hour), same as Oct 6.",
     },
   ],
 } as const;

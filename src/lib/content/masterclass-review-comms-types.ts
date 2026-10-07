@@ -18,7 +18,6 @@ export type Owner =
   | "Anthony"
   | "Mike"
   | "Liana"
-  | "Yvonne"
   | "Pearl"
   | "Team"
   | "Site (done)";
