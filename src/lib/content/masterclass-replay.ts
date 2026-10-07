@@ -155,7 +155,7 @@ export type ReplayVariant = {
   steps: readonly ReplayStep[];
   /** Replay-hero button: scrolls to the anchor named by `target`. */
   hero: { label: string; target: "video" | "cta" } | null;
-  /** Booking section; null on the advisory page, which has none on GHL. */
+  /** Booking section; null shows the replay only. */
   cta: {
     heading: string;
     /** Set larger and darker above the paragraphs. */
@@ -228,6 +228,39 @@ const READY_TO_BUILD = {
   action: { kind: "ghl-form" },
 } as const;
 
+/**
+ * ADNB's booking block (the night-of advisory calendar, inline). Also on the
+ * advisory page since 2026-10-07 (Adam): GHL's advisory page had no calendar,
+ * so a prospect a rep sent the replay to could not book from it.
+ */
+const STILL_HAVE_QUESTIONS = {
+  heading: "Still Have Questions?",
+  paragraphs: [
+    {
+      lines: ["Not sure yet whether vending makes sense for your situation?"],
+    },
+    { lines: ["That's exactly what the call is for."], weight: "black" },
+    {
+      lines: [
+        "We'll look at your goals, timeline, available capital, and market to determine whether building a vending business is a realistic fit.",
+      ],
+    },
+    {
+      lines: [
+        "If it isn't, we'll tell you.",
+        "If it is, we'll show you what the next steps look like.",
+      ],
+      weight: "semibold",
+    },
+    {
+      lines: [
+        "The replay comes down soon. The call is where you get a straight answer for your own situation.",
+      ],
+    },
+  ],
+  action: { kind: "calendly", calendlyUrl: REPLAY_ADVISORY_CALENDLY },
+} as const;
+
 /** Every variant's share (Open Graph / X) title. */
 export const REPLAY_META_TITLE = "Masterclass Replay";
 /** Tab titles: the pages that book a call, and the replay-only page. */
@@ -267,35 +300,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     ],
     steps: [],
     hero: null,
-    cta: {
-      heading: "Still Have Questions?",
-      paragraphs: [
-        {
-          lines: [
-            "Not sure yet whether vending makes sense for your situation?",
-          ],
-        },
-        { lines: ["That's exactly what the call is for."], weight: "black" },
-        {
-          lines: [
-            "We'll look at your goals, timeline, available capital, and market to determine whether building a vending business is a realistic fit.",
-          ],
-        },
-        {
-          lines: [
-            "If it isn't, we'll tell you.",
-            "If it is, we'll show you what the next steps look like.",
-          ],
-          weight: "semibold",
-        },
-        {
-          lines: [
-            "The replay comes down soon. The call is where you get a straight answer for your own situation.",
-          ],
-        },
-      ],
-      action: { kind: "calendly", calendlyUrl: REPLAY_ADVISORY_CALENDLY },
-    },
+    cta: STILL_HAVE_QUESTIONS,
     closing: { label: "Book my free advisory call", target: "cta" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
@@ -325,8 +330,8 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     sub: ["This replay will only be available for a limited time."],
     steps: [],
     hero: null,
-    cta: null,
-    closing: { label: "Watch the Replay", target: "video" },
+    cta: STILL_HAVE_QUESTIONS,
+    closing: { label: "Book my free advisory call", target: "cta" },
     testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
 };

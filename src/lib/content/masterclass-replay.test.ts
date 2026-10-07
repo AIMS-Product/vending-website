@@ -61,9 +61,10 @@ describe("masterclass replay content", () => {
         "https://calendly.com/d/cxwj-zxk-2z4/vending-route-advisory-call",
     });
     expect(REPLAY_ADVISORY_CALENDLY).toContain("cxwj-zxk-2z4");
-    // Advisory: no booking section; its button scrolls to the replay.
-    expect(replayVariants.advisory.cta).toBeNull();
-    expect(replayVariants.advisory.closing?.target).toBe("video");
+    // Advisory (2026-10-07, Adam): the same inline advisory calendar as ADNB,
+    // so a prospect a rep sent the replay to can book from the page.
+    expect(replayVariants.advisory.cta).toBe(replayVariants.adnb.cta);
+    expect(replayVariants.advisory.closing?.target).toBe("cta");
   });
 
   it("uses the GHL testimonial video ids (YouTube, or Vidalytics on meta)", () => {
