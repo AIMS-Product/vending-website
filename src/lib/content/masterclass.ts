@@ -249,17 +249,147 @@ export const masterclassHeroAngles = {
     subheadline:
       "Learn why the location, its foot traffic and the agreement should decide the machine you buy, not the other way around",
   },
-} as const;
+  // v1, v3 and v5 mirror the GHL landing pages webinar.vendingpreneurs.com/v1,
+  // /v3 and /v5 (read live 2026-10-07): headline, intro, bullets and both fit
+  // lists verbatim, so Liana's 50/50 test compares the page, not new copy.
+  // Everything else (form, numbers, host, member stories) stays identical.
+  // GHL's own member quotes are not carried over: Kody has not approved them,
+  // and /v1's "John" card repeats Shannon R.'s quote word for word.
+  v1: {
+    headline: "Your capital should have a job",
+    highlight: "should have a job",
+    subheadline: "Learn how to build a cash-flowing vending route in 2026",
+    intro:
+      "If you already have income and are looking for another place to grow it, modern vending gives you a tangible business to evaluate: real locations, real products, real customers, and a route you can improve over time.",
+    takeaways: [
+      "Why vending can be a lower-barrier asset than real estate, franchises, laundromats, or buying a business outright",
+      "What to understand before putting money into a machine or location",
+      "How location quality, product mix, service, and owner discipline affect the numbers",
+      "How to decide if vending fits your time, capital, and goals",
+    ],
+    fitFor: [
+      "You already have income and want another place to grow it",
+      "You want a tangible business, not only another paper asset",
+      "You want to evaluate the model before deploying capital",
+      "You understand this is not a get-rich-quick scheme",
+    ],
+    notFitFor: [
+      "You want guaranteed income",
+      "You want a no-money startup",
+      "You want to buy a machine and hope it performs",
+      "You are not willing to evaluate location quality, service, and route economics",
+    ],
+  },
+  v3: {
+    headline:
+      "Build something your family can own, without losing every evening to work.",
+    highlight: "your family can own,",
+    subheadline: "Learn how to build a cash-flowing vending route in 2026",
+    intro:
+      "For many people, vending is not just about another income stream. It is a way to start building more calendar control while creating a business the household can understand, help operate, and grow together.",
+    takeaways: [
+      "How families start while one or both parents are still employed",
+      "What the owner does in the early stage before the route is systemized",
+      "How kids can learn discipline, money, service, and ownership by seeing the business up close",
+      "What has to happen before the route can give time back instead of taking more of it",
+      "How to think about vending as a household-owned asset, not just another side project",
+    ],
+    fitFor: [
+      "You want more time with your family over the long term",
+      "You want your kids to see business ownership up close",
+      "You want to build something the household understands",
+      "You want an asset the family can help with in age-appropriate ways",
+      "You want more than another job or another side hustle",
+    ],
+    notFitFor: [
+      "You want a business that requires no planning",
+      "You want income without learning the route first",
+      "You expect the business to be systemized before it is built",
+      "You do not want family or spouse alignment before committing time and capital",
+    ],
+  },
+  v5: {
+    headline: "A strong income can still depend on one source.",
+    highlight: "one source.",
+    subheadline: "Learn how to build a cash-flowing vending route in 2026",
+    intro:
+      "The paycheck can be healthy and still leave the whole household tied to one employer, one role, or one business. This training shows how modern vending works as a route-based business you can evaluate before you start.",
+    takeaways: [
+      "How Anthony started thinking differently after job uncertainty",
+      "Why vending is not about buying a machine and hoping",
+      "How a real route is built around locations, products, service, and numbers",
+      "How to evaluate whether this model fits your life before you start",
+    ],
+    fitFor: [
+      "You have a good income but want more ownership",
+      "You do not want one employer carrying the whole plan",
+      "You want to understand vending before putting capital into it",
+      "You want a real business, not another online trend",
+    ],
+    notFitFor: [
+      "You want a guarantee",
+      "You want a shortcut",
+      "You want a no-work asset",
+      "You want to avoid the real questions around location, capital, inventory, service, and owner involvement",
+    ],
+  },
+} as const satisfies Record<string, AngleCopy>;
+
+type AngleCopy = {
+  headline: string;
+  highlight: string;
+  subheadline: string;
+  intro?: string;
+  takeaways?: readonly string[];
+  fitFor?: readonly string[];
+  notFitFor?: readonly string[];
+};
 
 export type HeroAngle = keyof typeof masterclassHeroAngles;
 
+/** The known angle for `?angle=`, or null for missing/unknown (the default page). */
+export function knownAngle(angle: string | null | undefined): HeroAngle | null {
+  return angle && Object.hasOwn(masterclassHeroAngles, angle)
+    ? (angle as HeroAngle)
+    : null;
+}
+
 /** The hero copy for an ad angle; anything unrecognised gets the default. */
 export function heroForAngle(angle: string | null | undefined) {
-  const variant =
-    angle && Object.hasOwn(masterclassHeroAngles, angle)
-      ? masterclassHeroAngles[angle as HeroAngle]
-      : null;
-  return variant ? { ...masterclassHero, ...variant } : masterclassHero;
+  const key = knownAngle(angle);
+  return key
+    ? { ...masterclassHero, ...masterclassHeroAngles[key] }
+    : masterclassHero;
+}
+
+/**
+ * The angle's message beyond the hero: intro line, "On the call" bullets and
+ * both fit lists. Each falls back to the default page's copy, so a
+ * headline-only angle (capital, location) changes nothing else.
+ */
+export function pageForAngle(angle: string | null | undefined): {
+  intro: string | null;
+  takeaways: readonly string[];
+  fitFor: readonly string[];
+  notFitFor: readonly string[];
+} {
+  const key = knownAngle(angle);
+  const v: Partial<AngleCopy> = key ? masterclassHeroAngles[key] : {};
+  return {
+    intro: v.intro ?? null,
+    takeaways: v.takeaways ?? masterclassTakeaways,
+    fitFor: v.fitFor ?? fitFor,
+    notFitFor: v.notFitFor ?? notFitFor,
+  };
+}
+
+/**
+ * GHL's `utm_term` for a registration from an angle page, so the board can
+ * split opt-in and show rate by version. An explicit `utm_term` on the ad URL wins.
+ */
+export function angleTerm(angle: string | null | undefined): string | null {
+  const key = knownAngle(angle);
+  return key ? `angle-${key}` : null;
 }
 
 /**

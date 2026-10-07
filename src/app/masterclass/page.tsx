@@ -14,7 +14,7 @@ import {
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
-import { ATTRIBUTION_KEYS } from "@/lib/content/masterclass";
+import { ATTRIBUTION_KEYS, angleTerm } from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -57,13 +57,18 @@ export default async function MasterclassPage({
     listCaseStudyStories(),
     searchParams,
   ]);
-  const attribution = Object.fromEntries(
+  const angle = typeof params.angle === "string" ? params.angle : undefined;
+  const fromUrl: Record<string, string> = Object.fromEntries(
     ATTRIBUTION_KEYS.flatMap((key) => {
       const value = params[key];
       const text = Array.isArray(value) ? value[0] : value;
       return text ? [[key, text.slice(0, 200)]] : [];
     }),
   );
+  // The version a person saw reaches GHL's utm_term, unless the ad set its own.
+  const term = angleTerm(angle);
+  const attribution =
+    term && !fromUrl.utm_term ? { ...fromUrl, utm_term: term } : fromUrl;
   // The date lines swap to "Live now" or "Next session date coming soon" on
   // the visitor's clock; this pins their first render to the server's.
   const renderedAt = renderTime();
@@ -74,7 +79,7 @@ export default async function MasterclassPage({
       <RevealObserver />
       <CountdownBanner startsAt={event.startsAt} renderedAt={renderedAt} />
       <MasterclassHero
-        angle={typeof params.angle === "string" ? params.angle : undefined}
+        angle={angle}
         stats={event.anthony}
         aside={
           <RegistrationForm
@@ -89,6 +94,7 @@ export default async function MasterclassPage({
       <HostBand stats={event.anthony} />
       <StoriesGrid stories={stories} />
       <FitSection
+        angle={angle}
         label={event.label}
         startsAt={event.startsAt}
         renderedAt={renderedAt}

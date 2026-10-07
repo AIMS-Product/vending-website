@@ -1,3 +1,4 @@
+import { cn } from "@/lib/utils";
 import { APPLY_QUIZ_ANCHOR, APPLY_VSL_ANCHOR } from "@/lib/content/apply-page";
 import { SaveSeatLink } from "@/components/sections/masterclass/SaveSeatLink";
 import { ChevronDownIcon, PlayIcon } from "@/components/sections/apply/icons";
@@ -7,7 +8,7 @@ import {
   WATCH_HEADING_ID,
   heroForAngle,
   hostCopy,
-  masterclassTakeaways,
+  pageForAngle,
 } from "@/lib/content/masterclass";
 import type { MasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -49,6 +50,9 @@ function NoBreak({ text, phrase }: { text: string; phrase: string }) {
  * dash nothing is bold: the whole item reads as regular text. Render-time
  * only: the approved string is shown whole, byte for byte.
  */
+/** Characters past which the phone headline steps down a size. */
+const LONG_HEADLINE = 50;
+
 function splitTakeaway(text: string): [string, string] {
   const dash = text.indexOf(" - ");
   return dash > 0 ? [text.slice(0, dash), text.slice(dash)] : ["", text];
@@ -70,6 +74,7 @@ export function MasterclassHero({
   stats: MasterclassEvent["anthony"];
 }) {
   const copy = heroForAngle(angle);
+  const { intro, takeaways } = pageForAngle(angle);
   // One block per sentence, so the second always starts its own line.
   const sentences = copy.headline.match(/[^.]+\.\s*/g) ?? [copy.headline];
   return (
@@ -97,7 +102,17 @@ export function MasterclassHero({
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] text-balance uppercase lg:col-start-1 lg:row-start-2 lg:max-w-[620px]">
           {copy.eyebrow}
         </p>
-        <h1 className="v2-display text-ink mt-2 max-w-[20ch] text-[clamp(1.8rem,4.4vw,3.6rem)] leading-[1.02] uppercase lg:col-start-1 lg:row-start-3 lg:mt-5 lg:leading-[1.14]">
+        <h1
+          className={cn(
+            // A long angle headline (v3) wraps to four lines on a phone and
+            // pushes the submit off the first screen; desktop hits the same cap.
+            // Size first: tailwind-merge drops a `leading-*` placed before it.
+            copy.headline.length > LONG_HEADLINE
+              ? "text-[clamp(1.5rem,4.4vw,3.6rem)]"
+              : "text-[clamp(1.8rem,4.4vw,3.6rem)]",
+            "v2-display text-ink mt-2 max-w-[20ch] leading-[1.02] uppercase lg:col-start-1 lg:row-start-3 lg:mt-5 lg:leading-[1.14]",
+          )}
+        >
           {sentences.map((sentence, index) => {
             const text = sentence.trim();
             const at = text.indexOf(copy.highlight);
@@ -141,11 +156,16 @@ export function MasterclassHero({
           </p>
         ) : null}
         <div className="mt-8 max-w-[620px] lg:col-start-1 lg:row-start-6 lg:mt-6">
+          {intro ? (
+            <p className="text-ink mb-6 text-[15px] leading-[1.55] font-medium">
+              {intro}
+            </p>
+          ) : null}
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
             On the call
           </p>
           <ul className="mt-3 space-y-3">
-            {masterclassTakeaways.map((item) => {
+            {takeaways.map((item) => {
               const [lead, rest] = splitTakeaway(item);
               return (
                 <li

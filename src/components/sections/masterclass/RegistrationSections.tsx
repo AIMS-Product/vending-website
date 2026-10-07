@@ -17,12 +17,11 @@ import {
   MASTERCLASS_DISCLAIMER,
   WATCH_HEADING_ID,
   fitCopy,
-  fitFor,
   hostCandids,
   hostCopy,
   hostVideoPoster,
   masterclassLiveEnd,
-  notFitFor,
+  pageForAngle,
   storiesCopy,
   shortOccupation,
 } from "@/lib/content/masterclass";
@@ -366,12 +365,16 @@ export function FitSection({
   label,
   startsAt,
   renderedAt,
+  angle,
 }: {
   label: string | null;
   startsAt: string | null;
   renderedAt: number;
+  /** `?angle=` from the ad URL; v1/v3/v5 carry their own fit lists. */
+  angle?: string;
 }) {
   const endsAt = masterclassLiveEnd(startsAt);
+  const { fitFor, notFitFor } = pageForAngle(angle);
   return (
     <section className="border-ink bg-tint border-t-2">
       <div className="mx-auto max-w-[1180px] px-5 py-16 lg:px-10">
