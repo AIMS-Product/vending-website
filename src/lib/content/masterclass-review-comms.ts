@@ -284,13 +284,6 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     ),
     verbatim: true,
     links: ["Playbook page (GHL)"],
-    flag: {
-      issue:
-        "The Playbook link still goes to the GoHighLevel /playbook page, so these clicks skip the site page the board measures.",
-      fix: "Change the link in this email to vendingpreneurs.com/playbook (keep the utm parameters). Link only; the workflow stays as is.",
-      owner: "Ivan",
-      due: "Thu Oct 8",
-    },
   },
   {
     id: "S3",
@@ -349,19 +342,12 @@ export const COMMS_MESSAGES: readonly CommsMessage[] = [
     from: ANTHONY_TEXT,
     body: text(
       "Hey, the masterclass is tomorrow at 7:30 PM Central Time.",
-      "Remember the video you saw after registering for the class. I want to show you that again {link: confirmation page (GHL)}",
+      "Remember the video you saw after registering for the class. I want to show you that again {link: confirmation page (site)}",
       "Once you finish it, let me know what that would do for you!",
       "Reply STOP to unsubscribe",
     ),
     verbatim: true,
-    links: ["Confirmation page (GHL)"],
-    flag: {
-      issue:
-        "The link still goes to the GoHighLevel confirmation page, not the site page people saw after signing up on the site.",
-      fix: "Change the link in this text to vendingpreneurs.com/masterclass-confirmed. Link only; the workflow stays as is.",
-      owner: "Ivan",
-      due: "Thu Oct 8",
-    },
+    links: ["Confirmation page (site)"],
   },
   {
     id: "E7",
@@ -1193,17 +1179,16 @@ export const SWAP_ROWS: readonly SwapRow[] = [
     after:
       "vendingpreneurs.com/masterclass-confirmed (video, calendar buttons, 3 intake questions, Playbook offer).",
     change:
-      "Live and showing Oct 13. The 24-hour text (S4) still links the GHL page: Ivan changes the link only.",
-    owner: "Ivan",
+      "Live and showing Oct 13. The 24-hour text (S4) now links this page.",
+    owner: "Site (done)",
   },
   {
     step: "Playbook page + checkout",
-    today:
-      "GHL /playbook ($67, anchor $199) and GHL /checkout; the Saturday email (E27) links GHL /playbook.",
+    today: "GHL /playbook ($67, anchor $199) and GHL /checkout.",
     after:
       "vendingpreneurs.com/playbook, /playbook/checkout (GHL order form embedded, same $67 product), /playbook/thank-you.",
     change:
-      "Live, with Anthony's current figures (47 locations, 84 machines, $116K), matching the GHL emails. The Saturday email (E27) moves to the site page. Purchase stays in GHL.",
+      "Live, with Anthony's current figures (47 locations, 84 machines, $116K), matching the GHL emails. Purchase stays in GHL.",
     owner: "Ivan",
   },
   {
@@ -1282,11 +1267,11 @@ export const SWAP_ROWS: readonly SwapRow[] = [
   {
     step: "Zoom, Close and Sheet zaps",
     today:
-      "Zoom registrar is on Oct 13 (every new registrant gets an Oct 13 link). GHL to Close is still on the Oct 6 pipeline: 6 Oct 13 registrants have no Close lead.",
+      "Zoom registrar, Sheet row and Close lead are on Oct 13 (Close rolled and backfilled Oct 6 night). Particpate > GHL and Calendly > GHL stay on Oct 6 for this week's replay and bookings.",
     after:
       "Every zap on the Oct 13 webinar (82546367729) and pipeline (5uuvIbBhU6oGD2JPrANk).",
     change:
-      "Ivan rolls the Close zap first thing Wed Oct 7 and backfills the missing leads; Sheet row checked; Particpate > GHL and Calendly > GHL rolled before the room.",
+      "Ivan rolls Particpate > GHL and Calendly > GHL (and their sheet tabs) to Oct 13 before the room on Tue Oct 13.",
     owner: "Ivan",
   },
 ];
@@ -1295,31 +1280,11 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
   // -------------------------------------------------------------- decisions
   // ----------------------------------------------------------------- Ivan
   {
-    item: "Roll the GHL to Close lead zap to the Oct 13 pipeline and backfill the leads it missed",
-    owner: "Ivan",
-    due: "Wed Oct 7, 9 AM CT",
-    status: "open",
-    note: "6 Oct 13 registrants since 7:41 PM CT Oct 6 have no Close lead; Zoom side already works.",
-  },
-  {
     item: "Retarget the six booking short links to the site replay pages with oct06_end_cta",
     owner: "Ivan",
     due: "Wed Oct 7",
     status: "open",
     note: "dna-replay, dna-sms-replay, dna-book-your-call to /masterclass-replay-dna; adnb-replay, adnb-sms, adnb-booking-calendar to /masterclass-replay-adnb. Destination only.",
-  },
-  {
-    item: "Confirm the Sheet row zap writes Oct 13 registrants to an OCT 13 tab",
-    owner: "Ivan",
-    due: "Wed Oct 7",
-    status: "open",
-  },
-  {
-    item: "Change the link in the 24-hour text (S4) and the Saturday email (E27) to the site pages",
-    owner: "Ivan",
-    due: "Thu Oct 8",
-    status: "open",
-    note: "S4 to /masterclass-confirmed, E27 to /playbook. Links only.",
   },
   {
     item: "Roll Particpate > GHL to Zoom 82546367729 and Calendly > GHL to the Oct 13 pipeline",
@@ -1385,6 +1350,26 @@ export const LAUNCH_CHECKLIST: readonly ChecklistItem[] = [
     status: "open",
   },
   // ------------------------------------------------------------------ done
+  {
+    item: "Close zap rolled to Oct 13 and the 10 missed registrants added to Close",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "Webinar Registrants > Close v17: pipeline Webinar Oct 13, utm oct13, tag webinar-13-oct.",
+  },
+  {
+    item: "24-hour text links the site confirmation page",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+    note: "Snippet PW: SMS 3 edited; the workflow step reads it live. The Saturday Playbook email is no longer in the sequence.",
+  },
+  {
+    item: "Zoom + Sheet zap checked: Oct 13 pipeline, Oct 13 webinar, Oct 13 tab",
+    owner: "Site (done)",
+    due: "Tue Oct 6",
+    status: "done",
+  },
   {
     item: "Anthony's figures match everywhere: 47 locations, 84 machines, $116,352.88",
     owner: "Site (done)",
@@ -1460,7 +1445,7 @@ export const COMMS_COPY = {
 export const READINESS = {
   heading: "Are we ready for Oct 13?",
   verdict:
-    "Full switch for Tue Oct 13. Pages, Zoom, custom values and tracking are ready. One red line (the Close zap) closes Wednesday morning, then one test sign-up, then the ads move.",
+    "Full switch for Tue Oct 13. Pages, Zoom, Close, custom values and tracking are ready. Next: the six booking short links, one test sign-up, then the ads move.",
   checkedOn: "Checked against the live systems Tue Oct 6, 11 PM CT",
   rows: [
     {
@@ -1470,13 +1455,13 @@ export const READINESS = {
     },
     {
       area: "Close",
-      status: "red",
-      line: "The GHL to Close zap is still on the Oct 6 pipeline: 6 Oct 13 registrants have no Close lead. Ivan, Wed 9 AM.",
+      status: "green",
+      line: "The Close zap is on the Oct 13 pipeline (utm oct13, tag webinar-13-oct). The 10 registrants it missed were added; all Oct 13 registrants are in Close.",
     },
     {
       area: "Messages and links",
       status: "yellow",
-      line: "Custom values are on Oct 13. Six short links still go to GHL replay pages with old UTMs; the 24-hour text and Saturday email link GHL pages.",
+      line: "Custom values are on Oct 13 and the 24-hour text links the site. Six booking short links still go to GHL replay pages with old UTMs (Bitly).",
     },
     {
       area: "Meta ads and tracking",
