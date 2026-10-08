@@ -166,7 +166,8 @@ CLOSE_WBRAID_FIELD_ID
 | `GHL_API_KEY`, `GHL_LOCATION_ID`                                                               | S     | Read-only GoHighLevel connectors. Unset: `skipped`, Channels shows "Not connected"                                                  |
 | `GHL_WRITE_TOKEN`                                                                              | S     | Write token used only by masterclass registration. Unset: the form refuses to register                                              |
 | `BITLY_ACCESS_TOKEN`, `BITLY_GROUP_GUID`                                                       | S     | Bitly click sync. Unset: "not connected"                                                                                            |
-| `MANYCHAT_API_KEY`                                                                             | S     | ManyChat API enrichment. Unset: events land without enrichment                                                                      |
+| `MANYCHAT_API_KEY_MIKE`, `MANYCHAT_API_KEY_ANTHONY`                                            | S     | ManyChat API enrichment per IG account. Unset: that account's events land without enrichment                                        |
+| `MANYCHAT_API_KEY`                                                                             | S     | Original single key (Mike's page); fallback when `MANYCHAT_API_KEY_MIKE` is unset                                                   |
 | `DATAFORSEO_LOGIN`, `DATAFORSEO_PASSWORD`                                                      | S     | DataForSEO ranks and AI checks (API credentials, not the site login)                                                                |
 | `DATAFORSEO_MONTHLY_BUDGET_USD`                                                                | S     | Hard monthly spend cap in USD; defaults to 25                                                                                       |
 

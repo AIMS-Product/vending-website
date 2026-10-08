@@ -14,17 +14,27 @@ function buildClient(upsertError: unknown = null) {
           if (!upsertError) events.push(row);
           return { error: upsertError };
         }),
-        select: vi.fn(() => ({
-          eq: vi.fn(async (_column: string, day: string) => ({
-            data: events
-              .filter((row) => row.day === day)
-              .map((row) => ({
-                event: row.event,
-                subscriber_id: row.subscriber_id,
-              })),
-            error: null,
-          })),
-        })),
+        select: vi.fn(() => {
+          // Chainable .eq() filters, resolved like a PostgREST builder.
+          const filters: Array<[string, unknown]> = [];
+          const builder = {
+            eq: vi.fn((column: string, value: unknown) => {
+              filters.push([column, value]);
+              return builder;
+            }),
+            then: (resolve: (value: unknown) => unknown) =>
+              resolve({
+                data: events
+                  .filter((row) => filters.every(([c, v]) => row[c] === v))
+                  .map((row) => ({
+                    event: row.event,
+                    subscriber_id: row.subscriber_id,
+                  })),
+                error: null,
+              }),
+          };
+          return builder;
+        }),
       };
     }
     if (table === "channel_daily") {
@@ -73,12 +83,14 @@ describe("ingestManychatEvent", () => {
     );
 
     expect(result).toEqual({
+      account: "mike",
       day: "2026-09-11",
       event: "booking_link_sent",
       enriched: true,
     });
     expect(events[0]).toMatchObject({
       subscriber_id: "123456",
+      account: "mike",
       event: "booking_link_sent",
       day: "2026-09-11",
       ig_username: "vendingmike",
@@ -92,6 +104,7 @@ describe("ingestManychatEvent", () => {
       source: "manychat",
       medium: "chat",
       destination: "book-call",
+      content: "mike",
       leads: 0,
       clicks: 1,
       booked: 0,
@@ -114,6 +127,50 @@ describe("ingestManychatEvent", () => {
       deps,
     );
     expect(spine.at(-1)).toMatchObject({ leads: 2, booked: 1, clicks: 0 });
+  });
+
+  it("enriches with the event's account and keeps accounts on separate rows", async () => {
+    const { client, events, spine } = buildClient();
+    const asked: string[] = [];
+    const deps = {
+      client,
+      now: NOW,
+      fetchSubscriber: async (_id: string, account: string) => {
+        asked.push(account);
+        return null;
+      },
+    };
+    await ingestManychatEvent({ subscriber_id: "1", event: "new_lead" }, deps);
+    await ingestManychatEvent(
+      { subscriber_id: "2", event: "new_lead", account: "anthony" },
+      deps,
+    );
+    await ingestManychatEvent(
+      { subscriber_id: "3", event: "new_lead", account: "anthony" },
+      deps,
+    );
+    expect(asked).toEqual(["mike", "anthony", "anthony"]);
+    expect(events.map((row) => row.account)).toEqual([
+      "mike",
+      "anthony",
+      "anthony",
+    ]);
+    expect(spine.at(-1)).toMatchObject({ content: "anthony", leads: 2 });
+    expect(spine.findLast((row) => row.content === "mike")).toMatchObject({
+      leads: 1,
+    });
+  });
+
+  it("rejects an account that has no ManyChat page", async () => {
+    const { client, events } = buildClient();
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(
+      ingestManychatEvent(
+        { subscriber_id: "1", event: "new_lead", account: "sofia" },
+        { client, now: NOW, fetchSubscriber: async () => null },
+      ),
+    ).rejects.toThrow(ManychatIngestError);
+    expect(events).toHaveLength(0);
   });
 
   it("still counts the event when enrichment fails, marked unenriched", async () => {

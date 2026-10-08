@@ -1206,8 +1206,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      manychat_contacts: {
+        Row: {
+          account: string;
+          custom_fields: Json;
+          fetched_at: string;
+          ig_username: string | null;
+          last_interaction_at: string | null;
+          name: string | null;
+          optin_keyword: string | null;
+          subscribed_at: string | null;
+          subscriber_id: string;
+          tags: Json;
+        };
+        Insert: {
+          account: string;
+          custom_fields?: Json;
+          fetched_at?: string;
+          ig_username?: string | null;
+          last_interaction_at?: string | null;
+          name?: string | null;
+          optin_keyword?: string | null;
+          subscribed_at?: string | null;
+          subscriber_id: string;
+          tags?: Json;
+        };
+        Update: {
+          account?: string;
+          custom_fields?: Json;
+          fetched_at?: string;
+          ig_username?: string | null;
+          last_interaction_at?: string | null;
+          name?: string | null;
+          optin_keyword?: string | null;
+          subscribed_at?: string | null;
+          subscriber_id?: string;
+          tags?: Json;
+        };
+        Relationships: [];
+      };
       manychat_events: {
         Row: {
+          account: string;
           day: string;
           email: string | null;
           enriched: boolean;
@@ -1221,6 +1261,7 @@ export type Database = {
           tags: Json;
         };
         Insert: {
+          account?: string;
           day: string;
           email?: string | null;
           enriched?: boolean;
@@ -1234,6 +1275,7 @@ export type Database = {
           tags?: Json;
         };
         Update: {
+          account?: string;
           day?: string;
           email?: string | null;
           enriched?: boolean;
@@ -1245,6 +1287,39 @@ export type Database = {
           subscribed_at?: string | null;
           subscriber_id?: string;
           tags?: Json;
+        };
+        Relationships: [];
+      };
+      manychat_lead_matches: {
+        Row: {
+          account: string | null;
+          candidates: Json;
+          close_lead_id: string;
+          level: string;
+          matched_at: string;
+          rules_version: number;
+          signals: string[];
+          subscriber_id: string | null;
+        };
+        Insert: {
+          account?: string | null;
+          candidates?: Json;
+          close_lead_id: string;
+          level: string;
+          matched_at?: string;
+          rules_version: number;
+          signals?: string[];
+          subscriber_id?: string | null;
+        };
+        Update: {
+          account?: string | null;
+          candidates?: Json;
+          close_lead_id?: string;
+          level?: string;
+          matched_at?: string;
+          rules_version?: number;
+          signals?: string[];
+          subscriber_id?: string | null;
         };
         Relationships: [];
       };

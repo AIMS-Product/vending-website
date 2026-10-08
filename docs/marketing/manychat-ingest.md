@@ -3,7 +3,8 @@
 The Channels tab shows an **Instagram DM** row (new leads, booking links sent,
 calls booked, closed) fed by ManyChat flows. ManyChat's API cannot list
 contacts in bulk, so each flow tells us when a contact reaches a stage. One
-"External Request" action per stage. Contract version 1.
+"External Request" action per stage. Contract version 2 (adds `account`;
+version 1 bodies without it still work and count as Mike's).
 
 ## Setup, once per stage (5 minutes total)
 
@@ -18,8 +19,14 @@ In ManyChat → Automation, open the flow that applies the stage's tag (or the
 - Body (raw JSON):
 
 ```json
-{ "subscriber_id": "{{user_id}}", "event": "call_booked" }
+{ "subscriber_id": "{{user_id}}", "event": "call_booked", "account": "mike" }
 ```
+
+`account` is the ManyChat page the flow lives on: `"mike"` on Mike Hoffmann's
+page (438225612717195), `"anthony"` on Anthony Kolodziej's (1209368162259831).
+It picks the API key used to look the contact up and splits the Instagram DM
+funnel per account. Leaving it out means `"mike"`, so a flow on Anthony's page
+without it would be looked up with the wrong key and miss its enrichment.
 
 Use one of these `event` values per stage:
 
