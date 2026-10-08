@@ -12,6 +12,7 @@ import {
   collapseToLeads,
   lookbackStart,
 } from "@/lib/analytics/lead-definition";
+import { QUALIFIED_BANDS } from "@/lib/analytics/weekly-scorecard";
 import {
   costPerBookedByMonth,
   monthKeys,
@@ -173,6 +174,39 @@ export const readLeads = cache((from: string) =>
         }),
       )
       .filter((lead) => lead.day >= from);
+  }),
+);
+
+/**
+ * Reporting days of site form fills the qualification quiz scored into a
+ * calling band (`QUALIFIED_BANDS`), from `from` on. One per submission.
+ */
+export const readQualifiedDays = cache((from: string) =>
+  attempt("Scored site forms", async () => {
+    const client = createAdminClient();
+    const { rows, error } = await readAllPages<{
+      created_at: string;
+      band: string | null;
+    }>(
+      (start, end, count) =>
+        client
+          .from("lead_submissions")
+          .select(
+            "created_at,band:qualification_summary->>qualification_band",
+            {
+              count,
+            },
+          )
+          .gte("created_at", `${from}T00:00:00Z`)
+          .order("created_at")
+          .order("id")
+          .range(start, end),
+      { pageSize: PAGE, maxRows: MAX_ROWS },
+    );
+    if (error) throw new Error(error.message);
+    return rows
+      .filter((row) => row.band != null && QUALIFIED_BANDS.has(row.band))
+      .map((row) => reportingDay(new Date(row.created_at)));
   }),
 );
 

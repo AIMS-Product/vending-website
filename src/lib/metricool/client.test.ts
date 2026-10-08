@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMetricoolClient, readMetric, toIso } from "./client";
+import {
+  MetricoolNotConnectedError,
+  createMetricoolClient,
+  readMetric,
+  toIso,
+} from "./client";
 
 function buildFetch(
   handler: (url: string) => { status: number; body: unknown },
@@ -108,6 +113,26 @@ describe("createMetricoolClient", () => {
       to: "2026-09-11",
     });
     expect(posts.map((row) => row.id)).toEqual(["p1"]);
+  });
+
+  it("throws not-connected for a 403 on ad campaigns, never an empty list", async () => {
+    const { fetchImpl } = buildFetch(() => ({
+      status: 403,
+      body: { detail: "There is no adwords connection for blog: b1" },
+    }));
+    const client = createMetricoolClient({
+      apiKey: "tok",
+      userId: "u1",
+      fetchImpl,
+    });
+    await expect(
+      client.fetchCampaigns({
+        blogId: "b1",
+        network: "googleads",
+        from: "2026-10-01",
+        to: "2026-10-01",
+      }),
+    ).rejects.toBeInstanceOf(MetricoolNotConnectedError);
   });
 
   it("follows a full-URL page.next and stops on anything else", async () => {

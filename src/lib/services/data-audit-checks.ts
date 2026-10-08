@@ -5,6 +5,8 @@ import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
 import { createCloseClient } from "@/lib/close/client";
 import { createGhlClient, type GhlClient } from "@/lib/ghl/client";
 import {
+  AD_NETWORK_LABELS,
+  MetricoolNotConnectedError,
   createMetricoolClient,
   type AdNetwork,
   type MetricoolClient,
@@ -414,16 +416,37 @@ async function adSpendCheck(
 
   const networks: readonly AdNetwork[] = ["googleads", "facebookads"];
   let source = 0;
+  // A network with no connection would add 0 here and agree with our 0, which
+  // is how a removed Google Ads connection passed this check from 2026-10-01.
+  const notConnected = new Set<AdNetwork>();
   for (const day of daysBetween(from, to)) {
     for (const network of networks) {
-      const campaigns = await metricool.fetchCampaigns({
-        blogId,
-        network,
-        from: day,
-        to: day,
-      });
-      for (const campaign of campaigns) source += campaign.spend ?? 0;
+      if (notConnected.has(network)) continue;
+      try {
+        const campaigns = await metricool.fetchCampaigns({
+          blogId,
+          network,
+          from: day,
+          to: day,
+        });
+        for (const campaign of campaigns) source += campaign.spend ?? 0;
+      } catch (error) {
+        if (!(error instanceof MetricoolNotConnectedError)) throw error;
+        notConnected.add(network);
+      }
     }
+  }
+  if (notConnected.size > 0) {
+    const names = [...notConnected].map((n) => AD_NETWORK_LABELS[n]);
+    return [
+      assertion({
+        ...shared,
+        checkId: "ad-spend",
+        label: "Ad spend",
+        ok: false,
+        detail: `${names.join(" and ")} ${names.length > 1 ? "are" : "is"} not connected in Metricool, so ${names.length > 1 ? "their" : "its"} spend is neither recorded nor verifiable. Reconnect in Metricool (brand settings > Connections).`,
+      }),
+    ];
   }
   const ours = await sumColumn(client, "channel_daily", "spend", (query) =>
     query.gte("day", from).lte("day", to),
