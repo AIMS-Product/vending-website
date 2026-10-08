@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   angleTerm,
+  withAngleTerm,
   heroForAngle,
   masterclassHero,
   masterclassHeroAngles,
@@ -68,5 +69,17 @@ describe("angleTerm", () => {
     expect(angleTerm("capital")).toBe("angle-capital");
     expect(angleTerm(undefined)).toBeNull();
     expect(angleTerm("__proto__")).toBeNull();
+  });
+});
+
+describe("withAngleTerm", () => {
+  it("overrides the utm_term Meta appends to every ad click", () => {
+    const fromMeta = { utm_source: "meta", utm_medium: "120247650598250338", utm_term: "120247650598250338" };
+    expect(withAngleTerm(fromMeta, "v3")).toEqual({ ...fromMeta, utm_term: "angle-v3" });
+  });
+  it("leaves attribution untouched without a known angle", () => {
+    const fromUrl = { utm_term: "kept" };
+    expect(withAngleTerm(fromUrl, undefined)).toBe(fromUrl);
+    expect(withAngleTerm(fromUrl, "nope")).toBe(fromUrl);
   });
 });

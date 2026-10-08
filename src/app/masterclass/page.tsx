@@ -14,7 +14,7 @@ import {
   StoriesGrid,
 } from "@/components/sections/masterclass/RegistrationSections";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
-import { ATTRIBUTION_KEYS, angleTerm } from "@/lib/content/masterclass";
+import { ATTRIBUTION_KEYS, withAngleTerm } from "@/lib/content/masterclass";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
@@ -65,10 +65,8 @@ export default async function MasterclassPage({
       return text ? [[key, text.slice(0, 200)]] : [];
     }),
   );
-  // The version a person saw reaches GHL's utm_term, unless the ad set its own.
-  const term = angleTerm(angle);
-  const attribution =
-    term && !fromUrl.utm_term ? { ...fromUrl, utm_term: term } : fromUrl;
+  // The version a person saw reaches GHL's utm_term.
+  const attribution = withAngleTerm(fromUrl, angle);
   // The date lines swap to "Live now" or "Next session date coming soon" on
   // the visitor's clock; this pins their first render to the server's.
   const renderedAt = renderTime();

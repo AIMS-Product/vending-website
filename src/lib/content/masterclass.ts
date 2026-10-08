@@ -385,11 +385,24 @@ export function pageForAngle(angle: string | null | undefined): {
 
 /**
  * GHL's `utm_term` for a registration from an angle page, so the board can
- * split opt-in and show rate by version. An explicit `utm_term` on the ad URL wins.
+ * split opt-in and show rate by version.
  */
 export function angleTerm(angle: string | null | undefined): string | null {
   const key = knownAngle(angle);
   return key ? `angle-${key}` : null;
+}
+
+/**
+ * The angle version overrides any `utm_term` on the URL. Meta appends its own
+ * `utm_term` (the ad set id, already carried in `utm_medium`) to every click,
+ * so letting the URL win would drop the version on every paid visit.
+ */
+export function withAngleTerm(
+  attribution: Record<string, string>,
+  angle: string | null | undefined,
+): Record<string, string> {
+  const term = angleTerm(angle);
+  return term ? { ...attribution, utm_term: term } : attribution;
 }
 
 /**
