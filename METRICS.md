@@ -676,6 +676,23 @@ One page over the definitions above. What each card counts:
 | Cost per booked call | Per channel, per month      | §9 cost per booked over the spine; complete months only in the trend, the running month shown "so far"                                                                                                                                 |
 | Trend                | Leads, booked calls per day | §4 by arrival day; §5 Close first calls by the day they are dated                                                                                                                                                                      |
 
+### Scorecard (top card, `weekly-scorecard.ts`)
+
+The Q4'26 Leadership Scorecard's marketing rows, eight Monday-Sunday weeks, ignoring the dashboard
+window. Mon-Sun because Kody's Q3 marketing row reproduces on those weeks (88/81/65 against his
+89/79/63, 2026-10-08).
+
+| Row                | Definition                                                                                                                                        |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total booked calls | Close first calls dated in the week, **every one** (the sheet's Total; 167/162/149 against his 172/166/145). Kept = §3; mktg = kept minus Lane 2  |
+| MQLs               | Captured, as the flow card counts it: §4 leads + contacts on the spine, UTC days. "Scored" = site fills banded `top_closers`, `lane_1`, `setting` |
+| Ad spend           | Spine `spend` for sources `google` and `meta_ads` (Metricool), webinar campaigns included                                                         |
+| Cost per MQL       | Ad spend / MQLs                                                                                                                                   |
+
+A network that recorded spend anywhere in the eight weeks but has a settled day (before today) with
+no spend row marks that week's spend and cost **Incomplete**. Verified 2026-10-08 against production:
+week of 9/28 = 140 calls, 694 MQLs, $10,215.22, $14.72, Google Ads missing 10/1-10/4.
+
 Channels are the bands in `FLOW_CHANNELS` (`channel-flow.ts`), mapping both vocabularies, spine
 channel labels and Close funnel names, onto one list. Chatbot captures sit in Website & search, where
 Close files a chat-booked call (13 of 18 matched calls on 2026-10-02 had funnel Website).

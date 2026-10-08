@@ -69,14 +69,14 @@ import {
  * number on screen always names its METRICS.md section in its card's source line.
  */
 
-const num = (n: number) => n.toLocaleString("en-US");
-const money = (n: number) =>
+export const num = (n: number) => n.toLocaleString("en-US");
+export const money = (n: number) =>
   n.toLocaleString("en-US", {
     style: "currency",
     currency: "USD",
     maximumFractionDigits: 0,
   });
-const dayLabel = (day: string) =>
+export const dayLabel = (day: string) =>
   new Date(`${day}T12:00:00Z`).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -107,7 +107,7 @@ function sparkRange(window: DashboardWindow): DayRange {
 
 // ── Shared card chrome ──────────────────────────────────────────────────
 
-function DashboardCard({
+export function DashboardCard({
   title,
   source,
   action,
@@ -141,7 +141,7 @@ function DashboardCard({
   );
 }
 
-function CardMessage({
+export function CardMessage({
   tone,
   children,
 }: {
@@ -163,7 +163,7 @@ function CardMessage({
 }
 
 /** The first failed read, as a card message; null when every read is fine. */
-function failed(...reads: Read<unknown>[]): ReactNode {
+export function failed(...reads: Read<unknown>[]): ReactNode {
   const bad = reads.find((r) => !r.ok);
   return bad && !bad.ok ? (
     <CardMessage tone="error">

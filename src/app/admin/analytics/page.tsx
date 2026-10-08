@@ -19,6 +19,7 @@ import {
   TrendCard,
 } from "@/components/admin/dashboard/DashboardPanels";
 import { DashboardWindowControl } from "@/components/admin/dashboard/DashboardWindowControl";
+import { ScorecardCard } from "@/components/admin/dashboard/ScorecardCard";
 import {
   customWindowKey,
   parseDashboardWindow,
@@ -107,6 +108,15 @@ export default async function AdminAnalyticsPage({
             </Link>
           ))}
         </nav>
+      </div>
+
+      {/* Weekly, whatever the window: the sheet's rows, filled from here. */}
+      <div className="mb-5">
+        <Suspense
+          fallback={<CardSkeleton label="leadership scorecard" height="h-80" />}
+        >
+          <ScorecardCard window={window} />
+        </Suspense>
       </div>
 
       <Suspense
