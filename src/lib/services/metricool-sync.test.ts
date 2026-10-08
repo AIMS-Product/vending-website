@@ -406,6 +406,79 @@ describe("syncMetricool", () => {
     );
   });
 
+  it("takes Google Ads spend from GA4, on Metricool's keys, and never asks Metricool for it", async () => {
+    // 2026-10-08: Metricool lost Google Ads; GA4's Ads link reports the same
+    // campaign id, name and cost ($499.98 on 9/28 in both).
+    const { client, upserts } = buildClient();
+    const fetchCampaigns = vi.fn(async ({ network }: { network: string }) => {
+      if (network === "googleads")
+        throw new MetricoolNotConnectedError("googleads");
+      return [webinarCampaign];
+    });
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns,
+        fetchYouTubeVideos: noAds,
+      },
+      googleAds: {
+        fetchGoogleAdsCampaigns: async () => [
+          {
+            day: "2026-09-11",
+            id: "23805931083",
+            name: "VP | W2 | Consideration",
+            spend: 499.98,
+            impressions: 1861,
+            clicks: 168,
+          },
+        ],
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toBeNull();
+    expect(
+      fetchCampaigns.mock.calls.some(([arg]) => arg.network === "googleads"),
+    ).toBe(false);
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-11",
+        source: "google",
+        medium: "cpc",
+        campaign: "23805931083",
+        content: "VP | W2 | Consideration",
+        spend: 499.98,
+        clicks: 168,
+      }),
+    );
+  });
+
+  it("records a GA4 read failure and still writes Meta", async () => {
+    const { client, upserts } = buildClient();
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async () => [webinarCampaign],
+        fetchYouTubeVideos: noAds,
+      },
+      googleAds: {
+        fetchGoogleAdsCampaigns: async () => {
+          throw new Error("GA4 runReport failed with HTTP 403");
+        },
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toMatch(/could not be read from GA4/);
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({ source: "meta_ads" }),
+    );
+  });
+
   it("fails the ads run when nothing is connected at all", async () => {
     const { client } = buildClient();
     const result = await syncMetricool({

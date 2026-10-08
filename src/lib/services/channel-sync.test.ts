@@ -114,6 +114,7 @@ const ga4 = (rows: unknown[], thankYou: unknown[] = []) =>
     fetchPageViews: vi.fn(),
     fetchChannelSessions: vi.fn(async () => rows),
     fetchThankYouSessions: vi.fn(async () => thankYou),
+    fetchGoogleAdsCampaigns: vi.fn(async () => []),
   }) as unknown as Ga4Client;
 
 const bitly = (links: Array<{ id: string; longUrl: string }>) =>

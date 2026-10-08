@@ -57,6 +57,26 @@ type ReportSpec = {
   dimensionFilter?: Record<string, unknown>;
 };
 
+/**
+ * Google Ads cost per campaign per day, from the Google Ads link on the GA4
+ * property. The campaign id and name are the ones Metricool reported (checked
+ * 2026-10-08: 23805931083 "VP | W2 | Consideration", $499.98 on 9/28 in both),
+ * so rows built from it land on the same spine keys. GA4 requires a campaign
+ * dimension beside the advertiser metrics.
+ */
+const GOOGLE_ADS_REPORT: ReportSpec = {
+  dimensions: [
+    "date",
+    "sessionGoogleAdsCampaignId",
+    "sessionGoogleAdsCampaignName",
+  ],
+  metrics: [
+    "advertiserAdCost",
+    "advertiserAdImpressions",
+    "advertiserAdClicks",
+  ],
+};
+
 const PAGE_VIEW_REPORT: ReportSpec = {
   dimensions: ["date", "landingPage", "sessionCampaignName", "sessionSource"],
   metrics: [
@@ -303,6 +323,20 @@ export type Ga4Client = {
     startDate: string;
     endDate: string;
   }): Promise<Ga4ChannelSessionRow[]>;
+  /** Google Ads campaigns with cost, per day, via the property's Ads link. */
+  fetchGoogleAdsCampaigns(range: {
+    startDate: string;
+    endDate: string;
+  }): Promise<Ga4AdCampaignRow[]>;
+};
+
+export type Ga4AdCampaignRow = {
+  day: string;
+  id: string;
+  name: string;
+  spend: number;
+  impressions: number;
+  clicks: number;
 };
 
 export function createGa4Client({
@@ -442,6 +476,12 @@ export function createGa4Client({
         (row) => row.sessions,
         { verifyTotals: false },
       ),
+    // Cost is a decimal: a float sum never equals GA4's TOTAL exactly, so the
+    // exact-match check would refuse every read. A day is a handful of rows.
+    fetchGoogleAdsCampaigns: (range) =>
+      fetchAll(GOOGLE_ADS_REPORT, range, toAdCampaignRow, (row) => row.spend, {
+        verifyTotals: false,
+      }),
   };
 }
 
@@ -490,6 +530,25 @@ function cells(raw: unknown): {
       const parsed = Number(value);
       return Number.isFinite(parsed) ? parsed : 0;
     },
+  };
+}
+
+/** A campaign with an id and some cost; "(not set)" rows are site traffic. */
+function toAdCampaignRow(raw: unknown): Ga4AdCampaignRow | null {
+  const row = cells(raw);
+  if (!row) return null;
+  const day = isoDay(row.dimension(0));
+  const id = row.dimension(1);
+  if (!day || !/^\d+$/.test(id)) return null;
+  const spend = row.metric(0);
+  if (!(spend > 0)) return null;
+  return {
+    day,
+    id,
+    name: row.dimension(2),
+    spend,
+    impressions: row.metric(1),
+    clicks: row.metric(2),
   };
 }
 

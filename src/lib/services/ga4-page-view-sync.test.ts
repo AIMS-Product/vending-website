@@ -97,6 +97,7 @@ function buildGa4(rows: Ga4PageViewRow[]): {
       }),
       fetchChannelSessions: vi.fn(async () => []),
       fetchThankYouSessions: vi.fn(async () => []),
+      fetchGoogleAdsCampaigns: vi.fn(async () => []),
     },
   };
 }

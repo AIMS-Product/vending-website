@@ -765,7 +765,7 @@ async function pageAll<T>(
   return rows;
 }
 
-function ga4FromConfig(): Ga4Client | null {
+export function ga4FromConfig(): Ga4Client | null {
   const serviceAccountJson = config.GA4_SERVICE_ACCOUNT_JSON;
   const propertyId = config.GA4_PROPERTY_ID;
   if (!serviceAccountJson || !propertyId) return null;

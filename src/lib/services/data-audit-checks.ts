@@ -132,7 +132,7 @@ export async function runDataAudit(
       ),
     )),
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
-    ...(await safe("ads", () => adSpendCheck(client, metricool, now))),
+    ...(await safe("ads", () => adSpendCheck(client, metricool, ga4, now))),
     ...(await safe("ghl", () => ghlFormsCheck(client, ghl, now))),
     ...(await safe("youtube", () =>
       youtubeCheck(client, youtubeSource || null, now),
@@ -390,6 +390,7 @@ async function calendlyChecks(
 async function adSpendCheck(
   client: Client,
   metricool: MetricoolClient | null,
+  ga4: Pick<Ga4Client, "fetchGoogleAdsCampaigns"> | null,
   now: Date,
 ): Promise<AuditResult[]> {
   const { from, to, label } = settledWindow(
@@ -414,8 +415,19 @@ async function adSpendCheck(
     ];
   }
 
-  const networks: readonly AdNetwork[] = ["googleads", "facebookads"];
+  // Google Ads spend is written from GA4 when GA4 is configured (the sync
+  // does the same), so it is verified there; Meta always through Metricool.
+  const networks: readonly AdNetwork[] = ga4
+    ? ["facebookads"]
+    : ["googleads", "facebookads"];
   let source = 0;
+  if (ga4) {
+    const google = await ga4.fetchGoogleAdsCampaigns({
+      startDate: from,
+      endDate: to,
+    });
+    for (const campaign of google) source += campaign.spend;
+  }
   // A network with no connection would add 0 here and agree with our 0, which
   // is how a removed Google Ads connection passed this check from 2026-10-01.
   const notConnected = new Set<AdNetwork>();
