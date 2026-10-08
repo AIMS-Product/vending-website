@@ -35,8 +35,8 @@ describe("booking funnel routes", () => {
     }
     expect(BOOKING_FUNNEL_PATHS).toHaveLength(
       // /contact, /book-now, /masterclass, /playbook, /playbook/checkout,
-      // 4 webinar replays
-      9 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
+      // 4 webinar replays, /qa
+      10 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
     );
   });
 

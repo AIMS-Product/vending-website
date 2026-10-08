@@ -16,9 +16,14 @@ import { trackCtaClick } from "@/lib/tracking/funnel-events";
 export function CountdownBanner({
   startsAt,
   renderedAt,
+  lead = countdownBanner.lead,
+  cta = countdownBanner.cta,
 }: {
   startsAt: string | null;
   renderedAt: number;
+  /** The words before the countdown; /qa says "Live Q&A starts in". */
+  lead?: string;
+  cta?: string;
 }) {
   const now = useNow() ?? renderedAt;
   const left = startsAt ? Date.parse(startsAt) - now : NaN;
@@ -30,12 +35,9 @@ export function CountdownBanner({
       className="flex min-h-11 items-center justify-center gap-2 border-b-2 border-[#111111] bg-[#111111] px-5 text-center text-sm font-bold text-white hover:underline focus-visible:ring-2 focus-visible:ring-[#55b8e8] focus-visible:outline-none focus-visible:ring-inset"
     >
       <span role="timer" aria-live="off">
-        {countdownBanner.lead}{" "}
-        <span className="tabular-nums">{compactLeft(left)}</span>
+        {lead} <span className="tabular-nums">{compactLeft(left)}</span>
       </span>
-      <span className="hidden text-[#55b8e8] sm:inline">
-        · {countdownBanner.cta}
-      </span>
+      <span className="hidden text-[#55b8e8] sm:inline">· {cta}</span>
       <span aria-hidden className="text-[#55b8e8]">
         →
       </span>

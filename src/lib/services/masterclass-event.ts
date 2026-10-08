@@ -5,6 +5,7 @@ import { unstable_cache } from "next/cache";
 import { config } from "@/lib/config";
 import { GHL_VALUE_NAMES, parseWebinarStart } from "@/lib/content/masterclass";
 import { createGhlClient } from "@/lib/ghl/client";
+import { QA_VALUE_NAMES, parseQaStart, safeZoomLink } from "@/lib/content/qa";
 
 export type MasterclassEvent = {
   /** The GHL text as written, shown when the countdown cannot be computed. */
@@ -60,5 +61,45 @@ export async function getMasterclassEvent(): Promise<MasterclassEvent> {
   } catch (error) {
     console.error("masterclass: GHL custom values read failed", error);
     return { label: null, startsAt: null, anthony: null };
+  }
+}
+
+export type QaEvent = {
+  label: string | null;
+  startsAt: string | null;
+  /** The Zoom registration link, null when unset or not a Zoom URL. */
+  registerUrl: string | null;
+  anthony: MasterclassEvent["anthony"];
+};
+
+/** Anthony's Thursday Q&A, from the same cached GHL read as the masterclass. */
+export async function getQaEvent(now: number): Promise<QaEvent> {
+  const empty = {
+    label: null,
+    startsAt: null,
+    registerUrl: null,
+    anthony: null,
+  };
+  if (!config.GHL_API_KEY || !config.GHL_LOCATION_ID) return empty;
+  try {
+    const values = new Map(
+      (await cachedCustomValues()).map((v) => [v.name, v.value.trim()]),
+    );
+    const label = values.get(QA_VALUE_NAMES.date) || null;
+    const locations = values.get(GHL_VALUE_NAMES.locations);
+    const machines = values.get(GHL_VALUE_NAMES.machines);
+    const revenue = values.get(GHL_VALUE_NAMES.revenue);
+    return {
+      label,
+      startsAt: (label && parseQaStart(label, now)?.toISOString()) || null,
+      registerUrl: safeZoomLink(values.get(QA_VALUE_NAMES.link)),
+      anthony:
+        locations && machines && revenue
+          ? { locations, machines, revenue }
+          : null,
+    };
+  } catch (error) {
+    console.error("qa: GHL custom values read failed", error);
+    return empty;
   }
 }

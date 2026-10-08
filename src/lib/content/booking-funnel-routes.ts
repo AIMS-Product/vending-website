@@ -30,6 +30,7 @@ const HAND_WRITTEN_BOOKING_ROUTES = [
   "/masterclass-replay-adnb",
   "/masterclass-replay-meta",
   "/masterclass-replay-advisory",
+  "/qa",
 ] as const;
 
 export const BOOKING_FUNNEL_PATHS: readonly string[] = [

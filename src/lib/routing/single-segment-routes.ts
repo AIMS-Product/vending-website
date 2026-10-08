@@ -36,6 +36,7 @@ export const APP_TOP_LEVEL_PAGE_SEGMENTS: ReadonlySet<string> = new Set([
   "pre-call-resources",
   "privacy",
   "process",
+  "qa",
   "qa-links",
   "solutions",
   "spam-policy",
