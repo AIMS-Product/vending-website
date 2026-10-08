@@ -1,12 +1,12 @@
 import Link from "next/link";
 import {
   AdminStatusBadge,
+  adminCardClass,
   adminEyebrowClass,
   adminLinkClass,
 } from "@/components/admin/AdminUi";
 import {
   CardMessage,
-  DashboardCard,
   dayLabel,
   failed,
   money,
@@ -31,6 +31,8 @@ import {
  * from it any day. Definitions: METRICS.md §16 "Scorecard".
  */
 
+const compactCardClass = `${adminCardClass} min-w-0`;
+
 const cents = (n: number) =>
   n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 
@@ -54,103 +56,173 @@ export async function ScorecardCard({ window }: { window: DashboardWindow }) {
         }) // newest left: this week and last are the ones read
       : [];
   const gaps = gapSummary(rows);
+  // The sheet takes the last finished week; the running one is "so far".
+  const shown = rows.find((w) => w.complete) ?? rows[0];
+  const prior = shown ? rows[rows.indexOf(shown) + 1] : undefined;
+
+  if (problem) return <section className={compactCardClass}>{problem}</section>;
+  if (!shown)
+    return (
+      <section className={compactCardClass}>
+        <CardMessage tone="empty">No weeks to show yet.</CardMessage>
+      </section>
+    );
+  const short = shown.missingSpend.length > 0;
 
   return (
-    <DashboardCard
+    <section
       id="scorecard"
-      title="Leadership scorecard: marketing"
-      source="Monday to Sunday weeks, as the Q4'26 Leadership Scorecard counts them. Each row names its source below (§16)."
+      aria-label="Leadership scorecard: marketing"
+      className={compactCardClass}
     >
-      {problem ??
-        (rows.length === 0 ? (
-          <CardMessage tone="empty">No weeks to show yet.</CardMessage>
-        ) : (
-          <>
-            {gaps ? (
-              <div
-                role="alert"
-                className="rounded-ui border-ui-warn/25 bg-ui-warn-fill text-ui-warn-ink mb-4 border px-3 py-2 text-[0.8125rem]"
-              >
-                {gaps} Spend and cost per MQL in those weeks are too low until
-                the connection is restored.{" "}
-                <Link className={adminLinkClass} href="/admin/data">
-                  Check data health
-                </Link>
-                .
-              </div>
-            ) : null}
-            <div className="-mx-4 overflow-x-auto px-4">
-              <table className="w-full min-w-[40rem] border-collapse text-[0.8125rem] tabular-nums">
-                <caption className="sr-only">
-                  Booked calls, MQLs, ad spend and cost per MQL by week
-                </caption>
-                <thead>
-                  <tr className="border-ui-line border-b">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+        <div className="min-w-0">
+          <h2 className={adminEyebrowClass}>Leadership scorecard</h2>
+          <p className="text-ui-text-muted mt-0.5 text-xs whitespace-nowrap">
+            {dayLabel(shown.start)} – {dayLabel(shown.end)}
+          </p>
+        </div>
+        <Stat
+          label="Booked calls"
+          value={num(shown.booked)}
+          now={shown.booked}
+          before={prior?.booked}
+        />
+        <Stat
+          label="MQLs"
+          value={num(shown.mqls)}
+          now={shown.mqls}
+          before={prior?.mqls}
+        />
+        <Stat
+          label={short ? "Ad spend (incomplete)" : "Ad spend"}
+          value={money(shown.spend)}
+          now={shown.spend}
+          before={prior?.spend}
+        />
+        <Stat
+          label={short ? "Cost per MQL (incomplete)" : "Cost per MQL"}
+          value={shown.costPerMql === null ? "–" : cents(shown.costPerMql)}
+          now={shown.costPerMql}
+          before={prior?.costPerMql}
+        />
+      </div>
+      <details className="group mt-3">
+        <summary className="text-ui-accent cursor-pointer text-xs font-medium underline-offset-2 hover:underline">
+          All weeks{gaps ? " · spend gap" : ""}
+        </summary>
+        <div className="mt-3">
+          {gaps ? (
+            <p role="alert" className="text-ui-warn-ink mb-2 text-xs">
+              {gaps}{" "}
+              <Link className={adminLinkClass} href="/admin/data">
+                Data health
+              </Link>
+            </p>
+          ) : null}
+          <div className="-mx-4 overflow-x-auto px-4">
+            <table className="w-full min-w-[40rem] border-collapse text-[0.8125rem] tabular-nums">
+              <caption className="sr-only">
+                Booked calls, MQLs, ad spend and cost per MQL by week
+              </caption>
+              <thead>
+                <tr className="border-ui-line border-b">
+                  <th
+                    scope="col"
+                    className="text-ui-text-muted bg-ui-surface sticky left-0 py-2 pr-4 text-left font-medium"
+                  >
+                    Metric
+                  </th>
+                  {rows.map((w) => (
                     <th
+                      key={w.start}
                       scope="col"
-                      className="text-ui-text-muted bg-ui-surface sticky left-0 py-2 pr-4 text-left font-medium"
+                      className="text-ui-text-muted px-2 py-2 text-right font-medium whitespace-nowrap"
                     >
-                      Metric
+                      {dayLabel(w.start)} – {dayLabel(w.end)}
+                      {w.complete ? null : (
+                        <span className="text-ui-text-subtle block text-[0.6875rem] font-normal">
+                          so far
+                        </span>
+                      )}
                     </th>
-                    {rows.map((w) => (
-                      <th
-                        key={w.start}
-                        scope="col"
-                        className="text-ui-text-muted px-2 py-2 text-right font-medium whitespace-nowrap"
-                      >
-                        {dayLabel(w.start)} – {dayLabel(w.end)}
-                        {w.complete ? null : (
-                          <span className="text-ui-text-subtle block text-[0.6875rem] font-normal">
-                            so far
-                          </span>
-                        )}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-ui-line divide-y">
-                  <Row
-                    label="Total booked calls"
-                    rows={rows}
-                    value={(w) => num(w.booked)}
-                    detail={(w) =>
-                      `${num(w.bookedKept)} kept · ${num(w.bookedMarketing)} mktg`
-                    }
-                  />
-                  <Row
-                    label="MQLs"
-                    rows={rows}
-                    value={(w) => num(w.mqls)}
-                    detail={(w) => `${num(w.qualified)} scored`}
-                  />
-                  <Row
-                    label="Ad spend"
-                    rows={rows}
-                    value={(w) => money(w.spend)}
-                    detail={(w) =>
-                      w.spendByNetwork.map(
-                        (n) => `${n.label} ${money(n.spend)}`,
-                      )
-                    }
-                    incomplete={(w) => w.missingSpend.length > 0}
-                  />
-                  <Row
-                    label="Cost per MQL"
-                    rows={rows}
-                    value={(w) =>
-                      w.costPerMql === null ? "–" : cents(w.costPerMql)
-                    }
-                    incomplete={(w) =>
-                      w.missingSpend.length > 0 && w.costPerMql !== null
-                    }
-                  />
-                </tbody>
-              </table>
-            </div>
-            <Definitions />
-          </>
-        ))}
-    </DashboardCard>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-ui-line divide-y">
+                <Row
+                  label="Total booked calls"
+                  rows={rows}
+                  value={(w) => num(w.booked)}
+                  detail={(w) =>
+                    `${num(w.bookedKept)} kept · ${num(w.bookedMarketing)} mktg`
+                  }
+                />
+                <Row
+                  label="MQLs"
+                  rows={rows}
+                  value={(w) => num(w.mqls)}
+                  detail={(w) => `${num(w.qualified)} scored`}
+                />
+                <Row
+                  label="Ad spend"
+                  rows={rows}
+                  value={(w) => money(w.spend)}
+                  detail={(w) =>
+                    w.spendByNetwork.map((n) => `${n.label} ${money(n.spend)}`)
+                  }
+                  incomplete={(w) => w.missingSpend.length > 0}
+                />
+                <Row
+                  label="Cost per MQL"
+                  rows={rows}
+                  value={(w) =>
+                    w.costPerMql === null ? "–" : cents(w.costPerMql)
+                  }
+                  incomplete={(w) =>
+                    w.missingSpend.length > 0 && w.costPerMql !== null
+                  }
+                />
+              </tbody>
+            </table>
+          </div>
+          <Definitions />
+        </div>
+      </details>
+    </section>
+  );
+}
+
+/** One number with its change on the week before, quiet unless asked. */
+function Stat({
+  label,
+  value,
+  now,
+  before,
+}: {
+  label: string;
+  value: string;
+  now: number | null;
+  before: number | null | undefined;
+}) {
+  const change =
+    now !== null && before ? Math.round(((now - before) / before) * 100) : null;
+  return (
+    <div className="min-w-0">
+      <p className="text-ui-text text-xl font-semibold tracking-tight tabular-nums">
+        {value}
+      </p>
+      <p className="text-ui-text-muted text-xs whitespace-nowrap">
+        {label}
+        {change === null ? null : (
+          <span className="text-ui-text-subtle tabular-nums">
+            {" "}
+            · {change > 0 ? "+" : ""}
+            {change}% wk/wk
+          </span>
+        )}
+      </p>
+    </div>
   );
 }
 
@@ -219,7 +291,7 @@ function Definitions() {
     ],
     [
       "Ad spend",
-      "Google Ads and Meta spend as Metricool reports it, including the webinar campaigns. Incomplete = a network that spent in these weeks has days with nothing recorded, usually a lost Metricool connection.",
+      "Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Metricool, webinar campaigns included. Incomplete = a network that spent in these weeks has days with nothing recorded.",
     ],
     ["Cost per MQL", "Ad spend divided by MQLs for the same week."],
   ];
@@ -244,5 +316,5 @@ function gapSummary(rows: readonly ScorecardWeek[]): string | null {
   if (days.size === 0) return null;
   return `${[...days]
     .map(([label, n]) => `${label} has ${num(n)} day${n === 1 ? "" : "s"}`)
-    .join(" and ")} with no spend recorded.`;
+    .join(" and ")} with no spend recorded, so those weeks read low.`;
 }

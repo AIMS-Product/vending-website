@@ -679,14 +679,15 @@ One page over the definitions above. What each card counts:
 ### Scorecard (top card, `weekly-scorecard.ts`)
 
 The Q4'26 Leadership Scorecard's marketing rows, eight Monday-Sunday weeks, ignoring the dashboard
-window. Mon-Sun because Kody's Q3 marketing row reproduces on those weeks (88/81/65 against his
+window. Collapsed it shows the last finished week with week-on-week change; the eight-week table and
+definitions sit under "All weeks". Mon-Sun because Kody's Q3 marketing row reproduces on those weeks (88/81/65 against his
 89/79/63, 2026-10-08).
 
 | Row                | Definition                                                                                                                                        |
 | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Total booked calls | Close first calls dated in the week, **every one** (the sheet's Total; 167/162/149 against his 172/166/145). Kept = §3; mktg = kept minus Lane 2  |
 | MQLs               | Captured, as the flow card counts it: §4 leads + contacts on the spine, UTC days. "Scored" = site fills banded `top_closers`, `lane_1`, `setting` |
-| Ad spend           | Spine `spend` for sources `google` and `meta_ads` (Metricool), webinar campaigns included                                                         |
+| Ad spend           | Spine `spend` for sources `google` (GA4 Google Ads link) and `meta_ads` (Metricool), webinar campaigns included                                   |
 | Cost per MQL       | Ad spend / MQLs                                                                                                                                   |
 
 A network that recorded spend anywhere in the eight weeks but has a settled day (before today) with

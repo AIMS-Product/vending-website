@@ -23,7 +23,8 @@ import {
   type ChannelDailyRow,
   type SyncRunOutcome,
 } from "@/lib/services/channel-daily";
-import { skipped } from "@/lib/services/channel-sync";
+import { ga4FromConfig, skipped } from "@/lib/services/channel-sync";
+import type { Ga4Client } from "@/lib/ga4/client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, TablesInsert } from "@/types/database";
 
@@ -115,6 +116,11 @@ export async function syncMetricool(
     metricool?: MetricoolClient | null;
     /** Brands to pull, in order; the first brand to report a post owns it. */
     blogIds?: string[];
+    /**
+     * Where Google Ads spend comes from: GA4's Ads link. Explicit null falls
+     * back to Metricool's googleads; undefined builds from config.
+     */
+    googleAds?: Pick<Ga4Client, "fetchGoogleAdsCampaigns"> | null;
     now?: Date;
     days?: number;
   } = {},
@@ -124,6 +130,8 @@ export async function syncMetricool(
   const metricool =
     deps.metricool === undefined ? metricoolFromConfig() : deps.metricool;
   const blogIds = deps.blogIds ?? blogIdsFromConfig();
+  const googleAds =
+    deps.googleAds === undefined ? ga4FromConfig() : deps.googleAds;
   const endDate = dayKey(now);
   const startDate = dayKey(addDays(now, -(deps.days ?? WINDOW_DAYS)));
 
@@ -200,6 +208,7 @@ export async function syncMetricool(
       day = dayKey(addDays(new Date(`${day}T00:00:00.000Z`), 1))
     ) {
       for (const network of AD_NETWORKS) {
+        if (network === "googleads" && googleAds) continue;
         if (notConnected.has(network)) continue;
         try {
           const campaigns = await metricool.fetchCampaigns({
@@ -216,11 +225,45 @@ export async function syncMetricool(
         }
       }
     }
+    // Google Ads through GA4 since its Metricool connection was lost
+    // (2026-09-30): same campaign ids and cost, so the same spine keys.
+    let googleError: string | null = null;
+    if (googleAds) {
+      try {
+        const campaigns = await googleAds.fetchGoogleAdsCampaigns({
+          startDate: adsStart,
+          endDate,
+        });
+        for (const c of campaigns)
+          rows.push(
+            adRow(
+              "googleads",
+              {
+                id: c.id,
+                name: c.name,
+                spend: c.spend,
+                impressions: c.impressions,
+                reach: null,
+                clicks: c.clicks,
+              },
+              c.day,
+            ),
+          );
+      } catch (error) {
+        console.error("google ads spend via GA4 failed", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        googleError =
+          "Google Ads spend could not be read from GA4; see the server log.";
+      }
+    }
     const disconnected =
       notConnected.size > 0
         ? `${[...notConnected].map((n) => AD_NETWORK_LABELS[n]).join(" and ")} not connected in Metricool for brand ${adsBlogId}; no spend is being recorded for ${notConnected.size > 1 ? "them" : "it"}. Reconnect in Metricool (brand settings > Connections).`
         : null;
-    if (rows.length === 0) return { rowsWritten: 0, error: disconnected };
+    const readError =
+      [disconnected, googleError].filter(Boolean).join(" ") || null;
+    if (rows.length === 0) return { rowsWritten: 0, error: readError };
     const written = await upsertChannelDaily(client, rows, { now });
     // Only after every write landed: clearing a renamed row whose replacement
     // failed to write would lose that day's spend instead of double counting it.
@@ -235,7 +278,7 @@ export async function syncMetricool(
         : null;
     return {
       rowsWritten: written.written + cleared.written,
-      error: [disconnected, writeError].filter(Boolean).join(" ") || null,
+      error: [readError, writeError].filter(Boolean).join(" ") || null,
     };
   });
   return { endDate, connector, ads };

@@ -220,6 +220,73 @@ describe("createGa4Client", () => {
     expect(body.orderBys).toHaveLength(4);
   });
 
+  it("reads Google Ads campaigns with cost, dropping site traffic and zero-cost rows", async () => {
+    const { fetchImpl, calls } = buildFetch({
+      report: () => ({
+        status: 200,
+        body: {
+          rows: [
+            {
+              dimensionValues: [
+                { value: "20260928" },
+                { value: "23805931083" },
+                { value: "VP | W2 | Consideration" },
+              ],
+              metricValues: [
+                { value: "499.982828" },
+                { value: "1861" },
+                { value: "168" },
+              ],
+            },
+            {
+              dimensionValues: [
+                { value: "20260928" },
+                { value: "(not set)" },
+                { value: "(not set)" },
+              ],
+              metricValues: [{ value: "0" }, { value: "0" }, { value: "0" }],
+            },
+            {
+              dimensionValues: [
+                { value: "20260928" },
+                { value: "111" },
+                { value: "Paused" },
+              ],
+              metricValues: [{ value: "0" }, { value: "0" }, { value: "0" }],
+            },
+          ],
+        },
+      }),
+    });
+    const client = createGa4Client({
+      serviceAccountJson: SERVICE_ACCOUNT,
+      propertyId: "123",
+      fetchImpl,
+    });
+    const rows = await client.fetchGoogleAdsCampaigns({
+      startDate: "2026-09-28",
+      endDate: "2026-09-28",
+    });
+    expect(rows).toEqual([
+      {
+        day: "2026-09-28",
+        id: "23805931083",
+        name: "VP | W2 | Consideration",
+        spend: 499.982828,
+        impressions: 1861,
+        clicks: 168,
+      },
+    ]);
+    const report = calls.find((c) => c.url.includes(":runReport"))!.body as {
+      metrics: Array<{ name: string }>;
+    };
+    expect(report.metrics.map((m) => m.name)).toEqual([
+      "advertiserAdCost",
+      "advertiserAdImpressions",
+      "advertiserAdClicks",
+    ]);
+  });
+
   it("refuses a read whose rows do not add up to GA4's own total", async () => {
     const { fetchImpl } = buildFetch({
       report: () => ({
