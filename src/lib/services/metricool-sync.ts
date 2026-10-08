@@ -7,6 +7,8 @@ import {
 } from "@/lib/analytics/link-standard";
 import { config } from "@/lib/config";
 import {
+  AD_NETWORK_LABELS,
+  MetricoolNotConnectedError,
   createMetricoolClient,
   readMetric,
   type AdNetwork,
@@ -189,23 +191,36 @@ export async function syncMetricool(
     const adsBlogId = blogIds[0]!;
     const rows: ChannelDailyRow[] = [];
     const adsStart = dayKey(addDays(now, -(deps.days ?? ADS_WINDOW_DAYS)));
+    // A network with no connection is asked once, then left out; the others
+    // still write, and the run is marked failed so the trust bar says so.
+    const notConnected = new Set<AdNetwork>();
     for (
       let day = adsStart;
       day <= endDate;
       day = dayKey(addDays(new Date(`${day}T00:00:00.000Z`), 1))
     ) {
       for (const network of AD_NETWORKS) {
-        const campaigns = await metricool.fetchCampaigns({
-          blogId: adsBlogId,
-          network,
-          from: day,
-          to: day,
-        });
-        for (const campaign of campaigns)
-          rows.push(adRow(network, campaign, day));
+        if (notConnected.has(network)) continue;
+        try {
+          const campaigns = await metricool.fetchCampaigns({
+            blogId: adsBlogId,
+            network,
+            from: day,
+            to: day,
+          });
+          for (const campaign of campaigns)
+            rows.push(adRow(network, campaign, day));
+        } catch (error) {
+          if (!(error instanceof MetricoolNotConnectedError)) throw error;
+          notConnected.add(network);
+        }
       }
     }
-    if (rows.length === 0) return { rowsWritten: 0 };
+    const disconnected =
+      notConnected.size > 0
+        ? `${[...notConnected].map((n) => AD_NETWORK_LABELS[n]).join(" and ")} not connected in Metricool for brand ${adsBlogId}; no spend is being recorded for ${notConnected.size > 1 ? "them" : "it"}. Reconnect in Metricool (brand settings > Connections).`
+        : null;
+    if (rows.length === 0) return { rowsWritten: 0, error: disconnected };
     const written = await upsertChannelDaily(client, rows, { now });
     // Only after every write landed: clearing a renamed row whose replacement
     // failed to write would lose that day's spend instead of double counting it.
@@ -214,12 +229,13 @@ export async function syncMetricool(
         ? await clearRenamedAdRows(client, rows, { now })
         : { written: 0, failed: 0 };
     const failed = written.failed + cleared.failed;
+    const writeError =
+      failed > 0
+        ? `${failed} channel_daily rows failed to write; see the server log.`
+        : null;
     return {
       rowsWritten: written.written + cleared.written,
-      error:
-        failed > 0
-          ? `${failed} channel_daily rows failed to write; see the server log.`
-          : null,
+      error: [disconnected, writeError].filter(Boolean).join(" ") || null,
     };
   });
   return { endDate, connector, ads };

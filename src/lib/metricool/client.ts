@@ -90,7 +90,8 @@ export type MetricoolClient = {
   /**
    * Campaign totals for [from, to] on one ad network. Metricool aggregates
    * over the range, so a single day is asked for as from = to = that day.
-   * A network the brand has not connected answers 403 and yields no rows.
+   * A network the brand has not connected answers 403, which throws
+   * `MetricoolNotConnectedError`: no connection is not the same as no spend.
    */
   fetchCampaigns(range: {
     blogId: string;
@@ -119,6 +120,24 @@ export class MetricoolApiError extends Error {
     this.name = "MetricoolApiError";
   }
 }
+
+/**
+ * An ad network with no connection on the brand. Thrown, not returned as no
+ * campaigns: an empty list reads as "spent nothing", and on 2026-10-01 a
+ * removed Google Ads connection hid that way from the sync and the nightly
+ * audit alike while the ads kept running.
+ */
+export class MetricoolNotConnectedError extends MetricoolApiError {
+  constructor(readonly network: AdNetwork) {
+    super(`${AD_NETWORK_LABELS[network]} is not connected in Metricool`, 403);
+    this.name = "MetricoolNotConnectedError";
+  }
+}
+
+export const AD_NETWORK_LABELS: Record<AdNetwork, string> = {
+  googleads: "Google Ads",
+  facebookads: "Meta Ads",
+};
 
 type RawPost = {
   id?: string;
@@ -331,7 +350,7 @@ export function createMetricoolClient(options: {
         );
       } catch (error) {
         if (error instanceof MetricoolApiError && error.status === 403)
-          return [];
+          throw new MetricoolNotConnectedError(range.network);
         throw error;
       }
       return (body.data ?? []).flatMap((raw) => {

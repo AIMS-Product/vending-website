@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/database";
-import type {
-  MetricoolCampaign,
-  MetricoolClient,
-  MetricoolPost,
+import {
+  MetricoolNotConnectedError,
+  type MetricoolCampaign,
+  type MetricoolClient,
+  type MetricoolPost,
 } from "@/lib/metricool/client";
 
 vi.mock("@/lib/config", () => ({ config: {} }));
@@ -369,6 +370,59 @@ describe("syncMetricool", () => {
       "metricool-posts",
       "metricool-ads",
     ]);
+  });
+
+  it("fails the ads run when a network is not connected, and still writes the others", async () => {
+    // Production 2026-10-01: Google Ads was disconnected in Metricool, the 403
+    // read as "no campaigns", and the run recorded clean with no Google spend.
+    const { client, upserts } = buildClient();
+    const fetchCampaigns = vi.fn(
+      async ({ network, from }: { network: string; from: string }) => {
+        if (network === "googleads")
+          throw new MetricoolNotConnectedError("googleads");
+        return from === "2026-09-11" ? [webinarCampaign] : [];
+      },
+    );
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns,
+        fetchYouTubeVideos: noAds,
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toMatch(
+      /Google Ads not connected in Metricool for brand 6626386/,
+    );
+    // Asked once for Google, then left out; Meta asked every day.
+    expect(
+      fetchCampaigns.mock.calls.filter(([arg]) => arg.network === "googleads"),
+    ).toHaveLength(1);
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({ source: "meta_ads", spend: 2435.2 }),
+    );
+  });
+
+  it("fails the ads run when nothing is connected at all", async () => {
+    const { client } = buildClient();
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async ({ network }) => {
+          throw new MetricoolNotConnectedError(network);
+        },
+        fetchYouTubeVideos: noAds,
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads).toMatchObject({ rowsWritten: 0 });
+    expect(result.ads.error).toMatch(/Google Ads and Meta Ads not connected/);
   });
 
   it("clears a campaign day stored under the name it had before a rename", async () => {

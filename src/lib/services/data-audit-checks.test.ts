@@ -4,6 +4,8 @@ import type { Database } from "@/types/database";
 
 vi.mock("@/lib/config", () => ({ config: {} }));
 
+import { config } from "@/lib/config";
+import { MetricoolNotConnectedError } from "@/lib/metricool/client";
 import { daysBetween, runDataAudit, settledWindow } from "./data-audit-checks";
 import { staleOnOwnDay } from "./data-audit-spine-orphans";
 
@@ -239,6 +241,40 @@ describe("runDataAudit", () => {
     expect(
       run.results.find((result) => result.checkId === "connector-health"),
     ).toMatchObject({ status: "fail" });
+  });
+});
+
+describe("ad-spend", () => {
+  // 2026-10-01: Google Ads was disconnected in Metricool. Its 403 read as $0,
+  // matched our $0, and the check passed every night while the ads ran.
+  it("fails when an ad network is not connected, instead of agreeing on $0", async () => {
+    const settings = config as Record<string, unknown>;
+    settings.METRICOOL_BLOG_IDS = "6626386";
+    try {
+      const run = await runDataAudit({
+        now,
+        client: fakeClient({}),
+        ga4: null,
+        close: null,
+        calendly: null,
+        metricool: {
+          fetchPosts: async () => [],
+          fetchYouTubeVideos: async () => [],
+          fetchCampaigns: async ({ network }) => {
+            if (network === "googleads")
+              throw new MetricoolNotConnectedError("googleads");
+            return [];
+          },
+        },
+        youtube: null,
+        ghl: null,
+      });
+      const spend = run.results.find((result) => result.checkId === "ad-spend");
+      expect(spend).toMatchObject({ status: "fail" });
+      expect(spend?.detail).toMatch(/Google Ads is not connected in Metricool/);
+    } finally {
+      delete settings.METRICOOL_BLOG_IDS;
+    }
   });
 });
 
