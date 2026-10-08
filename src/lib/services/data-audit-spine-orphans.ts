@@ -137,9 +137,10 @@ const isWebinarAudienceRow = (row: SpineRow) =>
   ["warm", "cold", "unattributed"].includes(row.content);
 
 /**
- * manychat-ingest writes one fixed key per day (manychat / chat / pearl) and
- * rewrites it only when an event for that day arrives. Its key cannot move,
- * so it cannot strand a row, and an old stamp is its normal state.
+ * manychat-ingest writes one fixed key per account per day (manychat / chat /
+ * pearl, content = account) and rewrites it only when an event for that day
+ * arrives. Its key cannot move, so it cannot strand a row, and an old stamp is
+ * its normal state.
  */
 const isManychatRow = (row: SpineRow) => row.source === "manychat";
 

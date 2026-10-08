@@ -51,3 +51,6 @@ reports/ux-persona-review/ux-review.html
 
 # Agent scratch worktrees
 .claude/worktrees/
+
+# ManyChat probe / backfill raw responses (subscriber PII)
+tmp/manychat-*/

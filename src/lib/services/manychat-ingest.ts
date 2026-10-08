@@ -28,6 +28,18 @@ export const MANYCHAT_EVENTS = [
 
 export type ManychatEvent = (typeof MANYCHAT_EVENTS)[number];
 
+/** The Instagram accounts with their own ManyChat page and API key. */
+export const MANYCHAT_ACCOUNTS = ["mike", "anthony"] as const;
+
+export type ManychatAccount = (typeof MANYCHAT_ACCOUNTS)[number];
+
+/** Each account's key; Mike falls back to the original single key. */
+export function manychatApiKey(account: ManychatAccount): string | undefined {
+  return account === "mike"
+    ? (config.MANYCHAT_API_KEY_MIKE ?? config.MANYCHAT_API_KEY)
+    : config.MANYCHAT_API_KEY_ANTHONY;
+}
+
 /**
  * What a flow sends. Only the contact id and the stage are required; the
  * receiver fills the rest from the ManyChat API so the flow edit is one line.
@@ -38,6 +50,8 @@ export const ingestPayloadSchema = z.object({
     .string()
     .regex(/^\d{1,24}$/, "Expected a numeric id."),
   event: z.enum(MANYCHAT_EVENTS),
+  // Contract v1 flows predate the second account and were all on Mike's page.
+  account: z.enum(MANYCHAT_ACCOUNTS).default("mike"),
   occurred_at: z.string().datetime({ offset: true }).optional(),
   ig_username: z.string().max(120).optional().nullable(),
   email: z.string().max(320).optional().nullable(),
@@ -65,6 +79,7 @@ export class ManychatIngestError extends Error {
 }
 
 export type ManychatIngestResult = {
+  account: ManychatAccount;
   day: string;
   event: ManychatEvent;
   enriched: boolean;
@@ -83,7 +98,7 @@ export async function ingestManychatEvent(
   deps: {
     client?: IngestClient;
     now?: Date;
-    fetchSubscriber?: (id: string) => Promise<ManychatSubscriber | null>;
+    fetchSubscriber?: FetchSubscriber;
   } = {},
 ): Promise<ManychatIngestResult> {
   const client = deps.client ?? createAdminClient();
@@ -123,14 +138,14 @@ async function write(
   client: IngestClient,
   payload: IngestPayload,
   now: Date,
-  fetchSubscriber: (id: string) => Promise<ManychatSubscriber | null>,
+  fetchSubscriber: FetchSubscriber,
 ): Promise<ManychatIngestResult> {
   const occurredAt = payload.occurred_at ? new Date(payload.occurred_at) : now;
   const day = occurredAt.toISOString().slice(0, 10);
 
   let subscriber: ManychatSubscriber | null = null;
   try {
-    subscriber = await fetchSubscriber(payload.subscriber_id);
+    subscriber = await fetchSubscriber(payload.subscriber_id, payload.account);
   } catch (error) {
     // The event still counts; the row just carries what the flow sent.
     console.warn("manychat ingest: enrichment failed", {
@@ -141,6 +156,7 @@ async function write(
   const { error } = await client.from("manychat_events").upsert(
     {
       subscriber_id: payload.subscriber_id,
+      account: payload.account,
       event: payload.event,
       day,
       occurred_at: occurredAt.toISOString(),
@@ -156,16 +172,27 @@ async function write(
   );
   if (error) throw new Error(`manychat_events upsert failed: ${error.message}`);
 
-  await rollupDay(client, day, now);
-  return { day, event: payload.event, enriched: subscriber !== null };
+  await rollupDay(client, day, payload.account, now);
+  return {
+    account: payload.account,
+    day,
+    event: payload.event,
+    enriched: subscriber !== null,
+  };
 }
 
-/** Distinct contacts per stage for one day, written as one spine row. */
-async function rollupDay(client: IngestClient, day: string, now: Date) {
+/** Distinct contacts per stage for one account-day, written as one spine row. */
+async function rollupDay(
+  client: IngestClient,
+  day: string,
+  account: ManychatAccount,
+  now: Date,
+) {
   const { data, error } = await client
     .from("manychat_events")
     .select("event,subscriber_id")
-    .eq("day", day);
+    .eq("day", day)
+    .eq("account", account);
   if (error) throw new Error(`manychat_events read failed: ${error.message}`);
 
   const contacts = new Map<ManychatEvent, Set<string>>();
@@ -186,7 +213,8 @@ async function rollupDay(client: IngestClient, day: string, now: Date) {
         source: "manychat",
         medium: "chat",
         campaign: "pearl",
-        content: null,
+        // The account is the post owner; one spine row per account per day.
+        content: account,
         term: "book-call",
         leads: count("new_lead"),
         clicks: count("booking_link_sent"),
@@ -210,18 +238,26 @@ type ManychatInfoResponse = {
   };
 };
 
+type FetchSubscriber = (
+  id: string,
+  account: ManychatAccount,
+) => Promise<ManychatSubscriber | null>;
+
 /** GET /fb/subscriber/getInfo; null when no key is configured. 10 qps limit. */
 async function fetchSubscriberFromApi(
   id: string,
+  account: ManychatAccount,
 ): Promise<ManychatSubscriber | null> {
-  const key = config.MANYCHAT_API_KEY;
+  const key = manychatApiKey(account);
   if (!key) return null;
   const response = await fetch(
     `https://api.manychat.com/fb/subscriber/getInfo?subscriber_id=${encodeURIComponent(id)}`,
     { headers: { authorization: `Bearer ${key}` } },
   );
   if (!response.ok) {
-    throw new Error(`ManyChat getInfo answered ${response.status}.`);
+    throw new Error(
+      `ManyChat getInfo (${account}) answered ${response.status}.`,
+    );
   }
   const json = (await response.json()) as ManychatInfoResponse;
   if (json.status !== "success" || !json.data) {

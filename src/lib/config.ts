@@ -57,8 +57,15 @@ const envSchema = z.object({
    * /api/admin/manychat-ingest. Absent means the receiver answers 503.
    */
   MANYCHAT_INGEST_SECRET: optionalTrimmedOptionalEnv,
-  /** ManyChat page API key; absent means events land without enrichment. */
+  /**
+   * ManyChat page API keys, one per Instagram account (Bearer = whole key).
+   * Absent means that account's events land without enrichment.
+   * `MANYCHAT_API_KEY` is the original single key (Mike's page); it is the
+   * fallback for Mike when `MANYCHAT_API_KEY_MIKE` is unset.
+   */
   MANYCHAT_API_KEY: optionalTrimmedOptionalEnv,
+  MANYCHAT_API_KEY_MIKE: optionalTrimmedOptionalEnv,
+  MANYCHAT_API_KEY_ANTHONY: optionalTrimmedOptionalEnv,
   // Bitly click sync for the YouTube attribution tab. Absent means the clicks
   // stage of the funnel reports "not connected" rather than zero.
   BITLY_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
@@ -251,6 +258,8 @@ const parsed = envSchema.safeParse({
   WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
   MANYCHAT_INGEST_SECRET: process.env.MANYCHAT_INGEST_SECRET,
   MANYCHAT_API_KEY: process.env.MANYCHAT_API_KEY,
+  MANYCHAT_API_KEY_MIKE: process.env.MANYCHAT_API_KEY_MIKE,
+  MANYCHAT_API_KEY_ANTHONY: process.env.MANYCHAT_API_KEY_ANTHONY,
   BITLY_ACCESS_TOKEN: process.env.BITLY_ACCESS_TOKEN,
   BITLY_GROUP_GUID: process.env.BITLY_GROUP_GUID,
   GA4_SERVICE_ACCOUNT_JSON: process.env.GA4_SERVICE_ACCOUNT_JSON,
