@@ -17,6 +17,7 @@ const ADMIN_APP_DIR = path.resolve(process.cwd(), "src/app/admin");
  */
 const READ_ONLY_PAGES = [
   "analytics/page.tsx",
+  "analytics/board/page.tsx",
   "analytics/channels/page.tsx",
   "analytics/months/page.tsx",
   "analytics/video/page.tsx",
