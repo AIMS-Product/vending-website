@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { brandFor } from "@/components/admin/ChannelLogo";
 import {
   NO_FUNNEL,
   buildFunnelBoard,
@@ -107,6 +108,8 @@ describe("helpers", () => {
     expect(channelOfFunnel("Linkedin")).toBe("LinkedIn");
     expect(channelOfFunnel("LTF - In-House")).toBe("LTF - In-House");
     expect(channelOfFunnel(null)).toBe(NO_FUNNEL);
+    // The unknown row must not wear a vendor mark (it once read "Close").
+    expect(brandFor(NO_FUNNEL)).toBeNull();
   });
 
   it("finds the Monday on or before a day", () => {

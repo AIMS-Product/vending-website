@@ -88,8 +88,12 @@ export function groupFor(channel: string): ChannelGroup {
   return GROUP_OF[channel] ?? "Other";
 }
 
-/** A call whose lead has no funnel in Close and no site fill. */
-export const NO_FUNNEL = "No funnel in Close";
+/**
+ * A call whose lead has no funnel in Close and no site fill. Named as the
+ * sales sheet names it, and without "Close" so ChannelLogo never gives it
+ * the Close brand mark.
+ */
+export const NO_FUNNEL = "Unknown (needs review)";
 
 /**
  * Close funnels that name the same thing as one of our channels, so a call
