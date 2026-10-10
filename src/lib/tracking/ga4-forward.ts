@@ -18,6 +18,7 @@ const FORWARDED = new Set([
   "vp_lead_submit_error",
   "vp_lead_qualified",
   "vp_booking_click",
+  "vp_call_booked",
   "masterclass_registered",
   "vp_checkout_click",
   "vp_cta_click",

@@ -12,9 +12,16 @@
  * fetches its own data, and it keeps both callers free of a router dependency.
  */
 
+import { markBookedCall } from "@/lib/tracking/booked-call";
+
 export const PRE_CALL_RESOURCES_PATH = "/pre-call-resources";
 
-export function goToPreCallResources(): void {
+/**
+ * `inviteeUri` is the Calendly invitee on the confirmed booking; it marks the
+ * booked-call conversion that /pre-call-resources reports after the navigation.
+ */
+export function goToPreCallResources(inviteeUri: string | null = null): void {
+  markBookedCall(inviteeUri);
   // A calendar can sit inside an iframe on a page we do not own (none today,
   // but both embeds are reusable) — send the top window so the resources page
   // never renders letterboxed. Cross-origin tops throw on access, so fall back.

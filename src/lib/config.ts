@@ -57,6 +57,7 @@ const envSchema = z.object({
    * /api/admin/manychat-ingest. Absent means the receiver answers 503.
    */
   MANYCHAT_INGEST_SECRET: optionalTrimmedOptionalEnv,
+  GOOGLE_ADS_SYNC_SECRET: optionalTrimmedOptionalEnv,
   /**
    * ManyChat page API keys, one per Instagram account (Bearer = whole key).
    * Absent means that account's events land without enrichment.
@@ -257,6 +258,7 @@ const parsed = envSchema.safeParse({
   CALENDLY_API_TOKEN: process.env.CALENDLY_API_TOKEN,
   WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
   MANYCHAT_INGEST_SECRET: process.env.MANYCHAT_INGEST_SECRET,
+  GOOGLE_ADS_SYNC_SECRET: process.env.GOOGLE_ADS_SYNC_SECRET,
   MANYCHAT_API_KEY: process.env.MANYCHAT_API_KEY,
   MANYCHAT_API_KEY_MIKE: process.env.MANYCHAT_API_KEY_MIKE,
   MANYCHAT_API_KEY_ANTHONY: process.env.MANYCHAT_API_KEY_ANTHONY,
