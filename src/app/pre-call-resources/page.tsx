@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { BookedCallConversion } from "@/components/tracking/BookedCallConversion";
 import { PreCallResourcesPage } from "@/components/sections/PreCallResourcesPage";
 import { preCallMeta } from "@/lib/content/pre-call-resources";
 
@@ -12,5 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function PreCallResources() {
-  return <PreCallResourcesPage />;
+  return (
+    <>
+      <BookedCallConversion />
+      <PreCallResourcesPage />
+    </>
+  );
 }

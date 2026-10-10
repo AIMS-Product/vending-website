@@ -407,7 +407,7 @@ export function ChatWidget() {
       // sent with keepalive, so navigating away cannot cancel it — without
       // that, this navigation would drop the only in-session proof of the
       // booking and the reconciler cron would have to catch it minutes later.
-      goToPreCallResources();
+      goToPreCallResources(typeof inviteeUri === "string" ? inviteeUri : null);
     };
 
     window.addEventListener("message", onCalendlyMessage);

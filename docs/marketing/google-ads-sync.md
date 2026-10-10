@@ -63,3 +63,17 @@ search terms and asset metrics for a limited window; older days come back empty.
 `select sum(cost), sum(clicks), sum(conversions) from google_ads_campaign_daily
 where day between '<from>' and '<to>'` must equal the Campaigns page for the
 same dates, to the cent for cost.
+
+## Booked calls are the bidding target
+
+Since 2026-10-09 the account bids on **Booked Call**, lead form, qualified
+lead and closed won only (`scripts/google-ads/setup-booked-calls.js`, run once).
+
+- The site reports a booking when Calendly confirms it (page embeds and the
+  chat calendar), via `goToPreCallResources(inviteeUri)` marking it and
+  `/pre-call-resources` sending it (`src/lib/tracking/booked-call.ts`): a
+  Google Ads `conversion` to `NEXT_PUBLIC_GOOGLE_ADS_BOOKED_CALL_SEND_TO`
+  with the Calendly invitee id as `transaction_id`, plus `vp_call_booked` to GA4.
+- Without that env var only the GA4 event fires.
+- Next step once Booked Call has ~30 conversions (2-4 weeks): make the lead
+  form secondary so bids chase bookings alone.

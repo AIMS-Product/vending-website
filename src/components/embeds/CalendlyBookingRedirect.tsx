@@ -87,8 +87,9 @@ export function CalendlyBookingRedirect({ url }: { url?: string }) {
         { surface: "page", calendar_url: calendarUrl },
         SEND_NOW,
       );
-      linkBookingToSession(inviteeUriOf(event));
-      goToPreCallResources();
+      const inviteeUri = inviteeUriOf(event);
+      linkBookingToSession(inviteeUri);
+      goToPreCallResources(inviteeUri);
     }
 
     window.addEventListener("message", onMessage);
