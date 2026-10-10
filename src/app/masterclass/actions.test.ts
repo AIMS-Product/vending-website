@@ -385,6 +385,8 @@ describe("registerForMasterclass", () => {
   });
 
   it("shows a last-name error instead of dropping it", async () => {
+    const blank = await registerForMasterclass({}, form({ lastName: "  " }));
+    expect(blank.errors?.lastName).toBe("Enter your last name");
     const state = await registerForMasterclass({}, form({ lastName: "a.com" }));
     expect(state.errors?.lastName).toBeTruthy();
   });

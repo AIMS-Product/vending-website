@@ -64,11 +64,14 @@ const registration = z.object({
     .min(1, "Enter your first name")
     .max(40, NAME_MAX)
     .regex(NAME, "Use letters only"),
+  // Required: the Zoom registration needs a last name, and 3 Oct 13 sign-ups
+  // with none got no join link (2026-10-10).
   lastName: z
     .string()
     .trim()
+    .min(1, "Enter your last name")
     .max(40, NAME_MAX)
-    .regex(/^$|^[\p{L}' -]+$/u, "Use letters only"),
+    .regex(/^[\p{L}' -]+$/u, "Use letters only"),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),
   // US and Canada only (99 of the last 100 GHL registrants), as E.164. No 555
   // area code and no N11 area code or exchange: they cannot take a text and

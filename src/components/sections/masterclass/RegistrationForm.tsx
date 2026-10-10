@@ -165,6 +165,7 @@ export function RegistrationForm({
         <Field
           name="lastName"
           label="Last name"
+          required
           autoComplete="family-name"
           maxLength={40}
           defaultValue={values?.lastName}
