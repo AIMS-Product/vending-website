@@ -66,14 +66,26 @@ same dates, to the cent for cost.
 
 ## Booked calls are the bidding target
 
-Since 2026-10-09 the account bids on **Booked Call**, lead form, qualified
-lead and closed won only (`scripts/google-ads/setup-booked-calls.js`, run once).
+Proof (2026-08-01 to 2026-10-09, `lead_submissions` x `channel_daily`): Google
+paid search produced 293 site leads, 150 booked calls (51%), 8 wins, $59,376
+on $27,851 spend: $186 per booked call. VP | Brand: $602, 21 booked, $29 per
+booked call, $12,594 won (it stopped serving mid-September). Web Retargeting:
+$1,666, 0 booked. 308 of 309 Google leads carry a click id in our database.
 
-- The site reports a booking when Calendly confirms it (page embeds and the
-  chat calendar), via `goToPreCallResources(inviteeUri)` marking it and
-  `/pre-call-resources` sending it (`src/lib/tracking/booked-call.ts`): a
-  Google Ads `conversion` to `NEXT_PUBLIC_GOOGLE_ADS_BOOKED_CALL_SEND_TO`
-  with the Calendly invitee id as `transaction_id`, plus `vp_call_booked` to GA4.
-- Without that env var only the GA4 event fires.
-- Next step once Booked Call has ~30 conversions (2-4 weeks): make the lead
-  form secondary so bids chase bookings alone.
+How Google learns from bookings:
+
+- `GET /api/admin/google-ads-booked-calls?days=N` (bearer
+  `GOOGLE_ADS_SYNC_SECRET`) lists booked calls with a gclid
+  (`src/lib/services/google-ads-booked-calls.ts`: one per gclid, noon Pacific
+  on Close's booked date, never before the lead, bookings made before the
+  click left out).
+- `scripts/google-ads/upload-booked-calls.js` uploads them to
+  **CRM - Booked Call** (Import from clicks). Backfill `DAYS = 90` once, then
+  `DAYS = 7` daily. Google ignores exact re-uploads.
+- `scripts/google-ads/setup-booked-calls.js` creates that action and sets the
+  goals. Run 1 keeps the lead form as a bid signal; Run 2 (`BOOKINGS_ONLY =
+true`, after the backfill shows) bids on booked calls, qualified and won only.
+- The site also sends `vp_call_booked` to GA4 on every on-site booking
+  (`src/lib/tracking/booked-call.ts`); the Ads web tag there stays off unless
+  `NEXT_PUBLIC_GOOGLE_ADS_BOOKED_CALL_SEND_TO` is set. Do not set it while
+  CRM - Booked Call is primary: the same booking would count twice.
