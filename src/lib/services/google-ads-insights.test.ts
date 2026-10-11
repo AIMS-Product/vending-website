@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BASELINE,
+  keywordNote,
   PRE_TRACKING,
   beforeAfter,
   campaignHealth,
@@ -161,5 +162,21 @@ describe("leadKeyword", () => {
     expect(leadKeyword(null, "Vending Business")).toBe("vending business");
     expect(leadKeyword("{keyword}", null)).toBe(PRE_TRACKING);
     expect(leadKeyword(null, undefined)).toBe(PRE_TRACKING);
+  });
+});
+
+describe("keywordNote", () => {
+  const totals = { leads: 100, booked: 52 };
+  it("warns while leads have no keyword, and says why", () => {
+    const rows = [{ key: PRE_TRACKING, leads: 98, booked: 51 }];
+    expect(keywordNote(rows, totals, false)).toMatch(
+      /^98 of 100 leads \(51 of 52 booked calls\).*pending database update/,
+    );
+    expect(keywordNote(rows, totals, true)).toMatch(/could not be matched/);
+  });
+  it("is silent once every lead has a keyword", () => {
+    expect(
+      keywordNote([{ key: "x", leads: 3, booked: 1 }], totals, false),
+    ).toBe(null);
   });
 });
