@@ -34,9 +34,9 @@ export const heroV2 = {
 
 export const tickerV2 = {
   srSummary:
-    "Vendingpreneurs: passive income, done right. Real people, real results. Trusted brands in our machines. Beginner friendly.",
+    "Vendingpreneurs: coaching from active operators. Real people, real results. Trusted brands in our machines. Beginner friendly.",
   items: [
-    "Passive income, done right",
+    "Coaching from active operators",
     "Real people, real results",
     "Trusted brands in our machines",
     "Beginner friendly",
