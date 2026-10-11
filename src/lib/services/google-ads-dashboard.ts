@@ -84,6 +84,13 @@ function emptyRow(key: string, label: string): GoogleAdsRow {
   };
 }
 
+/** Unknown, not $0, when there is no spend row (script not synced yet). */
+function costPer(spend: number, booked: number): number | null {
+  return booked > 0 && spend > 0
+    ? Math.round((spend / booked) * 100) / 100
+    : null;
+}
+
 /** One lead per gclid: booked or won if any submission for it was. */
 export function dedupeLeads(leads: AdLead[]): AdLead[] {
   const byGclid = new Map<string, AdLead>();
@@ -140,10 +147,7 @@ export function buildRows(
     .map((row) => ({
       ...row,
       spend: Math.round(row.spend * 100) / 100,
-      costPerBooked:
-        row.booked > 0
-          ? Math.round((row.spend / row.booked) * 100) / 100
-          : null,
+      costPerBooked: costPer(row.spend, row.booked),
     }))
     .sort((a, b) => b.spend - a.spend || b.leads - a.leads);
 }
@@ -163,10 +167,7 @@ export function totalOf(rows: GoogleAdsRow[]): GoogleAdsRow {
     emptyRow("total", "All campaigns"),
   );
   total.spend = Math.round(total.spend * 100) / 100;
-  total.costPerBooked =
-    total.booked > 0
-      ? Math.round((total.spend / total.booked) * 100) / 100
-      : null;
+  total.costPerBooked = costPer(total.spend, total.booked);
   return total;
 }
 

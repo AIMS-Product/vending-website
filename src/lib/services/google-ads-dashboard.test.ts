@@ -77,6 +77,12 @@ describe("buildRows", () => {
     expect(rows[2]).toMatchObject({ label: "333", spend: 0, leads: 1 });
   });
 
+  it("leaves cost per booked call unknown when nothing was spent", () => {
+    const [row] = buildRows([], [lead({ booked: true })], () => "111");
+    expect(row.costPerBooked).toBeNull();
+    expect(totalOf([row]).costPerBooked).toBeNull();
+  });
+
   it("totals every row", () => {
     const rows = buildRows(
       [{ key: "1", label: "A", cost: 30, clicks: 1, impressions: 2 }],
