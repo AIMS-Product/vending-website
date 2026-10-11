@@ -219,7 +219,9 @@ function main() {
         "SELECT campaign.id, ad_group.id, ad_group.name, ad_group.status, ad_group_ad.ad.id, " +
         "ad_group_ad.status, ad_group_ad.policy_summary.approval_status, " +
         "ad_group_ad.policy_summary.review_status, ad_group_ad.policy_summary.policy_topic_entries, " +
-        "ad_group_ad.primary_status, ad_group_ad.primary_status_reasons FROM ad_group_ad " +
+        "ad_group_ad.primary_status, ad_group_ad.primary_status_reasons, ad_group_ad.ad.final_urls, " +
+        "ad_group_ad.ad.responsive_search_ad.headlines, ad_group_ad.ad.responsive_search_ad.descriptions " +
+        "FROM ad_group_ad " +
         "WHERE campaign.status != 'REMOVED' AND ad_group.status != 'REMOVED' " +
         "AND ad_group_ad.status != 'REMOVED'",
       map: function (r) {
@@ -239,6 +241,11 @@ function main() {
           }),
           primaryStatus: a.primaryStatus,
           primaryStatusReasons: a.primaryStatusReasons || [],
+          // Copy for every ad, including ones with no clicks yet (the "ad"
+          // report only returns ads with metrics).
+          finalUrls: a.ad.finalUrls || [],
+          headlines: texts((a.ad.responsiveSearchAd || {}).headlines),
+          descriptions: texts((a.ad.responsiveSearchAd || {}).descriptions),
         });
       },
     },

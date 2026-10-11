@@ -271,6 +271,12 @@ const nextConfig: NextConfig = {
         hostname: "i.ytimg.com",
         pathname: "/vi/**",
       },
+      // Google Ads image assets (admin Google Ads creatives panel).
+      {
+        protocol: "https",
+        hostname: "tpc.googlesyndication.com",
+        pathname: "/simgad/**",
+      },
       // Community wins board — win photos mirrored onto the wins site, and the
       // Mighty avatars its feed points at. Both render in the wins preview on
       // /pre-call-resources.

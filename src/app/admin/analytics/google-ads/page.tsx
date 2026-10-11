@@ -7,6 +7,10 @@ import {
 import { adminEyebrowClass } from "@/components/admin/AdminUi";
 import { GoogleAdsCeoView } from "@/components/admin/GoogleAdsCeoView";
 import {
+  GoogleAdsDisplayCreatives,
+  GoogleAdsLiveAds,
+} from "@/components/admin/GoogleAdsCreatives";
+import {
   GoogleAdsAds,
   GoogleAdsTable,
 } from "@/components/admin/GoogleAdsPanels";
@@ -63,6 +67,7 @@ export default async function AnalyticsGoogleAdsPage({
         summary={ceoSummary(ads)}
       />
       <div className="mt-5 grid gap-5">
+        <GoogleAdsLiveAds ads={ads.liveAds} rangeLabel={ads.rangeLabel} />
         <GoogleAdsWeekly weeks={ads.weeks} />
         <GoogleAdsTable
           title="By campaign"
@@ -94,6 +99,7 @@ export default async function AnalyticsGoogleAdsPage({
           />
           <GoogleAdsWaste wasted={ads.wasted} setUp={ads.healthSetUp} />
           <GoogleAdsAds ads={ads.ads} />
+          <GoogleAdsDisplayCreatives creatives={ads.displayCreatives} />
           <GoogleAdsChangeLog />
         </div>
       </details>
