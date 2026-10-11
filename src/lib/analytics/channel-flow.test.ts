@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { CloseCall } from "@/lib/services/close-week-view";
 import {
+  channelReportHref,
   buildChannelFlow,
   flowChannelForFunnel,
   flowChannelForSpine,
@@ -128,5 +129,20 @@ describe("channel flow", () => {
   it("returns null for a rate over nothing", () => {
     expect(stageRate(3, 0)).toBeNull();
     expect(stageRate(1, 3)).toBe(33.3);
+  });
+});
+
+describe("channelReportHref", () => {
+  it("opens a channel's own page, else Channels filtered to it, else nothing", () => {
+    expect(channelReportHref("google-ads")).toBe("/admin/analytics/google-ads");
+    expect(channelReportHref("youtube")).toBe("/admin/analytics/youtube");
+    expect(channelReportHref("website")).toBe(
+      "/admin/analytics/channels?channel=Website",
+    );
+    expect(channelReportHref("social")).toBe(
+      "/admin/analytics/channels?channel=LinkedIn",
+    );
+    expect(channelReportHref("reactivation")).toBeNull();
+    expect(channelReportHref("other")).toBeNull();
   });
 });
