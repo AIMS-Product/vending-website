@@ -135,6 +135,22 @@ const byFunnel = new Map(
   FLOW_CHANNELS.flatMap((c) => c.funnels.map((f) => [f.toLowerCase(), c.key])),
 );
 
+/** Channels with a page of their own; the rest open Channels filtered to them. */
+const OWN_PAGE: Partial<Record<FlowChannelKey, string>> = {
+  "google-ads": "/admin/analytics/google-ads",
+  youtube: "/admin/analytics/youtube",
+};
+
+/** Where a channel in the flow chart opens, or null when no report covers it. */
+export function channelReportHref(key: FlowChannelKey): string | null {
+  const own = OWN_PAGE[key];
+  if (own) return own;
+  const spine = FLOW_CHANNELS.find((c) => c.key === key)?.spine[0];
+  return spine
+    ? `/admin/analytics/channels?channel=${encodeURIComponent(spine)}`
+    : null;
+}
+
 export function flowChannelForSpine(channel: string | null): FlowChannelKey {
   return bySpine.get((channel ?? "").trim().toLowerCase()) ?? "other";
 }

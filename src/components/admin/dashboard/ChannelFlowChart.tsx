@@ -1,10 +1,13 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { cn } from "@/lib/utils";
 import {
   FLOW_STAGES,
+  channelReportHref,
   stageRate,
   type ChannelFlow,
   type FlowChannelKey,
@@ -113,14 +116,21 @@ export function ChannelFlowChart({ flow }: { flow: ChannelFlow }) {
   const H = heightFor(flow.bands.length);
   const segs = layout(flow, H);
   const ys = labelYs(segs, flow.bands.length, H);
+  const router = useRouter();
   const toggle = (key: FlowChannelKey) =>
     setPinned((p) => (p === key ? null : key));
+  // A channel name opens its report; the ribbons still pin for comparison.
+  const open = (key: FlowChannelKey) => {
+    const href = channelReportHref(key);
+    if (href) router.push(href);
+    else toggle(key);
+  };
   const bind = (key: FlowChannelKey) => ({
     onMouseEnter: () => setHovered(key),
     onMouseLeave: () => setHovered(null),
     onFocus: () => setHovered(key),
     onBlur: () => setHovered(null),
-    onClick: () => toggle(key),
+    onClick: () => open(key),
   });
 
   return (
@@ -293,9 +303,11 @@ export function ChannelFlowChart({ flow }: { flow: ChannelFlow }) {
               ? `, ${money(Math.round(revenue / vals[COLS - 1]!))} average`
               : ""}
           </p>
+          <ReportLink pinned={pinned} flow={flow} />
           <ChannelTotals flow={flow} focus={focus} bind={bind} />
           <p className="text-ui-text-subtle mt-auto pt-4 text-xs">
-            Hover or tap a channel to follow it through.
+            Hover a channel to follow it through. Click its name to open its
+            report.
           </p>
         </aside>
       </div>
@@ -309,9 +321,30 @@ export function ChannelFlowChart({ flow }: { flow: ChannelFlow }) {
           won to date from {num(vals[COLS - 1]!)} deals
           {band ? `, ${band.label}` : ""}. Tap a channel to follow it.
         </p>
+        <ReportLink pinned={pinned} flow={flow} />
         <ChannelTotals flow={flow} focus={focus} bind={bind} />
       </div>
     </div>
+  );
+}
+
+function ReportLink({
+  pinned,
+  flow,
+}: {
+  pinned: FlowChannelKey | null;
+  flow: ChannelFlow;
+}) {
+  const href = pinned ? channelReportHref(pinned) : null;
+  const label = flow.bands.find((b) => b.key === pinned)?.label;
+  if (!href || !label) return null;
+  return (
+    <Link
+      href={href}
+      className="bg-ui-accent hover:bg-ui-accent-hover rounded-ui mt-3 inline-flex w-fit items-center px-3 py-1.5 text-[0.8125rem] font-medium text-white"
+    >
+      Open {label} report
+    </Link>
   );
 }
 
