@@ -120,6 +120,9 @@ describe("tab to feed mapping matches what each loader reads", () => {
     seo_competitor_keywords: "seo-ranks",
     seo_ai_checks: "seo-ai",
     social_account_daily: "social-accounts",
+    google_ads_campaign_daily: "google-ads",
+    google_ads_keyword_daily: "google-ads",
+    google_ads_creatives: "google-ads",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
   };
@@ -167,6 +170,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
+    "google-ads": ["google-ads-dashboard"],
     dashboard: [
       "analytics-dashboard-data",
       "channel-report",

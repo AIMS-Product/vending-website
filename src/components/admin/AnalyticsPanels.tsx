@@ -264,6 +264,7 @@ const ANALYTICS_VIEW_PATHS: Readonly<Record<string, string>> = {
   channels: "/admin/analytics/channels",
   youtube: "/admin/analytics/youtube",
   video: "/admin/analytics/video",
+  "google-ads": "/admin/analytics/google-ads",
 };
 
 function analyticsHref(
