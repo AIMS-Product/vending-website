@@ -9,6 +9,7 @@ import { listIndexableSolutionSlugs } from "@/lib/content/solutions";
 import { listPublishedSlugs } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 export const revalidate = 0;
 
@@ -17,15 +18,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Stamping every URL with the request time taught Google to ignore it.
   const now = new Date();
   // One failed content read must not 500 the whole sitemap for crawlers:
-  // log it and drop only that source; static routes always go out.
+  // log and report it, drop only that source; static routes always go out.
   const [news, caseStudies, seoPages] = await Promise.allSettled([
     listPublishedSlugs(),
     listPublishedCaseStudySlugs(),
     listSitemapSeoPages(),
   ]);
-  const slugs = valueOrEmpty("news", news);
-  const caseStudySlugs = valueOrEmpty("case-studies", caseStudies);
-  const resourcePages = valueOrEmpty("seo-pages", seoPages);
+  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
+    valueOrEmpty("news", news),
+    valueOrEmpty("case-studies", caseStudies),
+    valueOrEmpty("seo-pages", seoPages),
+  ]);
 
   return [
     ...staticRoutes.map((route) => ({
@@ -80,11 +83,17 @@ function validDateOrFallback(value: string | null | undefined, fallback: Date) {
   return Number.isNaN(parsed.getTime()) ? fallback : parsed;
 }
 
-function valueOrEmpty<T>(source: string, result: PromiseSettledResult<T[]>) {
+async function valueOrEmpty<T>(
+  source: string,
+  result: PromiseSettledResult<T[]>,
+): Promise<T[]> {
   if (result.status === "fulfilled") return result.value;
   console.error(
     `sitemap: ${source} read failed, omitting its URLs`,
     result.reason,
   );
+  // Fails soft for crawlers, so nothing else would surface it. Message-free
+  // (reportRouteError strips it); the source rides in the route tag.
+  await reportRouteError(`sitemap-${source}`, result.reason);
   return [];
 }

@@ -8,7 +8,12 @@ vi.mock("@/lib/services/seo-page-public", () => ({
   listSitemapSeoPages: vi.fn(),
 }));
 
+vi.mock("@/lib/observability/route-error", () => ({
+  reportRouteError: vi.fn(),
+}));
+
 import sitemap from "./sitemap";
+import { reportRouteError } from "@/lib/observability/route-error";
 import { absoluteUrl } from "@/lib/site";
 import { staticRoutes } from "@/lib/content/site-routes";
 import { processSectionIsHeldBack, processSteps } from "@/lib/content/process";
@@ -22,6 +27,7 @@ const urlsOf = async () => (await sitemap()).map((entry) => entry.url);
 describe("sitemap", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.mocked(reportRouteError).mockClear();
     vi.mocked(listPublishedSlugs).mockResolvedValue(["post-a"]);
     vi.mocked(listPublishedCaseStudySlugs).mockResolvedValue(["study-a"]);
     vi.mocked(listSitemapSeoPages).mockResolvedValue([
@@ -49,6 +55,16 @@ describe("sitemap", () => {
       expect.stringContaining("seo-pages"),
       expect.any(Error),
     );
+    expect(reportRouteError).toHaveBeenCalledTimes(1);
+    expect(reportRouteError).toHaveBeenCalledWith(
+      "sitemap-seo-pages",
+      expect.any(Error),
+    );
+  });
+
+  it("reports nothing when every source reads", async () => {
+    await urlsOf();
+    expect(reportRouteError).not.toHaveBeenCalled();
   });
 
   it("emits static routes when every source rejects", async () => {
