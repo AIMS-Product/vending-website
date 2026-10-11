@@ -133,6 +133,8 @@ describe("tab to feed mapping matches what each loader reads", () => {
     google_ads_search_term_daily: "google-ads",
     google_ads_search_term_conversions: "google-ads",
     google_ads_conversion_daily: "google-ads",
+    google_ads_rows: "google-ads",
+    google_ads_creatives: "google-ads",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
   };
