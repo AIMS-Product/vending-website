@@ -58,6 +58,34 @@ search terms and asset metrics for a limited window; older days come back empty.
 - A report that errors (for example a field Google deprecates) fails alone;
   the other reports still sync and the run is marked failed.
 
+## Health and attribution reports (added 2026-10-11)
+
+| Report                   | View                                 | What it answers                                                   |
+| ------------------------ | ------------------------------------ | ----------------------------------------------------------------- |
+| `campaign_status`        | `google_ads_campaign_status`         | Serving, limited by budget, has disapproved ads (latest run only) |
+| `ad_status`              | `google_ads_ad_status`               | Approval and policy topic per live ad (latest run only)           |
+| `click`                  | `google_ads_clicks`                  | gclid -> keyword, ad group, device, region; kept after the window |
+| `conversion_daily`       | `google_ads_conversion_daily`        | Conversions per action per campaign per day (CRM - Booked Call)   |
+| `search_term_conversion` | `google_ads_search_term_conversions` | Search terms that produced a form fill or a CRM upload            |
+
+Apply `supabase/migrations/20261011120000_google_ads_health_reports.sql`
+before pasting the new script; until then those five reports are rejected
+(HTTP 400) and the run is marked failed while the six original reports still
+sync. After pasting, run once with `DAYS = 90` to backfill clicks.
+
+The nightly audit check `google-ads-sync-spend` compares this table's spend
+with GA4's `advertiserAdCost` and fails if the script stops writing.
+
+## Editing the script safely
+
+**Run saves the editor.** In Ads > Scripts, Preview runs whatever is in the
+editor without saving; Run saves it first. Never paste one-off code into the
+scheduled sync script and press Run: the next scheduled run would execute the
+one-off code. Use Preview for read-only questions; for a one-off change, Run
+outside the 1-2am schedule and paste the real `sync.js` back (with the secret)
+and Save straight after. Account changes are logged in
+`src/lib/services/google-ads-changelog.ts`.
+
 ## Reconciling
 
 `select sum(cost), sum(clicks), sum(conversions) from google_ads_campaign_daily

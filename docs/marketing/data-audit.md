@@ -33,6 +33,7 @@ in about one, YouTube in three — so the windows end before that).
 | Close mirror is current    | last crawl time                        | —                                                 | 3 hours   |
 | Calls on the calendar      | `calendly_bookings`, distinct events   | Calendly scheduled events                         | 2%        |
 | Ad spend                   | `channel_daily.spend`                  | Metricool, per campaign per day                   | 1%        |
+| Google Ads page spend      | `google_ads_campaign_daily.cost`       | GA4 `advertiserAdCost` (Google Ads link)          | 1%        |
 | Off-site form fills        | `channel_daily.leads` on the form keys | GoHighLevel submissions                           | 1%        |
 | YouTube views              | `youtube_video_daily.views`            | YouTube, or Metricool when OAuth is not connected | 2%        |
 | Webinar numbers arriving   | `webinar_events.received_at`           | the vp-webinars push                              | 8 days    |

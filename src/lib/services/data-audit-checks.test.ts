@@ -233,6 +233,7 @@ describe("runDataAudit", () => {
       "close-config",
       "ga4-config",
       "ghl-config",
+      "google-ads-sync-config",
       "youtube-config",
     ]);
     expect(configChecks.every((result) => result.status === "fail")).toBe(true);
