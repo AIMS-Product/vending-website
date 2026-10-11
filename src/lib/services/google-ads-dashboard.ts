@@ -63,16 +63,18 @@ export type GoogleAdsRow = {
   costPerBooked: number | null;
 };
 
-export type GoogleAdsCreative = {
-  assetId: string;
-  assetType: string | null;
-  text: string | null;
-  previewUrl: string | null;
-  performanceLabel: string | null;
-  impressions: number;
+/** One ad over the selected range, with its current status. */
+export type GoogleAdsAd = {
+  adId: string;
+  campaign: string;
+  adGroup: string | null;
+  headlines: string[];
+  landing: string | null;
+  status: string;
+  approval: string | null;
+  spend: number;
   clicks: number;
-  cost: number;
-  conversions: number;
+  impressions: number;
 };
 
 export type GoogleAdsDashboard = {
@@ -81,7 +83,8 @@ export type GoogleAdsDashboard = {
   totals: GoogleAdsRow;
   campaigns: GoogleAdsRow[];
   keywords: GoogleAdsRow[];
-  creatives: GoogleAdsCreative[];
+  /** Top ads by spend in the range (ad level: asset rows repeat the ad's spend). */
+  ads: GoogleAdsAd[];
   weeks: Week[];
   beforeAfter: BeforeAfter;
   wasted: WastedTerm[];
@@ -175,6 +178,64 @@ export function buildRows(
       costPerBooked: costPer(row.spend, row.booked),
     }))
     .sort((a, b) => b.spend - a.spend || b.leads - a.leads);
+}
+
+/** Leads whose utm_campaign is not a Google campaign id (link tags like "cohort_seats"). */
+export const NO_CAMPAIGN_ID = "(no Google campaign id)";
+
+export function campaignKey(campaign: string | null): string {
+  return campaign && /^\d+$/.test(campaign) ? campaign : NO_CAMPAIGN_ID;
+}
+
+/** Per-ad totals for the range, highest spend first; status from the newest day. */
+export function adsInRange(
+  rows: Array<Record<string, unknown>>,
+  campaignNames: Map<string, string>,
+  limit = 12,
+): GoogleAdsAd[] {
+  const byAd = new Map<string, GoogleAdsAd & { day: string }>();
+  for (const r of rows) {
+    const adId = String(r.ad_id);
+    const day = String(r.day);
+    const existing = byAd.get(adId);
+    const cost = num(r.cost);
+    const clicks = num(r.clicks);
+    const impressions = num(r.impressions);
+    if (existing) {
+      existing.spend += cost;
+      existing.clicks += clicks;
+      existing.impressions += impressions;
+      if (day > existing.day) {
+        existing.day = day;
+        existing.status = String(r.status);
+        existing.approval = (r.approval_status as string) ?? null;
+      }
+      continue;
+    }
+    const urls = Array.isArray(r.final_urls) ? r.final_urls.map(String) : [];
+    const campaignId = String(r.campaign_id);
+    byAd.set(adId, {
+      adId,
+      day,
+      campaign: campaignNames.get(campaignId) ?? campaignId,
+      adGroup: (r.ad_group_name as string) ?? null,
+      headlines: Array.isArray(r.headlines) ? r.headlines.map(String) : [],
+      landing: urls[0] ?? null,
+      status: String(r.status),
+      approval: (r.approval_status as string) ?? null,
+      spend: cost,
+      clicks,
+      impressions,
+    });
+  }
+  return [...byAd.values()]
+    .filter((ad) => ad.spend > 0)
+    .sort((a, b) => b.spend - a.spend)
+    .slice(0, limit)
+    .map(({ day: _day, ...ad }) => ({
+      ...ad,
+      spend: Math.round(ad.spend * 100) / 100,
+    }));
 }
 
 export function totalOf(rows: GoogleAdsRow[]): GoogleAdsRow {
@@ -393,7 +454,7 @@ export async function getGoogleAdsDashboard(input: {
     startDay < CHANGE_DATE ? start.toISOString() : `${CHANGE_DATE}T07:00:00Z`;
 
   type CampaignDay = Record<string, unknown>;
-  const [campaignDays, keywordDays, leadRows, creativeRows, extra] =
+  const [campaignDays, keywordDays, leadRows, adRows, extra] =
     await Promise.all([
       readAll<CampaignDay>("campaigns", (from, to) =>
         client
@@ -422,15 +483,15 @@ export async function getGoogleAdsDashboard(input: {
           .not("metadata->paid_attribution->>gclid", "is", null)
           .range(from, to),
       ),
-      readAll<CampaignDay>("creatives", () =>
+      readAll<Record<string, unknown>>("ads", (from, to) =>
         client
-          .from("google_ads_creatives")
+          .from("google_ads_ad_daily")
           .select(
-            "asset_id, asset_type, text, preview_url, performance_label, impressions, clicks, cost, conversions",
+            "day, campaign_id, ad_group_name, ad_id, status, approval_status, final_urls, headlines, cost, clicks, impressions",
           )
-          .order("cost", { ascending: false })
-          // One page: the top 12 is all the card shows.
-          .range(0, 11),
+          .gte("day", startDay)
+          .lte("day", endDay)
+          .range(from, to),
       ),
       readHealthOrMissing(client, startDay, endDay, now),
     ]);
@@ -474,7 +535,7 @@ export async function getGoogleAdsDashboard(input: {
       impressions: num(r.impressions),
     })),
     leads,
-    (lead) => lead.campaign ?? "(no campaign id)",
+    (lead) => campaignKey(lead.campaign),
   ).map((row) => ({ ...row, label: names.get(row.key) ?? row.label }));
 
   const keywords = buildRows(
@@ -492,7 +553,8 @@ export async function getGoogleAdsDashboard(input: {
     }),
     leads,
     (lead) => leadKeyword(lead.term, clickKw.get(lead.gclid)),
-  );
+    // Paused keywords with no spend and no lead in the range are noise.
+  ).filter((row) => row.spend > 0 || row.leads > 0);
 
   const daySpend = (rows: CampaignDay[]) =>
     rows.map((r) => ({ day: String(r.day), cost: num(r.cost) }));
@@ -502,17 +564,7 @@ export async function getGoogleAdsDashboard(input: {
     totals: totalOf(campaigns),
     campaigns,
     keywords,
-    creatives: creativeRows.map((r) => ({
-      assetId: String(r.asset_id),
-      assetType: (r.asset_type as string) ?? null,
-      text: (r.text as string) ?? null,
-      previewUrl: (r.preview_url as string) ?? null,
-      performanceLabel: (r.performance_label as string) ?? null,
-      impressions: num(r.impressions),
-      clicks: num(r.clicks),
-      cost: num(r.cost),
-      conversions: num(r.conversions),
-    })),
+    ads: adsInRange(adRows, names),
     weeks: weeklyTrend(daySpend(rangeDays), leads),
     beforeAfter: beforeAfter(
       daySpend(campaignDays),

@@ -4,8 +4,11 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 import {
+  adsInRange,
   buildRows,
+  campaignKey,
   dedupeLeads,
+  NO_CAMPAIGN_ID,
   totalOf,
   type AdLead,
 } from "./google-ads-dashboard";
@@ -102,6 +105,52 @@ describe("buildRows", () => {
   });
 });
 
+describe("campaignKey", () => {
+  it("keeps Google campaign ids and buckets link tags", () => {
+    expect(campaignKey("23805931083")).toBe("23805931083");
+    expect(campaignKey("cohort_seats")).toBe(NO_CAMPAIGN_ID);
+    expect(campaignKey(null)).toBe(NO_CAMPAIGN_ID);
+  });
+});
+
+describe("adsInRange", () => {
+  const row = (over: Record<string, unknown>) => ({
+    day: "2026-10-01",
+    campaign_id: "1",
+    ad_group_name: "Research",
+    ad_id: "a1",
+    status: "ENABLED",
+    approval_status: "APPROVED",
+    final_urls: ["https://www.vendingpreneurs.com/contact"],
+    headlines: ["Start a Vending Business"],
+    cost: 10,
+    clicks: 2,
+    impressions: 20,
+    ...over,
+  });
+
+  it("sums each ad over the range, takes the newest status, and drops unspent ads", () => {
+    const ads = adsInRange(
+      [
+        row({ day: "2026-10-02", cost: 5, approval_status: "DISAPPROVED" }),
+        row({}),
+        row({ ad_id: "a2", cost: 30 }),
+        row({ ad_id: "a3", cost: 0 }),
+      ],
+      new Map([["1", "W2"]]),
+    );
+    expect(ads.map((a) => a.adId)).toEqual(["a2", "a1"]);
+    expect(ads[1]).toMatchObject({
+      campaign: "W2",
+      spend: 15,
+      clicks: 4,
+      impressions: 40,
+      approval: "DISAPPROVED",
+      landing: "https://www.vendingpreneurs.com/contact",
+    });
+  });
+});
+
 describe("getGoogleAdsDashboard", () => {
   /** Rows per table; filters are ignored, so rows are chosen to fit the range. */
   function fakeClient(rows: Record<string, Array<Record<string, unknown>>>) {
@@ -153,6 +202,23 @@ describe("getGoogleAdsDashboard", () => {
           clicks: 15,
           impressions: 150,
         },
+        // Paused, nothing spent and no lead: hidden.
+        { keyword: "vending legit", cost: 0, clicks: 0, impressions: 0 },
+      ],
+      google_ads_ad_daily: [
+        {
+          day: "2026-10-10",
+          campaign_id: "1",
+          ad_group_name: "Research",
+          ad_id: "a1",
+          status: "PAUSED",
+          approval_status: "DISAPPROVED",
+          final_urls: ["https://www.vendingpreneurs.com/"],
+          headlines: ["First Machine in 90 Days"],
+          cost: 50,
+          clicks: 5,
+          impressions: 50,
+        },
       ],
       lead_submissions: [
         // Before utm_term: keyword comes from the click.
@@ -183,6 +249,16 @@ describe("getGoogleAdsDashboard", () => {
           closed_won_at: null,
           closed_won_value: null,
           gclid: "g-new",
+        },
+        // A link tag, not a campaign id.
+        {
+          created_at: "2026-10-10T19:00:00Z",
+          utm_campaign: "cohort_seats",
+          utm_term: null,
+          call_booked_at: null,
+          closed_won_at: null,
+          closed_won_value: null,
+          gclid: "g-tag",
         },
       ],
       google_ads_clicks: [{ gclid: "g-old", keyword: "Vending Machine Cost" }],
@@ -218,7 +294,12 @@ describe("getGoogleAdsDashboard", () => {
     });
     const cost = ads.keywords.find((k) => k.key === "vending machine cost");
     expect(cost).toMatchObject({ leads: 2, booked: 2, costPerBooked: 75 });
-    expect(ads.keywords.find((k) => k.key === "(pre-tracking)")?.leads).toBe(1);
+    expect(ads.keywords.find((k) => k.key === "(pre-tracking)")?.leads).toBe(2);
+    expect(ads.keywords.some((k) => k.key === "vending legit")).toBe(false);
+    expect(ads.campaigns.map((c) => c.key)).toEqual(["1", NO_CAMPAIGN_ID]);
+    expect(ads.ads).toMatchObject([
+      { adId: "a1", spend: 50, status: "PAUSED" },
+    ]);
     expect(ads.health[0].flags).toEqual([
       "Not serving: no approved ads",
       "Limited by budget",

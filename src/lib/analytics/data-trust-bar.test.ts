@@ -126,7 +126,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     social_account_daily: "social-accounts",
     google_ads_campaign_daily: "google-ads",
     google_ads_keyword_daily: "google-ads",
-    google_ads_creatives: "google-ads",
+    google_ads_ad_daily: "google-ads",
     google_ads_clicks: "google-ads",
     google_ads_campaign_status: "google-ads",
     google_ads_ad_status: "google-ads",

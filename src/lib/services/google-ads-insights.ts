@@ -302,3 +302,22 @@ export function leadKeyword(
 
 /** The last complete day before `today` (YYYY-MM-DD). */
 export const lastCompleteDay = (today: string) => addDays(today, -1);
+
+type Counts = { key: string; leads: number; booked: number };
+
+/**
+ * The caveat over the keyword table while leads still lack a keyword: without
+ * it, a keyword whose bookings sit in the unknown row reads as pure waste.
+ */
+export function keywordNote(
+  keywords: readonly Counts[],
+  totals: { leads: number; booked: number },
+  clickLookup: boolean,
+): string | null {
+  const unknown = keywords.find((k) => k.key === PRE_TRACKING);
+  if (!unknown || unknown.leads === 0) return null;
+  const why = clickLookup
+    ? "their click could not be matched to a keyword."
+    : "they came before keyword tracking started on Oct 10, and the click lookup that fills them in starts after the pending database update.";
+  return `${unknown.leads} of ${totals.leads} leads (${unknown.booked} of ${totals.booked} booked calls) in this range have no keyword: ${why} Booked calls per keyword are undercounted, so a keyword showing 0 booked here may still be booking calls. Don't pause keywords from this table until this note is gone.`;
+}

@@ -5,7 +5,7 @@ import {
   type SearchParams,
 } from "@/components/admin/dashboard/AnalyticsDrillDown";
 import {
-  GoogleAdsCreatives,
+  GoogleAdsAds,
   GoogleAdsTable,
   GoogleAdsTotals,
 } from "@/components/admin/GoogleAdsPanels";
@@ -18,6 +18,7 @@ import {
 } from "@/components/admin/GoogleAdsMediaBuyerPanels";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { getGoogleAdsDashboard } from "@/lib/services/google-ads-dashboard";
+import { keywordNote } from "@/lib/services/google-ads-insights";
 import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -77,9 +78,10 @@ export default async function AnalyticsGoogleAdsPage({
           firstColumn="Keyword"
           rows={ads.keywords}
           empty="No keyword rows in this range."
+          note={keywordNote(ads.keywords, ads.totals, ads.healthSetUp)}
         />
         <GoogleAdsWaste wasted={ads.wasted} setUp={ads.healthSetUp} />
-        <GoogleAdsCreatives creatives={ads.creatives} />
+        <GoogleAdsAds ads={ads.ads} />
         <GoogleAdsChangeLog />
       </div>
     </AnalyticsDrillDown>
