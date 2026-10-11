@@ -1,3 +1,10 @@
+import { LEADS_LIVE_FROM } from "@/lib/services/funnel-monthly";
+import {
+  liveAdsOf,
+  servedCopy,
+  type DisplayCreative,
+  type LiveAd,
+} from "@/lib/services/google-ads-live-ads";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -93,6 +100,8 @@ export type GoogleAdsDashboard = {
   bookedInAds30d: number | null;
   /** False until the health migration is applied: health and waste are not read. */
   healthSetUp: boolean;
+  liveAds: LiveAd[];
+  displayCreatives: DisplayCreative[];
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -343,7 +352,16 @@ async function readHealthOrMissing(
     };
   } catch (error) {
     if (!isMissingView(error)) throw error;
-    return { health: [], wasted: [], bookedInAds30d: null, setUp: false };
+    return {
+      health: [],
+      wasted: [],
+      bookedInAds30d: null,
+      setUp: false,
+      adStatus: [],
+      copy: [],
+      creatives: [],
+      enabledCampaigns: new Map<string, string>(),
+    };
   }
 }
 
@@ -356,53 +374,123 @@ async function readHealth(
   const since30 = new Date(now.getTime() - 30 * DAY_MS)
     .toISOString()
     .slice(0, 10);
-  const [campaignRows, adRows, termRows, convertingRows, bookedRows] =
-    await Promise.all([
-      readAll<Record<string, unknown>>("campaign status", (from, to) =>
-        client
-          .from("google_ads_campaign_status")
-          .select(
-            "campaign_id, campaign_name, status, primary_status, primary_status_reasons, daily_budget",
-          )
-          .range(from, to),
-      ),
-      readAll<Record<string, unknown>>("ad status", (from, to) =>
-        client
-          .from("google_ads_ad_status")
-          .select(
-            "campaign_id, ad_group_status, status, approval_status, review_status",
-          )
-          .range(from, to),
-      ),
-      readAll<Record<string, unknown>>("search terms", (from, to) =>
-        client
-          .from("google_ads_search_term_daily")
-          .select("search_term, campaign_id, cost, clicks")
-          .gte("day", startDay)
-          .lte("day", endDay)
-          .gt("cost", 0)
-          .range(from, to),
-      ),
-      readAll<Record<string, unknown>>("converting terms", (from, to) =>
-        client
-          .from("google_ads_search_term_conversions")
-          .select("search_term")
-          .range(from, to),
-      ),
-      readAll<Record<string, unknown>>("booked in ads", (from, to) =>
-        client
-          .from("google_ads_conversion_daily")
-          .select("conversions")
-          .eq("action_name", "CRM - Booked Call")
-          .gte("day", since30)
-          .range(from, to),
-      ),
-    ]);
+  const [
+    campaignRows,
+    adRows,
+    termRows,
+    convertingRows,
+    bookedRows,
+    copyRows,
+    creativeRows,
+  ] = await Promise.all([
+    readAll<Record<string, unknown>>("campaign status", (from, to) =>
+      client
+        .from("google_ads_campaign_status")
+        .select(
+          "campaign_id, campaign_name, status, primary_status, primary_status_reasons, daily_budget",
+        )
+        .range(from, to),
+    ),
+    readAll<Record<string, unknown>>("ad status", (from, to) =>
+      client
+        .from("google_ads_ad_status")
+        .select(
+          "campaign_id, ad_group_name, ad_group_status, ad_id, status, approval_status, review_status",
+        )
+        .range(from, to),
+    ),
+    readAll<Record<string, unknown>>("search terms", (from, to) =>
+      client
+        .from("google_ads_search_term_daily")
+        .select("search_term, campaign_id, cost, clicks")
+        .gte("day", startDay)
+        .lte("day", endDay)
+        .gt("cost", 0)
+        .range(from, to),
+    ),
+    readAll<Record<string, unknown>>("converting terms", (from, to) =>
+      client
+        .from("google_ads_search_term_conversions")
+        .select("search_term")
+        .range(from, to),
+    ),
+    readAll<Record<string, unknown>>("booked in ads", (from, to) =>
+      client
+        .from("google_ads_conversion_daily")
+        .select("conversions")
+        .eq("action_name", "CRM - Booked Call")
+        .gte("day", since30)
+        .range(from, to),
+    ),
+    // One row per ad (upserted); newest first so removed ads fall off below.
+    readAll<Record<string, unknown>>("ad copy", (from, to) =>
+      client
+        .from("google_ads_rows")
+        .select("synced_at, data")
+        .eq("report", "ad_status")
+        .order("synced_at", { ascending: false })
+        .range(from, to),
+    ),
+    readAll<Record<string, unknown>>("creatives", (from, to) =>
+      client
+        .from("google_ads_creatives")
+        .select(
+          "ad_id, asset_id, asset_type, preview_url, impressions, clicks, cost",
+        )
+        .not("preview_url", "is", null)
+        .order("impressions", { ascending: false })
+        .range(from, to),
+    ),
+  ]);
   const converting = new Set(
     convertingRows.map((r) => String(r.search_term).trim().toLowerCase()),
   );
   const strings = (v: unknown) => (Array.isArray(v) ? v.map(String) : []);
+  const newest = String(copyRows[0]?.synced_at ?? "");
+  const cutoff = newest
+    ? new Date(Date.parse(newest) - 2 * 60 * 60 * 1000).toISOString()
+    : "";
+  const copy = copyRows
+    .filter((r) => String(r.synced_at) >= cutoff)
+    .map((r) => r.data as Record<string, unknown>)
+    .filter((d) => strings(d.headlines).length > 0)
+    .map((d) => ({
+      adId: String(d.adId),
+      headlines: strings(d.headlines),
+      descriptions: strings(d.descriptions),
+      finalUrls: strings(d.finalUrls),
+    }));
+  const enabledCampaigns = new Map(
+    campaignRows
+      .filter((r) => r.status === "ENABLED")
+      .map((r) => [
+        String(r.campaign_id),
+        String(r.campaign_name ?? r.campaign_id),
+      ]),
+  );
+  const campaignOfAd = new Map(
+    adRows.map((r) => [String(r.ad_id), String(r.campaign_id)]),
+  );
+  const nameOf = new Map(
+    campaignRows.map((r) => [
+      String(r.campaign_id),
+      String(r.campaign_name ?? r.campaign_id),
+    ]),
+  );
+  const creatives: DisplayCreative[] = creativeRows.slice(0, 12).map((r) => ({
+    assetId: String(r.asset_id),
+    campaign: nameOf.get(campaignOfAd.get(String(r.ad_id)) ?? "") ?? "",
+    kind: r.asset_type === "YOUTUBE_VIDEO" ? "video" : "image",
+    previewUrl: String(r.preview_url),
+    impressions: num(r.impressions),
+    clicks: num(r.clicks),
+    cost: Math.round(num(r.cost) * 100) / 100,
+  }));
   return {
+    adStatus: adRows,
+    copy,
+    creatives,
+    enabledCampaigns,
     health: campaignHealth(
       campaignRows.map((r) => ({
         campaignId: String(r.campaign_id),
@@ -444,7 +532,11 @@ export async function getGoogleAdsDashboard(input: {
   const client = input.client ?? (createAdminClient() as unknown as Client);
   const now = input.now ?? new Date();
   const { label, days, endsAt } = resolveAdminAnalyticsRange(input.range, now);
-  const start = new Date(endsAt.getTime() - days * DAY_MS);
+  // Spend before lead capture went live has no leads to join, so a range
+  // reaching past it would price booked calls on spend that could never book.
+  const liveFrom = Date.parse(`${LEADS_LIVE_FROM}T07:00:00Z`);
+  const wanted = endsAt.getTime() - days * DAY_MS;
+  const start = new Date(Math.max(wanted, liveFrom));
   const startDay = start.toISOString().slice(0, 10);
   const endDay = endsAt.toISOString().slice(0, 10);
   // Before vs after always needs everything since the change, whatever the range.
@@ -487,7 +579,7 @@ export async function getGoogleAdsDashboard(input: {
         client
           .from("google_ads_ad_daily")
           .select(
-            "day, campaign_id, ad_group_name, ad_id, status, approval_status, final_urls, headlines, cost, clicks, impressions",
+            "day, campaign_id, ad_group_name, ad_id, status, approval_status, final_urls, headlines, descriptions, cost, clicks, impressions",
           )
           .gte("day", startDay)
           .lte("day", endDay)
@@ -559,7 +651,10 @@ export async function getGoogleAdsDashboard(input: {
   const daySpend = (rows: CampaignDay[]) =>
     rows.map((r) => ({ day: String(r.day), cost: num(r.cost) }));
   return {
-    rangeLabel: label,
+    rangeLabel:
+      wanted < liveFrom
+        ? `${label} (since Jul 27, when lead tracking began)`
+        : label,
     synced: rangeDays.length > 0,
     totals: totalOf(campaigns),
     campaigns,
@@ -575,5 +670,17 @@ export async function getGoogleAdsDashboard(input: {
     health: extra.health,
     bookedInAds30d: extra.bookedInAds30d,
     healthSetUp: extra.setUp,
+    liveAds: liveAdsOf(
+      extra.adStatus,
+      extra.copy,
+      adsInRange(
+        adRows.filter((r) => String(r.day) >= startDay),
+        names,
+        Infinity,
+      ),
+      extra.enabledCampaigns,
+      servedCopy(adRows),
+    ),
+    displayCreatives: extra.creatives,
   };
 }
