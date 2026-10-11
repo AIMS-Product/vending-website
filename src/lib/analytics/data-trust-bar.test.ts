@@ -64,7 +64,11 @@ describe("tab to feed mapping", () => {
   });
 
   it("maps checks only to tabs that exist", () => {
-    const keys = new Set<string>(ANALYTICS_TABS.map((tab) => tab.key));
+    const keys = new Set<string>([
+      ...ANALYTICS_TABS.map((tab) => tab.key),
+      // Its own page (/admin/analytics/google-ads), not a dashboard tab.
+      "google-ads",
+    ]);
     for (const cover of CHECK_COVERS) expect(keys.has(cover.tab)).toBe(true);
   });
 });
@@ -123,6 +127,12 @@ describe("tab to feed mapping matches what each loader reads", () => {
     google_ads_campaign_daily: "google-ads",
     google_ads_keyword_daily: "google-ads",
     google_ads_creatives: "google-ads",
+    google_ads_clicks: "google-ads",
+    google_ads_campaign_status: "google-ads",
+    google_ads_ad_status: "google-ads",
+    google_ads_search_term_daily: "google-ads",
+    google_ads_search_term_conversions: "google-ads",
+    google_ads_conversion_daily: "google-ads",
     // Written by many connectors; the tab must list at least one of them.
     channel_daily: "spine",
   };

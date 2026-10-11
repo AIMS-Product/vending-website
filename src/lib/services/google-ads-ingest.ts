@@ -11,6 +11,11 @@ export const GOOGLE_ADS_REPORTS = [
   "search_term",
   "keyword",
   "conversion_action",
+  "campaign_status",
+  "ad_status",
+  "conversion_daily",
+  "search_term_conversion",
+  "click",
 ] as const;
 
 /** The script sends at most this many rows per request. */

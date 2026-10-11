@@ -440,7 +440,13 @@ export function judgeAudit(
 // Which on-screen number each check verifies
 // ---------------------------------------------------------------------------
 
-export type CoveredMetric = "leads" | "booked" | "won" | "revenue" | "calendly";
+export type CoveredMetric =
+  | "leads"
+  | "booked"
+  | "won"
+  | "revenue"
+  | "calendly"
+  | "spend";
 
 /** Days a check compares, inclusive, as YYYY-MM-DD. */
 export type DayRange = { from: string; to: string };
@@ -459,7 +465,7 @@ type CheckCover = {
    */
   standIns: readonly string[];
   window: CheckWindow;
-  tab: AnalyticsTabKey;
+  tab: TrustScope;
   metric: CoveredMetric;
   /** The number's name as the tab prints it. */
   number: string;
@@ -531,6 +537,14 @@ export const CHECK_COVERS: ReadonlyArray<CheckCover> = [
     tab: "booked",
     metric: "calendly",
     number: "Marketing booked",
+  },
+  {
+    checkId: "google-ads-sync-spend",
+    standIns: ["google-ads-group", "google-ads-sync-config"],
+    window: "last-7-settled-days",
+    tab: "google-ads",
+    metric: "spend",
+    number: "Spend",
   },
 ];
 

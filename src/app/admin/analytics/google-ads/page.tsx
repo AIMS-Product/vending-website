@@ -9,6 +9,13 @@ import {
   GoogleAdsTable,
   GoogleAdsTotals,
 } from "@/components/admin/GoogleAdsPanels";
+import {
+  GoogleAdsBeforeAfter,
+  GoogleAdsChangeLog,
+  GoogleAdsHealth,
+  GoogleAdsWaste,
+  GoogleAdsWeekly,
+} from "@/components/admin/GoogleAdsMediaBuyerPanels";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { getGoogleAdsDashboard } from "@/lib/services/google-ads-dashboard";
 import { requireReadAccess } from "@/lib/supabase/auth";
@@ -34,7 +41,7 @@ export default async function AnalyticsGoogleAdsPage({
       path="/admin/analytics/google-ads"
       tab="google-ads"
       title="Google Ads"
-      description="Spend, leads, booked calls and wins by campaign and keyword. Leads are site leads with a Google click id; wins are those leads' closed deals."
+      description="Spend, leads, booked calls and wins by campaign and keyword, account health, and every change made in the account. Leads are site leads with a Google click id; wins are those leads' closed deals."
       user={{ email: user.email, role }}
       range={range}
       trust={getTrustBar("google-ads")}
@@ -46,8 +53,19 @@ export default async function AnalyticsGoogleAdsPage({
           live.
         </p>
       )}
-      <GoogleAdsTotals totals={ads.totals} />
+      <div className="grid gap-5 lg:grid-cols-2">
+        <GoogleAdsHealth
+          health={ads.health}
+          bookedInAds30d={ads.bookedInAds30d}
+          setUp={ads.healthSetUp}
+        />
+        <GoogleAdsBeforeAfter data={ads.beforeAfter} />
+      </div>
+      <div className="mt-5">
+        <GoogleAdsTotals totals={ads.totals} />
+      </div>
       <div className="mt-5 grid gap-5">
+        <GoogleAdsWeekly weeks={ads.weeks} />
         <GoogleAdsTable
           title="By campaign"
           firstColumn="Campaign"
@@ -60,7 +78,9 @@ export default async function AnalyticsGoogleAdsPage({
           rows={ads.keywords}
           empty="No keyword rows in this range."
         />
+        <GoogleAdsWaste wasted={ads.wasted} setUp={ads.healthSetUp} />
         <GoogleAdsCreatives creatives={ads.creatives} />
+        <GoogleAdsChangeLog />
       </div>
     </AnalyticsDrillDown>
   );

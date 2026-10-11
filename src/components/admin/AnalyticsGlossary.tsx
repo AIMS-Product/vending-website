@@ -74,6 +74,26 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
     meaning:
       "Nothing to count: we have no data for it, or too few calls to work out a rate. A 0 is a real zero.",
   },
+  {
+    term: "Cost per booked call (Google Ads)",
+    meaning:
+      "Google Ads spend divided by the people who came from a Google ad click (one per click id) and later booked a first sales call. Booked calls count on the day the lead came in, so the latest days keep filling in for a week or two. The frozen baseline is $149 (Sep 10 to Oct 9, 2026).",
+  },
+  {
+    term: "(pre-tracking) keyword",
+    meaning:
+      "A Google lead whose keyword cannot be recovered: it came in before keywords were added to ad links (Oct 10, 2026) and its click is not in the Google Ads click report either. Never guessed.",
+  },
+  {
+    term: "Search terms with spend and no lead",
+    meaning:
+      "What people actually typed, where the clicks cost at least $25 in the range and never produced a site form, a Google lead form or a Close upload (qualified, booked, won) on any day the Google Ads script has synced (from July 2026). Candidates for negative keywords, not proof of waste.",
+  },
+  {
+    term: "Campaign health",
+    meaning:
+      "Google's own status for each campaign and its live ads, read by the daily Google Ads script: not serving, ads disapproved or in review, limited by budget.",
+  },
 ];
 
 export function AnalyticsGlossary() {

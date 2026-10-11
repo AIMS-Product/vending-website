@@ -44,6 +44,7 @@ import {
   staleOnOwnDay,
 } from "@/lib/services/data-audit-spine-orphans";
 import { seoSearchConsoleCheck } from "@/lib/services/data-audit-seo-checks";
+import { googleAdsSyncSpendCheck } from "@/lib/services/data-audit-google-ads-checks";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
@@ -133,6 +134,13 @@ export async function runDataAudit(
     )),
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
     ...(await safe("ads", () => adSpendCheck(client, metricool, ga4, now))),
+    ...(await safe("google-ads", () =>
+      googleAdsSyncSpendCheck(
+        client,
+        ga4,
+        settledWindow(now, SETTLED_LAG_DAYS.ads, ADS_WINDOW_DAYS),
+      ),
+    )),
     ...(await safe("ghl", () => ghlFormsCheck(client, ghl, now))),
     ...(await safe("youtube", () =>
       youtubeCheck(client, youtubeSource || null, now),

@@ -1,9 +1,12 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
 import {
+  GOOGLE_ADS_REPORTS,
   GoogleAdsIngestError,
   ingestGoogleAdsBatch,
 } from "./google-ads-ingest";
@@ -61,5 +64,22 @@ describe("ingestGoogleAdsBatch", () => {
         client as never,
       ),
     ).rejects.toMatchObject({ status: 500 });
+  });
+
+  it("accepts exactly the reports the table's check constraint allows", () => {
+    // The newest migration that rewrites the constraint is the one in force.
+    const sql = readFileSync(
+      path.join(
+        process.cwd(),
+        "supabase/migrations/20261011120000_google_ads_health_reports.sql",
+      ),
+      "utf8",
+    );
+    const allowed = [
+      ...(sql.match(/check \(report in \(([^)]+)\)/)?.[1] ?? "").matchAll(
+        /'([a-z_]+)'/g,
+      ),
+    ].map((m) => m[1]);
+    expect([...allowed].sort()).toEqual([...GOOGLE_ADS_REPORTS].sort());
   });
 });
