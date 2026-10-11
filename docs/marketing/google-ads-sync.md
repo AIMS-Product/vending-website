@@ -78,12 +78,14 @@ with GA4's `advertiserAdCost` and fails if the script stops writing.
 
 ## Editing the script safely
 
-**Run saves the editor.** In Ads > Scripts, Preview runs whatever is in the
-editor without saving; Run saves it first. Never paste one-off code into the
-scheduled sync script and press Run: the next scheduled run would execute the
-one-off code. Use Preview for read-only questions; for a one-off change, Run
-outside the 1-2am schedule and paste the real `sync.js` back (with the secret)
-and Save straight after. Account changes are logged in
+**Preview and Run both save the editor.** Run saves it, and so does Preview
+(confirmed 2026-10-11: a Preview-only query was the saved script the next
+morning). Clicking Run on code you haven't previewed opens "Preview before
+running?" and nothing runs until you choose. Any one-off code, even a
+read-only Preview, replaces the scheduled sync script. After every one-off
+session, paste the real `sync.js` back (with the secret), Save, reload the
+script in a new tab and compare it byte for byte. Never do this during the
+1-2am schedule. Account changes are logged in
 `src/lib/services/google-ads-changelog.ts`.
 
 ## Reconciling
