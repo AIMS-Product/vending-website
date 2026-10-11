@@ -18,6 +18,7 @@ import {
   TodayStrip,
   TrendCard,
 } from "@/components/admin/dashboard/DashboardPanels";
+import { CeoBriefing } from "@/components/admin/dashboard/CeoBriefing";
 import { DashboardWindowControl } from "@/components/admin/dashboard/DashboardWindowControl";
 import { ScorecardCard } from "@/components/admin/dashboard/ScorecardCard";
 import {
@@ -90,6 +91,12 @@ export default async function AdminAnalyticsPage({
         </Suspense>
       }
     >
+      <Suspense
+        key={`briefing-${window.key}`}
+        fallback={<CardSkeleton label="briefing" height="h-28" />}
+      >
+        <CeoBriefing window={window} />
+      </Suspense>
       <Suspense fallback={<CardSkeleton label="today" height="h-32" />}>
         <TodayStrip window={window} />
       </Suspense>

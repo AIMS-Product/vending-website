@@ -132,7 +132,12 @@ export function DashboardCard({
       <header className="mb-4 flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <h2 className={adminSectionTitleClass}>{title}</h2>
-          <p className="text-ui-text-subtle mt-0.5 text-xs">{source}</p>
+          <details className="text-ui-text-subtle mt-0.5 text-xs">
+            <summary className="hover:text-ui-text-muted w-fit cursor-pointer">
+              How it&apos;s counted
+            </summary>
+            <p className="mt-1 max-w-3xl">{source}</p>
+          </details>
         </div>
         {action}
       </header>
@@ -618,13 +623,17 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
       <div className="divide-ui-line grid divide-y sm:grid-cols-3 sm:divide-x lg:grid-cols-5 lg:divide-y-0">
         {cells}
       </div>
-      <p className="border-ui-line text-ui-text-subtle border-t px-4 py-2 text-[0.6875rem]">
-        {window.key.startsWith("custom:") ? "" : `${window.label}, `}
-        {dayLabel(window.startDay)} – {dayLabel(window.endDay)}, against{" "}
-        {dayLabel(prior.startDay)} – {dayLabel(prior.endDay)}. Leads §4 · Booked
-        §5 Close mirror, SteelTrap rule §3 · Show rate §7 calls held · Revenue
-        §8 · CAC §10.
-      </p>
+      <details className="border-ui-line text-ui-text-subtle border-t px-4 py-2 text-[0.6875rem]">
+        <summary className="hover:text-ui-text-muted w-fit cursor-pointer">
+          {window.key.startsWith("custom:") ? "" : `${window.label}, `}
+          {dayLabel(window.startDay)} – {dayLabel(window.endDay)}, against{" "}
+          {dayLabel(prior.startDay)} – {dayLabel(prior.endDay)}
+        </summary>
+        <p className="mt-1">
+          Leads §4 · Booked §5 Close mirror, SteelTrap rule §3 · Show rate §7
+          calls held · Revenue §8 · CAC §10.
+        </p>
+      </details>
     </section>
   );
 }
