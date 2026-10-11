@@ -35,35 +35,6 @@ function Cell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function GoogleAdsTotals({ totals }: { totals: GoogleAdsRow }) {
-  const items = [
-    ["Spend", formatUsd(totals.spend)],
-    ["Leads", formatCount(totals.leads)],
-    ["Booked calls", formatCount(totals.booked)],
-    [
-      "Cost per booked call",
-      totals.costPerBooked === null ? "–" : formatUsd(totals.costPerBooked),
-    ],
-    ["Won", formatCount(totals.won)],
-    ["Won value", formatUsd(totals.wonValue)],
-  ];
-  return (
-    <section
-      className={`${adminCardClass} grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6`}
-      aria-label="Google Ads totals"
-    >
-      {items.map(([label, value]) => (
-        <div key={label}>
-          <p className={adminEyebrowClass}>{label}</p>
-          <p className="text-ui-text mt-1 text-xl font-semibold tabular-nums">
-            {value}
-          </p>
-        </div>
-      ))}
-    </section>
-  );
-}
-
 export function GoogleAdsTable({
   title,
   firstColumn,

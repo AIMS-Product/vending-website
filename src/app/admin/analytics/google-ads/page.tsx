@@ -4,10 +4,11 @@ import {
   drillDownParams,
   type SearchParams,
 } from "@/components/admin/dashboard/AnalyticsDrillDown";
+import { adminEyebrowClass } from "@/components/admin/AdminUi";
+import { GoogleAdsCeoView } from "@/components/admin/GoogleAdsCeoView";
 import {
   GoogleAdsAds,
   GoogleAdsTable,
-  GoogleAdsTotals,
 } from "@/components/admin/GoogleAdsPanels";
 import {
   GoogleAdsBeforeAfter,
@@ -17,6 +18,7 @@ import {
   GoogleAdsWeekly,
 } from "@/components/admin/GoogleAdsMediaBuyerPanels";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
+import { ceoSummary } from "@/lib/services/google-ads-ceo";
 import { getGoogleAdsDashboard } from "@/lib/services/google-ads-dashboard";
 import { keywordNote } from "@/lib/services/google-ads-insights";
 import { requireReadAccess } from "@/lib/supabase/auth";
@@ -42,7 +44,7 @@ export default async function AnalyticsGoogleAdsPage({
       path="/admin/analytics/google-ads"
       tab="google-ads"
       title="Google Ads"
-      description="Spend, leads, booked calls and wins by campaign and keyword, account health, and every change made in the account. Leads are site leads with a Google click id; wins are those leads' closed deals."
+      description="What Google Ads costs, what it brings back, and what needs a decision."
       user={{ email: user.email, role }}
       range={range}
       trust={getTrustBar("google-ads")}
@@ -54,17 +56,12 @@ export default async function AnalyticsGoogleAdsPage({
           live.
         </p>
       )}
-      <div className="grid gap-5 lg:grid-cols-2">
-        <GoogleAdsHealth
-          health={ads.health}
-          bookedInAds30d={ads.bookedInAds30d}
-          setUp={ads.healthSetUp}
-        />
-        <GoogleAdsBeforeAfter data={ads.beforeAfter} />
-      </div>
-      <div className="mt-5">
-        <GoogleAdsTotals totals={ads.totals} />
-      </div>
+      <GoogleAdsCeoView
+        rangeLabel={ads.rangeLabel}
+        totals={ads.totals}
+        beforeAfter={ads.beforeAfter}
+        summary={ceoSummary(ads)}
+      />
       <div className="mt-5 grid gap-5">
         <GoogleAdsWeekly weeks={ads.weeks} />
         <GoogleAdsTable
@@ -73,17 +70,33 @@ export default async function AnalyticsGoogleAdsPage({
           rows={ads.campaigns}
           empty="No Google Ads spend or leads in this range."
         />
-        <GoogleAdsTable
-          title="By keyword"
-          firstColumn="Keyword"
-          rows={ads.keywords}
-          empty="No keyword rows in this range."
-          note={keywordNote(ads.keywords, ads.totals, ads.healthSetUp)}
-        />
-        <GoogleAdsWaste wasted={ads.wasted} setUp={ads.healthSetUp} />
-        <GoogleAdsAds ads={ads.ads} />
-        <GoogleAdsChangeLog />
       </div>
+      <details className="mt-8">
+        <summary className={`${adminEyebrowClass} cursor-pointer`}>
+          Media buyer detail: account health, keywords, search terms, ads,
+          change log
+        </summary>
+        <div className="mt-5 grid gap-5">
+          <div className="grid gap-5 lg:grid-cols-2">
+            <GoogleAdsHealth
+              health={ads.health}
+              bookedInAds30d={ads.bookedInAds30d}
+              setUp={ads.healthSetUp}
+            />
+            <GoogleAdsBeforeAfter data={ads.beforeAfter} />
+          </div>
+          <GoogleAdsTable
+            title="By keyword"
+            firstColumn="Keyword"
+            rows={ads.keywords}
+            empty="No keyword rows in this range."
+            note={keywordNote(ads.keywords, ads.totals, ads.healthSetUp)}
+          />
+          <GoogleAdsWaste wasted={ads.wasted} setUp={ads.healthSetUp} />
+          <GoogleAdsAds ads={ads.ads} />
+          <GoogleAdsChangeLog />
+        </div>
+      </details>
     </AnalyticsDrillDown>
   );
 }
