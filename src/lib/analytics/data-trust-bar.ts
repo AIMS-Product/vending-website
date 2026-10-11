@@ -24,9 +24,10 @@ export type FeedSource =
         | "lead_submissions"
         | "calendly_bookings"
         | "ga4_page_views"
-        | "lead_video_views";
+        | "lead_video_views"
+        | "google_ads_rows";
       /** `day` is a date: the newest day of data, read as the end of that day. */
-      column: "created_at" | "day" | "last_seen_at";
+      column: "created_at" | "day" | "last_seen_at" | "synced_at";
     };
 
 export type FeedDef = {
@@ -155,6 +156,11 @@ export const FEEDS = {
     staleAfterHours: 8 * 24,
     source: { kind: "run", connector: "webinar-ingest" },
   },
+  "google-ads": {
+    label: "Google Ads (daily script)",
+    staleAfterHours: DAILY,
+    source: { kind: "table", table: "google_ads_rows", column: "synced_at" },
+  },
   manychat: {
     label: "ManyChat contacts",
     staleAfterHours: 48,
@@ -183,7 +189,12 @@ const SPINE: readonly FeedKey[] = [
   "manychat",
 ];
 
-export type TrustScope = AnalyticsTabKey | "dashboard" | "data" | "seo";
+export type TrustScope =
+  | AnalyticsTabKey
+  | "dashboard"
+  | "data"
+  | "seo"
+  | "google-ads";
 
 /**
  * THE map of tab to the feeds its loader reads. Read off each tab's data
@@ -232,6 +243,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   dashboard: [...SPINE, "close", "calendly", "site-leads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
+  // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
+  "google-ads": ["google-ads", "site-leads"],
   // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
   seo: ["seo-search", "seo-ranks", "seo-ai", "social-accounts"],

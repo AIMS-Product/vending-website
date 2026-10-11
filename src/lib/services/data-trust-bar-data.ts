@@ -163,7 +163,8 @@ async function observeTable(
 ): Promise<FeedObservation> {
   const source = FEEDS[feed].source;
   if (source.kind !== "table") return { feed, lastSuccessAt: null };
-  const { data, error } = await client
+  // google_ads_rows is not in the generated types yet; the read is the same.
+  const { data, error } = await (client as Pick<SupabaseClient, "from">)
     .from(source.table)
     .select(source.column)
     .order(source.column, { ascending: false })

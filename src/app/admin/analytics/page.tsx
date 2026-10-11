@@ -41,6 +41,7 @@ const DRILL_DOWNS = [
   { href: "/admin/analytics/channels", label: "Channels" },
   { href: "/admin/analytics/months", label: "Month over month" },
   { href: "/admin/analytics/youtube", label: "YouTube" },
+  { href: "/admin/analytics/google-ads", label: "Google Ads" },
   { href: "/admin/analytics/video", label: "Pre-call video" },
 ] as const;
 
