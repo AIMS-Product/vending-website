@@ -100,4 +100,31 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
     expected:
       "Sitelinks show again: bigger ads, better click-through and ad rank",
   },
+  {
+    at: "2026-10-11 10:57",
+    kind: "ads",
+    entity:
+      "4 new RSAs landing on /contact: W2 Research General (827756722925), Cost Research (827756630879), Profit Research (827756706470), Buy/Acquire (827756706479)",
+    before:
+      "Last night's claim-free RSAs in these 4 ad groups (827730530582, 827604665514, 827604644322, 827604686595) disapproved again for unreliable claims; they land on the homepage",
+    after:
+      "Same claim-free copy, final URL /contact; the 4 disapproved RSAs paused. The 3 approved-limited homepage ads and both Brand ads unchanged",
+    evidence:
+      'Policy read 10:54: every RSA landing on / was flagged (4 disapproved, 3 limited); the only clean approval lands on /contact. Homepage text has "$90K/Month", "2-15 days to place your first machine", "guarantee consistent income", "passive income" and no earnings disclaimer; /contact has the disclaimer. Homepage CTAs already link to /contact',
+    expected:
+      "The 4 W2 ad groups serve again once approved; same lead form, one step shorter",
+  },
+  {
+    at: "2026-10-11 11:03",
+    kind: "ads",
+    entity:
+      "5 disapproved sitelinks unlinked from W2 and Brand (341871490082, 341871490091, 352563868973, 358106694179, 358106694182)",
+    before:
+      "Linked but not eligible (3 misleading claims, 2 dead destinations)",
+    after:
+      "Unlinked (assets kept). W2 and Brand each show 5 approved sitelinks: the 4 new ones plus Free Resources",
+    evidence:
+      "All 4 new sitelinks APPROVED / ELIGIBLE on both campaigns at 10:54; read-only check after the run shows no disapproved sitelink linked",
+    expected: "Tidy only; disapproved sitelinks could not serve",
+  },
 ];
