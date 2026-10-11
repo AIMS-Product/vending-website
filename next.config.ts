@@ -187,6 +187,12 @@ const nextConfig: NextConfig = {
         destination: "/contact",
         permanent: true,
       },
+      // Old Google Ads sitelink target that 404'd (found 2026-10-11).
+      {
+        source: "/build-your-vending-business",
+        destination: "/process",
+        permanent: true,
+      },
       {
         source: "/privacy-policy",
         destination: "/privacy",
