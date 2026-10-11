@@ -79,7 +79,15 @@ How Google learns from bookings:
   (`src/lib/services/google-ads-booked-calls.ts`: one per gclid, noon Pacific
   on Close's booked date, never before the lead, bookings made before the
   click left out).
-- `scripts/google-ads/upload-booked-calls.js` uploads them to
+- Daily feed (live path): Vercel cron `/api/admin/google-ads-booked-calls/run`
+  (6:15am PT, `CRON_SECRET`) POSTs the last 7 days of booked calls, one
+  request each, to the Zapier catch hook in
+  `GOOGLE_ADS_BOOKED_CALL_WEBHOOK_URL` as `{gclid, conversion_date_time
+(Pacific, with offset), conversion_action}`. Zap "Booked calls -> Google Ads
+  (CRM - Booked Call)" (383130890) uploads each. Missing URL = 503. Google
+  ignores exact repeats, so the overlapping window is safe.
+- `scripts/google-ads/upload-booked-calls.js` (fallback, needs a passkey-authorized
+  Scripts user) uploads them to
   **CRM - Booked Call** (Import from clicks). Backfill `DAYS = 90` once, then
   `DAYS = 7` daily. Google ignores exact re-uploads.
 - `scripts/google-ads/setup-booked-calls.js` creates that action and sets the

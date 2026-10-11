@@ -59,6 +59,15 @@ const envSchema = z.object({
   MANYCHAT_INGEST_SECRET: optionalTrimmedOptionalEnv,
   GOOGLE_ADS_SYNC_SECRET: optionalTrimmedOptionalEnv,
   /**
+   * Zapier catch hook that sends each booked call to Google Ads as a
+   * "CRM - Booked Call" conversion. Absent means the daily run answers 503.
+   */
+  GOOGLE_ADS_BOOKED_CALL_WEBHOOK_URL: z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() ? value.trim() : undefined,
+    z.string().url().startsWith("https://").optional(),
+  ),
+  /**
    * ManyChat page API keys, one per Instagram account (Bearer = whole key).
    * Absent means that account's events land without enrichment.
    * `MANYCHAT_API_KEY` is the original single key (Mike's page); it is the
@@ -259,6 +268,8 @@ const parsed = envSchema.safeParse({
   WEBINAR_INGEST_SECRET: process.env.WEBINAR_INGEST_SECRET,
   MANYCHAT_INGEST_SECRET: process.env.MANYCHAT_INGEST_SECRET,
   GOOGLE_ADS_SYNC_SECRET: process.env.GOOGLE_ADS_SYNC_SECRET,
+  GOOGLE_ADS_BOOKED_CALL_WEBHOOK_URL:
+    process.env.GOOGLE_ADS_BOOKED_CALL_WEBHOOK_URL,
   MANYCHAT_API_KEY: process.env.MANYCHAT_API_KEY,
   MANYCHAT_API_KEY_MIKE: process.env.MANYCHAT_API_KEY_MIKE,
   MANYCHAT_API_KEY_ANTHONY: process.env.MANYCHAT_API_KEY_ANTHONY,

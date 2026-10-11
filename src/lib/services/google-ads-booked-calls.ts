@@ -100,3 +100,65 @@ export async function loadBookedCallConversions(
   }
   return toConversions(rows, now);
 }
+
+/** "2026-10-09T12:00:00-07:00": the Pacific wall time with its offset. */
+export function toPacificIso(iso: string): string {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      hourCycle: "h23",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      timeZoneName: "longOffset",
+    })
+      .formatToParts(new Date(iso))
+      .map((part) => [part.type, part.value]),
+  );
+  const offset = parts.timeZoneName.replace("GMT", "") || "+00:00";
+  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}${offset}`;
+}
+
+/**
+ * POST each conversion to the Zapier hook that uploads it to Google Ads, in
+ * the same shape as the 2026-10-10 backfill. Google ignores an exact repeat
+ * (same gclid, action and time), so overlapping windows are safe.
+ */
+export async function sendBookedCallsToWebhook(
+  conversions: BookedCallConversion[],
+  webhookUrl: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0;
+  let failed = 0;
+  for (const conversion of conversions) {
+    try {
+      const res = await fetchImpl(webhookUrl, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          gclid: conversion.gclid,
+          conversion_date_time: toPacificIso(conversion.conversionTime),
+          conversion_action: "CRM - Booked Call",
+        }),
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (res.ok) sent += 1;
+      else {
+        failed += 1;
+        console.error("google ads booked call webhook rejected", {
+          status: res.status,
+        });
+      }
+    } catch (error) {
+      failed += 1;
+      console.error("google ads booked call webhook failed", {
+        name: error instanceof Error ? error.name : "UnknownError",
+      });
+    }
+  }
+  return { sent, failed };
+}
