@@ -87,4 +87,17 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
       "2-3 form fills each in 90 days; two booked a call; [vending accelerator] booked on $14",
     expected: "Control and ad relevance on queries that already convert",
   },
+  {
+    at: "2026-10-11 02:14",
+    kind: "ads",
+    entity: "4 new sitelinks on W2 and Brand",
+    before:
+      '5 of 6 sitelinks disapproved: 3 for claims ("Over 1,000 active members", startup-cost promises), 2 pointing at dead pages (/build-your-vending-business is a 404, the beginners article redirects)',
+    after:
+      "Book a Strategy Call (/book-your-call), Vending Startup Questions, Member Case Studies (/case-studies), Contact Our Team (/contact); claim-free, every page answers 200. Old ones left linked (they cannot serve)",
+    evidence:
+      "Asset policy read 02:10; W2 loses 64% of impressions to ad rank, and sitelinks feed ad rank",
+    expected:
+      "Sitelinks show again: bigger ads, better click-through and ad rank",
+  },
 ];
