@@ -3,7 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/supabase/admin", () => ({ createAdminClient: vi.fn() }));
 
-import { toConversions } from "./google-ads-booked-calls";
+import {
+  sendBookedCallsToWebhook,
+  toConversions,
+  toPacificIso,
+} from "./google-ads-booked-calls";
 
 const NOW = new Date("2026-10-10T05:00:00Z");
 const G = "Cj0KCQjwm8bTBhDWARIsAC9Hi8n";
@@ -109,5 +113,44 @@ describe("toConversions", () => {
       NOW,
     );
     expect(Date.parse(future[0].conversionTime)).toBeLessThan(NOW.getTime());
+  });
+});
+
+describe("toPacificIso", () => {
+  it("writes Pacific wall time with its offset, summer and winter", () => {
+    expect(toPacificIso("2026-10-09T19:00:00.000Z")).toBe(
+      "2026-10-09T12:00:00-07:00",
+    );
+    expect(toPacificIso("2026-12-01T20:00:00.000Z")).toBe(
+      "2026-12-01T12:00:00-08:00",
+    );
+  });
+});
+
+describe("sendBookedCallsToWebhook", () => {
+  it("posts the backfill shape and counts rejects and throws as failed", async () => {
+    const fetchImpl = vi
+      .fn()
+      .mockResolvedValueOnce(new Response("{}", { status: 200 }))
+      .mockResolvedValueOnce(new Response("no", { status: 500 }))
+      .mockRejectedValueOnce(new Error("network"));
+    const conversions = [
+      { gclid: "a", conversionTime: "2026-10-09T19:00:00.000Z" },
+      { gclid: "b", conversionTime: "2026-10-09T19:00:00.000Z" },
+      { gclid: "c", conversionTime: "2026-10-09T19:00:00.000Z" },
+    ];
+    const result = await sendBookedCallsToWebhook(
+      conversions,
+      "https://hooks.example/x",
+      fetchImpl as unknown as typeof fetch,
+    );
+    expect(result).toEqual({ sent: 1, failed: 2 });
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(url).toBe("https://hooks.example/x");
+    expect(JSON.parse(init.body)).toEqual({
+      gclid: "a",
+      conversion_date_time: "2026-10-09T12:00:00-07:00",
+      conversion_action: "CRM - Booked Call",
+    });
   });
 });

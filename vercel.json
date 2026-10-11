@@ -38,6 +38,10 @@
       "schedule": "17 * * * *"
     },
     {
+      "path": "/api/admin/google-ads-booked-calls/run",
+      "schedule": "15 13 * * *"
+    },
+    {
       "path": "/api/admin/ga4-sync/run",
       "schedule": "40 10 * * *"
     },
