@@ -23,7 +23,7 @@ export const hero = {
   title: ["Turn Vending", "Into Your Path", "to Financial Freedom"],
   body: [
     "Breaking free from the traditional job structure isn't just a dream—it's a real possibility with the right strategy.",
-    "At Vendingpreneurs, we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a profitable vending machine business with minimal time investment.",
+    "At Vendingpreneurs, we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a vending machine business.",
   ],
   image: {
     src: "/images/sections/hero.avif",
@@ -132,11 +132,11 @@ export const accelerator = {
     { value: "$1K-$250K", label: "In revenue generated per month" },
   ] satisfies ReadonlyArray<Stat>,
   statsDisclaimer:
-    "*Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
+    "*Earnings may vary and are not guaranteed. Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
   points: [
     "How to start a vending business with little upfront investment compared to Real Estate",
     "Which vending machines and products generate the highest profits",
-    "How to secure high-traffic locations that guarantee consistent income",
+    "How to secure high-traffic locations and keep them",
     "Automation & scaling strategies to maximize your time and revenue",
     "Common mistakes new vending entrepreneurs make—and how to avoid them",
   ] satisfies ReadonlyArray<AcceleratorPoint>,
