@@ -28,7 +28,7 @@ const TONE_WORD: Record<TrustTone, string> = {
 const AUDIT_WORD: Record<TrustTone, string> = {
   ok: "All passed",
   warn: "Worth a look",
-  bad: "Do not quote",
+  bad: "A check failed",
 };
 
 /**
