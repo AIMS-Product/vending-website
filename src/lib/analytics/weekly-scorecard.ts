@@ -12,6 +12,9 @@ import type { ChannelFact } from "@/lib/services/channel-report-rollup";
 
 export const SCORECARD_WEEKS = 8;
 
+/** Close "Booked By" value for a call a Lane 2 setter booked. */
+export const LANE_2_BOOKED_BY = "Lane 2";
+
 /** Website form bands the qualification quiz routes to a call. */
 export const QUALIFIED_BANDS = new Set(["top_closers", "lane_1", "setting"]);
 
@@ -30,8 +33,10 @@ export type ScorecardWeek = {
   booked: number;
   /** After the §3 exclusions, one per lead. */
   bookedKept: number;
-  /** `bookedKept` without Lane 2 reactivation. */
+  /** `bookedKept` without the Reactivation Scrapers funnel: by lead source. */
   bookedMarketing: number;
+  /** `bookedKept` that a Lane 2 setter booked (Close "Booked By"), any source. */
+  bookedByLane2: number;
   /** Captured (§4): site leads plus contacts on the spine. */
   mqls: number;
   /** Site form fills the quiz scored into a calling band. */
@@ -111,6 +116,8 @@ export function buildScorecard(input: {
       bookedMarketing: keptInWeek.filter(
         (c) => flowChannelForFunnel(c.funnel) !== "reactivation",
       ).length,
+      bookedByLane2: keptInWeek.filter((c) => c.bookedBy === LANE_2_BOOKED_BY)
+        .length,
       mqls,
       qualified: input.qualifiedDays.filter(within).length,
       spend,

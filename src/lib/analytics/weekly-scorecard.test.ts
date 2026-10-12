@@ -57,7 +57,11 @@ describe("buildScorecard", () => {
       count: 2,
       calls: [
         call("a", "2026-09-28"),
-        call("b", "2026-10-04"),
+        // Lane 2 booked a webinar lead: marketing by source, Lane 2 by booker.
+        call("b", "2026-10-04", {
+          funnel: "Internal Webinar",
+          bookedBy: "Lane 2",
+        }),
         call("c", "2026-09-30", { status: "🔻 Canceled (by Lead)" }),
         call("d", "2026-10-01", { funnel: "Reactivation Scrapers" }),
         call("e", "2026-10-05"), // next week
@@ -71,6 +75,7 @@ describe("buildScorecard", () => {
       booked: 4,
       bookedKept: 3,
       bookedMarketing: 2,
+      bookedByLane2: 1,
     });
   });
 

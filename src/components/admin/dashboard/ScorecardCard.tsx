@@ -158,7 +158,7 @@ export async function ScorecardCard({ window }: { window: DashboardWindow }) {
                   rows={rows}
                   value={(w) => num(w.booked)}
                   detail={(w) =>
-                    `${num(w.bookedKept)} kept · ${num(w.bookedMarketing)} mktg`
+                    `${num(w.bookedKept)} kept · ${num(w.bookedMarketing)} mktg · ${num(w.bookedByLane2)} by Lane 2`
                   }
                 />
                 <Row

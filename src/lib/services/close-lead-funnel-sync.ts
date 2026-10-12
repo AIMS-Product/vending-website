@@ -34,6 +34,10 @@ export const FIELD_LABELS = {
   lane: "Sales Team Lane",
   qualified: "Qualified (Opp)",
   disposition: "Todays Call Disposition (Opp)",
+  /** Who booked the call: "Lane 2" marks a Lane 2 setter (Dom, 2026-10-11). */
+  bookedBy: "Booked By",
+  entrySource: "Entry Source",
+  latestBookedDate: "Latest Sales Call Booked Date",
 } as const;
 
 export type FieldKey = keyof typeof FIELD_LABELS;
@@ -144,10 +148,7 @@ export function mapLead(
     return text(lead[`custom.${id}`] ?? custom[id]);
   };
   const bookedRaw = field("bookedDate");
-  const booked =
-    bookedRaw && /^\d{4}-\d{2}-\d{2}/.test(bookedRaw)
-      ? bookedRaw.slice(0, 10)
-      : null;
+  const booked = dateOnly(bookedRaw);
   return {
     lead_id: leadId,
     display_name: text(lead.display_name),
@@ -162,6 +163,9 @@ export function mapLead(
     qualified: field("qualified"),
     setter_name: field("setter"),
     call_disposition: field("disposition"),
+    booked_by: field("bookedBy"),
+    entry_source: field("entrySource"),
+    latest_sales_call_booked_date: dateOnly(field("latestBookedDate")),
     lead_created_at: text(lead.date_created),
     lead_updated_at: text(lead.date_updated),
     synced_at: syncedAt,
@@ -254,6 +258,10 @@ export async function syncCloseLeadFunnel(
 function closeFromConfig(): SearchClient | null {
   if (!config.CLOSE_API_KEY) return null;
   return createCloseClient({ apiKey: config.CLOSE_API_KEY });
+}
+
+function dateOnly(value: string | null): string | null {
+  return value && /^\d{4}-\d{2}-\d{2}/.test(value) ? value.slice(0, 10) : null;
 }
 
 function text(value: unknown): string | null {

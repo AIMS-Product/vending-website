@@ -65,6 +65,9 @@ describe("mapLead", () => {
         "custom.cf_bookedDate": "2026-08-12T00:00:00+00:00",
         "custom.cf_funnel": "Internal Webinar",
         "custom.cf_showUp": "No",
+        "custom.cf_bookedBy": "Lane 2",
+        "custom.cf_entrySource": "Webinar",
+        "custom.cf_latestBookedDate": "2026-09-02",
       },
       ids,
       "2026-09-13T00:00:00.000Z",
@@ -76,6 +79,9 @@ describe("mapLead", () => {
       first_sales_call_booked_date: "2026-08-12",
       first_call_show_up: "No",
       setter_name: null,
+      booked_by: "Lane 2",
+      entry_source: "Webinar",
+      latest_sales_call_booked_date: "2026-09-02",
     });
   });
 
