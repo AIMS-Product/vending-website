@@ -6,6 +6,7 @@ import {
   adminLinkClass,
 } from "@/components/admin/AdminUi";
 import {
+  CardHelp,
   CardMessage,
   dayLabel,
   failed,
@@ -77,7 +78,9 @@ export async function ScorecardCard({ window }: { window: DashboardWindow }) {
     >
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
         <div className="min-w-0">
-          <h2 className={adminEyebrowClass}>Leadership scorecard</h2>
+          <h2 className={`${adminEyebrowClass} flex items-center gap-1.5`}>
+            Leadership scorecard <CardHelp help="scorecard" />
+          </h2>
           <p className="text-ui-text-muted mt-0.5 text-xs whitespace-nowrap">
             {dayLabel(shown.start)} – {dayLabel(shown.end)}
           </p>
@@ -186,7 +189,6 @@ export async function ScorecardCard({ window }: { window: DashboardWindow }) {
               </tbody>
             </table>
           </div>
-          <Definitions />
         </div>
       </details>
     </section>
@@ -276,34 +278,6 @@ function Row({
         );
       })}
     </tr>
-  );
-}
-
-function Definitions() {
-  const items: Array<[string, string]> = [
-    [
-      "Total booked calls",
-      "Close first sales calls dated in the week (the day the call is scheduled for), every one, as the sheet's Total counts them. Kept = after cancelled-by-lead, outside-the-US and quiz-funnel calls are removed (§3); mktg = kept, without Lane 2 reactivation.",
-    ],
-    [
-      "MQLs",
-      "Every new marketing lead captured: site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days). Scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting).",
-    ],
-    [
-      "Ad spend",
-      "Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Metricool, webinar campaigns included. Incomplete = a network that spent in these weeks has days with nothing recorded.",
-    ],
-    ["Cost per MQL", "Ad spend divided by MQLs for the same week."],
-  ];
-  return (
-    <dl className="border-ui-line mt-4 grid gap-x-6 gap-y-2 border-t pt-3 text-xs sm:grid-cols-2">
-      {items.map(([term, text]) => (
-        <div key={term}>
-          <dt className={adminEyebrowClass}>{term}</dt>
-          <dd className="text-ui-text-muted mt-0.5">{text}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
 

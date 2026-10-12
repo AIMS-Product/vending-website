@@ -189,6 +189,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
       "close-wins",
       "booked-metrics-data",
       "cac-report-data",
+      "google-ads-dashboard",
     ],
   };
 

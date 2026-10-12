@@ -19,7 +19,9 @@ import {
   TrendCard,
 } from "@/components/admin/dashboard/DashboardPanels";
 import { ChannelValueCard } from "@/components/admin/dashboard/ChannelValueCard";
-import { CeoBriefing } from "@/components/admin/dashboard/CeoBriefing";
+import { GlanceCard } from "@/components/admin/dashboard/GlanceCard";
+import { PaidAdsCard } from "@/components/admin/dashboard/PaidAdsCard";
+import { AnalyticsGlossary } from "@/components/admin/AnalyticsGlossary";
 import { DashboardWindowControl } from "@/components/admin/dashboard/DashboardWindowControl";
 import { ScorecardCard } from "@/components/admin/dashboard/ScorecardCard";
 import {
@@ -75,7 +77,6 @@ export default async function AdminAnalyticsPage({
       activeSection="analytics"
       eyebrow="Analytics"
       title={longToday}
-      description="Every channel from first capture to closed sale. Days are Eastern time, as the sales floor counts them."
       userEmail={user.email}
       userRole={role}
       actions={
@@ -93,10 +94,12 @@ export default async function AdminAnalyticsPage({
       }
     >
       <Suspense
-        key={`briefing-${window.key}`}
-        fallback={<CardSkeleton label="briefing" height="h-28" />}
+        key={`glance-${window.key}`}
+        fallback={
+          <CardSkeleton label="booked calls by channel" height="h-64" />
+        }
       >
-        <CeoBriefing window={window} />
+        <GlanceCard window={window} />
       </Suspense>
       <Suspense fallback={<CardSkeleton label="today" height="h-32" />}>
         <TodayStrip window={window} />
@@ -152,6 +155,15 @@ export default async function AdminAnalyticsPage({
         </Suspense>
       </div>
 
+      <div className="mt-5">
+        <Suspense
+          key={`paid-${window.key}`}
+          fallback={<CardSkeleton label="paid ads" height="h-96" />}
+        >
+          <PaidAdsCard window={window} />
+        </Suspense>
+      </div>
+
       <div className="mt-5 grid gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
           <Suspense
@@ -193,6 +205,7 @@ export default async function AdminAnalyticsPage({
       >
         <SyncFooter />
       </Suspense>
+      <AnalyticsGlossary />
     </AdminShell>
   );
 }
