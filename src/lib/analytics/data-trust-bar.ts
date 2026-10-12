@@ -114,7 +114,8 @@ export const FEEDS = {
     source: { kind: "run", connector: "metricool-posts" },
   },
   "metricool-ads": {
-    label: "Ad spend (Metricool)",
+    // Meta from Meta's API since 2026-10-12, Google via GA4; the run keeps its old connector name.
+    label: "Ad spend (Meta and Google)",
     staleAfterHours: DAILY,
     source: { kind: "run", connector: "metricool-ads" },
   },

@@ -40,6 +40,7 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   // currently agrees with the system that owns it.
   "/admin/data",
   "/admin/forms",
+  "/admin/guide",
   "/admin/leads",
   "/admin/libraries",
   "/admin/links",

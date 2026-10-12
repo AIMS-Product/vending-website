@@ -28,6 +28,7 @@ import {
 
 type AdminSection =
   | "overview"
+  | "guide"
   | "pages"
   | "posts"
   | "caseStudies"
@@ -99,6 +100,13 @@ const contentSections: AdminNavSection[] = [
     href: "/admin/analytics",
     description: "Every channel, capture to sale",
     icon: "search",
+  },
+  {
+    id: "guide",
+    label: "Start here",
+    href: "/admin/guide",
+    description: "How to use the studio",
+    icon: "book",
   },
   {
     id: "pages",

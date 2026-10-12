@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { adminEyebrowClass } from "@/components/admin/AdminUi";
 import { readChannelValue } from "@/components/admin/dashboard/ChannelValueCard";
@@ -31,14 +32,35 @@ const COLUMNS = [
 const show = (n: number | null, f: (n: number) => string = num) =>
   n === null ? "–" : f(n);
 
+const CELLS: Record<(typeof COLUMNS)[number], (r: PaidRow) => string> = {
+  Spend: (r) => money(r.spend),
+  Clicks: (r) => num(r.clicks),
+  "Sign-ups": (r) => show(r.signUps),
+  Booked: (r) => show(r.booked),
+  Won: (r) => show(r.won),
+  "Cost per booked": (r) => show(r.costPerBooked, money),
+};
+
+// Meta campaigns carry spend and clicks only (registrations are stored per
+// webinar week, not per campaign), so their funnel columns are dropped
+// instead of shown as a row of dashes. Network and Google tables keep every
+// column: there a dash means "spent, nothing booked".
+const SPEND_ONLY: readonly (typeof COLUMNS)[number][] = ["Spend", "Clicks"];
+
+const DETAIL_LINK =
+  "text-ui-accent ml-2 font-medium normal-case tracking-normal hover:underline";
+const WEBINAR_BOARD_ADS = "https://webinars.vendingpreneurs.com/ads/winners";
+
 function PaidTable({
   rows,
   first,
   logos = false,
+  columns = COLUMNS,
 }: {
   rows: readonly PaidRow[];
   first: string;
   logos?: boolean;
+  columns?: readonly (typeof COLUMNS)[number][];
 }) {
   return (
     <div className="overflow-x-auto">
@@ -48,7 +70,7 @@ function PaidTable({
             className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
           >
             <th className="py-2 pr-3 font-semibold">{first}</th>
-            {COLUMNS.map((c) => (
+            {columns.map((c) => (
               <th key={c} className="py-2 pr-3 text-right font-semibold">
                 {c}
               </th>
@@ -66,19 +88,9 @@ function PaidTable({
                   </span>
                 </span>
               </td>
-              {[
-                money(r.spend),
-                num(r.clicks),
-                show(r.signUps),
-                show(r.booked),
-                show(r.won),
-                show(r.costPerBooked, money),
-              ].map((v, i) => (
-                <td
-                  key={COLUMNS[i]}
-                  className="py-2.5 pr-3 text-right tabular-nums"
-                >
-                  {v}
+              {columns.map((c) => (
+                <td key={c} className="py-2.5 pr-3 text-right tabular-nums">
+                  {CELLS[c](r)}
                 </td>
               ))}
             </tr>
@@ -142,7 +154,12 @@ export async function PaidAdsCard({ window }: PaidAdsCardProps) {
         first="Channel"
         logos
       />
-      <h3 className={`${adminEyebrowClass} mt-6 mb-1`}>Google campaigns</h3>
+      <h3 className={`${adminEyebrowClass} mt-6 mb-1`}>
+        Google campaigns
+        <Link href="/admin/analytics/google-ads" className={DETAIL_LINK}>
+          Keywords, ads and decisions
+        </Link>
+      </h3>
       {google.ok ? (
         google.rows.length ? (
           <PaidTable rows={google.rows} first="Campaign" />
@@ -154,9 +171,14 @@ export async function PaidAdsCard({ window }: PaidAdsCardProps) {
           Google Ads campaigns could not be read.
         </CardMessage>
       )}
-      <h3 className={`${adminEyebrowClass} mt-6 mb-1`}>Meta campaigns</h3>
+      <h3 className={`${adminEyebrowClass} mt-6 mb-1`}>
+        Meta campaigns
+        <a href={WEBINAR_BOARD_ADS} className={DETAIL_LINK}>
+          Registrations, bookings and wins per ad on the webinar board
+        </a>
+      </h3>
       {meta.length ? (
-        <PaidTable rows={meta} first="Campaign" />
+        <PaidTable rows={meta} first="Campaign" columns={SPEND_ONLY} />
       ) : (
         <CardMessage tone="empty">No Meta spend recorded.</CardMessage>
       )}
