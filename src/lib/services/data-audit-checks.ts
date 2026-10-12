@@ -2,6 +2,7 @@ import "server-only";
 
 import { config } from "@/lib/config";
 import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
+import { metaAdsFromConfig, type MetaAdsClient } from "@/lib/meta/ads-client";
 import { createCloseClient } from "@/lib/close/client";
 import { createGhlClient, type GhlClient } from "@/lib/ghl/client";
 import {
@@ -75,6 +76,7 @@ export type DataAuditDeps = {
   ga4?: Ga4Client | null;
   ghl?: GhlClient | null;
   metricool?: MetricoolClient | null;
+  metaAds?: MetaAdsClient | null;
   youtube?: YouTubeAnalyticsClient | null;
   calendly?: CalendlyApiClient | null;
   close?: CloseSearchClient | null;
@@ -113,6 +115,8 @@ export async function runDataAudit(
   const ghl = deps.ghl === undefined ? ghlFromConfig() : deps.ghl;
   const metricool =
     deps.metricool === undefined ? metricoolFromConfig() : deps.metricool;
+  const metaAds =
+    deps.metaAds === undefined ? metaAdsFromConfig() : deps.metaAds;
   const youtubeSource =
     deps.youtube === undefined
       ? youtubeSourceFromConfig()
@@ -133,7 +137,9 @@ export async function runDataAudit(
       ),
     )),
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
-    ...(await safe("ads", () => adSpendCheck(client, metricool, ga4, now))),
+    ...(await safe("ads", () =>
+      adSpendCheck(client, metricool, ga4, metaAds, now),
+    )),
     ...(await safe("google-ads", () =>
       googleAdsSyncSpendCheck(
         client,
@@ -399,6 +405,7 @@ async function adSpendCheck(
   client: Client,
   metricool: MetricoolClient | null,
   ga4: Pick<Ga4Client, "fetchGoogleAdsCampaigns"> | null,
+  metaAds: MetaAdsClient | null,
   now: Date,
 ): Promise<AuditResult[]> {
   const { from, to, label } = settledWindow(
@@ -423,12 +430,19 @@ async function adSpendCheck(
     ];
   }
 
-  // Google Ads spend is written from GA4 when GA4 is configured (the sync
-  // does the same), so it is verified there; Meta always through Metricool.
-  const networks: readonly AdNetwork[] = ga4
-    ? ["facebookads"]
-    : ["googleads", "facebookads"];
+  // Each network is verified against whatever the sync writes it from:
+  // Google via GA4 and Meta via Meta's API when configured, else Metricool.
+  const networks: readonly AdNetwork[] = (
+    ["googleads", "facebookads"] as const
+  ).filter((n) => (n === "googleads" ? !ga4 : !metaAds));
   let source = 0;
+  if (metaAds) {
+    const meta = await metaAds.fetchCampaignDays({
+      startDate: from,
+      endDate: to,
+    });
+    for (const campaign of meta) source += campaign.spend;
+  }
   if (ga4) {
     const google = await ga4.fetchGoogleAdsCampaigns({
       startDate: from,

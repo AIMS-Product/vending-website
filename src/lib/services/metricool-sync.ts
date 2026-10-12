@@ -25,6 +25,7 @@ import {
 } from "@/lib/services/channel-daily";
 import { ga4FromConfig, skipped } from "@/lib/services/channel-sync";
 import type { Ga4Client } from "@/lib/ga4/client";
+import { metaAdsFromConfig, type MetaAdsClient } from "@/lib/meta/ads-client";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, TablesInsert } from "@/types/database";
 
@@ -121,6 +122,11 @@ export async function syncMetricool(
      * back to Metricool's googleads; undefined builds from config.
      */
     googleAds?: Pick<Ga4Client, "fetchGoogleAdsCampaigns"> | null;
+    /**
+     * Where Meta spend comes from: Meta's own Marketing API. Explicit null
+     * falls back to Metricool's facebookads; undefined builds from config.
+     */
+    metaAds?: MetaAdsClient | null;
     now?: Date;
     days?: number;
   } = {},
@@ -132,6 +138,8 @@ export async function syncMetricool(
   const blogIds = deps.blogIds ?? blogIdsFromConfig();
   const googleAds =
     deps.googleAds === undefined ? ga4FromConfig() : deps.googleAds;
+  const metaAds =
+    deps.metaAds === undefined ? metaAdsFromConfig() : deps.metaAds;
   const endDate = dayKey(now);
   const startDate = dayKey(addDays(now, -(deps.days ?? WINDOW_DAYS)));
 
@@ -214,6 +222,7 @@ export async function syncMetricool(
     ) {
       for (const network of AD_NETWORKS) {
         if (network === "googleads" && googleAds) continue;
+        if (network === "facebookads" && metaAds) continue;
         if (notConnected.has(network)) continue;
         try {
           const campaigns = await metricool.fetchCampaigns({
@@ -266,6 +275,24 @@ export async function syncMetricool(
           "Google Ads spend could not be read from GA4; see the server log.";
       }
     }
+    // Meta from its own API since Metricool's Meta link stalled (2026-10-08):
+    // same campaign ids and figures (10-05 matched to the cent), same keys.
+    let metaError: string | null = null;
+    if (metaAds) {
+      try {
+        const campaigns = await metaAds.fetchCampaignDays({
+          startDate: adsStart,
+          endDate,
+        });
+        for (const c of campaigns) rows.push(adRow("facebookads", c, c.day));
+      } catch (error) {
+        console.error("meta ads spend via Meta API failed", {
+          message: error instanceof Error ? error.message : String(error),
+        });
+        metaError =
+          "Meta ad spend could not be read from the Meta API; see the server log.";
+      }
+    }
     const disconnected =
       notConnected.size > 0
         ? `${[...notConnected].map((n) => AD_NETWORK_LABELS[n]).join(" and ")} not connected in Metricool for brand ${adsBlogId}; no spend is being recorded for ${notConnected.size > 1 ? "them" : "it"}. Reconnect in Metricool (brand settings > Connections).`
@@ -277,7 +304,9 @@ export async function syncMetricool(
       ? `Metricool returned no ${silent.join(" or ")} campaigns from ${adsStart} to ${endDate}. If those ads are running, reconnect the ad account in Metricool (brand settings > Connections), then re-run this sync with a wider window to backfill.`
       : null;
     const readError =
-      [disconnected, stalled, googleError].filter(Boolean).join(" ") || null;
+      [disconnected, stalled, googleError, metaError]
+        .filter(Boolean)
+        .join(" ") || null;
     if (rows.length === 0) return { rowsWritten: 0, error: readError };
     const written = await upsertChannelDaily(client, rows, { now });
     // Only after every write landed: clearing a renamed row whose replacement
