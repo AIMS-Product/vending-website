@@ -41,14 +41,11 @@ const CELLS: Record<(typeof COLUMNS)[number], (r: PaidRow) => string> = {
   "Cost per booked": (r) => show(r.costPerBooked, money),
 };
 
-const EMPTY_WHEN_NULL: Partial<
-  Record<(typeof COLUMNS)[number], (r: PaidRow) => number | null>
-> = {
-  "Sign-ups": (r) => r.signUps,
-  Booked: (r) => r.booked,
-  Won: (r) => r.won,
-  "Cost per booked": (r) => r.costPerBooked,
-};
+// Meta campaigns carry spend and clicks only (registrations are stored per
+// webinar week, not per campaign), so their funnel columns are dropped
+// instead of shown as a row of dashes. Network and Google tables keep every
+// column: there a dash means "spent, nothing booked".
+const SPEND_ONLY: readonly (typeof COLUMNS)[number][] = ["Spend", "Clicks"];
 
 const DETAIL_LINK =
   "text-ui-accent ml-2 font-medium normal-case tracking-normal hover:underline";
@@ -58,16 +55,13 @@ function PaidTable({
   rows,
   first,
   logos = false,
+  columns = COLUMNS,
 }: {
   rows: readonly PaidRow[];
   first: string;
   logos?: boolean;
+  columns?: readonly (typeof COLUMNS)[number][];
 }) {
-  // A column no row can fill (Meta campaigns carry no funnel here) is noise, not a row of dashes.
-  const columns = COLUMNS.filter((c) => {
-    const value = EMPTY_WHEN_NULL[c];
-    return !value || rows.some((r) => value(r) !== null);
-  });
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[40rem] text-[0.8125rem]">
@@ -184,7 +178,7 @@ export async function PaidAdsCard({ window }: PaidAdsCardProps) {
         </a>
       </h3>
       {meta.length ? (
-        <PaidTable rows={meta} first="Campaign" />
+        <PaidTable rows={meta} first="Campaign" columns={SPEND_ONLY} />
       ) : (
         <CardMessage tone="empty">No Meta spend recorded.</CardMessage>
       )}

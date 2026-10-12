@@ -31,7 +31,7 @@ function mondayOf(day: string): string {
 }
 
 /**
- * The top of the dashboard: booked calls by channel this week and this month,
+ * The booked-by-channel card: booked calls by channel this week and this month,
  * then at most three lines on where to put money, from the value card's rows.
  */
 export async function GlanceCard({ window }: GlanceCardProps) {
