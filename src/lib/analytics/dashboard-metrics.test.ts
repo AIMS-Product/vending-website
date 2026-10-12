@@ -8,8 +8,10 @@ import {
   costPerBookedByMonth,
   dailyCounts,
   deltaPct,
+  firstCallsOn,
   monthKeys,
   planBooked,
+  reactivationCalls,
   showRateHeld,
   sparkPoints,
   windowPlanTarget,
@@ -183,5 +185,36 @@ describe("dashboard metrics", () => {
       booked: 3,
       cost: 267,
     });
+  });
+});
+
+describe("firstCallsOn", () => {
+  it("counts the day's calls after the SteelTrap rule, once per lead", () => {
+    const calls = [
+      call({ leadId: "a" }),
+      call({ leadId: "a" }),
+      call({ leadId: "b", status: "🔻 Canceled (by Lead)" }),
+      call({ leadId: "c", status: "Outside the US" }),
+      call({ leadId: "d", funnel: "LTF - Quiz Funnel" }),
+      call({ leadId: "e", bookedDate: "2026-10-02" }),
+      call({ leadId: "f", showUp: "yes" }),
+    ];
+    expect(firstCallsOn(calls, "2026-10-01").map((c) => c.leadId)).toEqual([
+      "a",
+      "f",
+    ]);
+  });
+});
+
+describe("reactivationCalls", () => {
+  it("moves Google click leads out of reactivation, as the flow card does", () => {
+    const kept = [
+      call({ leadId: "a", funnel: "Reactivation Scrapers" }),
+      call({ leadId: "b", funnel: "Sales Reactivation" }),
+      call({ leadId: "g", funnel: "Reactivation Scrapers" }),
+      call({ leadId: "y", funnel: "YouTube" }),
+    ];
+    expect(reactivationCalls(kept, new Set())).toBe(3);
+    expect(reactivationCalls(kept, new Set(["g"]))).toBe(2);
   });
 });

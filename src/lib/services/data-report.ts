@@ -46,11 +46,13 @@ export type DataReportInput = {
   /** e.g. "Friday 19 September" or "Sep 12 to Sep 18". */
   windowLabel: string;
   channels: readonly ReportChannelRow[];
-  /** The same window on the Close side: every first call, including people who never touched the site. */
+  /** The same window on the Close side: every first call, including people who never touched the site, after the SteelTrap rule. */
   close: {
     label: string;
     rows: readonly ReportCloseRow[];
     complete: boolean;
+    /** First calls the SteelTrap rule left out, printed rather than absorbed. */
+    excluded?: number;
   } | null;
   /** Webinar, email, chatbot, reach: sources with no place in the channel table. */
   sources?: readonly ReportSourceBlock[];
@@ -89,7 +91,7 @@ export function buildDataReport(input: DataReportInput): DataReport {
   // than letting a week's calls read as today's.
   const callsPhrase =
     calls === null
-      ? `${num(totalOf(input.channels, "booked"))} calls booked`
+      ? `${num(totalOf(input.channels, "booked"))} calls booked (site channels)`
       : input.period === "day"
         ? `${num(calls)} calls booked this week`
         : `${num(calls)} calls booked`;
@@ -124,7 +126,7 @@ export function buildDataReport(input: DataReportInput): DataReport {
     });
     sections.push({
       kind: "paragraph",
-      text: "Every first call on the closers' calendar, including people who never touched the site.",
+      text: `Every first call on the closers' calendar, including people who never touched the site, except leads now Canceled (by Lead) or Outside the US and the LTF quiz funnel (the SteelTrap rule${input.close.excluded ? `, ${num(input.close.excluded)} left out` : ""}).`,
       tone: "muted",
     });
     sections.push(closeTable(input.close.rows));

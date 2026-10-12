@@ -662,11 +662,11 @@ rows below in short. What each card counts:
 | Booked by channel    | This week, this month       | Close first calls (§3, §5) credited as the flow card credits them (gclid leads to Google Ads), Monday to today and the 1st to today, Eastern days. Independent of the window                                                                        |
 |                      | Double down / Watch         | At most 3 lines from the Channel value rows for the window: paid, at least 10 booked, revenue per $1 known. Double down at $1 or more back per $1 (best first, at most 2 while a Watch exists), Watch under $1 (worst first)                        |
 | Today strip          | Calls booked today          | §5 "New calls booked", New York day                                                                                                                                                                                                                 |
-|                      | First calls on the calendar | §5 "First calls on calendar"                                                                                                                                                                                                                        |
+|                      | First calls on the calendar | §5 "First calls on calendar" after §3, the same kept calls "Showed so far" splits (header chip too)                                                                                                                                                 |
 |                      | Leads in today              | §4 site leads, people, by New York day of first submission                                                                                                                                                                                          |
 |                      | Showed so far               | §6, rep-logged `yes` on calls dated today; no-show and not-logged-yet beside it                                                                                                                                                                     |
 | KPI strip            | Leads                       | §4 site leads (people), window vs prior window of equal length                                                                                                                                                                                      |
-|                      | Booked calls                | §5 Close mirror after §3, split marketing / Sales reactivation (Lane 2 funnels)                                                                                                                                                                     |
+|                      | Booked calls                | §5 Close mirror after §3, split marketing / Sales reactivation (Lane 2 funnels) with the flow card's gclid credit, so the split equals the flow bands                                                                                               |
 |                      | Show rate                   | §7 "Show rate, calls held"                                                                                                                                                                                                                          |
 |                      | Revenue won                 | §8, Close opportunities by `date_won` in the window (a period, not a cohort)                                                                                                                                                                        |
 |                      | CAC                         | §10 blended CAC for the newest month that has typed inputs, named on the tile                                                                                                                                                                       |
@@ -692,16 +692,24 @@ window. Collapsed it shows the last finished week with week-on-week change; the 
 definitions sit under "All weeks". Mon-Sun because Kody's Q3 marketing row reproduces on those weeks (88/81/65 against his
 89/79/63, 2026-10-08).
 
-| Row                | Definition                                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Total booked calls | Close first calls dated in the week, **every one** (the sheet's Total; 167/162/149 against his 172/166/145). Kept = §3; mktg = kept minus Lane 2  |
-| MQLs               | Captured, as the flow card counts it: §4 leads + contacts on the spine, UTC days. "Scored" = site fills banded `top_closers`, `lane_1`, `setting` |
-| Ad spend           | Spine `spend` for sources `google` (GA4 Google Ads link) and `meta_ads` (Metricool), webinar campaigns included                                   |
-| Cost per MQL       | Ad spend / MQLs                                                                                                                                   |
+| Row                | Definition                                                                                                                                                                                                                                     |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Total booked calls | Close first calls dated in the week, **every one** (the sheet's Total; 167/162/149 against his 172/166/145). Kept = §3; mktg = kept minus Lane 2 by Close funnel only (the sheet's split; no gclid credit, unlike the KPI strip and flow card) |
+| MQLs               | Captured, as the flow card counts it: §4 leads + contacts on the spine, UTC days. "Scored" = site fills banded `top_closers`, `lane_1`, `setting`                                                                                              |
+| Ad spend           | Spine `spend` for sources `google` (GA4 Google Ads link) and `meta_ads` (Metricool), webinar campaigns included                                                                                                                                |
+| Cost per MQL       | Ad spend / MQLs                                                                                                                                                                                                                                |
 
 A network that recorded spend anywhere in the eight weeks but has a settled day (before today) with
 no spend row marks that week's spend and cost **Incomplete**. Verified 2026-10-08 against production:
 week of 9/28 = 140 calls, 694 MQLs, $10,215.22, $14.72, Google Ads missing 10/1-10/4.
+
+### Funnel board (`/admin/analytics/board`, `funnel-board.ts`)
+
+Every Close first call by the day it is scheduled, two Monday-Sunday weeks, **no §3 rule**: it is
+the sales floor's Funnel Details sheet and the Q4 plan's booked basis (cancellations included), so
+its TOTAL row is Close's total. A call whose lead filled a site form is credited by `resolveChannel`
+(latest fill on or before the call day), otherwise by its Close funnel; the crosswalk shows every
+move. It does not apply the gclid credit, so its Google row can differ from the flow card's.
 
 Channels are the bands in `FLOW_CHANNELS` (`channel-flow.ts`), mapping both vocabularies, spine
 channel labels and Close funnel names, onto one list. Chatbot captures sit in Website & search, where
