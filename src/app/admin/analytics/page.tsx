@@ -18,6 +18,7 @@ import {
   TodayStrip,
   TrendCard,
 } from "@/components/admin/dashboard/DashboardPanels";
+import { ChannelValueCard } from "@/components/admin/dashboard/ChannelValueCard";
 import { CeoBriefing } from "@/components/admin/dashboard/CeoBriefing";
 import { DashboardWindowControl } from "@/components/admin/dashboard/DashboardWindowControl";
 import { ScorecardCard } from "@/components/admin/dashboard/ScorecardCard";
@@ -141,6 +142,15 @@ export default async function AdminAnalyticsPage({
       >
         <FlowCard window={window} />
       </Suspense>
+
+      <div className="mt-5">
+        <Suspense
+          key={`value-${window.key}`}
+          fallback={<CardSkeleton label="channel value" height="h-72" />}
+        >
+          <ChannelValueCard window={window} />
+        </Suspense>
+      </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
