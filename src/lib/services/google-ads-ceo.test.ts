@@ -96,6 +96,11 @@ describe("ceoActions", () => {
     expect(out[0].title).toBe("C9 is not showing ads");
   });
 
+  it("never judges a campaign missing from health (removed)", () => {
+    const out = ceoActions([w2, dud], totals, [health("1")]);
+    expect(out).toEqual([]);
+  });
+
   it("suggests budget only for a cheap campaign limited by budget, max three", () => {
     const out = ceoActions([w2], totals, [
       health("1", { flags: ["Limited by budget"] }),
