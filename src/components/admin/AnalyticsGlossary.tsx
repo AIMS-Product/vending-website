@@ -42,17 +42,17 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: CARD_HELP.today,
     meaning:
-      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: Close first calls dated today (§5). Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
+      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: Close first calls dated today, SteelTrap rule (§3, §5), the same calls Showed so far splits. Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
   },
   {
     term: CARD_HELP.kpi,
     meaning:
-      "Each against the same length of time just before. Leads: people on site forms (§4), recorded from Jul 6, 2026. Booked calls: Close mirror, SteelTrap rule (§3, §5), split marketing and reactivation. Show rate: of calls held (§7). Revenue won: by date won (§8). CAC: blended, monthly model, the newest month with inputs (§10).",
+      "Each against the same length of time just before. Leads: people on site forms (§4), recorded from Jul 6, 2026. Booked calls: Close mirror, SteelTrap rule (§3, §5), split marketing and reactivation as the flow card credits them (a lead with a Google click id is marketing, whatever Close funnel it sits under). Show rate: of calls held (§7). Revenue won: by date won (§8). CAC: blended, monthly model, the newest month with inputs (§10).",
   },
   {
     term: CARD_HELP.scorecard,
     meaning:
-      "Monday to Sunday weeks, whatever the window. Total booked calls: Close first sales calls dated in the week (the day the call is scheduled for), every one, as the sheet's Total counts them; kept = after cancelled-by-lead, outside-the-US and quiz-funnel calls are removed (§3); mktg = kept, without Lane 2 reactivation. MQLs: every new marketing lead captured, site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days); scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting). Ad spend: Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Metricool, webinar campaigns included; incomplete = a network that spent in these weeks has days with nothing recorded. Cost per MQL: ad spend divided by MQLs for the same week.",
+      "Monday to Sunday weeks, whatever the window. Total booked calls: Close first sales calls dated in the week (the day the call is scheduled for), every one, as the sheet's Total counts them; kept = after cancelled-by-lead, outside-the-US and quiz-funnel calls are removed (§3); mktg = kept, without Lane 2 reactivation by Close funnel (as the sheet splits it, so Google click leads Close files under Lane 2 stay in reactivation here, unlike the flow card). MQLs: every new marketing lead captured, site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days); scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting). Ad spend: Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Metricool, webinar campaigns included; incomplete = a network that spent in these weeks has days with nothing recorded. Cost per MQL: ad spend divided by MQLs for the same week.",
   },
   {
     term: CARD_HELP.flow,

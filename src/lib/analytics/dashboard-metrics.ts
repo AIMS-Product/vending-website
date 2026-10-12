@@ -5,6 +5,7 @@
 
 import {
   FLOW_CHANNELS,
+  flowChannelForFunnel,
   flowChannelForSpine,
   type FlowChannelKey,
 } from "@/lib/analytics/channel-flow";
@@ -43,6 +44,31 @@ export function keptCalls<T extends CloseCall>(calls: readonly T[]): T[] {
     seen.add(call.leadId);
     return true;
   });
+}
+
+/** Kept first calls dated `day`: the Today strip's calendar count (§3, §5). */
+export function firstCallsOn(
+  calls: readonly CloseCall[],
+  day: string,
+): CloseCall[] {
+  return keptCalls(calls).filter((call) => call.bookedDate === day);
+}
+
+/**
+ * Kept calls in the Sales reactivation band, credited as the flow card
+ * credits them: a lead whose site form carried a Google click id is Google
+ * Ads whatever Close funnel it sits under, so the KPI split and the flow's
+ * bands agree.
+ */
+export function reactivationCalls(
+  kept: readonly CloseCall[],
+  googleClickLeads: ReadonlySet<string>,
+): number {
+  return kept.filter(
+    (call) =>
+      !googleClickLeads.has(call.leadId) &&
+      flowChannelForFunnel(call.funnel) === "reactivation",
+  ).length;
 }
 
 export function countInRange<T>(

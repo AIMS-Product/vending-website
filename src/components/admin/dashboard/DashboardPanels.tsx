@@ -24,20 +24,19 @@ import {
   DailyBarChart,
   MiniBars,
 } from "@/components/admin/dashboard/DashboardCharts";
-import {
-  buildChannelFlow,
-  flowChannelForFunnel,
-} from "@/lib/analytics/channel-flow";
+import { buildChannelFlow } from "@/lib/analytics/channel-flow";
 import {
   bySetter,
   capturedByChannel,
   countInRange,
   dailyCounts,
   deltaPct,
+  firstCallsOn,
   inRange,
   keptCalls,
   LEADS_RECORDED_FROM,
   planBooked,
+  reactivationCalls,
   sameDayLastWeek,
   showRateHeld,
   sparkPoints,
@@ -223,13 +222,14 @@ function Delta({
 
 export async function AttentionChip({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [booked, stuck, trust] = await Promise.all([
-    readBookedOn([window.today]),
+  const [closeCalls, stuck, trust] = await Promise.all([
+    readCalls(span.from, span.to),
     leadsNotInClose(span.from, window.today),
     readTrust(),
   ]);
-  const calls = booked.ok
-    ? (booked.data[window.today]?.onCalendar ?? null)
+  // The SteelTrap rule, as the Today strip counts it.
+  const calls = closeCalls.ok
+    ? firstCallsOn(closeCalls.data, window.today).length
     : null;
   const failing = trust.problems.filter((p) => p.tone === "bad").length;
   const items: Array<{
@@ -303,7 +303,7 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
     leads.ok ? countInRange(leads.data, (l) => l.day, onDay(d)) : null;
   const outcomes = (d: string) => {
     if (!calls.ok) return null;
-    const list = keptCalls(calls.data).filter((c) => c.bookedDate === d);
+    const list = firstCallsOn(calls.data, d);
     const showed = list.filter((c) => isYes(c.showUp)).length;
     const noShow = list.filter(
       (c) => (c.showUp ?? "").trim().toLowerCase() === "no",
@@ -323,10 +323,10 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
       ),
     },
     {
+      // Kept calls, the same list "Showed so far" splits, so showed +
+      // no-show + not logged add up to it.
       label: "First calls on the calendar",
-      values: days.map((d) =>
-        booked.ok ? (booked.data[d]?.onCalendar ?? null) : null,
-      ),
+      values: o.map((x) => (x ? x.showed + x.noShow + x.unlogged : null)),
     },
     {
       label: "Leads in today",
@@ -433,11 +433,12 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
   const spark = sparkRange(window);
   const dealsFrom = [window.prior.startDay, spark.startDay].sort()[0]!;
-  const [leads, calls, deals, cac] = await Promise.all([
+  const [leads, calls, deals, cac, googleClicks] = await Promise.all([
     readLeads(span.from),
     readCalls(span.from, span.to),
     readDeals(dealsFrom, window.today),
     readCac(),
+    readGoogleClickLeads(),
   ]);
   const prior = window.prior;
   const cells: ReactNode[] = [];
@@ -482,9 +483,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
     const kept = keptCalls(calls.data);
     const inWindow = kept.filter((c) => inRange(c.bookedDate, window));
     const before = kept.filter((c) => inRange(c.bookedDate, prior)).length;
-    const reactivation = inWindow.filter(
-      (c) => flowChannelForFunnel(c.funnel) === "reactivation",
-    ).length;
+    // Without the click ids the split cannot be the flow card's; say so
+    // rather than show Close's funnel split under the same words.
+    const reactivation = googleClicks.ok
+      ? reactivationCalls(inWindow, googleClicks.data)
+      : null;
     const show = showRateHeld(calls.data, window, window.today);
     const showBefore = showRateHeld(calls.data, prior, window.today);
     const showDaily = dailyCounts(kept, (c) => c.bookedDate, spark).map(
@@ -503,7 +506,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         label="Booked calls"
         value={num(inWindow.length)}
         delta={<Delta value={deltaPct(inWindow.length, before)} />}
-        caption={`${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`}
+        caption={
+          reactivation === null
+            ? "Marketing / reactivation split unavailable"
+            : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`
+        }
         spark={sparkPoints(dailyCounts(kept, (c) => c.bookedDate, spark))}
         href="#bookings"
       />,
