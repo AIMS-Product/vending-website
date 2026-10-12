@@ -56,6 +56,7 @@ import {
   readCalls,
   readCostByMonth,
   readDeals,
+  readGoogleClickLeads,
   readFacts,
   readLeads,
   readTrust,
@@ -642,27 +643,29 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, facts, deals] = await Promise.all([
+  const [calls, facts, deals, googleClicks] = await Promise.all([
     readCalls(span.from, span.to),
     // Captured is the window's own captures: read the window, not the six
     // months the cost card needs.
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today),
+    readGoogleClickLeads(),
   ]);
-  const error = failed(calls, facts, deals);
+  const error = failed(calls, facts, deals, googleClicks);
   const flow =
-    calls.ok && facts.ok && deals.ok
+    calls.ok && facts.ok && deals.ok && googleClicks.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
+          googleClickLeads: googleClicks.data,
         })
       : null;
   return (
     <DashboardCard
       id="flow"
       title="Every channel, from capture to sale"
-      source="Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: Close first calls in the window and what became of them to date (§5, §6, §16)."
+      source="Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: Close first calls in the window and what became of them to date (§5, §6, §16), by Close funnel, except that a lead whose site form carried a Google click id counts as Google Ads."
       action={
         <Link
           href="/admin/analytics/channels"

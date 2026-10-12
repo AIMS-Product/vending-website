@@ -188,6 +188,13 @@ export function buildChannelFlow(input: {
   captured: ReadonlyArray<{ channel: string; count: number }>;
   /** Won deals dated from the window's first day to today. */
   wins: readonly FlowWin[];
+  /**
+   * Close lead ids of site leads that arrived with a Google click id. Close
+   * files ~40% of them under Lane 2 or another funnel; the click is the
+   * better evidence, so these calls (and their wins) count as Google Ads,
+   * the same population the Google Ads page counts. Moved, never copied.
+   */
+  googleClickLeads?: ReadonlySet<string>;
 }): ChannelFlow {
   const bands = new Map<FlowChannelKey, FlowBand>(
     FLOW_CHANNELS.map((c) => [
@@ -228,7 +235,11 @@ export function buildChannelFlow(input: {
     // must not count twice.
     if (seen.has(call.leadId)) continue;
     seen.add(call.leadId);
-    const b = band(flowChannelForFunnel(call.funnel));
+    const b = band(
+      input.googleClickLeads?.has(call.leadId)
+        ? "google-ads"
+        : flowChannelForFunnel(call.funnel),
+    );
     const showed = isYes(call.showUp);
     const qualified = isYes(call.qualified);
     b.values[1] += 1;
