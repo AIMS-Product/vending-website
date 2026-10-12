@@ -23,6 +23,7 @@ import {
   callSpan,
   readCalls,
   readDeals,
+  readGoogleClickLeads,
   readFacts,
 } from "@/lib/services/analytics-dashboard-data";
 
@@ -56,18 +57,20 @@ export async function ChannelValueCard({
   window: DashboardWindow;
 }) {
   const span = callSpan(window);
-  const [calls, facts, deals] = await Promise.all([
+  const [calls, facts, deals, googleClicks] = await Promise.all([
     readCalls(span.from, span.to),
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today),
+    readGoogleClickLeads(),
   ]);
-  const error = failed(calls, facts, deals);
+  const error = failed(calls, facts, deals, googleClicks);
   const flow =
-    calls.ok && facts.ok && deals.ok
+    calls.ok && facts.ok && deals.ok && googleClicks.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
+          googleClickLeads: googleClicks.data,
         })
       : null;
   const rows =
@@ -78,7 +81,7 @@ export async function ChannelValueCard({
     <DashboardCard
       id="channel-value"
       title="What each channel's calls are worth"
-      source="The flow card's calls: Close first calls booked in the window and what became of them to date (§5, §6, §16), won deals and revenue from Close opportunities (§8). Spend: ad spend on the channel spine in the window, as the cost card counts it (§9). Close rate is won over booked."
+      source="The flow card's calls: Close first calls booked in the window and what became of them to date (§5, §6, §16), won deals and revenue from Close opportunities (§8). A lead whose site form carried a Google click id counts as Google Ads, whatever Close funnel it is filed under. Spend: ad spend on the channel spine in the window, as the cost card counts it (§9). Close rate is won over booked."
     >
       {error ??
         (rows.length === 0 ? (

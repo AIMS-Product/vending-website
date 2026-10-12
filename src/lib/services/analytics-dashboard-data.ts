@@ -251,6 +251,30 @@ export const readDeals = cache((from: string, to: string) =>
 );
 
 /**
+ * Close lead ids of site leads with a Google click id, the population the
+ * Google Ads page counts (`metadata.paid_attribution.gclid`). The flow
+ * credits their calls to Google Ads whatever funnel Close filed them under.
+ */
+export const readGoogleClickLeads = cache(() =>
+  attempt("Google click leads", async () => {
+    const client = createAdminClient();
+    const { rows, error } = await readAllPages<{ close_lead_id: string }>(
+      (start, end, count) =>
+        client
+          .from("lead_submissions")
+          .select("close_lead_id", { count })
+          .not("metadata->paid_attribution->>gclid", "is", null)
+          .not("close_lead_id", "is", null)
+          .order("id")
+          .range(start, end),
+      { pageSize: PAGE, maxRows: MAX_ROWS },
+    );
+    if (error) throw new Error(error.message);
+    return new Set(rows.map((row) => row.close_lead_id));
+  }),
+);
+
+/**
  * Cost per booked call by month for the six months to `today` (§9). The
  * spine over six months is the slowest read on the dashboard (~6s), and the
  * finished months in it do not move, so the computed rows are kept for 15

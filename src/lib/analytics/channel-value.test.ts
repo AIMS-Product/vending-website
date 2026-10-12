@@ -119,6 +119,27 @@ describe("channel value", () => {
     ]);
   });
 
+  it("credits a Google click lead to Google Ads, moved not copied", () => {
+    const allCalls = [
+      ...calls("Google Ads", 2),
+      ...calls("Sales Reactivation", 3),
+    ];
+    const wins: FlowWin[] = [{ leadId: "Sales Reactivation-0", value: 7000 }];
+    const flow = buildChannelFlow({
+      calls: allCalls,
+      captured: [],
+      wins,
+      googleClickLeads: new Set(["Sales Reactivation-0", "not-a-call"]),
+    });
+    const band = (key: string) => flow.bands.find((b) => b.key === key)!;
+    expect(band("google-ads").values[1]).toBe(3);
+    expect(band("google-ads").values[4]).toBe(1);
+    expect(band("google-ads").revenue).toBe(7000);
+    expect(band("reactivation").values[1]).toBe(2);
+    expect(band("reactivation").revenue).toBe(0);
+    expect(flow.totals[1]).toBe(5);
+  });
+
   it("carries booked, won and revenue straight from the flow", () => {
     const { flow, rows } = build();
     for (const band of flow.bands) {
