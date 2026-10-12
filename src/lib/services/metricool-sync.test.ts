@@ -406,6 +406,45 @@ describe("syncMetricool", () => {
     );
   });
 
+  it("fails the ads run when Meta returns no campaigns for the whole window", async () => {
+    // Production 2026-10-08..11: Metricool's Meta import stopped and answered
+    // an empty list (not a 403) while the ads kept spending.
+    const { client } = buildClient();
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async () => [],
+        fetchYouTubeVideos: noAds,
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toMatch(
+      /Metricool returned no .*Meta.* campaigns from/,
+    );
+  });
+
+  it("does not flag Meta when any day in the window has campaigns", async () => {
+    const { client } = buildClient();
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async ({ network, from }) =>
+          network === "facebookads" && from === "2026-09-11"
+            ? [webinarCampaign]
+            : [],
+        fetchYouTubeVideos: noAds,
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error ?? "").not.toMatch(/Meta.* campaigns from/);
+  });
+
   it("takes Google Ads spend from GA4, on Metricool's keys, and never asks Metricool for it", async () => {
     // 2026-10-08: Metricool lost Google Ads; GA4's Ads link reports the same
     // campaign id, name and cost ($499.98 on 9/28 in both).
