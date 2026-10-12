@@ -41,6 +41,8 @@ export type CloseCall = {
   bookedDate: string;
   showUp: string | null;
   qualified: string | null;
+  /** Close "Booked By": "Lane 2" when a Lane 2 setter booked the call. */
+  bookedBy?: string | null;
 };
 
 export type CloseWeekRow = {

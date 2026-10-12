@@ -1049,9 +1049,11 @@ export type Database = {
       };
       close_lead_funnel: {
         Row: {
+          booked_by: string | null;
           call_disposition: string | null;
           display_name: string | null;
           email: string | null;
+          entry_source: string | null;
           first_call_show_up: string | null;
           first_sales_call_booked_date: string | null;
           funnel: string | null;
@@ -1059,6 +1061,7 @@ export type Database = {
           lead_id: string;
           lead_source: string | null;
           lead_updated_at: string | null;
+          latest_sales_call_booked_date: string | null;
           marketing_source_type: string | null;
           qualified: string | null;
           sales_team_lane: string | null;
@@ -1067,9 +1070,11 @@ export type Database = {
           synced_at: string;
         };
         Insert: {
+          booked_by?: string | null;
           call_disposition?: string | null;
           display_name?: string | null;
           email?: string | null;
+          entry_source?: string | null;
           first_call_show_up?: string | null;
           first_sales_call_booked_date?: string | null;
           funnel?: string | null;
@@ -1077,6 +1082,7 @@ export type Database = {
           lead_id: string;
           lead_source?: string | null;
           lead_updated_at?: string | null;
+          latest_sales_call_booked_date?: string | null;
           marketing_source_type?: string | null;
           qualified?: string | null;
           sales_team_lane?: string | null;
@@ -1085,9 +1091,11 @@ export type Database = {
           synced_at?: string;
         };
         Update: {
+          booked_by?: string | null;
           call_disposition?: string | null;
           display_name?: string | null;
           email?: string | null;
+          entry_source?: string | null;
           first_call_show_up?: string | null;
           first_sales_call_booked_date?: string | null;
           funnel?: string | null;
@@ -1095,6 +1103,7 @@ export type Database = {
           lead_id?: string;
           lead_source?: string | null;
           lead_updated_at?: string | null;
+          latest_sales_call_booked_date?: string | null;
           marketing_source_type?: string | null;
           qualified?: string | null;
           sales_team_lane?: string | null;
