@@ -93,14 +93,6 @@ export default async function AdminAnalyticsPage({
         </Suspense>
       }
     >
-      <Suspense
-        key={`glance-${window.key}`}
-        fallback={
-          <CardSkeleton label="booked calls by channel" height="h-64" />
-        }
-      >
-        <GlanceCard window={window} />
-      </Suspense>
       <Suspense fallback={<CardSkeleton label="today" height="h-32" />}>
         <TodayStrip window={window} />
       </Suspense>
@@ -137,6 +129,16 @@ export default async function AdminAnalyticsPage({
         fallback={<CardSkeleton label="key numbers" height="h-36" />}
       >
         <KpiStrip window={window} />
+      </Suspense>
+
+      {/* Below the scorecard and key numbers, not above them (Adam, 2026-10-12). */}
+      <Suspense
+        key={`glance-${window.key}`}
+        fallback={
+          <CardSkeleton label="booked calls by channel" height="h-64" />
+        }
+      >
+        <GlanceCard window={window} />
       </Suspense>
 
       <Suspense
