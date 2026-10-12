@@ -202,6 +202,11 @@ export async function syncMetricool(
     // A network with no connection is asked once, then left out; the others
     // still write, and the run is marked failed so the trust bar says so.
     const notConnected = new Set<AdNetwork>();
+    // Campaigns returned per network across the window. Metricool answers an
+    // expired Meta connection with an empty list, not a 403 (Oct 8-11 2026:
+    // $0 recorded while the ads spent), so a whole window of nothing is
+    // reported instead of read as "no campaigns".
+    const returned = new Map<AdNetwork, number>();
     for (
       let day = adsStart;
       day <= endDate;
@@ -217,6 +222,10 @@ export async function syncMetricool(
             from: day,
             to: day,
           });
+          returned.set(
+            network,
+            (returned.get(network) ?? 0) + campaigns.length,
+          );
           for (const campaign of campaigns)
             rows.push(adRow(network, campaign, day));
         } catch (error) {
@@ -261,8 +270,14 @@ export async function syncMetricool(
       notConnected.size > 0
         ? `${[...notConnected].map((n) => AD_NETWORK_LABELS[n]).join(" and ")} not connected in Metricool for brand ${adsBlogId}; no spend is being recorded for ${notConnected.size > 1 ? "them" : "it"}. Reconnect in Metricool (brand settings > Connections).`
         : null;
+    const silent = [...returned]
+      .filter(([, count]) => count === 0)
+      .map(([network]) => AD_NETWORK_LABELS[network]);
+    const stalled = silent.length
+      ? `Metricool returned no ${silent.join(" or ")} campaigns from ${adsStart} to ${endDate}. If those ads are running, reconnect the ad account in Metricool (brand settings > Connections), then re-run this sync with a wider window to backfill.`
+      : null;
     const readError =
-      [disconnected, googleError].filter(Boolean).join(" ") || null;
+      [disconnected, stalled, googleError].filter(Boolean).join(" ") || null;
     if (rows.length === 0) return { rowsWritten: 0, error: readError };
     const written = await upsertChannelDaily(client, rows, { now });
     // Only after every write landed: clearing a renamed row whose replacement
