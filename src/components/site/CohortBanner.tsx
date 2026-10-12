@@ -2,25 +2,18 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import {
-  cohortBannerHref,
-  cohortMonth,
-  cohortSeatsLeft,
-} from "@/lib/content/cohort-banner";
+import { cohortBannerHref } from "@/lib/content/cohort-banner";
 
 const noopSubscribe = () => () => {};
 
-// Text is computed in the browser, never baked into cached HTML, so a page
-// built days ago cannot show a stale count. The bar keeps its height while
-// empty, so filling it in causes no layout shift.
+// Text is filled in after hydration (server HTML carries only a screen-reader
+// label). The bar keeps its height while empty, so there is no layout shift.
 export function CohortBanner() {
   const text = useSyncExternalStore(
     noopSubscribe,
-    () => {
-      const now = new Date();
-      const seats = cohortSeatsLeft(now);
-      return `${seats} open seat${seats === 1 ? "" : "s"} left in the ${cohortMonth(now)} cohort`;
-    },
+    // No seat count or cohort wording: scarcity claims get Google Ads
+    // disapproval ("Unreliable claims", 2026-10-10).
+    () => "Talk to Vendingpreneurs about your market",
     () => null,
   );
 

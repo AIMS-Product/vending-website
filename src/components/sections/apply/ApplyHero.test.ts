@@ -6,12 +6,19 @@ import { splitMoneyPhrase } from "./ApplyHero";
 // The highlight splits Kody's wording for presentation only: joining the
 // parts back must give the exact headline, character for character.
 describe("splitMoneyPhrase", () => {
-  it("highlights the funnel claim exactly as before", () => {
-    const parts = splitMoneyPhrase(applyHero.headline);
+  it("highlights a money phrase exactly as before", () => {
+    // The funnel headline no longer carries income (Google Ads "Unreliable
+    // claims"), but the splitter still serves the legacy lead pages.
+    const headline =
+      "Everyday People Are Building $5-$60k/Month Vending Routes";
+    const parts = splitMoneyPhrase(headline);
     expect(parts?.money).toBe("$5-$60k/Month");
-    expect(`${parts?.before}${parts?.money}${parts?.after}`).toBe(
-      applyHero.headline,
-    );
+    expect(`${parts?.before}${parts?.money}${parts?.after}`).toBe(headline);
+  });
+
+  it("keeps income figures out of the funnel hero", () => {
+    expect(splitMoneyPhrase(applyHero.headline)).toBeNull();
+    expect(applyHero.headline).toContain(applyHero.highlight);
   });
 
   it("finds the legacy pages' phrasing and never rewrites a title", () => {

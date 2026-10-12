@@ -4,7 +4,6 @@ import { ApplyVsl } from "./apply/ApplyVsl";
 import { ApplyTools } from "./apply/ApplyTools";
 import { ApplyTestimonials } from "./apply/ApplyTestimonials";
 import { ApplyRoadmap } from "./apply/ApplyRoadmap";
-import { ApplyMembers } from "./apply/ApplyMembers";
 import { ApplyFaq } from "./apply/ApplyFaq";
 import { ApplyQuiz } from "./apply/ApplyQuiz";
 import { ApplyDisclaimer } from "./apply/ApplyDisclaimer";
@@ -45,7 +44,6 @@ export function ApplyLandingPage({
       <ApplyTools />
       <ApplyTestimonials />
       <ApplyRoadmap />
-      <ApplyMembers />
       <ApplyFaq />
       <ApplyDisclaimer />
       <ApplyStickyCta />

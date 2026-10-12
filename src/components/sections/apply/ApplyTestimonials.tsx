@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { Section } from "@/components/ui/Section";
 import { applyTestimonials } from "@/lib/content/apply-page";
 
-// "What people are saying": six review cards in a 2-up grid, capped with the
+// "What people are saying": review cards in a 2-up grid, capped with the
 // wide Madison spotlight (the page's one ink card). Real text, so a quote is
 // as readable at 390 as at 1440.
 export function ApplyTestimonials() {
@@ -45,9 +45,6 @@ export function ApplyTestimonials() {
             <span>
               <span className="block text-lg leading-tight font-black">
                 {spotlight.name}
-              </span>
-              <span className="text-sky mt-1 block text-sm font-bold">
-                {spotlight.stat}
               </span>
             </span>
           </figcaption>

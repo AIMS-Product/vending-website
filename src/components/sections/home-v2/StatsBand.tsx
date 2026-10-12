@@ -1,5 +1,4 @@
 import type { CSSProperties } from "react";
-import { AnimatedStatValue } from "@/components/sections/AnimatedStatValue";
 import { accelerator } from "@/lib/content/home";
 import { statsBandV2 } from "@/lib/content/home-v2";
 
@@ -41,7 +40,7 @@ export function StatsBand() {
                 {stat.label}
               </dt>
               <dd className="v2-display text-[clamp(3.25rem,5.5vw,5.5rem)] leading-none text-white tabular-nums [text-shadow:0.05em_0.05em_0_#111111]">
-                <AnimatedStatValue value={stat.value} />
+                {stat.value}
               </dd>
             </div>
           ))}

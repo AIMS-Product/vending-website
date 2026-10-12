@@ -6,9 +6,13 @@ import {
 } from "@/components/sections/Testimonials";
 import { caseStudyQuotes, caseStudyVideos } from "@/lib/content/case-studies";
 import { accelerator } from "@/lib/content/home";
-import { testimonialsV2 } from "@/lib/content/home-v2";
+import { homeQuoteIds, testimonialsV2 } from "@/lib/content/home-v2";
 
 const VISIBLE_QUOTES = 4;
+
+const homeQuotes = caseStudyQuotes.filter((quote) =>
+  homeQuoteIds.includes(quote.id),
+);
 
 export function TestimonialsV2() {
   return (
@@ -57,7 +61,7 @@ export function TestimonialsV2() {
         {/* Fourteen full reviews stacked into ~6,000px on a phone (UI audit,
             2026-09-22). The first few show; the rest sit one tap away. */}
         <ul className="mt-16 grid gap-6 lg:grid-cols-2">
-          {caseStudyQuotes.slice(0, VISIBLE_QUOTES).map((quote, index) => (
+          {homeQuotes.slice(0, VISIBLE_QUOTES).map((quote, index) => (
             <li
               key={quote.id}
               data-reveal
@@ -70,13 +74,13 @@ export function TestimonialsV2() {
           ))}
         </ul>
 
-        {caseStudyQuotes.length > VISIBLE_QUOTES ? (
+        {homeQuotes.length > VISIBLE_QUOTES ? (
           <details className="group mt-6">
             <summary className="rounded-control border-ink text-ink shadow-btn hover:shadow-btn-hover focus-visible:ring-sky mx-auto flex w-fit cursor-pointer list-none items-center gap-2 border-2 bg-white px-5 py-3 text-sm font-black uppercase transition group-open:hidden hover:-translate-y-0.5 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none [&::-webkit-details-marker]:hidden">
-              Read {caseStudyQuotes.length - VISIBLE_QUOTES} more reviews
+              Read {homeQuotes.length - VISIBLE_QUOTES} more reviews
             </summary>
             <ul className="grid gap-6 lg:grid-cols-2">
-              {caseStudyQuotes.slice(VISIBLE_QUOTES).map((quote) => (
+              {homeQuotes.slice(VISIBLE_QUOTES).map((quote) => (
                 <li key={quote.id}>
                   <QuoteTestimonialCard quote={quote} />
                 </li>

@@ -19,7 +19,7 @@ const OFFSET_VAR = "--sticky-cta-offset";
 export function ApplyStickyCta({
   ctaLabel = applySticky.ctaLabel,
   text = applySticky.text,
-  mobileText = "Launch your route in 90 days.",
+  mobileText = "Talk to a coach about your market.",
   trackAs,
 }: {
   ctaLabel?: string;

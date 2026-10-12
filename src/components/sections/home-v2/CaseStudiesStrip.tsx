@@ -58,7 +58,18 @@ export async function CaseStudiesStrip() {
         <ul className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {caseStudies.map((caseStudy) => (
             <li key={caseStudy.slug} data-reveal>
-              <CaseStudyCard caseStudy={caseStudy} />
+              {/* Stored titles, excerpts and roles carry income and count
+                  figures that Google Ads flags as "Unreliable claims", so the
+                  homepage shows the member and the video only. The story page
+                  keeps its full copy. */}
+              <CaseStudyCard
+                caseStudy={{
+                  ...caseStudy,
+                  title: `${caseStudy.member_name}'s vending story`,
+                  excerpt: null,
+                  member_role: null,
+                }}
+              />
             </li>
           ))}
         </ul>

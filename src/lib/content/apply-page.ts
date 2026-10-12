@@ -1,8 +1,9 @@
 // Copy + data for the custom /apply landing page. Every visible string on the
 // page traces back to this module (per the page/component conventions) so the
-// marketing + compliance copy stays reviewable as data. Income claims are
-// reproduced verbatim from Kody's approved mockup — do NOT reword or soften
-// them; compliance review is a pre-publish step owned by the client.
+// marketing + compliance copy stays reviewable as data. This page is a Google
+// Ads destination: no income figures, counts of people, time-to-result,
+// "passive", "guarantee" or scarcity wording ("Unreliable claims" disapproval,
+// 2026-10-10). See the Learnings line in AGENTS.md before adding any.
 
 export type ToolIconKey = "course" | "coaching" | "discounts" | "community";
 
@@ -12,7 +13,7 @@ export type RichSegment = { text: string; strong?: boolean };
 export const applyMeta = {
   title: "Apply",
   description:
-    "Launch your vending business in 90 days with Mike's playbook, systems, coaching, and exclusive discounts. Answer a few quick questions to see if you're a fit.",
+    "Start your vending business with Mike's playbook, systems, coaching, and exclusive discounts. Answer a few quick questions to see if you're a fit.",
 } as const;
 
 /**
@@ -24,16 +25,14 @@ export const CTA_TRUST_LINE = "Free 45-minute call. No purchase necessary.";
 
 export const applyHero = {
   eyebrow: "Start Your Vending Business Today",
-  // Kody's 2026-08-10 headline, split across two sizes on 2026-08-11: set as one
-  // 20-word block it swallowed the whole first screen on mobile. The claim stays
-  // in the h1; the qualifier drops to the old sub-headline size to break it up.
-  headline: "Everyday People Are Building $5-$60k/Month Vending Routes",
-  subheadline: "Without Quitting Their Job or Risking Savings",
-  // Adam, 2026-09-17: refocused from "the mistakes you will make without us"
-  // onto the route itself and what it could earn. Deliberately carries no
-  // figure — the income claim in `headline` is Kody's approved wording and is
-  // the only one on the page.
-  body: "Map out what your route could look like: how many machines to start with, where to place them, and what that could earn in your market.",
+  // Was Kody's income headline ("$5-$60k/Month Vending Routes"); replaced
+  // 2026-10-11 after the Google Ads "Unreliable claims" disapproval. Matches the
+  // live ad headlines ("Start Your Vending Business", "Step-by-Step Coaching").
+  headline: "Start Your Vending Business With Step-by-Step Coaching",
+  // Presentation only: the phrase gets the blue highlight block.
+  highlight: "Step-by-Step Coaching",
+  subheadline: "Guided by Operators Who Are Doing It Now",
+  body: "Map out your route on a free strategy call: which machines to start with, how to find locations, and what to look at in your market.",
   ctaLabel: "Book Your Free Strategy Call",
   // Points at the VSL directly under the hero (Adam, 2026-09-22).
   videoCue: "Watch Mike's story below",
@@ -54,7 +53,7 @@ export const applyVsl = {
   videoHref: "https://youtu.be/P-Z1BZ9M-Fg",
   caption: [
     {
-      text: "Mike breaks down how the business model works, what makes a location worth pursuing, and how he and others have built a vending route with no experience while working a 9-to-5 to create the freedom to spend more time with their families.",
+      text: "Mike breaks down how the business model works, what makes a location worth pursuing, and how he and others have started a vending route with no experience while working a 9-to-5.",
     },
   ] satisfies RichSegment[],
 } as const;
@@ -78,7 +77,7 @@ export const applyTools = {
     {
       icon: "discounts" as ToolIconKey,
       title: "Exclusive Discounts",
-      body: "Pre-negotiated machine deals and below-retail product across 5,000+ SKUs, so more of every sale stays yours.",
+      body: "Pre-negotiated machine deals and below-retail product pricing, so more of every sale stays yours.",
     },
     {
       icon: "community" as ToolIconKey,
@@ -99,38 +98,14 @@ export type ReviewCard = {
 };
 
 export const applyTestimonials = {
-  eyebrow: "Real results",
+  eyebrow: "Member reviews",
   title: "What people are saying",
   cards: [
-    {
-      name: "Brett Tracy",
-      headshot: "/apply/reviews/headshots/brett-tracy.png",
-      quote:
-        "Vendingpreneurs has been great! It helped speed up my knowledge by years in a short amount of time.",
-    },
-    {
-      name: "DJ Fuchs",
-      headshot: "/apply/reviews/headshots/dj-fuchs.png",
-      quote:
-        "You will exponentially increase your chances of succeeding and shorten the learning curve with Vendingpreneurs.",
-    },
     {
       name: "George Hoover",
       headshot: "/apply/reviews/headshots/george-hoover.png",
       quote:
         "I have learned so much about this business since joining. Everyone in this community has been extremely helpful. I'm looking forward to contributing more to the group!",
-    },
-    {
-      name: "Joe Natoli",
-      headshot: "/apply/reviews/headshots/joe-natoli.png",
-      quote:
-        "The best thing about Vendingpreneurs is the community itself. Mike and the team have taken me from zero experience to landing 10 locations in less than a year. Would highly recommend!",
-    },
-    {
-      name: "Kyle Sharp",
-      headshot: "/apply/reviews/headshots/kyle-sharp.png",
-      quote:
-        "Mike's program helped us go from zero knowledge about the vending industry to having 10 locations in 6 months. It's proven and works!",
     },
     {
       name: "Kelsey Corcoran",
@@ -139,12 +114,11 @@ export const applyTestimonials = {
         "I've only been a part of the community for less than 3 months and have gained much more than I expected! So glad to have found Mike & this community & would recommend this to everyone.",
     },
   ] satisfies ReviewCard[],
-  // The wide member-spotlight card under the grid. The figure is Kody's
-  // wording from the original graphic; the separator is presentation only.
+  // The wide member-spotlight card under the grid. Its income stat was dropped
+  // 2026-10-11 (Google Ads "Unreliable claims").
   spotlight: {
     name: "Madison Graves",
     headshot: "/apply/reviews/headshots/madison-graves.png",
-    stat: "$28K/Month · 16 machines",
     quote:
       "The fastest way to learn is by learning from people who are in it, who are doing it, who have already been successful. The value of the community and the people you meet along the way is alone worth getting into the program.",
   },
@@ -152,27 +126,27 @@ export const applyTestimonials = {
 
 export const applyRoadmap = {
   eyebrow: "The roadmap",
-  title: "What you'll build in 90 days",
-  body: "Doing this alone usually means 18–24 months of expensive mistakes. Here's the path members follow instead.",
+  title: "How the program works",
+  body: "Doing this alone usually means expensive mistakes. Here's the path members follow instead.",
   ctaLabel: "Book Your Call",
   phases: [
     {
       num: "01",
-      range: "Days 0–30",
+      range: "Step one",
       title: "Land your first location.",
       body: "Find high-traffic spots, walk in, and close them, backed by a platform showing every viable location in your market.",
     },
     {
       num: "02",
-      range: "Days 30–60",
-      title: "Get your first machine earning.",
-      body: "Placed and stocked with member pricing and rebates. You start reading real sales data and dialing in product.",
+      range: "Step two",
+      title: "Place and stock your first machine.",
+      body: "Choose the right machine and product with member pricing and rebates. You start reading real sales data and dialing in your mix.",
     },
     {
       num: "03",
-      range: "Days 60–90",
-      title: "Optimize and line up the next.",
-      body: "Tighten location one, then decide on location two. This is where it starts to feel like a business.",
+      range: "Step three",
+      title: "Optimize and plan what's next.",
+      body: "Tighten your first location, then decide where to go next. This is where it starts to feel like a business.",
     },
   ],
 } as const;
@@ -226,8 +200,8 @@ export const applyFaq = {
       a: "A course is videos you watch alone. This is a live operator community, weekly coaching, 1-on-1 ambassadors, and group pricing — you build the business, you don't just study it.",
     },
     {
-      q: "How long until my first machine?",
-      a: "Most members land their first location within the first few weeks. A profitable route builds over the months after.",
+      q: "Where do I start?",
+      a: "On a free strategy call we look at your market, the kinds of locations that fit it, and which machines to consider. From there, coaching walks you through finding locations and placing your first machine at your own pace.",
     },
     {
       q: "Do I need experience?",
@@ -235,11 +209,11 @@ export const applyFaq = {
     },
     {
       q: "Can I do this with a full-time job?",
-      a: "Yes. It's built to run alongside a 9-to-5 — every member here kept theirs.",
+      a: "Yes. Many members build alongside a full-time job, and the program is designed to fit around your schedule.",
     },
     {
-      q: "Is this passive income?",
-      a: "No. Early on it takes real hours. The goal is a route that eventually runs without you.",
+      q: "How much work is it?",
+      a: "It takes real work, especially early on: finding locations, stocking machines, and learning your market. Coaching and systems help you spend that time well.",
     },
   ],
 } as const;
@@ -250,10 +224,8 @@ export const applyQuiz = {
 
 export const applyFooter = {
   disclaimer:
-    // Number tracks the hero headline — Kody, 2026-08-11. If the headline claim
-    // ever changes again, this string changes with it or the page is making a
-    // claim its own disclaimer does not cover.
-    "Earnings may vary and are not guaranteed. The $5,000–$60,000 claim is based on the average profitability of our community members' machines. Outcomes depend on effort, market, and execution.",
+    // Generic on purpose: the page makes no earnings claim for it to cover.
+    "Earnings may vary and are not guaranteed. Outcomes depend on effort, market, and execution.",
   privacyNote:
     "By applying you agree to our Privacy Policy. We never sell your data.",
   // Light/transparent wordmark for the dark disclaimer band. Not delivered
@@ -263,7 +235,7 @@ export const applyFooter = {
 } as const;
 
 export const applySticky = {
-  text: "Don't wait. Launch your vending route in 90 days.",
+  text: "Ready to start? Talk to a coach about your market.",
   ctaLabel: "Book Your Call",
 } as const;
 

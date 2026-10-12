@@ -20,9 +20,9 @@ export type PartnerLogo = {
 };
 
 export const hero = {
-  title: ["Turn Vending", "Into Your Path", "to Financial Freedom"],
+  title: ["Start Your", "Vending Business", "With Coaching"],
   body: [
-    "Breaking free from the traditional job structure isn't just a dream—it's a real possibility with the right strategy.",
+    "Starting a vending business takes the right strategy: where to place machines, what to stock, and how to win locations.",
     "At Vendingpreneurs, we provide aspiring entrepreneurs with the mentorship, tools, and exclusive discounts they need to launch and scale a vending machine business.",
   ],
   image: {
@@ -90,15 +90,15 @@ export const partnerLogos: ReadonlyArray<PartnerLogo> = [
 
 export const benefits = {
   title: "Why Vendingpreneurs?",
-  body: "Building a vending machine business without expert guidance can lead to wasted time and costly mistakes. We eliminate the guesswork by providing a structured roadmap to success.",
+  body: "Building a vending machine business without expert guidance can lead to wasted time and costly mistakes. We eliminate the guesswork by providing a structured roadmap.",
   image: {
     src: "/images/sections/why.avif",
     alt: "A customer paying at a smart vending machine with a smartwatch",
   },
   items: [
     {
-      title: "Proven Success Strategies",
-      body: "A step-by-step system designed to get results, even for complete beginners.",
+      title: "A Step-by-Step System",
+      body: "A clear process that walks complete beginners through every stage.",
       icon: "trend",
     },
     {
@@ -108,7 +108,7 @@ export const benefits = {
     },
     {
       title: "Exclusive Discounts",
-      body: "Save money on vending machines and bulk product deals to boost profitability.",
+      body: "Access discounted vending machines and bulk product deals from our partners.",
       icon: "percent",
     },
     {
@@ -127,22 +127,22 @@ export const accelerator = {
     alt: "An entrepreneur using a Cantaloupe-branded vending kiosk",
   },
   stats: [
-    { value: "2-15", label: "Hours a week to run your route" },
-    { value: "< 90", label: "Days to place your first machine" },
-    { value: "$1K-$250K", label: "In revenue generated per month" },
+    { value: "Live", label: "Coaching from active operators" },
+    { value: "Hands-on", label: "Help finding and winning locations" },
+    { value: "Member", label: "Pricing on machines and product" },
   ] satisfies ReadonlyArray<Stat>,
   statsDisclaimer:
-    "*Earnings may vary and are not guaranteed. Based on the average results of Vendingpreneur community members. Individual outcomes depend on personal investment, your market, and adherence to the program.",
+    "Earnings may vary and are not guaranteed. Individual outcomes depend on personal investment, your market, and adherence to the program.",
   points: [
-    "How to start a vending business with little upfront investment compared to Real Estate",
-    "Which vending machines and products generate the highest profits",
+    "How to start a vending business and what to budget for",
+    "Which vending machines and products fit your locations",
     "How to secure high-traffic locations and keep them",
-    "Automation & scaling strategies to maximize your time and revenue",
+    "Automation and scaling strategies to make the most of your time",
     "Common mistakes new vending entrepreneurs make—and how to avoid them",
   ] satisfies ReadonlyArray<AcceleratorPoint>,
   bonus: {
     label: "Bonus:",
-    body: "Get access to discounted vending machines and bulk product deals to increase your bottom line.",
+    body: "Get access to discounted vending machines and bulk product deals.",
   },
   cta: { label: "See if your market is a fit", href: "/contact" },
 } as const;

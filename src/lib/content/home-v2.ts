@@ -12,19 +12,19 @@ type HeroTitleSegment = {
 export const heroV2 = {
   eyebrow: "The Vending Accelerator Program",
   titleLines: [
-    [{ text: "Turn vending" }],
-    [{ text: "into " }, { text: "financial", highlight: true }],
-    [{ text: "freedom", highlight: true }],
+    [{ text: "Start your" }],
+    [{ text: "vending " }, { text: "business", highlight: true }],
+    [{ text: "with coaching" }],
   ] satisfies ReadonlyArray<ReadonlyArray<HeroTitleSegment>>,
   badges: [
     {
-      value: "$36K/mo",
-      label: "Graham & Katie · After one year",
+      value: "Live coaching",
+      label: "From active operators",
       tilt: "-4deg",
     },
   ],
   secondaryCta: {
-    label: "Get your free 90-day roadmap",
+    label: "Get your free roadmap",
     // Jess, 2026-09-22: this pointed at /vending-route-blueprint, the old
     // watch-and-apply page, which has no roadmap on it. The download and the
     // email capture live on the roadmap lead-magnet page.
@@ -34,18 +34,18 @@ export const heroV2 = {
 
 export const tickerV2 = {
   srSummary:
-    "Vendingpreneurs: coaching from active operators. Real people, real results. Trusted brands in our machines. Beginner friendly.",
+    "Vendingpreneurs: coaching from active operators. Real people, real stories. Trusted brands in our machines. Beginner friendly.",
   items: [
     "Coaching from active operators",
-    "Real people, real results",
+    "Real people, real stories",
     "Trusted brands in our machines",
     "Beginner friendly",
   ],
 } as const;
 
 export const statsBandV2 = {
-  eyebrow: "Proof over promises",
-  title: "The numbers behind the program",
+  eyebrow: "What you get",
+  title: "What's inside the program",
   ghostWord: "Vending",
 } as const;
 
@@ -61,8 +61,8 @@ export const benefitsV2 = {
 /** The video case-study strip directly under the partner ticker. */
 export const caseStudiesStripV2 = {
   eyebrow: "Success stories",
-  title: "Real people, real results",
-  body: "Real members, filmed in their own words, with the numbers they actually hit.",
+  title: "Real people, real stories",
+  body: "Real members, filmed in their own words, sharing how they got started.",
   allStoriesLabel: "See every story",
 } as const;
 
@@ -71,6 +71,18 @@ export const caseStudiesStripV2 = {
  * strip above on purpose: two bands both titled "Real people, real results"
  * reads as a duplicate rather than a second kind of proof.
  */
+/**
+ * Written reviews safe for the homepage: the rest state location counts or
+ * time-to-result, which Google Ads flags as "Unreliable claims". Add an id only
+ * after checking the quote for figures.
+ */
+export const homeQuoteIds: ReadonlyArray<string> = [
+  "dewitts",
+  "bret-bourgeois",
+  "nolan-mayfield",
+  "adam-s",
+];
+
 export const testimonialsV2 = {
   eyebrow: "In their own words",
   title: "What members say",
@@ -83,5 +95,5 @@ export const finalCtaV2 = {
   // line carries the highlight. Framed as a fit question rather than "join the
   // program": the ask is a low-commitment qualification, not a commitment.
   titleLines: ["Curious if your market", "is a fit?"],
-  ghostWord: "Freedom",
+  ghostWord: "Start",
 } as const;
