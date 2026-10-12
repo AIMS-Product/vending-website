@@ -67,8 +67,10 @@ export function ceoActions(
 
   for (const c of campaigns) {
     if (c.spend < MIN_SPEND_TO_JUDGE || avg === null) continue;
+    // With health set up, judge only campaigns it lists as ENABLED: a
+    // removed campaign drops out of health but keeps its spend in range.
     const live = health.find((h) => h.campaignId === c.key);
-    if (live && live.status !== "ENABLED") continue;
+    if (health.length > 0 && live?.status !== "ENABLED") continue;
     if (c.booked === 0) {
       actions.push({
         tone: "bad",
