@@ -1,6 +1,32 @@
 import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
 import { MATURE_AFTER_DAYS } from "@/lib/services/close-monthly-funnel";
 import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
+import { SMALL_SAMPLE } from "@/lib/analytics/channel-value";
+
+/** Anchor of one entry, so a card's "?" can land on its own definition. */
+export const glossaryAnchor = (term: string) =>
+  `def-${term
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+
+/**
+ * Card titles on /admin/analytics, each with its "how it's counted" note. The
+ * cards show a title, the number and the chart; the words live here (METRICS.md
+ * §16 has the full definitions).
+ */
+export const CARD_HELP = {
+  glance: "Booked calls by channel",
+  today: "Today",
+  kpi: "Key numbers",
+  scorecard: "Leadership scorecard",
+  flow: "Every channel, from capture to sale",
+  value: "What each channel's calls are worth",
+  paid: "Paid ads: Google and Meta",
+  bookings: "Booked calls",
+  cost: "Cost per booked call",
+  trend: "Leads and booked calls per day",
+} as const;
 
 /**
  * The words every analytics tab shares, defined once on screen. Tooltips never
@@ -9,6 +35,54 @@ import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
  * change them together.
  */
 export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
+  {
+    term: CARD_HELP.glance,
+    meaning: `Close first calls (SteelTrap rule, §5) by channel, credited as the flow card credits them. This week is Monday to today; this month is the 1st to today; days are Eastern time, as the sales floor counts them. Double down and Watch read the "What each channel's calls are worth" table for the window on screen: paid channels with at least ${SMALL_SAMPLE} booked calls, Double down when revenue won per $1 spent is $1 or more (best first), Watch when it is under $1 (worst first). Recent calls have had less time to close, so revenue per $1 reads low on short windows.`,
+  },
+  {
+    term: CARD_HELP.today,
+    meaning:
+      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: Close first calls dated today (§5). Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
+  },
+  {
+    term: CARD_HELP.kpi,
+    meaning:
+      "Each against the same length of time just before. Leads: people on site forms (§4), recorded from Jul 6, 2026. Booked calls: Close mirror, SteelTrap rule (§3, §5), split marketing and reactivation. Show rate: of calls held (§7). Revenue won: by date won (§8). CAC: blended, monthly model, the newest month with inputs (§10).",
+  },
+  {
+    term: CARD_HELP.scorecard,
+    meaning:
+      "Monday to Sunday weeks, whatever the window. Total booked calls: Close first sales calls dated in the week (the day the call is scheduled for), every one, as the sheet's Total counts them; kept = after cancelled-by-lead, outside-the-US and quiz-funnel calls are removed (§3); mktg = kept, without Lane 2 reactivation. MQLs: every new marketing lead captured, site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days); scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting). Ad spend: Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Metricool, webinar campaigns included; incomplete = a network that spent in these weeks has days with nothing recorded. Cost per MQL: ad spend divided by MQLs for the same week.",
+  },
+  {
+    term: CARD_HELP.flow,
+    meaning:
+      "Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: Close first calls in the window and what became of them to date (§5, §6, §16), by Close funnel, except that a lead whose site form carried a Google click id counts as Google Ads. Calls the SteelTrap rule leaves out are not counted. A call qualified with no show logged counts as qualified, never as a show. Won deals with no value in Close count as won and add nothing to revenue. Chatbot leads are in Website & search, where Close files their calls.",
+  },
+  {
+    term: CARD_HELP.value,
+    meaning: `The flow card's calls: Close first calls booked in the window and what became of them to date (§5, §6, §16), won deals and revenue from Close opportunities (§8). A lead whose site form carried a Google click id counts as Google Ads, whatever Close funnel it is filed under. Spend: ad spend on the channel spine in the window, as the cost card counts it (§9). Close rate is won over booked. Won deals lag: recent bookings have had less time to close, so compare channels on the same window and use 90 days for close rate. Under ${SMALL_SAMPLE} booked calls is a small sample (greyed). A dash means no ad spend or nothing to divide by.`,
+  },
+  {
+    term: CARD_HELP.paid,
+    meaning:
+      "By channel: spend and clicks are the spine's ad rows (§9; Google from Google Analytics' Google Ads link, Meta from Metricool). Sign-ups: Google = site leads from a Google ad link; Meta = webinar registrations and lead-form contacts from Meta ad links. Booked and won are the flow card's calls (§16): Google = the Google Ads band; Meta = the Webinar and Meta Ads bands together, because Meta buys the webinar registrations (webinar calls also include registrants who came without an ad, about 1 in 7 in Sep-Oct 2026). By campaign: Google rows are the Google Ads page's (site leads with a Google click id that arrived in the window, and whether they booked or won), so they need not add up to the channel row. Meta stores spend and clicks per campaign but its registrations only per webinar week, so sign-ups, booked and won are not split by Meta campaign.",
+  },
+  {
+    term: CARD_HELP.bookings,
+    meaning:
+      "Close first calls in the window, SteelTrap rule (§5), by channel as the flow card credits them. Plan: the booking plan's channels against its target for these days (§11), cancellations included as the plan counts them; the plan starts September 2026. Setter: as Close records it (§12).",
+  },
+  {
+    term: CARD_HELP.cost,
+    meaning:
+      "Ad spend over channel bookings, by complete month (§9). The running month is shown as so far, never as the trend, and refreshes every 15 minutes.",
+  },
+  {
+    term: CARD_HELP.trend,
+    meaning:
+      "Site leads by the day they arrived (§4); Close first calls by the day they are dated (§5). A window shorter than 14 days is drawn over 14 days so the bars have a shape.",
+  },
   { term: "Lead", meaning: LEAD_DEFINITION.body },
   {
     term: "Registrations & contacts",
@@ -104,7 +178,11 @@ export function AnalyticsGlossary() {
       </summary>
       <dl className="mt-3 grid gap-x-6 gap-y-2.5 text-xs sm:grid-cols-2">
         {GLOSSARY.map((entry) => (
-          <div key={entry.term}>
+          <div
+            key={entry.term}
+            id={glossaryAnchor(entry.term)}
+            className="scroll-mt-4"
+          >
             <dt className="text-ui-text font-semibold">{entry.term}</dt>
             <dd className="text-ui-text-muted mt-0.5 leading-5">
               {entry.meaning}

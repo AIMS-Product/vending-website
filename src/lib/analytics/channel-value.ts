@@ -92,3 +92,146 @@ export function buildChannelValue(
       b.booked - a.booked,
   );
 }
+
+export type FocusLine = {
+  tone: "double-down" | "watch";
+  label: string;
+  costPerBooked: number | null;
+  revenuePerDollar: number;
+};
+
+/**
+ * At most three lines for the top of the dashboard: paid channels with a
+ * real sample, "Double down" where a dollar of spend has won a dollar or
+ * more (best first), "Watch" where it has not (worst first).
+ */
+export function focusLines(rows: readonly ChannelValueRow[]): FocusLine[] {
+  const priced = rows.filter(
+    (r): r is ChannelValueRow & { revenuePerDollar: number } =>
+      r.spend !== null && !r.smallSample && r.revenuePerDollar !== null,
+  );
+  const line = (tone: FocusLine["tone"]) => (r: (typeof priced)[number]) => ({
+    tone,
+    label: r.label,
+    costPerBooked: r.costPerBooked,
+    revenuePerDollar: r.revenuePerDollar,
+  });
+  const up = priced
+    .filter((r) => r.revenuePerDollar >= 1)
+    .sort((a, b) => b.revenuePerDollar - a.revenuePerDollar)
+    .map(line("double-down"));
+  const down = priced
+    .filter((r) => r.revenuePerDollar < 1)
+    .sort((a, b) => a.revenuePerDollar - b.revenuePerDollar)
+    .map(line("watch"));
+  // Keep a slot for the worst channel whenever there is one.
+  return [...up.slice(0, down.length ? 2 : 3), ...down].slice(0, 3);
+}
+
+/** The two paid networks, as the spine's `source` names their ad rows. */
+export const PAID_NETWORKS = [
+  {
+    key: "google",
+    label: "Google Ads",
+    source: "google",
+    bands: ["google-ads"],
+  },
+  // Meta buys the webinar registrations, so the Webinar band is Meta's too.
+  {
+    key: "meta",
+    label: "Meta",
+    source: "meta_ads",
+    bands: ["meta-ads", "webinar"],
+  },
+] as const satisfies ReadonlyArray<{
+  key: string;
+  label: string;
+  source: string;
+  bands: readonly FlowChannelKey[];
+}>;
+
+export type PaidRow = {
+  key: string;
+  label: string;
+  spend: number;
+  clicks: number;
+  /** Sign-ups or leads; null where the network does not split them this way. */
+  signUps: number | null;
+  booked: number | null;
+  won: number | null;
+  costPerBooked: number | null;
+};
+
+type PaidFact = {
+  day: string;
+  source: string | null;
+  content?: string | null;
+  spend?: number | null;
+  clicks?: number | null;
+  leads?: number | null;
+  contacts?: number | null;
+};
+
+/** Google and Meta side by side: spine spend, clicks and sign-ups; the flow's booked and won. */
+export function paidByNetwork(
+  facts: readonly PaidFact[],
+  flow: ChannelFlow,
+  range: DayRange,
+): PaidRow[] {
+  const bands = new Map(flow.bands.map((b) => [b.key, b]));
+  return PAID_NETWORKS.map((n) => {
+    const mine = facts.filter(
+      (f) => f.source === n.source && inRange(f.day, range),
+    );
+    const sum = (pick: (f: PaidFact) => number | null | undefined) =>
+      mine.reduce((s, f) => s + (pick(f) ?? 0), 0);
+    const of = (stage: 1 | 4) =>
+      n.bands.reduce((s, k) => s + (bands.get(k)?.values[stage] ?? 0), 0);
+    const spend = sum((f) => f.spend);
+    const booked = of(1);
+    return {
+      key: n.key,
+      label: n.label,
+      spend: Math.round(spend),
+      clicks: sum((f) => f.clicks),
+      signUps: sum((f) => f.leads) + sum((f) => f.contacts),
+      booked,
+      won: of(4),
+      costPerBooked: spend > 0 ? per(spend, booked) : null,
+    };
+  });
+}
+
+/**
+ * Meta campaigns by name (the spine's `content` on ad rows), spend first.
+ * Registrations are stored per webinar week, not per campaign, so only spend
+ * and clicks split by campaign.
+ */
+export function metaCampaigns(
+  facts: readonly PaidFact[],
+  range: DayRange,
+): PaidRow[] {
+  const by = new Map<string, PaidRow>();
+  for (const f of facts) {
+    if (f.source !== "meta_ads" || !f.spend || !inRange(f.day, range)) continue;
+    const name = f.content?.trim() || "(unnamed campaign)";
+    const row = by.get(name) ?? {
+      key: name,
+      label: name,
+      spend: 0,
+      clicks: 0,
+      signUps: null,
+      booked: null,
+      won: null,
+      costPerBooked: null,
+    };
+    by.set(name, {
+      ...row,
+      spend: row.spend + f.spend,
+      clicks: row.clicks + (f.clicks ?? 0),
+    });
+  }
+  return [...by.values()]
+    .map((r) => ({ ...r, spend: Math.round(r.spend) }))
+    .sort((a, b) => b.spend - a.spend);
+}

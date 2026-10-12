@@ -26,6 +26,27 @@ export function DefinitionsLink() {
 }
 
 /**
+ * The "?" beside a card title: opens the glossary and lands on that card's
+ * entry (the browser follows the hash after the click opens the details).
+ */
+export function HelpLink({ anchor, term }: { anchor: string; term: string }) {
+  return (
+    <a
+      href={`#${anchor}`}
+      aria-label={`How "${term}" is counted`}
+      title="How it's counted"
+      onClick={() => {
+        const target = document.getElementById(DEFINITIONS_ID);
+        if (target instanceof HTMLDetailsElement) target.open = true;
+      }}
+      className="border-ui-line text-ui-text-subtle hover:text-ui-accent hover:border-ui-accent inline-flex size-6 shrink-0 items-center justify-center rounded-full border text-[0.6875rem] font-semibold"
+    >
+      ?
+    </a>
+  );
+}
+
+/**
  * Sits next to a number whose check did not pass last night. The reason is on
  * hover here and in visible text in the trust bar, which is what a phone sees.
  */

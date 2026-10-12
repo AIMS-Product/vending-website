@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
+import {
+  CARD_HELP,
+  glossaryAnchor,
+} from "@/components/admin/AnalyticsGlossary";
+import { HelpLink } from "@/components/admin/TrustMarks";
 import type { ReactNode } from "react";
 import {
   AdminBar,
@@ -20,7 +25,6 @@ import {
   MiniBars,
 } from "@/components/admin/dashboard/DashboardCharts";
 import {
-  FLOW_CHANNELS,
   buildChannelFlow,
   flowChannelForFunnel,
 } from "@/lib/analytics/channel-flow";
@@ -33,7 +37,6 @@ import {
   inRange,
   keptCalls,
   LEADS_RECORDED_FROM,
-  monthHasPlan,
   planBooked,
   sameDayLastWeek,
   showRateHeld,
@@ -67,7 +70,8 @@ import {
  * The cards of /admin/analytics. Each is its own async server component
  * behind its own Suspense boundary, reads only the sources it needs (shared
  * per request), and says plainly when a source is empty or unreadable. A
- * number on screen always names its METRICS.md section in its card's source line.
+ * card is a title, the number and the chart; its "?" opens the glossary
+ * entry that names the METRICS.md sections behind it.
  */
 
 export const num = (n: number) => n.toLocaleString("en-US");
@@ -108,37 +112,37 @@ function sparkRange(window: DashboardWindow): DayRange {
 
 // ── Shared card chrome ──────────────────────────────────────────────────
 
+/** The "?" for a card: its glossary entry. */
+export function CardHelp({ help }: { help: keyof typeof CARD_HELP }) {
+  const term = CARD_HELP[help];
+  return <HelpLink anchor={glossaryAnchor(term)} term={term} />;
+}
+
 export function DashboardCard({
-  title,
-  source,
+  help,
   action,
   id,
   className = "",
   children,
 }: {
-  title: string;
-  /** Where the numbers come from, in plain words, with the METRICS.md section. */
-  source: string;
+  /** The card's title, and its glossary entry (how it's counted). */
+  help: keyof typeof CARD_HELP;
   action?: ReactNode;
   id?: string;
   className?: string;
   children: ReactNode;
 }) {
+  const title = CARD_HELP[help];
   return (
     <section
       id={id}
       aria-label={title}
       className={`${adminCardClass} min-w-0 scroll-mt-6 ${className}`}
     >
-      <header className="mb-4 flex flex-wrap items-start justify-between gap-2">
-        <div className="min-w-0">
+      <header className="mb-4 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
           <h2 className={adminSectionTitleClass}>{title}</h2>
-          <details className="text-ui-text-subtle mt-0.5 text-xs">
-            <summary className="hover:text-ui-text-muted w-fit cursor-pointer">
-              How it&apos;s counted
-            </summary>
-            <p className="mt-1 max-w-3xl">{source}</p>
-          </details>
+          <CardHelp help={help} />
         </div>
         {action}
       </header>
@@ -311,26 +315,22 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
     label: string;
     values: Array<number | null>;
     note?: string;
-    source: string;
   }> = [
     {
       label: "Calls booked today",
       values: days.map((d) =>
         booked.ok ? (booked.data[d]?.newBooked ?? null) : null,
       ),
-      source: "New calls booked, Lane 2 out (§5)",
     },
     {
       label: "First calls on the calendar",
       values: days.map((d) =>
         booked.ok ? (booked.data[d]?.onCalendar ?? null) : null,
       ),
-      source: "Close first calls dated today (§5)",
     },
     {
       label: "Leads in today",
       values: days.map(leadsOn),
-      source: "Site leads, people (§4)",
     },
     {
       label: "Showed so far",
@@ -338,11 +338,13 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
       note: o[0]
         ? `${num(o[0].noShow)} no-show · ${num(o[0].unlogged)} not logged yet`
         : undefined,
-      source: "Rep-logged first-call show (§6)",
     },
   ];
   return (
-    <section aria-label="Today" className={`${adminPanelClass} mb-4`}>
+    <section aria-label="Today" className={`${adminPanelClass} relative mb-4`}>
+      <span className="absolute top-2 right-2">
+        <CardHelp help="today" />
+      </span>
       <div className="divide-ui-line grid divide-y sm:grid-cols-2 sm:divide-x lg:grid-cols-4 lg:divide-y-0">
         {cells.map((cell) => {
           const [now, prev, week] = cell.values;
@@ -361,9 +363,6 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
                   {cell.note}
                 </p>
               ) : null}
-              <p className="text-ui-text-subtle mt-1 text-[0.6875rem]">
-                {cell.source}
-              </p>
             </div>
           );
         })}
@@ -375,8 +374,7 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
         >
           {[booked, leads, calls]
             .flatMap((r) => (r.ok ? [] : [r.error]))
-            .join(" ")}{" "}
-          A dash means not read, never zero.
+            .join(" ")}
         </p>
       ) : null}
     </section>
@@ -396,7 +394,7 @@ function KpiCell({
   label: string;
   value: string;
   delta: ReactNode;
-  caption: ReactNode;
+  caption?: ReactNode;
   spark: ReadonlyArray<number | null> | null;
   href?: string;
 }) {
@@ -409,9 +407,11 @@ function KpiCell({
         </span>
         {delta}
       </p>
-      <p className="text-ui-text-muted mt-1.5 text-xs tabular-nums">
-        {caption}
-      </p>
+      {caption ? (
+        <p className="text-ui-text-muted mt-1.5 text-xs tabular-nums">
+          {caption}
+        </p>
+      ) : null}
       <div className="mt-2">
         {spark ? <MiniBars data={spark} /> : <div className="h-8" />}
       </div>
@@ -449,7 +449,7 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         label="Leads"
         value="–"
         delta={null}
-        caption="Site leads are recorded from Jul 6, 2026"
+        caption="From Jul 6, 2026"
         spark={null}
       />,
     );
@@ -462,7 +462,6 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         label="Leads"
         value={num(now)}
         delta={<Delta value={deltaPct(now, before)} />}
-        caption={`People on site forms · ${num(before)} before`}
         spark={sparkPoints(dailyCounts(leads.data, (l) => l.day, spark))}
         href="/admin/leads"
       />,
@@ -562,7 +561,7 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         label="Revenue won"
         value={money(now)}
         delta={<Delta value={deltaPct(now, sum(prior))} />}
-        caption={`${num(won)} deal${won === 1 ? "" : "s"} won, by date won`}
+        caption={`${num(won)} deal${won === 1 ? "" : "s"}`}
         spark={sparkPoints(
           dailyCounts(deals.data, (d) => d.dateWon, spark).map(({ day }) => ({
             value: sum({ startDay: day, endDay: day }),
@@ -599,7 +598,7 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         caption={
           last.month < current
             ? `${new Date(`${current}-01T00:00:00Z`).toLocaleDateString("en-US", { month: "long", timeZone: "UTC" })} not entered yet`
-            : "Blended, monthly model"
+            : undefined
         }
         spark={points.length > 1 ? points.map((p) => p.cac!) : null}
         href="/admin/cac"
@@ -624,17 +623,13 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
       <div className="divide-ui-line grid divide-y sm:grid-cols-3 sm:divide-x lg:grid-cols-5 lg:divide-y-0">
         {cells}
       </div>
-      <details className="border-ui-line text-ui-text-subtle border-t px-4 py-2 text-[0.6875rem]">
-        <summary className="hover:text-ui-text-muted w-fit cursor-pointer">
-          {window.key.startsWith("custom:") ? "" : `${window.label}, `}
-          {dayLabel(window.startDay)} – {dayLabel(window.endDay)}, against{" "}
+      <div className="border-ui-line text-ui-text-subtle flex items-center justify-between gap-2 border-t px-4 py-1.5 text-[0.6875rem]">
+        <span>
+          {dayLabel(window.startDay)} – {dayLabel(window.endDay)} vs{" "}
           {dayLabel(prior.startDay)} – {dayLabel(prior.endDay)}
-        </summary>
-        <p className="mt-1">
-          Leads §4 · Booked §5 Close mirror, SteelTrap rule §3 · Show rate §7
-          calls held · Revenue §8 · CAC §10.
-        </p>
-      </details>
+        </span>
+        <CardHelp help="kpi" />
+      </div>
     </section>
   );
 }
@@ -664,8 +659,7 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
   return (
     <DashboardCard
       id="flow"
-      title="Every channel, from capture to sale"
-      source="Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: Close first calls in the window and what became of them to date (§5, §6, §16), by Close funnel, except that a lead whose site form carried a Google click id counts as Google Ads."
+      help="flow"
       action={
         <Link
           href="/admin/analytics/channels"
@@ -677,24 +671,10 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
     >
       {error ??
         (flow && flow.totals[1] + flow.totals[0] > 0 ? (
-          <>
-            <ChannelFlowChart flow={flow} />
-            <p className="text-ui-text-subtle mt-3 text-xs tabular-nums">
-              {num(flow.excluded)} first calls left out by the SteelTrap rule.{" "}
-              {flow.qualifiedWithoutShow
-                ? `${num(flow.qualifiedWithoutShow)} qualified with no show logged; counted as qualified, never as a show. `
-                : ""}
-              {flow.unvalued
-                ? `${num(flow.unvalued)} won deals carry no value in Close. `
-                : ""}
-              Chatbot leads are in Website & search, where Close files their
-              calls.
-            </p>
-          </>
+          <ChannelFlowChart flow={flow} />
         ) : (
           <CardMessage tone="empty">
-            No captures or first calls in {windowPhrase(window)}. Try a wider
-            window.
+            No captures or first calls in {windowPhrase(window)}.
           </CardMessage>
         ))}
     </DashboardCard>
@@ -703,7 +683,22 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
 
 // ── Bookings ────────────────────────────────────────────────────────────
 
-function BarList({
+/** Booked calls per channel, credited and ordered as the flow card does. */
+export function bookedBars(
+  calls: Parameters<typeof buildChannelFlow>[0]["calls"],
+  googleClickLeads: ReadonlySet<string>,
+) {
+  return buildChannelFlow({ calls, captured: [], wins: [], googleClickLeads })
+    .bands.filter((b) => b.values[1] > 0)
+    .map((b) => ({
+      key: b.key,
+      label: b.label,
+      color: FLOW_COLORS[b.key],
+      value: b.values[1],
+    }));
+}
+
+export function BarList({
   rows,
   total,
   logos = false,
@@ -746,15 +741,14 @@ function BarList({
 
 export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const calls = await readCalls(span.from, span.to);
-  if (!calls.ok) {
+  const [calls, googleClicks] = await Promise.all([
+    readCalls(span.from, span.to),
+    readGoogleClickLeads(),
+  ]);
+  if (!calls.ok || !googleClicks.ok) {
     return (
-      <DashboardCard
-        id="bookings"
-        title="Booked calls"
-        source="Close first calls (§5)"
-      >
-        {failed(calls)}
+      <DashboardCard id="bookings" help="bookings">
+        {failed(calls, googleClicks)}
       </DashboardCard>
     );
   }
@@ -763,25 +757,13 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const target = windowPlanTarget(window);
   const plan = planBooked(calls.data, window);
   const share = target ? plan / target : null;
-  // Same order as the flow: largest first, the unrecorded remainder last.
-  const byChannel = FLOW_CHANNELS.map((c) => ({
-    key: c.key,
-    label: c.label,
-    color: FLOW_COLORS[c.key],
-    value: kept.filter((k) => flowChannelForFunnel(k.funnel) === c.key).length,
-  }))
-    .filter((r) => r.value > 0)
-    .sort(
-      (a, b) =>
-        Number(a.key === "other") - Number(b.key === "other") ||
-        b.value - a.value,
-    );
+  // The flow's credit and order: largest first, the remainder last.
+  const byChannel = bookedBars(inWindow, googleClicks.data);
   const setters = bySetter(inWindow).slice(0, 8);
   return (
     <DashboardCard
       id="bookings"
-      title="Booked calls"
-      source="Close first calls in the window, SteelTrap rule (§5). Target: the booking plan (§11), on its own basis."
+      help="bookings"
       action={
         <Link
           href="/admin/bookings"
@@ -811,11 +793,11 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
               />
             ) : null}
           </div>
-          <p className="text-ui-text-muted mt-1 text-xs tabular-nums">
-            {target === null
-              ? "The booking plan starts in September 2026; no target for this window."
-              : `Plan channels booked ${num(plan)} against a target of ${num(target)} for ${monthHasPlan(window.startDay.slice(0, 7)) ? "these days" : "the days the plan covers (it starts September 2026)"} (cancellations included, as the plan counts them).`}
-          </p>
+          {target === null ? null : (
+            <p className="text-ui-text-muted mt-1 text-xs tabular-nums">
+              Plan {num(plan)} of {num(target)}
+            </p>
+          )}
           {share !== null ? (
             <div className="mt-3">
               <AdminBar share={Math.min(1, share)} />
@@ -827,9 +809,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
               <BarList rows={byChannel} total={kept.length} logos />
             </div>
             <div>
-              <h3 className={`${adminEyebrowClass} mb-2.5`}>
-                By setter, as Close records it (§12)
-              </h3>
+              <h3 className={`${adminEyebrowClass} mb-2.5`}>By setter</h3>
               <BarList rows={setters} total={kept.length} />
             </div>
           </div>
@@ -851,10 +831,7 @@ export async function CostCard({ window }: { window: DashboardWindow }) {
       timeZone: "UTC",
     });
   return (
-    <DashboardCard
-      title="Cost per booked call"
-      source="Ad spend over channel bookings, by complete month (§9). The running month is shown as so far, never as the trend, and refreshes every 15 minutes."
-    >
+    <DashboardCard help="cost">
       {failed(cost) ??
         (rows.length === 0 ? (
           <CardMessage tone="empty">
@@ -942,10 +919,7 @@ export async function TrendCard({ window }: { window: DashboardWindow }) {
     : [];
   const empty = [...leadSeries, ...callSeries].every((d) => d.value === 0);
   return (
-    <DashboardCard
-      title="Leads and booked calls per day"
-      source={`Site leads by the day they arrived (§4); Close first calls by the day they are dated (§5).${range === window ? "" : " Shown over 14 days so the bars have a shape."}`}
-    >
+    <DashboardCard help="trend">
       {error ??
         (empty ? (
           <CardMessage tone="empty">

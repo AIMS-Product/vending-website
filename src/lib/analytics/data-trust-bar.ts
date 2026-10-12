@@ -239,8 +239,9 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // kpi-report-data.ts: spine facts, Close, GHL email, webinars, Calendly
   kpi: [...SPINE, "close", "calendly", "site-leads"],
   // analytics-dashboard-data.ts: Close mirror, site leads, Calendly, the
-  // spine (captures, spend) through channel-report, Close wins, CAC inputs
-  dashboard: [...SPINE, "close", "calendly", "site-leads"],
+  // spine (captures, spend) through channel-report, Close wins, CAC inputs;
+  // google-ads-dashboard.ts for the paid card's Google campaigns
+  dashboard: [...SPINE, "close", "calendly", "site-leads", "google-ads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid

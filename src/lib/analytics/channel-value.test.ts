@@ -3,6 +3,9 @@ import type { CloseCall } from "@/lib/services/close-week-view";
 import { buildChannelFlow, type FlowWin } from "./channel-flow";
 import {
   buildChannelValue,
+  focusLines,
+  metaCampaigns,
+  paidByNetwork,
   spendByFlowChannel,
   type ChannelValueRow,
 } from "./channel-value";
@@ -157,6 +160,157 @@ describe("channel value", () => {
       flow.totals[1],
       flow.totals[4],
       flow.revenue,
+    ]);
+  });
+});
+
+const valueRow = (
+  label: string,
+  revenuePerDollar: number | null,
+  over: Partial<ChannelValueRow> = {},
+): ChannelValueRow => ({
+  key: "other",
+  label,
+  spend: 1000,
+  booked: 20,
+  showed: 10,
+  won: 2,
+  revenue: 0,
+  showRate: 50,
+  closeRate: 10,
+  costPerBooked: 50,
+  costPerWon: 500,
+  revenuePerDollar,
+  smallSample: false,
+  ...over,
+});
+
+describe("focusLines", () => {
+  it("doubles down on the best returns, watches the worst, at most three", () => {
+    const lines = focusLines([
+      valueRow("A", 4),
+      valueRow("B", 2),
+      valueRow("C", 1.5),
+      valueRow("D", 0.5),
+      valueRow("E", 0.2),
+    ]);
+    expect(lines.map((l) => [l.tone, l.label])).toEqual([
+      ["double-down", "A"],
+      ["double-down", "B"],
+      ["watch", "E"],
+    ]);
+  });
+
+  it("skips small samples, unpaid channels and channels with no return figure", () => {
+    const lines = focusLines([
+      valueRow("Small", 9, { smallSample: true }),
+      valueRow("Unpaid", null, { spend: null }),
+      valueRow("Nothing", null),
+      valueRow("Kept", 0.9),
+    ]);
+    expect(lines.map((l) => l.label)).toEqual(["Kept"]);
+  });
+
+  it("uses all three lines for doubles when nothing needs watching", () => {
+    expect(
+      focusLines([
+        valueRow("A", 3),
+        valueRow("B", 2),
+        valueRow("C", 1),
+        valueRow("D", 1),
+      ]),
+    ).toHaveLength(3);
+  });
+});
+
+describe("paid ads", () => {
+  const range = { startDay: "2026-10-01", endDay: "2026-10-10" };
+  const facts = [
+    {
+      day: "2026-10-02",
+      source: "google",
+      content: "W2",
+      spend: 600,
+      clicks: 300,
+    },
+    { day: "2026-10-02", source: "google", leads: 12 },
+    {
+      day: "2026-10-03",
+      source: "meta_ads",
+      content: "Webinar Oct 13",
+      spend: 900.4,
+      clicks: 1000,
+    },
+    {
+      day: "2026-10-04",
+      source: "meta_ads",
+      content: "Webinar Oct 13",
+      spend: 100,
+      clicks: 50,
+    },
+    {
+      day: "2026-10-04",
+      source: "meta_ads",
+      content: "VSL",
+      spend: 50,
+      clicks: 10,
+    },
+    { day: "2026-10-04", source: "meta_ads", contacts: 400 },
+    // Outside the range: never counted.
+    {
+      day: "2026-09-30",
+      source: "meta_ads",
+      content: "VSL",
+      spend: 999,
+      clicks: 9,
+    },
+  ];
+  const flow = buildChannelFlow({
+    calls: [
+      ...calls("Google Ads", 6),
+      ...calls("Internal Webinar", 20),
+      ...calls("Meta Ads", 5),
+    ],
+    captured: [],
+    wins: [{ leadId: "Internal Webinar-0", value: 5000 }],
+  });
+
+  it("puts Google and Meta side by side, Meta owning the webinar calls", () => {
+    expect(paidByNetwork(facts, flow, range)).toEqual([
+      {
+        key: "google",
+        label: "Google Ads",
+        spend: 600,
+        clicks: 300,
+        signUps: 12,
+        booked: 6,
+        won: 0,
+        costPerBooked: 100,
+      },
+      {
+        key: "meta",
+        label: "Meta",
+        spend: 1050,
+        clicks: 1060,
+        signUps: 400,
+        booked: 25,
+        won: 1,
+        costPerBooked: 42,
+      },
+    ]);
+  });
+
+  it("splits Meta spend and clicks by campaign name, nothing it cannot split", () => {
+    expect(
+      metaCampaigns(facts, range).map((r) => [
+        r.label,
+        r.spend,
+        r.clicks,
+        r.signUps,
+      ]),
+    ).toEqual([
+      ["Webinar Oct 13", 1000, 1050, null],
+      ["VSL", 50, 10, null],
     ]);
   });
 });
