@@ -127,4 +127,51 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
       "All 4 new sitelinks APPROVED / ELIGIBLE on both campaigns at 10:54; read-only check after the run shows no disapproved sitelink linked",
     expected: "Tidy only; disapproved sitelinks could not serve",
   },
+  {
+    at: "2026-10-11 18:20",
+    kind: "ads",
+    entity:
+      "Start Action (827784799106) and License & Finance (827659269537): same claim-free RSA copy, final URL /contact",
+    before:
+      "Only live ads (827646533665, 827604655572) landed on / and were Approved (limited): unreliable claims",
+    after:
+      "New /contact RSAs under review; the two limited homepage RSAs paused. Landing pages untouched (figures are CEO-approved)",
+    evidence:
+      "Audit 2026-10-11 row 1: the 4 ad groups moved to /contact on day 2 came back APPROVED; Start Action books at $75 per booked call (30d)",
+    expected: "Both ad groups fully eligible again: about +1-2 booked/mo",
+  },
+  {
+    at: "2026-10-11 18:20",
+    kind: "campaigns",
+    entity: "VP | Brand > Vending Locations ad group (199840060207)",
+    before: "Enabled; non-brand group, its only ad disapproved",
+    after: "Paused",
+    evidence:
+      "Audit row 4: broad keyword paused on day 1, phrase last spent 09-09, ad 827604660888 DISAPPROVED",
+    expected: "Brand's $50/day stays on brand searches ($56 per booked call)",
+  },
+  {
+    at: "2026-10-11 18:20",
+    kind: "keywords",
+    entity:
+      'Paused "vending machine cost" (broad, Cost Research) and [vending machine business near me] (License & Finance); added 14 exact keywords from converting search terms (13 in W2, [vending preneurs] in Brand)',
+    before:
+      "$324 and $203 per 30d with 2 and 0 booked; converting terms matched only loosely",
+    after: "Two keywords paused; 14 exact keywords enabled",
+    evidence:
+      "Audit rows 2, 3, 7 (90d/30d keyword and search-term data); every added term produced a Google-attributed booked call",
+    expected: "About $850/mo moves to cheaper keywords: +3-5 booked/mo",
+  },
+  {
+    at: "2026-10-11 18:20",
+    kind: "negatives",
+    entity: 'Shared list "Wasted intent 2026-10 (media buyer)": +39 negatives',
+    before:
+      "Wrong-intent terms (rentals, single-machine prices, hardware, other brands) matching",
+    after:
+      "39 phrase/exact negatives, incl. VendHub/VendScout brand terms (approved)",
+    evidence:
+      "Audit section 3: $958.81 / 90d, $134.77 / 30d; checked against all 310 converting terms and live keywords, 0 conflicts",
+    expected: "Small: at most +1 booked/mo",
+  },
 ];
