@@ -143,6 +143,13 @@ const envSchema = z.object({
   METRICOOL_BLOG_ID: optionalTrimmedOptionalEnv,
   METRICOOL_BLOG_IDS: optionalTrimmedOptionalEnv,
   /**
+   * Meta Marketing API (read-only use): a system-user token and the ad
+   * account id. When set, Meta ad spend comes from Meta directly instead of
+   * Metricool, whose Meta link stalled on 2026-10-08.
+   */
+  META_ACCESS_TOKEN: optionalTrimmedOptionalEnv,
+  META_AD_ACCOUNT_ID: optionalTrimmedOptionalEnv,
+  /**
    * YouTube Analytics as the channel owner: a Desktop-app OAuth client and
    * the refresh token from scripts/youtube-oauth-token.mjs. Absent means the
    * youtube-analytics connector records "skipped".
@@ -294,6 +301,8 @@ const parsed = envSchema.safeParse({
   METRICOOL_USER_ID: process.env.METRICOOL_USER_ID,
   METRICOOL_BLOG_ID: process.env.METRICOOL_BLOG_ID,
   METRICOOL_BLOG_IDS: process.env.METRICOOL_BLOG_IDS,
+  META_ACCESS_TOKEN: process.env.META_ACCESS_TOKEN,
+  META_AD_ACCOUNT_ID: process.env.META_AD_ACCOUNT_ID,
   GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID,
   GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET,
   YOUTUBE_REFRESH_TOKEN: process.env.YOUTUBE_REFRESH_TOKEN,

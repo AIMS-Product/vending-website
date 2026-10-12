@@ -494,6 +494,87 @@ describe("syncMetricool", () => {
     );
   });
 
+  it("takes Meta spend from Meta's API, on Metricool's keys, and never asks Metricool for it", async () => {
+    // 2026-10-08: Metricool's Meta link stalled (empty lists). Meta's own
+    // insights carry the same campaign ids and figures ($1,210.22 on 10-05).
+    const { client, upserts } = buildClient();
+    const fetchCampaigns = vi.fn(async () => [] as MetricoolCampaign[]);
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns,
+        fetchYouTubeVideos: noAds,
+      },
+      googleAds: { fetchGoogleAdsCampaigns: async () => [] },
+      metaAds: {
+        fetchCampaignDays: async () => [
+          {
+            day: "2026-09-11",
+            id: "120251321060910338",
+            name: "LL - VP Masterclass Webinar | Purchase",
+            spend: 1210.22,
+            impressions: 81542,
+            reach: 68814,
+            clicks: 9753,
+          },
+        ],
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toBeNull();
+    expect(fetchCampaigns).not.toHaveBeenCalled();
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({
+        day: "2026-09-11",
+        channel: "Webinar",
+        source: "meta_ads",
+        medium: "paid",
+        campaign: "120251321060910338",
+        spend: 1210.22,
+        clicks: 9753,
+      }),
+    );
+  });
+
+  it("records a Meta API failure and still writes Google", async () => {
+    const { client, upserts } = buildClient();
+    const result = await syncMetricool({
+      client,
+      metricool: {
+        fetchPosts: async () => [],
+        fetchCampaigns: async () => [],
+        fetchYouTubeVideos: noAds,
+      },
+      googleAds: {
+        fetchGoogleAdsCampaigns: async () => [
+          {
+            day: "2026-09-11",
+            id: "23805931083",
+            name: "VP | W2 | Consideration",
+            spend: 499.98,
+            impressions: 1861,
+            clicks: 168,
+          },
+        ],
+      },
+      metaAds: {
+        fetchCampaignDays: async () => {
+          throw new Error("Meta insights 400");
+        },
+      },
+      blogIds: ["6626386"],
+      now,
+      days: 1,
+    });
+    expect(result.ads.error).toMatch(/could not be read from the Meta API/);
+    expect(upserts.channel_daily).toContainEqual(
+      expect.objectContaining({ source: "google", spend: 499.98 }),
+    );
+  });
+
   it("records a GA4 read failure and still writes Meta", async () => {
     const { client, upserts } = buildClient();
     const result = await syncMetricool({
