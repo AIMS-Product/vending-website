@@ -467,7 +467,6 @@ export function PublicLeadForm({
         summaryRef={summaryRef}
         state={activeState}
         pending={activePending}
-        submitLabel={submitLabel}
         values={submittedValues}
         compact={isCompact}
         onFieldFocus={handleStage2FocusCapture}
@@ -762,6 +761,10 @@ function vpStage2Questions(
   return [VP_GATE_QUESTION];
 }
 
+// Truthful for every outcome: the call-worthy bands land on a calendar, the
+// rest on the roadmap page, so "times" would over-promise.
+const STAGE_2_SUBMIT_LABEL = "See my next step";
+
 /**
  * Stage 2 of the two-stage inline funnel: the same card, with the contact
  * fields swapped for the Form V2 stepper — one question at a time with every
@@ -781,7 +784,6 @@ function QualificationQuestionsStage({
   summaryRef,
   state,
   pending,
-  submitLabel,
   values,
   compact,
   onFieldFocus,
@@ -794,7 +796,6 @@ function QualificationQuestionsStage({
   summaryRef: React.Ref<HTMLDivElement>;
   state: PublicLeadActionState;
   pending: boolean;
-  submitLabel: string;
   values: Record<string, string>;
   compact: boolean;
   onFieldFocus: () => void;
@@ -807,6 +808,7 @@ function QualificationQuestionsStage({
     seedStage2Answers(values),
   );
   const [stepIndex, setStepIndex] = useState(0);
+  const submitRef = useRef<HTMLButtonElement>(null);
 
   const questions = vpStage2Questions(answers[VP_QUESTION_IDS.operator]);
   const question = questions[Math.min(stepIndex, questions.length - 1)];
@@ -848,7 +850,23 @@ function QualificationQuestionsStage({
       }
       return { ...previous, [question.id]: value };
     });
-    if (!isLast) setStepIndex((index) => index + 1);
+    if (!isLast) {
+      setStepIndex((index) => index + 1);
+      return;
+    }
+    // Last question: the submit row sits below the option list, off-screen on
+    // a phone, so bring it into view and focus it or the pick looks inert.
+    const button = submitRef.current;
+    if (button) {
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
+      button.scrollIntoView({
+        behavior: reduceMotion ? "auto" : "smooth",
+        block: "center",
+      });
+      button.focus({ preventScroll: true });
+    }
   };
 
   return (
@@ -945,7 +963,8 @@ function QualificationQuestionsStage({
       {isLast && (
         <SubmitRow
           pending={pending}
-          submitLabel={submitLabel}
+          submitLabel={STAGE_2_SUBMIT_LABEL}
+          buttonRef={submitRef}
           state={state}
           muted={hasSummary}
           dataGtm="lead-form-submit-qualification-step-2"
@@ -1017,6 +1036,7 @@ function SubmitRow({
   muted,
   dataGtm,
   wide = false,
+  buttonRef,
 }: {
   pending: boolean;
   submitLabel: string;
@@ -1026,6 +1046,7 @@ function SubmitRow({
   // The short booking form's submit is the card's only action: full width at
   // the 56px hero size, so the card reads as one finished unit.
   wide?: boolean;
+  buttonRef?: React.Ref<HTMLButtonElement>;
 }) {
   return (
     <div
@@ -1036,6 +1057,7 @@ function SubmitRow({
     >
       <button
         type="submit"
+        ref={buttonRef}
         disabled={pending}
         data-gtm={dataGtm}
         className={cn(
