@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  channelForLandingPath,
+  isYoutubeSiteLead,
   CHATBOT_CHANNEL,
   isInternalHost,
   REFERRAL_CHANNEL,
@@ -280,5 +282,37 @@ describe("resolveGa4Channel", () => {
   it("passes everything else straight through", () => {
     expect(resolveGa4Channel("youtube", "whatever").channel).toBe("YouTube");
     expect(resolveGa4Channel("(direct)", "(not set)").channel).toBe("Website");
+  });
+});
+
+describe("YouTube-only landing pages", () => {
+  it("reads /booking-youtube as YouTube however the path is written", () => {
+    for (const path of [
+      "/booking-youtube",
+      "/booking-youtube/",
+      "/Booking-YouTube?utm_source=",
+      " /booking-youtube#form ",
+    ])
+      expect(channelForLandingPath(path)).toBe("YouTube");
+    expect(channelForLandingPath("/contact")).toBeNull();
+    expect(channelForLandingPath("/")).toBeNull();
+    expect(channelForLandingPath(null)).toBeNull();
+  });
+
+  const row = (
+    utm_source: string | null,
+    source_path: string | null,
+    utm_medium: string | null = null,
+  ) => ({ utm_source, utm_medium, source_path });
+
+  it("counts a YouTube tag anywhere, and an untagged /booking-youtube form", () => {
+    expect(isYoutubeSiteLead(row("youtube", "/contact"))).toBe(true);
+    expect(isYoutubeSiteLead(row("yt", null))).toBe(true);
+    expect(isYoutubeSiteLead(row(null, "/booking-youtube"))).toBe(true);
+  });
+
+  it("lets another channel's tag win over the page", () => {
+    expect(isYoutubeSiteLead(row("instagram", "/booking-youtube"))).toBe(false);
+    expect(isYoutubeSiteLead(row(null, "/contact"))).toBe(false);
   });
 });

@@ -183,6 +183,21 @@ export type ChannelFlow = {
 
 export type FlowWin = { leadId: string; value: number | null };
 
+/** The band a call lands in: Close's funnel, unless the site holds better evidence. */
+function creditedFlowChannel(
+  call: Pick<CloseCall, "leadId" | "funnel">,
+  input: {
+    googleClickLeads?: ReadonlySet<string>;
+    youtubeSiteLeads?: ReadonlySet<string>;
+  },
+): FlowChannelKey {
+  if (input.googleClickLeads?.has(call.leadId)) return "google-ads";
+  const key = flowChannelForFunnel(call.funnel);
+  return key === "website" && input.youtubeSiteLeads?.has(call.leadId)
+    ? "youtube"
+    : key;
+}
+
 export function buildChannelFlow(input: {
   calls: readonly CloseCall[];
   captured: ReadonlyArray<{ channel: string; count: number }>;
@@ -195,6 +210,13 @@ export function buildChannelFlow(input: {
    * the same population the Google Ads page counts. Moved, never copied.
    */
   googleClickLeads?: ReadonlySet<string>;
+  /**
+   * Close lead ids of site leads that came from YouTube (tagged YouTube, or
+   * sent from /booking-youtube). Every site form lands in Close tagged
+   * Website-Apply, so when Close files one of these under "Website" its call
+   * and wins count as YouTube. Other funnels are left as Close has them.
+   */
+  youtubeSiteLeads?: ReadonlySet<string>;
 }): ChannelFlow {
   const bands = new Map<FlowChannelKey, FlowBand>(
     FLOW_CHANNELS.map((c) => [
@@ -235,11 +257,7 @@ export function buildChannelFlow(input: {
     // must not count twice.
     if (seen.has(call.leadId)) continue;
     seen.add(call.leadId);
-    const b = band(
-      input.googleClickLeads?.has(call.leadId)
-        ? "google-ads"
-        : flowChannelForFunnel(call.funnel),
-    );
+    const b = band(creditedFlowChannel(call, input));
     const showed = isYes(call.showUp);
     const qualified = isYes(call.qualified);
     b.values[1] += 1;

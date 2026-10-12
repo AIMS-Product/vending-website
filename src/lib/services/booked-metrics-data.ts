@@ -14,7 +14,11 @@ import {
   mappingReviewState,
   type MappingReviewState,
 } from "@/lib/services/calendly-event-class";
-import { resolveChannel } from "@/lib/analytics/channel";
+import {
+  WEBSITE_CHANNEL,
+  channelForLandingPath,
+  resolveChannel,
+} from "@/lib/analytics/channel";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
 import { CALENDLY_BOOKED_AT_PATH } from "@/lib/services/calendly-bookings";
 import { readAllPages } from "@/lib/services/paged-read";
@@ -291,12 +295,13 @@ async function fetchSiteChannels(
     email: string;
     utm_source: string | null;
     utm_medium: string | null;
+    source_path: string | null;
     metadata: unknown;
   }>(
     (from, to, count) =>
       client
         .from("lead_submissions")
-        .select("email,utm_source,utm_medium,metadata", { count })
+        .select("email,utm_source,utm_medium,source_path,metadata", { count })
         .order("created_at")
         .order("id")
         .range(from, to),
@@ -313,13 +318,17 @@ async function fetchSiteChannels(
   for (const row of rows) {
     const email = row.email?.trim().toLowerCase();
     if (!email || channels.has(email)) continue;
+    const { channel } = resolveChannel(row.utm_source, {
+      medium: row.utm_medium,
+      capturedByChatbot:
+        !row.utm_source?.trim() && isChatbotCapture(row.metadata),
+    });
+    // An untagged form on a single-channel page belongs to that channel.
     channels.set(
       email,
-      resolveChannel(row.utm_source, {
-        medium: row.utm_medium,
-        capturedByChatbot:
-          !row.utm_source?.trim() && isChatbotCapture(row.metadata),
-      }).channel,
+      channel === WEBSITE_CHANNEL
+        ? (channelForLandingPath(row.source_path) ?? channel)
+        : channel,
     );
   }
   return channels;

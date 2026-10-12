@@ -582,6 +582,12 @@ export type CreditVia = "close" | "booking-tag" | "site-form" | "none";
  * email, the booking link's own tracking tag, then the tag on the person's first
  * website form. Measured 2026-09-28 over two weeks: 70 of 282 new calls had no
  * Close funnel, and 44 of those carried one of the two tags.
+ *
+ * One exception to Close first: a Close "Website" funnel loses to our own
+ * YouTube evidence. Every form on the site, /booking-youtube included, lands in
+ * Close tagged Website-Apply, so "Website" there can mean "booked on the site
+ * from a YouTube link" (Jess, 2026-10-12). A YouTube tag on the booking or the
+ * first form, or a form sent from /booking-youtube, credits YouTube.
  */
 export function creditChannel(
   booking: Pick<BookingRow, "inviteeEmail" | "utmSource" | "utmMedium">,
@@ -590,15 +596,24 @@ export function creditChannel(
 ): { key: string | null; via: CreditVia } {
   const email = emailKey(booking.inviteeEmail);
   const funnel = email ? funnels.get(email) : null;
-  if (funnel?.trim()) return { key: channelKeyForFunnel(funnel), via: "close" };
-  if (booking.utmSource?.trim()) {
-    const { channel } = resolveChannel(booking.utmSource, {
-      medium: booking.utmMedium,
-    });
-    return { key: goalKeyForSiteChannel(channel), via: "booking-tag" };
-  }
+  const tagKey = booking.utmSource?.trim()
+    ? goalKeyForSiteChannel(
+        resolveChannel(booking.utmSource, { medium: booking.utmMedium })
+          .channel,
+      )
+    : null;
   const site = email ? siteChannels?.get(email) : undefined;
-  if (site) return { key: goalKeyForSiteChannel(site), via: "site-form" };
+  const siteKey = site ? goalKeyForSiteChannel(site) : null;
+  if (funnel?.trim()) {
+    const key = channelKeyForFunnel(funnel);
+    if (key === "website" && tagKey === "youtube")
+      return { key: "youtube", via: "booking-tag" };
+    if (key === "website" && siteKey === "youtube")
+      return { key: "youtube", via: "site-form" };
+    return { key, via: "close" };
+  }
+  if (booking.utmSource?.trim()) return { key: tagKey, via: "booking-tag" };
+  if (site) return { key: siteKey, via: "site-form" };
   return { key: null, via: "none" };
 }
 

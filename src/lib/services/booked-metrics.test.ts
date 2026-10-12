@@ -442,7 +442,8 @@ describe("callsByChannel", () => {
     timeZone: "America/New_York",
     siteChannels: new Map([
       ["former@example.com", "Instagram"],
-      ["buyer@example.com", "YouTube"], // Close funnel wins over this
+      // Close funnel wins over this; only YouTube evidence beats Close's Website.
+      ["buyer@example.com", "Instagram"],
     ]),
   };
 

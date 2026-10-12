@@ -101,6 +101,43 @@ describe("creditChannel: the order of evidence", () => {
   });
 });
 
+describe("creditChannel: Close Website against YouTube evidence", () => {
+  const website = new Map([["a@example.com", "Website"]]);
+
+  it("credits YouTube when the booking link is tagged YouTube", () => {
+    expect(
+      creditChannel(pick("a@example.com", "youtube"), website, undefined),
+    ).toEqual({ key: "youtube", via: "booking-tag" });
+  });
+
+  it("credits YouTube when the first site form came from YouTube", () => {
+    expect(
+      creditChannel(
+        pick("a@example.com"),
+        website,
+        sites([["a@example.com", "YouTube"]]),
+      ),
+    ).toEqual({ key: "youtube", via: "site-form" });
+  });
+
+  it("keeps Website when the site agrees, and any other Close funnel as is", () => {
+    expect(
+      creditChannel(
+        pick("a@example.com", "instagram"),
+        website,
+        sites([["a@example.com", "Website"]]),
+      ),
+    ).toEqual({ key: "website", via: "close" });
+    expect(
+      creditChannel(
+        pick("a@example.com", "youtube"),
+        new Map([["a@example.com", "Instagram"]]),
+        undefined,
+      ),
+    ).toEqual({ key: "instagram", via: "close" });
+  });
+});
+
 describe("creditChannel: mapping onto Goals page channels", () => {
   it.each([
     ["YouTube", "youtube"],

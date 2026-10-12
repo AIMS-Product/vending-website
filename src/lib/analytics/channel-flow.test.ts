@@ -79,6 +79,37 @@ describe("channel flow", () => {
     });
   });
 
+  it("moves a YouTube site lead out of Close's Website funnel, call and wins", () => {
+    const flow = buildChannelFlow({
+      captured: [],
+      calls: [
+        call({ leadId: "yt", funnel: "Website" }),
+        call({ leadId: "web", funnel: "Website" }),
+        // Only Website loses to the site: another Close funnel stands.
+        call({ leadId: "webinar", funnel: "Internal Webinar" }),
+      ],
+      wins: [{ leadId: "yt", value: 6000 }],
+      youtubeSiteLeads: new Set(["yt", "webinar"]),
+    });
+    const band = (key: string) => flow.bands.find((b) => b.key === key)!;
+    expect(band("youtube").values).toEqual([0, 1, 0, 0, 1]);
+    expect(band("youtube").revenue).toBe(6000);
+    expect(band("website").values[1]).toBe(1);
+    expect(band("webinar").values[1]).toBe(1);
+    expect(flow.totals[1]).toBe(3);
+  });
+
+  it("keeps a Google click ahead of YouTube evidence", () => {
+    const flow = buildChannelFlow({
+      captured: [],
+      calls: [call({ leadId: "a", funnel: "Website" })],
+      wins: [],
+      googleClickLeads: new Set(["a"]),
+      youtubeSiteLeads: new Set(["a"]),
+    });
+    expect(flow.bands.map((b) => b.key)).toEqual(["google-ads"]);
+  });
+
   it("counts a lead once even if the read returns it twice", () => {
     const flow = buildChannelFlow({
       captured: [],

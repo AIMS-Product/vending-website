@@ -60,6 +60,7 @@ import {
   readCostByMonth,
   readDeals,
   readGoogleClickLeads,
+  readYoutubeSiteLeads,
   readFacts,
   readLeads,
   readTrust,
@@ -638,22 +639,24 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, facts, deals, googleClicks] = await Promise.all([
+  const [calls, facts, deals, googleClicks, youtubeLeads] = await Promise.all([
     readCalls(span.from, span.to),
     // Captured is the window's own captures: read the window, not the six
     // months the cost card needs.
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today),
     readGoogleClickLeads(),
+    readYoutubeSiteLeads(),
   ]);
-  const error = failed(calls, facts, deals, googleClicks);
+  const error = failed(calls, facts, deals, googleClicks, youtubeLeads);
   const flow =
-    calls.ok && facts.ok && deals.ok && googleClicks.ok
+    calls.ok && facts.ok && deals.ok && googleClicks.ok && youtubeLeads.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
           googleClickLeads: googleClicks.data,
+          youtubeSiteLeads: youtubeLeads.data,
         })
       : null;
   return (
@@ -687,8 +690,15 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
 export function bookedBars(
   calls: Parameters<typeof buildChannelFlow>[0]["calls"],
   googleClickLeads: ReadonlySet<string>,
+  youtubeSiteLeads: ReadonlySet<string>,
 ) {
-  return buildChannelFlow({ calls, captured: [], wins: [], googleClickLeads })
+  return buildChannelFlow({
+    calls,
+    captured: [],
+    wins: [],
+    googleClickLeads,
+    youtubeSiteLeads,
+  })
     .bands.filter((b) => b.values[1] > 0)
     .map((b) => ({
       key: b.key,
@@ -741,14 +751,15 @@ export function BarList({
 
 export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, googleClicks] = await Promise.all([
+  const [calls, googleClicks, youtubeLeads] = await Promise.all([
     readCalls(span.from, span.to),
     readGoogleClickLeads(),
+    readYoutubeSiteLeads(),
   ]);
-  if (!calls.ok || !googleClicks.ok) {
+  if (!calls.ok || !googleClicks.ok || !youtubeLeads.ok) {
     return (
       <DashboardCard id="bookings" help="bookings">
-        {failed(calls, googleClicks)}
+        {failed(calls, googleClicks, youtubeLeads)}
       </DashboardCard>
     );
   }
@@ -758,7 +769,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const plan = planBooked(calls.data, window);
   const share = target ? plan / target : null;
   // The flow's credit and order: largest first, the remainder last.
-  const byChannel = bookedBars(inWindow, googleClicks.data);
+  const byChannel = bookedBars(inWindow, googleClicks.data, youtubeLeads.data);
   const setters = bySetter(inWindow).slice(0, 8);
   return (
     <DashboardCard

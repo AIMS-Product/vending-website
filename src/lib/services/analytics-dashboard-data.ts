@@ -2,7 +2,7 @@ import "server-only";
 
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
-import { resolveChannel } from "@/lib/analytics/channel";
+import { isYoutubeSiteLead, resolveChannel } from "@/lib/analytics/channel";
 import {
   addDays,
   reportingDay,
@@ -271,6 +271,39 @@ export const readGoogleClickLeads = cache(() =>
     );
     if (error) throw new Error(error.message);
     return new Set(rows.map((row) => row.close_lead_id));
+  }),
+);
+
+/**
+ * Close lead ids of site leads that came from YouTube: a form tagged YouTube,
+ * or an untagged form sent from /booking-youtube. Every site form lands in
+ * Close tagged Website-Apply, so some of these sit under Close's "Website"
+ * funnel; the flow moves those (and only those) to YouTube.
+ */
+export const readYoutubeSiteLeads = cache(() =>
+  attempt("YouTube site leads", async () => {
+    const client = createAdminClient();
+    const { rows, error } = await readAllPages<{
+      close_lead_id: string;
+      utm_source: string | null;
+      utm_medium: string | null;
+      source_path: string | null;
+    }>(
+      (start, end, count) =>
+        client
+          .from("lead_submissions")
+          .select("close_lead_id,utm_source,utm_medium,source_path", { count })
+          .not("close_lead_id", "is", null)
+          .order("id")
+          .range(start, end),
+      { pageSize: PAGE, maxRows: MAX_ROWS },
+    );
+    if (error) throw new Error(error.message);
+    return new Set(
+      rows
+        .filter((row) => isYoutubeSiteLead(row))
+        .map((row) => row.close_lead_id),
+    );
   }),
 );
 

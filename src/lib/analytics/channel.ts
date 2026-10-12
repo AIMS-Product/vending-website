@@ -31,6 +31,8 @@ export type ChannelAttribution = {
  */
 export const WEBSITE_CHANNEL = "Website";
 
+export const YOUTUBE_CHANNEL = "YouTube";
+
 /**
  * Mediums that mark a paid placement. A `google` source with medium `cpc`
  * (and a numeric Google Ads campaign id) is Google Ads, not Organic search;
@@ -274,6 +276,41 @@ export function channelForHost(host: string): string {
     if (host === suffix || host.endsWith(`.${suffix}`)) return channel;
   }
   return REFERRAL_CHANNEL;
+}
+
+/**
+ * Site pages only one channel links to. A form sent from one with no tracking
+ * tag still came from that channel: /booking-youtube is linked from YouTube
+ * descriptions alone, and a description link that lost its UTMs read as
+ * Website until 2026-10-12.
+ */
+const LANDING_PATH_CHANNEL: ReadonlyMap<string, string> = new Map([
+  ["/booking-youtube", YOUTUBE_CHANNEL],
+]);
+
+/** The channel a submitting page implies, or null when any channel links to it. */
+export function channelForLandingPath(
+  path: string | null | undefined,
+): string | null {
+  const bare = path?.trim().toLowerCase().split(/[?#]/)[0] ?? "";
+  const normalized = bare.length > 1 ? bare.replace(/\/+$/, "") : bare;
+  return LANDING_PATH_CHANNEL.get(normalized) ?? null;
+}
+
+/** A site form that came from YouTube: tagged YouTube, or untagged on a YouTube-only page. */
+export function isYoutubeSiteLead(row: {
+  utm_source: string | null;
+  utm_medium: string | null;
+  source_path: string | null;
+}): boolean {
+  const { channel } = resolveChannel(row.utm_source, {
+    medium: row.utm_medium,
+  });
+  if (channel === YOUTUBE_CHANNEL) return true;
+  return (
+    channel === WEBSITE_CHANNEL &&
+    channelForLandingPath(row.source_path) === YOUTUBE_CHANNEL
+  );
 }
 
 /**

@@ -18,6 +18,7 @@ import {
 import {
   readCalls,
   readGoogleClickLeads,
+  readYoutubeSiteLeads,
 } from "@/lib/services/analytics-dashboard-data";
 
 interface GlanceCardProps {
@@ -39,14 +40,15 @@ export async function GlanceCard({ window }: GlanceCardProps) {
   const week = { startDay: mondayOf(today), endDay: today };
   const month = { startDay: `${today.slice(0, 7)}-01`, endDay: today };
   const from = week.startDay < month.startDay ? week.startDay : month.startDay;
-  const [calls, googleClicks, value] = await Promise.all([
+  const [calls, googleClicks, youtubeLeads, value] = await Promise.all([
     readCalls(from, today),
     readGoogleClickLeads(),
+    readYoutubeSiteLeads(),
     readChannelValue(window),
   ]);
-  const error = failed(calls, googleClicks);
+  const error = failed(calls, googleClicks, youtubeLeads);
   const periods =
-    calls.ok && googleClicks.ok
+    calls.ok && googleClicks.ok && youtubeLeads.ok
       ? [
           { name: "This week", range: week },
           { name: "This month", range: month },
@@ -54,6 +56,7 @@ export async function GlanceCard({ window }: GlanceCardProps) {
           const bars = bookedBars(
             calls.data.filter((c) => inRange(c.bookedDate, p.range)),
             googleClicks.data,
+            youtubeLeads.data,
           );
           return { ...p, bars, total: bars.reduce((s, b) => s + b.value, 0) };
         })
