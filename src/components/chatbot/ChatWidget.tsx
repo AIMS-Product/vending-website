@@ -912,19 +912,23 @@ export function ChatWidget() {
       )}
     >
       {!open && showTeaser && teaserMessage ? (
-        <TeaserBubble
-          text={teaserMessage}
-          avatarUrl={config.avatarUrl}
-          onOpen={() => {
-            setShowTeaser(false);
-            setOpen(true);
-            captureEvent("chat_opened", { trigger: "teaser" });
-          }}
-          onDismiss={() => {
-            setShowTeaser(false);
-            writeSessionFlag(TEASER_DISMISSED_KEY);
-          }}
-        />
+        // Phones (<640px) keep only the launcher: the bubble covered the hero
+        // copy on paid landing pages. CSS-only, so no hydration mismatch.
+        <div className="hidden sm:block">
+          <TeaserBubble
+            text={teaserMessage}
+            avatarUrl={config.avatarUrl}
+            onOpen={() => {
+              setShowTeaser(false);
+              setOpen(true);
+              captureEvent("chat_opened", { trigger: "teaser" });
+            }}
+            onDismiss={() => {
+              setShowTeaser(false);
+              writeSessionFlag(TEASER_DISMISSED_KEY);
+            }}
+          />
+        </div>
       ) : null}
 
       {open ? (
