@@ -10,6 +10,7 @@ import {
   checkLinkUtms,
   isImportedLink,
   linkStandardSchema,
+  type LinkStandardInput,
   toContentId,
   toLinkSlug,
 } from "@/lib/analytics/link-standard";
@@ -81,6 +82,17 @@ export async function createMarketingLink(
 
   const url = buildStandardLink(parsed.data);
   const label = input.label?.trim() || null;
+  const client = deps.client ?? createAdminClient();
+
+  // Checked before any Bitly mint. Two rows with the same five tags would
+  // each be credited with the same leads, so the second is refused here, not
+  // only by the form (a stale tab or a second tab skips that).
+  const duplicate = await findSameTags(client, parsed.data);
+  if (duplicate) {
+    throw new MarketingLinkServiceError(
+      `This exact link already exists: ${duplicate.bitly_url ?? duplicate.url}. Reuse it, or change the content to make a new one.`,
+    );
+  }
 
   let bitlyId: string | null = null;
   let bitlyUrl: string | null = null;
@@ -110,7 +122,6 @@ export async function createMarketingLink(
     }
   }
 
-  const client = deps.client ?? createAdminClient();
   const { data, error } = await client
     .from("marketing_links")
     .insert({
@@ -148,6 +159,7 @@ export async function listMarketingLinks(
       .from("marketing_links")
       .select("*", { count })
       .order("created_at", { ascending: false })
+      .order("id")
       .range(from, to),
   );
   if (error) {
@@ -189,7 +201,10 @@ export async function getLinkRegistry(
           "created_at,email,full_name,lifecycle_status,call_booked_at,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
           { count },
         )
+        // A unique tie-break: concurrent pages over tied created_at values
+        // would otherwise overlap or skip rows.
         .order("created_at")
+        .order("id")
         .range(from, to),
     ),
     readAllPages<StatsBooking>((from, to, count) =>
@@ -199,8 +214,11 @@ export async function getLinkRegistry(
           "invitee_email,status,utm_source,utm_medium,utm_campaign,utm_content,utm_term",
           { count },
         )
-        .or("utm_source.not.is.null,utm_campaign.not.is.null")
+        .or(
+          "utm_source.not.is.null,utm_medium.not.is.null,utm_campaign.not.is.null,utm_content.not.is.null,utm_term.not.is.null",
+        )
         .order("created_at")
+        .order("id")
         .range(from, to),
     ),
     readAllPages<StatsClick>((from, to, count) =>
@@ -208,6 +226,7 @@ export async function getLinkRegistry(
         .from("bitly_link_clicks")
         .select("bitly_id,clicks", { count })
         .order("day")
+        .order("bitly_id")
         .range(from, to),
     ),
   ]);
@@ -243,6 +262,33 @@ export async function getLinkRegistry(
       stats: stats ? (stats.get(link.id) ?? null) : null,
     })),
   };
+}
+
+async function findSameTags(
+  client: LinksClient,
+  link: LinkStandardInput,
+): Promise<Pick<MarketingLink, "url" | "bitly_url"> | null> {
+  const { data, error } = await client
+    .from("marketing_links")
+    .select("url,bitly_url,utm_content")
+    .eq("utm_source", link.source)
+    .eq("utm_medium", link.medium)
+    .eq("utm_campaign", link.campaign)
+    .eq("utm_term", link.destination);
+  if (error) {
+    console.error("marketing link duplicate check failed", {
+      code: error.code,
+      message: error.message,
+    });
+    throw new MarketingLinkServiceError("Could not save the link.");
+  }
+  // Content keeps its case (YouTube ids), but attribution matches it
+  // case-insensitively, so the duplicate test does too.
+  const content = link.content.toLowerCase();
+  return (
+    (data ?? []).find((row) => row.utm_content.toLowerCase() === content) ??
+    null
+  );
 }
 
 export function bitlyConnected(): boolean {

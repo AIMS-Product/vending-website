@@ -17,11 +17,30 @@ import {
   MarketingLinkServiceError,
 } from "./marketing-links";
 
-function buildClient(insertError: unknown = null) {
+function buildClient(
+  insertError: unknown = null,
+  existing: Array<Record<string, unknown>> = [],
+) {
   const inserted: Array<Record<string, unknown>> = [];
   const from = vi.fn((table: string) => {
     if (table !== "marketing_links") throw new Error(`Unexpected ${table}`);
+    const filters: Record<string, unknown> = {};
+    const lookup = {
+      eq: (column: string, value: unknown) => {
+        filters[column] = value;
+        return Object.assign(
+          Promise.resolve({
+            data: existing.filter((row) =>
+              Object.entries(filters).every(([k, v]) => row[k] === v),
+            ),
+            error: null,
+          }),
+          lookup,
+        );
+      },
+    };
     return {
+      select: () => lookup,
       insert: vi.fn((row: Record<string, unknown>) => {
         inserted.push(row);
         return {
@@ -53,6 +72,24 @@ const input = {
 describe("createMarketingLink", () => {
   beforeEach(() => {
     mocks.config.BITLY_ACCESS_TOKEN = undefined;
+  });
+
+  it("refuses a second link with the same five tags, before minting anything", async () => {
+    const { client, inserted } = buildClient(null, [
+      {
+        url: "https://www.vendingpreneurs.com/book?x",
+        bitly_url: null,
+        utm_source: "instagram",
+        utm_medium: "organic",
+        utm_campaign: "webinar-sept15",
+        utm_content: "POST-1",
+        utm_term: "webinar-register",
+      },
+    ]);
+    await expect(
+      createMarketingLink(input, { createdBy: "a@b.c", client, bitly: null }),
+    ).rejects.toThrow(/already exists/);
+    expect(inserted).toHaveLength(0);
   });
 
   it("stores the finished URL with the five UTMs as columns", async () => {

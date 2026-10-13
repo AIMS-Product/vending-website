@@ -25,6 +25,8 @@ describe("marketing link backfill", () => {
   it("keys links exactly like the app", () => {
     const t = tuple({ source: "YouTube " });
     expect(tupleKey(t)).toBe(utmTupleKey(t));
+    const filler = tuple({ term: "_____", content: "{{x}}" });
+    expect(tupleKey(filler)).toBe(utmTupleKey(filler));
     expect(SCRIPT_PREFIX).toBe(IMPORTED_LINK_PREFIX);
   });
 
@@ -93,6 +95,44 @@ describe("marketing link backfill", () => {
       baseUrl: "https://b.test/",
       firstSeen: "2026-08-01",
     });
+  });
+
+  it("refuses tags no link of ours could carry, and reports duplicate short links", () => {
+    const drops = [];
+    const merged = mergeCandidates(
+      [
+        {
+          origin: "leads",
+          tuple: tuple({ campaign: "<script>" }),
+          baseUrl: "https://a.test/",
+        },
+        {
+          origin: "leads",
+          tuple: tuple({ content: "x".repeat(121) }),
+          baseUrl: "https://a.test/",
+        },
+        {
+          origin: "webinar-links",
+          tuple: tuple(),
+          baseUrl: "https://a.test/",
+          bitlyUrl: "https://s/1",
+        },
+        {
+          origin: "webinar-links",
+          tuple: tuple(),
+          baseUrl: "https://a.test/",
+          bitlyUrl: "https://s/2",
+        },
+      ],
+      new Set(),
+      (candidate, why) => drops.push(`${candidate.bitlyUrl ?? "-"} ${why}`),
+    );
+    expect(merged).toHaveLength(1);
+    expect(drops).toEqual([
+      "- implausible tag",
+      "- implausible tag",
+      "https://s/2 same tags as https://s/1",
+    ]);
   });
 
   it("writes empty strings for missing tags and marks the row imported", () => {

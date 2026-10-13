@@ -22,7 +22,7 @@
  *   node scripts/backfill-marketing-links.mjs --apply    # writes
  */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import {
   mergeCandidates,
   mostCommon,
@@ -33,6 +33,12 @@ import {
 } from "./lib/marketing-link-backfill.mjs";
 
 const APPLY = process.argv.includes("--apply");
+const planArg = process.argv.indexOf("--plan");
+/** Every row the run would write, one per line, for review before --apply. */
+const PLAN_FILE =
+  planArg > -1
+    ? process.argv[planArg + 1]
+    : "marketing-links-backfill-plan.tsv";
 const SITE = "https://www.vendingpreneurs.com";
 const OUR_HOSTS = /(^|\.)vendingpreneurs\.(com|ai)$/;
 
@@ -174,7 +180,7 @@ async function main() {
   );
 
   const existing = await readAll(
-    "marketing_links?select=utm_source,utm_medium,utm_campaign,utm_content,utm_term,bitly_id",
+    "marketing_links?select=utm_source,utm_medium,utm_campaign,utm_content,utm_term,bitly_id&order=id",
   );
   const existingKeys = new Set(existing.map((row) => tupleKey(tupleOf(row))));
   const existingBitly = new Set(
@@ -184,16 +190,16 @@ async function main() {
 
   const [leads, bookings, videos, posts] = await Promise.all([
     readAll(
-      "lead_submissions?select=created_at,source_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term&order=created_at",
+      "lead_submissions?select=created_at,source_path,utm_source,utm_medium,utm_campaign,utm_content,utm_term&order=created_at,id",
     ),
     readAll(
-      "calendly_bookings?select=created_at,scheduled_event_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term&order=created_at",
+      "calendly_bookings?select=created_at,scheduled_event_name,utm_source,utm_medium,utm_campaign,utm_content,utm_term&order=created_at,id",
     ),
     readAll(
-      "youtube_videos?select=title,bitly_url,published_at&bitly_url=not.is.null",
+      "youtube_videos?select=title,bitly_url,published_at&bitly_url=not.is.null&order=video_id",
     ),
     readAll(
-      "metricool_posts?select=network,link,published_at&link=not.is.null",
+      "metricool_posts?select=network,link,published_at&link=not.is.null&order=network,post_id,brand_id",
     ),
   ]);
 
@@ -202,7 +208,9 @@ async function main() {
   // Site leads: one candidate per tag set, based on the page most of them landed on.
   const leadGroups = groupByTuple(leads);
   for (const group of leadGroups.values()) {
-    const path = mostCommon(group.rows.map((row) => row.source_path)) ?? "/";
+    // source_path is visitor-supplied; keep it short and path-shaped.
+    const raw = mostCommon(group.rows.map((row) => row.source_path)) ?? "/";
+    const path = /^\/[A-Za-z0-9/_.-]{0,80}$/.test(raw) ? raw : "/";
     candidates.push({
       origin: "leads",
       tuple: group.tuple,
@@ -214,6 +222,9 @@ async function main() {
 
   // Calendly: links that booked straight onto a calendar (webinar CTAs, setters).
   for (const group of groupByTuple(bookings).values()) {
+    // Calendly sees every calendar in the org, personal ones included, so a
+    // tag set used for a single booking is more often a test than a link.
+    if (group.rows.length < 2) continue;
     const event = mostCommon(group.rows.map((row) => row.scheduled_event_name));
     candidates.push({
       origin: "calendly",
@@ -250,8 +261,12 @@ async function main() {
     )),
   );
 
-  console.log(`following ${posts.length} social post links...`);
-  const followed = await inBatches(posts, 8, async (post) => {
+  // One request per distinct URL, not per post.
+  const distinctPosts = [
+    ...new Map(posts.map((post) => [post.link, post])).values(),
+  ];
+  console.log(`following ${distinctPosts.length} social post links...`);
+  const followed = await inBatches(distinctPosts, 8, async (post) => {
     const final = await follow(post.link);
     if (!final) return null;
     const split = splitUrl(final);
@@ -266,8 +281,12 @@ async function main() {
   });
   candidates.push(...followed.filter(Boolean));
 
-  const merged = mergeCandidates(candidates, existingKeys);
-  // A short link the registry already owns cannot be inserted twice.
+  const dropped = [];
+  const merged = mergeCandidates(candidates, existingKeys, (candidate, why) =>
+    dropped.push(`${candidate.origin} ${candidate.bitlyUrl ?? ""} ${why}`),
+  );
+  // Guards the unique index marketing_links_bitly_id_idx. The webinar list is
+  // filtered before expansion today, but that filter may change.
   const rows = merged
     .map(toRow)
     .filter((row) => !row.bitly_id || !existingBitly.has(row.bitly_id));
@@ -280,6 +299,14 @@ async function main() {
   for (const row of rows.slice(0, 12)) {
     console.log(`  ${row.created_by.padEnd(22)} ${row.url}`);
   }
+  for (const line of dropped) console.log(`  skipped: ${line}`);
+  writeFileSync(
+    PLAN_FILE,
+    rows
+      .map((row) => [row.created_by, row.url, row.label ?? ""].join("\t"))
+      .join("\n") + "\n",
+  );
+  console.log(`full plan (${rows.length} rows): ${PLAN_FILE}`);
 
   if (!APPLY) {
     console.log("\nDry run only. Re-run with --apply to write.");

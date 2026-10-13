@@ -11,6 +11,7 @@ import {
 import { CopyButton } from "@/components/admin/CopyButton";
 import {
   checkLinkStandard,
+  isShareableLink,
   parseLinkUtms,
   UTM_KEYS,
   utmTupleKey,
@@ -50,6 +51,10 @@ export function MarketingLinkRegistry({
     pasted && UTM_KEYS.some((key) => query.includes(key))
       ? utmTupleKey(pasted)
       : null;
+
+  const pastedMatch = pastedKey
+    ? (links.find((link) => keyOf(link) === pastedKey) ?? null)
+    : null;
 
   const visible = links
     .filter((link) => matchesFilter(link, filter))
@@ -150,7 +155,7 @@ export function MarketingLinkRegistry({
           <PastedCheck
             url={query.trim()}
             utms={pasted!}
-            match={visible[0] ?? null}
+            match={pastedMatch}
             onStartFrom={onStartFrom}
           />
         ) : null}
@@ -221,6 +226,7 @@ function LinkRow({
   onStartFrom: (link: RegistryLink) => void;
 }) {
   const shareUrl = link.bitly_url ?? link.url;
+  const shareable = isShareableLink(link);
   return (
     <tr className="align-top">
       <td className="max-w-[28rem] px-4 py-2.5">
@@ -253,15 +259,21 @@ function LinkRow({
               : ""}
           </p>
         ) : null}
-        <a
-          href={shareUrl}
-          target="_blank"
-          rel="noreferrer"
-          title={link.url}
-          className="text-ui-accent mt-0.5 block truncate text-xs underline-offset-2 hover:underline"
-        >
-          {shareUrl}
-        </a>
+        {shareable ? (
+          <a
+            href={shareUrl}
+            target="_blank"
+            rel="noreferrer"
+            title={link.url}
+            className="text-ui-accent mt-0.5 block truncate text-xs underline-offset-2 hover:underline"
+          >
+            {shareUrl}
+          </a>
+        ) : (
+          <p className="text-ui-text-subtle mt-0.5 text-xs">
+            Seen on Calendly bookings; the calendar page was not recorded.
+          </p>
+        )}
       </td>
       <Cell value={link.stats?.leads} strong />
       <Cell value={link.stats?.booked} />
@@ -272,7 +284,7 @@ function LinkRow({
       </td>
       <td className="px-4 py-2.5">
         <div className="flex justify-end gap-1.5">
-          <CopyButton value={shareUrl} />
+          {shareable ? <CopyButton value={shareUrl} /> : null}
           <button
             type="button"
             onClick={() => onStartFrom(link)}

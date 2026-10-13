@@ -27,7 +27,29 @@ export const ORIGIN_PRIORITY = {
 };
 
 /** Our own QA and review tags, never published links. */
-const SKIP_SOURCES = new Set(["qa", "team-review", "test"]);
+const SKIP_SOURCES = new Set([
+  "qa",
+  "team-review",
+  "test",
+  // Calendly's own product emails, tagged by Calendly, not by us.
+  "braze",
+]);
+
+/**
+ * Anyone can add ?utm_*= to a URL and submit once, so a tag that could not
+ * have come from a link we built (too long, or carrying markup characters) is
+ * not imported. Google Ads names keep their spaces and pipes.
+ */
+const MAX_TAG_LENGTH = 120;
+const JUNK_CHARS = /[<>"'`\\]/;
+
+export function isPlausibleTuple(t) {
+  return Object.values(t).every(
+    (value) =>
+      value === null ||
+      (value.length <= MAX_TAG_LENGTH && !JUNK_CHARS.test(value)),
+  );
+}
 
 /**
  * A tag value or null. Blank, the Calendly link template's literal "_____"
@@ -52,7 +74,7 @@ export function tupleOf(row) {
 
 export function tupleKey(t) {
   return [t.source, t.medium, t.campaign, t.content, t.term]
-    .map((value) => value?.trim().toLowerCase() ?? "")
+    .map((value) => cleanTag(value)?.toLowerCase() ?? "")
     .join("\u0000");
 }
 
@@ -95,10 +117,14 @@ export function buildUrl(baseUrl, t) {
  * and label, the earliest sighting, and drops anything the registry already
  * holds (`existingKeys`) or that carries no tag at all.
  */
-export function mergeCandidates(candidates, existingKeys) {
+export function mergeCandidates(candidates, existingKeys, onDrop = () => {}) {
   const byKey = new Map();
   for (const candidate of candidates) {
     if (!isTagged(candidate.tuple)) continue;
+    if (!isPlausibleTuple(candidate.tuple)) {
+      onDrop(candidate, "implausible tag");
+      continue;
+    }
     if (SKIP_SOURCES.has(candidate.tuple.source?.toLowerCase() ?? "")) continue;
     const key = tupleKey(candidate.tuple);
     if (existingKeys.has(key)) continue;
@@ -109,6 +135,14 @@ export function mergeCandidates(candidates, existingKeys) {
     }
     const better =
       ORIGIN_PRIORITY[candidate.origin] < ORIGIN_PRIORITY[current.origin];
+    // Two short links with identical tags: one row keeps the link, the other
+    // is reported so nobody wonders where its clicks went.
+    if (candidate.bitlyUrl && current.bitlyUrl) {
+      onDrop(
+        better ? current : candidate,
+        `same tags as ${(better ? candidate : current).bitlyUrl}`,
+      );
+    }
     const firstSeen = earliest(current.firstSeen, candidate.firstSeen);
     byKey.set(
       key,

@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   buildStandardLink,
   checkLinkStandard,
+  isImportedLink,
   linkStandardSchema,
   parseLinkUtms,
+  standardSourceFor,
+  toContentId,
+  toLinkSlug,
+  utmTupleKey,
 } from "./link-standard";
 
 const valid = {
@@ -130,8 +135,7 @@ describe("checkLinkStandard", () => {
 });
 
 describe("builder helpers", () => {
-  it("cleans typed campaigns and content ids", async () => {
-    const { toLinkSlug, toContentId } = await import("./link-standard");
+  it("cleans typed campaigns and content ids", () => {
     expect(toLinkSlug("MH Podcast ")).toBe("mh-podcast");
     expect(toLinkSlug("Side Hustle Pro's Show!!")).toBe(
       "side-hustle-pros-show",
@@ -139,16 +143,29 @@ describe("builder helpers", () => {
     expect(toContentId(" dQw4w9 WgXcQ ")).toBe("dQw4w9-WgXcQ");
   });
 
-  it("maps hand-typed sources onto the list, or leaves them for a person", async () => {
-    const { standardSourceFor } = await import("./link-standard");
+  it("maps hand-typed sources onto the list, or leaves them for a person", () => {
     expect(standardSourceFor("mike-ig")).toBe("instagram");
     expect(standardSourceFor("internal-webinar")).toBe("webinar");
     expect(standardSourceFor("youtube")).toBe("youtube");
     expect(standardSourceFor("google")).toBeNull();
   });
 
-  it("knows an imported row by its creator", async () => {
-    const { isImportedLink } = await import("./link-standard");
+  it("keys template filler the same as an empty tag", () => {
+    const base = {
+      source: "youtube",
+      medium: "video",
+      campaign: "c",
+      content: "d",
+    };
+    expect(utmTupleKey({ ...base, term: "_____" })).toBe(
+      utmTupleKey({ ...base, term: "" }),
+    );
+    expect(utmTupleKey({ ...base, term: "{{contact.id}}" })).toBe(
+      utmTupleKey({ ...base, term: null }),
+    );
+  });
+
+  it("knows an imported row by its creator", () => {
     expect(isImportedLink("backfill:leads")).toBe(true);
     expect(isImportedLink("jess@modern-amenities.com")).toBe(false);
   });

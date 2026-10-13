@@ -90,4 +90,21 @@ describe("buildLinkStats", () => {
     });
     expect(stats.get("a")?.leads).toBe(1);
   });
+
+  it('matches a booking whose link template left "_____" in a tag', () => {
+    const stats = buildLinkStats({
+      links: [{ ...link, utm_term: "" }],
+      leads: [],
+      bookings: [
+        {
+          ...tags,
+          utm_term: "_____",
+          invitee_email: "a@x.com",
+          status: "booked",
+        },
+      ],
+      clicks: [],
+    });
+    expect(stats.get("a")?.calendarBookings).toBe(1);
+  });
 });

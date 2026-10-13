@@ -22,6 +22,7 @@ import {
   LINK_DESTINATIONS,
   LINK_MEDIUMS,
   LINK_SOURCES,
+  isShareableLink,
   linkStandardSchema,
   standardSourceFor,
   toContentId,
@@ -86,9 +87,10 @@ export function MarketingLinkBuilder({
   const startFrom = (link: RegistryLink) => {
     setPresetKey(null);
     setDraft({
-      baseUrl: link.base_url.startsWith("https://")
-        ? link.base_url
-        : DEFAULT_BASE_URL,
+      baseUrl:
+        link.base_url.startsWith("https://") && isShareableLink(link)
+          ? link.base_url
+          : DEFAULT_BASE_URL,
       source: standardSourceFor(link.utm_source) ?? "",
       medium: isOn(LINK_MEDIUMS, link.utm_medium) ? link.utm_medium : "",
       campaign: toLinkSlug(link.utm_campaign),
@@ -150,7 +152,13 @@ function BuilderForm({
   const preview = parsed.success
     ? { url: buildStandardLink(parsed.data), problem: null }
     : { url: null, problem: parsed.error.issues[0]?.message ?? null };
-  const existing = parsed.success ? findSameLink(links, cleaned) : null;
+  const match = parsed.success ? findSameLink(links, cleaned) : null;
+  // The link just saved is in the refreshed list too; that is the success
+  // message's job, not a duplicate warning.
+  const existing =
+    match && !(state.status === "saved" && match.url === state.url)
+      ? match
+      : null;
 
   const update =
     (key: keyof Draft) =>
@@ -420,10 +428,12 @@ function AlreadyExists({ link }: { link: RegistryLink }) {
           ? ` So far: ${link.stats.leads} leads, ${link.stats.booked} booked.`
           : ""}
       </p>
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-        <code className="text-ui-text min-w-0 flex-1 break-all">{url}</code>
-        <CopyButton value={url} />
-      </div>
+      {isShareableLink(link) ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <code className="text-ui-text min-w-0 flex-1 break-all">{url}</code>
+          <CopyButton value={url} />
+        </div>
+      ) : null}
     </div>
   );
 }
