@@ -9,7 +9,7 @@ import { logReadFailure } from "./read-failure";
 
 type Failure = { code?: string; message: string };
 
-/** Chainable stand-in; `.range()` honours the 1,000-row API cap. */
+/** Chainable stand-in; `.range()` and `.limit()` honour the 1,000-row API cap. */
 function builderFor(
   rows: unknown[],
   failure: Failure | null,
@@ -18,8 +18,11 @@ function builderFor(
   for (const method of ["select", "order", "in", "gte", "lte", "lt"]) {
     builder[method] = () => builder;
   }
-  builder.limit = () =>
-    Promise.resolve({ data: failure ? null : rows, error: failure });
+  builder.limit = (n: number) =>
+    Promise.resolve({
+      data: failure ? null : rows.slice(0, Math.min(n, 1000)),
+      error: failure,
+    });
   builder.range = (from: number, to: number) =>
     Promise.resolve({
       data: failure ? null : rows.slice(from, Math.min(to + 1, from + 1000)),
