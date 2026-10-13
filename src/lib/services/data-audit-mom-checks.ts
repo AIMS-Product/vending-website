@@ -149,6 +149,7 @@ async function closeWonForMonth(close: MomCloseClient, month: Month) {
           "status_label",
           "opportunities",
           `custom.${fieldIds.funnel}`,
+          ...(fieldIds.businessLine ? [`custom.${fieldIds.businessLine}`] : []),
         ],
       },
       _limit: 200,
@@ -165,6 +166,7 @@ async function closeWonForMonth(close: MomCloseClient, month: Month) {
         bookedDate: month.from,
         showUp: null,
         qualified: null,
+        businessLine: row.business_line ?? null,
       };
       if (isExcludedCall(call) || !isWonCall(call)) continue;
       won += 1;

@@ -6,12 +6,16 @@ import {
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { UnverifiedMark } from "@/components/admin/TrustMarks";
 import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
-import { SCRAPER_FUNNEL } from "@/lib/services/close-mtd-funnel";
+import {
+  SCRAPER_FUNNEL,
+  mtdMismatches,
+  type CloseMtdFunnel,
+} from "@/lib/services/close-mtd-funnel";
 import type { CloseMtdReport } from "@/lib/services/close-mtd-funnel-data";
 import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
- * The month so far, in the shape of Stephen's MTD funnel and none of its
+ * The month so far, in the shape of the company MTD funnel and none of its
  * arithmetic. Every stage prints the population it counted and the Close
  * field it read, so a number here can be argued with on its own terms rather
  * than checked against somebody's sheet.
@@ -122,11 +126,14 @@ export function CloseMtdFunnelPanel({
               {funnel.excluded} first{" "}
               {funnel.excluded === 1 ? "call is" : "calls are"} left out because
               the lead is now Canceled (by Lead) or Outside the US, or in the
-              LTF Quiz Funnel. SteelTrap leaves the same calls out.
+              LTF Quiz Funnel, or belongs to another company brand (The Land
+              Geek, Publishing Profits Academy).
             </p>
           ) : null}
         </div>
       </section>
+
+      <CompanyMtdView funnel={funnel} company={report.company} />
 
       <section
         className={adminPanelClass}
@@ -309,5 +316,91 @@ export function CloseMtdFunnelPanel({
         </div>
       </section>
     </div>
+  );
+}
+
+const COMPANY_STAGES = [
+  { key: "booked", label: "Booked" },
+  { key: "showed", label: "Showed" },
+  { key: "qualified", label: "Qualified" },
+  { key: "won", label: "Closed-won" },
+  { key: "revenue", label: "Revenue" },
+] as const;
+
+/**
+ * The same month cut to the company MTD dashboard's population, beside a
+ * verdict on whether it equals that dashboard. This is the line that lets
+ * anyone check our numbers against the one the sales floor reads.
+ */
+function CompanyMtdView({
+  funnel,
+  company,
+}: {
+  funnel: CloseMtdFunnel;
+  company: Extract<CloseMtdReport, { ok: true }>["company"];
+}) {
+  const view = funnel.companyView;
+  const mismatches = company.ok ? mtdMismatches(view, company.totals) : [];
+  const ourBooked = funnel.stages[0]?.count ?? 0;
+  const extra = ourBooked - view.booked;
+  const show = (key: (typeof COMPANY_STAGES)[number]["key"], value: number) =>
+    key === "revenue" ? money(value) : value.toLocaleString("en-US");
+
+  return (
+    <section
+      className={adminPanelClass}
+      aria-label="Company MTD dashboard view"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-4">
+        <div>
+          <h2 className={adminSectionTitleClass}>Company MTD dashboard view</h2>
+          <p className="text-ui-text-subtle mt-1 max-w-2xl text-xs">
+            The same month, limited to the leads the company MTD dashboard
+            counts: leads owned by the Lane 1 sales roster, other brands left
+            out, and the closers it leaves out of closed-won.
+          </p>
+        </div>
+        {!company.ok ? (
+          <span className="bg-ui-warn-fill text-ui-warn-ink rounded-full px-2.5 py-1 text-xs font-semibold">
+            Not compared: {company.error}
+          </span>
+        ) : mismatches.length === 0 ? (
+          <span className="bg-ui-ok-fill text-ui-ok-ink rounded-full px-2.5 py-1 text-xs font-semibold">
+            Matches the MTD dashboard
+          </span>
+        ) : (
+          <span className="bg-ui-bad-fill text-ui-bad-ink rounded-full px-2.5 py-1 text-xs font-semibold">
+            Differs from the MTD dashboard
+          </span>
+        )}
+      </div>
+      <dl className="divide-ui-line border-ui-line mt-3 grid grid-cols-2 divide-y border-t sm:grid-cols-5 sm:divide-x sm:divide-y-0">
+        {COMPANY_STAGES.map(({ key, label }) => {
+          const off = mismatches.find((m) => m.key === key);
+          return (
+            <div key={key} className="px-4 py-3">
+              <dt className={adminEyebrowClass}>{label}</dt>
+              <dd className="text-ui-text mt-1.5 text-lg leading-none font-semibold tabular-nums">
+                {show(key, view[key])}
+              </dd>
+              {off ? (
+                <dd className="text-ui-bad-ink mt-1 text-xs">
+                  MTD dashboard: {show(key, off.theirs)}
+                </dd>
+              ) : null}
+            </div>
+          );
+        })}
+      </dl>
+      {extra > 0 ? (
+        <p className="text-ui-text-subtle border-ui-line border-t px-4 py-3 text-xs">
+          Our Booked above is {extra.toLocaleString("en-US")} higher because it
+          also counts leads owned by Lane 2 and anyone off that roster.
+          {company.ok && mismatches.length === 0
+            ? " Nothing else differs."
+            : null}
+        </p>
+      ) : null}
+    </section>
   );
 }

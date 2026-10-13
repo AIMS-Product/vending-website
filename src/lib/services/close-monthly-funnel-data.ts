@@ -54,7 +54,7 @@ export async function getCloseMonthlyFunnel(
       const { data, error } = await client
         .from("close_lead_funnel")
         .select(
-          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at",
+          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line",
         )
         .gte("first_sales_call_booked_date", from)
         .lte("first_sales_call_booked_date", today)
@@ -71,6 +71,7 @@ export async function getCloseMonthlyFunnel(
           bookedDate: row.first_sales_call_booked_date,
           showUp: row.first_call_show_up,
           qualified: row.qualified,
+          businessLine: row.business_line,
         });
         if (!mirrorSyncedAt || row.synced_at > mirrorSyncedAt) {
           mirrorSyncedAt = row.synced_at;

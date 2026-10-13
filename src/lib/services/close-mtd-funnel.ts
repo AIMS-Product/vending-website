@@ -75,10 +75,55 @@ export type CloseMtdFunnel = {
   scrapers: CloseFunnelSplit;
   /** Per-funnel detail, booked descending. */
   rows: Array<CloseFunnelSplit & { label: string }>;
+  /** The same month cut to the company MTD dashboard's population. */
+  companyView: CompanyMtdTotals;
 };
 
+/** The five numbers the company MTD dashboard headlines. */
+export type CompanyMtdTotals = CloseFunnelSplit & {
+  won: number;
+  revenue: number;
+};
+
+/**
+ * The company MTD dashboard (aims-product.github.io/mtd-funnel-dashboard,
+ * `fetch_and_build.py`) counts a booked call only when the lead's owner is on
+ * its Lane 1 roster, and leaves these closers' wins out of closed-won. Copied
+ * from its source on 2026-10-13; the nightly `company-mtd-*` checks fail if
+ * its roster moves and these do not.
+ */
+export const MTD_BOOKING_OWNERS: ReadonlySet<string> = new Set([
+  "Ariella Irvine",
+  "Christian Hartwell",
+  "Eric Piccione",
+  "Joe Dysert",
+  "Joe Vaughan",
+  "Luke Herman",
+  "Oscar Pugh",
+  "Robin Perkins",
+  "Scott Seymour",
+  "Shreya Bechra",
+]);
+export const MTD_EXCLUDED_CLOSERS: ReadonlySet<string> = new Set([
+  "Ahmad Bukhari",
+  "Stephen Olivas",
+  "Spencer Reynolds",
+  "Mallory Kent",
+  "Adam Wolfe",
+]);
+
+/** Which of the five numbers differ from the company MTD dashboard's. */
+export function mtdMismatches(
+  ours: CompanyMtdTotals,
+  theirs: CompanyMtdTotals,
+): Array<{ key: keyof CompanyMtdTotals; ours: number; theirs: number }> {
+  return (["booked", "showed", "qualified", "won", "revenue"] as const)
+    .filter((key) => Math.round(ours[key]) !== Math.round(theirs[key]))
+    .map((key) => ({ key, ours: ours[key], theirs: theirs[key] }));
+}
+
 const BOOKED_SOURCE =
-  'Close "First Sales Call Booked Date", one row per lead, leaving out leads now "Canceled (by Lead)" or "Outside the US" and the "LTF - Quiz Funnel" funnel.';
+  'Close "First Sales Call Booked Date", one row per lead, leaving out leads now "Canceled (by Lead)" or "Outside the US", the "LTF - Quiz Funnel" funnel and other company brands (The Land Geek, Publishing Profits Academy).';
 const SHOWED_SOURCE =
   'Close "First Call Show Up (Opp)" = Yes. A call nobody logged is not counted as shown.';
 const QUALIFIED_SOURCE =
@@ -196,6 +241,24 @@ export function buildCloseMtdFunnel(input: {
     marketing,
     scrapers,
     rows,
+    companyView: companyView(kept, wonDeals),
+  };
+}
+
+function companyView(
+  kept: readonly CloseCall[],
+  wonDeals: readonly CloseDeal[],
+): CompanyMtdTotals {
+  const owned = kept.filter((call) =>
+    MTD_BOOKING_OWNERS.has(call.leadOwner ?? ""),
+  );
+  const counted = wonDeals.filter(
+    (deal) => !MTD_EXCLUDED_CLOSERS.has(deal.closer ?? ""),
+  );
+  return {
+    ...split(owned),
+    won: counted.length,
+    revenue: counted.reduce((sum, deal) => sum + (deal.value ?? 0), 0),
   };
 }
 

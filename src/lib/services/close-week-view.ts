@@ -31,6 +31,11 @@ export const CLOSE_VIEW_SOURCE =
 /** Close lead statuses SteelTrap leaves out of booked, matched without emoji. */
 const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
 const EXCLUDED_FUNNELS = new Set(["ltf - quiz funnel"]);
+/** Other company brands in the same Close org, left out as the MTD dashboard does. */
+const EXCLUDED_BUSINESS_LINES = new Set([
+  "the land geek (tlg)",
+  "publishing profits academy (ppa)",
+]);
 
 export type CloseCall = {
   /** The Close lead this first call belongs to. Joins a win back to its booking. */
@@ -43,6 +48,10 @@ export type CloseCall = {
   qualified: string | null;
   /** Close "Booked By": "Lane 2" when a Lane 2 setter booked the call. */
   bookedBy?: string | null;
+  /** Close "BTC Business Line", the company brand the lead belongs to. */
+  businessLine?: string | null;
+  /** Close "Lead Owner", as the user's name. */
+  leadOwner?: string | null;
 };
 
 export type CloseWeekRow = {
@@ -109,7 +118,8 @@ function bareStatus(status: string | null): string {
 export function isExcludedCall(call: CloseCall): boolean {
   return (
     EXCLUDED_STATUSES.has(bareStatus(call.status)) ||
-    EXCLUDED_FUNNELS.has((call.funnel ?? "").trim().toLowerCase())
+    EXCLUDED_FUNNELS.has((call.funnel ?? "").trim().toLowerCase()) ||
+    EXCLUDED_BUSINESS_LINES.has((call.businessLine ?? "").trim().toLowerCase())
   );
 }
 

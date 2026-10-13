@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCloseMtdFunnel } from "./close-mtd-funnel";
+import { buildCloseMtdFunnel, mtdMismatches } from "./close-mtd-funnel";
 import type { CloseCall } from "./close-week-view";
 import type { CloseDeal } from "./close-wins";
 
@@ -117,5 +117,44 @@ describe("buildCloseMtdFunnel", () => {
     expect(funnel.rows).toEqual([
       { label: "No source", booked: 2, showed: 2, qualified: 2 },
     ]);
+  });
+});
+
+describe("companyView", () => {
+  it("cuts to the MTD dashboard's population: roster owners, roster-excluded closers out", () => {
+    const funnel = build(
+      [
+        call({ leadOwner: "Luke Herman" }),
+        call({ leadOwner: "Luke Herman", showUp: "No", qualified: "No" }),
+        call({ leadOwner: "A Lane 2 Setter" }),
+        call({ leadOwner: null }),
+        call({ leadOwner: "Joe Vaughan", businessLine: "The Land Geek (TLG)" }),
+      ],
+      [deal({ value: 6000 }), deal({ closer: "Adam Wolfe", value: 9000 })],
+    );
+    expect(funnel.companyView).toEqual({
+      booked: 2,
+      showed: 1,
+      qualified: 1,
+      won: 1,
+      revenue: 6000,
+    });
+    // Our own total keeps every owner; only the other brand's lead is out.
+    expect(funnel.stages[0]!.count).toBe(4);
+    expect(funnel.excluded).toBe(1);
+  });
+
+  it("names exactly the numbers that differ from the MTD dashboard", () => {
+    const ours = {
+      booked: 212,
+      showed: 126,
+      qualified: 91,
+      won: 15,
+      revenue: 121814,
+    };
+    expect(mtdMismatches(ours, { ...ours })).toEqual([]);
+    expect(
+      mtdMismatches(ours, { ...ours, booked: 210, revenue: 121814.4 }),
+    ).toEqual([{ key: "booked", ours: 212, theirs: 210 }]);
   });
 });

@@ -1050,6 +1050,7 @@ export type Database = {
       close_lead_funnel: {
         Row: {
           booked_by: string | null;
+          business_line: string | null;
           call_disposition: string | null;
           display_name: string | null;
           email: string | null;
@@ -1059,6 +1060,7 @@ export type Database = {
           funnel: string | null;
           lead_created_at: string | null;
           lead_id: string;
+          lead_owner: string | null;
           lead_source: string | null;
           lead_updated_at: string | null;
           latest_sales_call_booked_date: string | null;
@@ -1071,6 +1073,7 @@ export type Database = {
         };
         Insert: {
           booked_by?: string | null;
+          business_line?: string | null;
           call_disposition?: string | null;
           display_name?: string | null;
           email?: string | null;
@@ -1080,6 +1083,7 @@ export type Database = {
           funnel?: string | null;
           lead_created_at?: string | null;
           lead_id: string;
+          lead_owner?: string | null;
           lead_source?: string | null;
           lead_updated_at?: string | null;
           latest_sales_call_booked_date?: string | null;
@@ -1092,6 +1096,7 @@ export type Database = {
         };
         Update: {
           booked_by?: string | null;
+          business_line?: string | null;
           call_disposition?: string | null;
           display_name?: string | null;
           email?: string | null;
@@ -1101,6 +1106,7 @@ export type Database = {
           funnel?: string | null;
           lead_created_at?: string | null;
           lead_id?: string;
+          lead_owner?: string | null;
           lead_source?: string | null;
           lead_updated_at?: string | null;
           latest_sales_call_booked_date?: string | null;

@@ -14,7 +14,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database, TablesInsert } from "@/types/database";
 
 type SyncClient = Pick<SupabaseClient<Database>, "from">;
-type SearchClient = Pick<CloseClient, "listCustomFields" | "searchLeads">;
+type SearchClient = Pick<
+  CloseClient,
+  "listCustomFields" | "searchLeads" | "listUsers"
+>;
 
 export const CLOSE_LEAD_FUNNEL_CONNECTOR = "close-lead-funnel";
 
@@ -38,6 +41,10 @@ export const FIELD_LABELS = {
   bookedBy: "Booked By",
   entrySource: "Entry Source",
   latestBookedDate: "Latest Sales Call Booked Date",
+  /** A Close user field: arrives as a user id, stored as the user's name. */
+  leadOwner: "Lead Owner",
+  /** Which company brand the lead belongs to, e.g. "The Land Geek (TLG)". */
+  businessLine: "BTC Business Line",
 } as const;
 
 export type FieldKey = keyof typeof FIELD_LABELS;
@@ -138,6 +145,7 @@ export function mapLead(
   lead: Record<string, unknown>,
   fieldIds: FieldIds,
   syncedAt: string,
+  userNames: ReadonlyMap<string, string> = new Map(),
 ): CloseLeadFunnelRow | null {
   const leadId = text(lead.id);
   if (!leadId) return null;
@@ -166,6 +174,8 @@ export function mapLead(
     booked_by: field("bookedBy"),
     entry_source: field("entrySource"),
     latest_sales_call_booked_date: dateOnly(field("latestBookedDate")),
+    lead_owner: ownerName(field("leadOwner"), userNames),
+    business_line: field("businessLine"),
     lead_created_at: text(lead.date_created),
     lead_updated_at: text(lead.date_updated),
     synced_at: syncedAt,
@@ -191,6 +201,7 @@ export async function syncCloseLeadFunnel(
       }
       const definitions = await close.listCustomFields("lead");
       const fieldIds = resolveFieldIds(definitions.data ?? []);
+      const userNames = await closeUserNames(close);
       const syncedAt = now.toISOString();
 
       // Keyed, not pushed: the crawl is a cursor walk over a live set sorted
@@ -208,7 +219,7 @@ export async function syncCloseLeadFunnel(
           buildSearchBody(fieldIds, cursor),
         );
         for (const lead of result.data ?? []) {
-          const row = mapLead(lead, fieldIds, syncedAt);
+          const row = mapLead(lead, fieldIds, syncedAt, userNames);
           if (row && !byLeadId.has(row.lead_id)) byLeadId.set(row.lead_id, row);
         }
         cursor = result.cursor ?? null;
@@ -253,6 +264,36 @@ export async function syncCloseLeadFunnel(
     },
     { now: () => new Date() },
   );
+}
+
+/** 20 pages of 100 is far above the org's users; stops a runaway loop. */
+const MAX_USER_PAGES = 20;
+
+/** Close user id to "First Last", the form the sales dashboards' rosters use. */
+export async function closeUserNames(
+  close: Pick<CloseClient, "listUsers">,
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  for (let page = 0; page < MAX_USER_PAGES; page += 1) {
+    const result = await close.listUsers(page * 100);
+    for (const user of result.data ?? []) {
+      const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`
+        .split(/\s+/)
+        .filter(Boolean)
+        .join(" ");
+      if (user.id && name) names.set(user.id, name);
+    }
+    if (!result.has_more) break;
+  }
+  return names;
+}
+
+/** A user id becomes its name; an unknown id is kept rather than dropped. */
+function ownerName(
+  value: string | null,
+  userNames: ReadonlyMap<string, string>,
+): string | null {
+  return value ? (userNames.get(value) ?? value) : null;
 }
 
 function closeFromConfig(): SearchClient | null {
