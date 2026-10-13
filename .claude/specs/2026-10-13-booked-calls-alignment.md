@@ -31,13 +31,17 @@ Lane 2 by three fields (after exclusions):
 | Oct 1-12 | 101 | ~41 | 116 |
 Sales Team Lane follows the current owner (Lane 1 closer after a Lane 2 set), so it is not booking credit.
 50 Sep / 33 Oct bookings were relabeled to their source funnel (mostly Internal Webinar) and are Booked By = Lane 2
-but Sales Team Lane = Lane 1: both repos currently count them as marketing bookings.
+but Sales Team Lane = Lane 1: the webinar board counted them as the room's marketing bookings.
 
 ## Decision taken here (not an open question in Dom's doc)
 
-Lane 2 booking credit = Booked By = "Lane 2" (Dom's field for credit); fall back to the scraper funnel only when
-Booked By is empty. Funnel Name = source. Applies to: website Lane 2 channel + marketing pace exclusion, and
-vp-webinars `is_lane2`.
+Lane 2 booking credit = Booked By = "Lane 2" (Dom's field for credit); then Sales Team Lane, then the scraper funnel,
+when Booked By is blank. Funnel Name = source.
+
+- vp-webinars `is_lane2`: changed (branch fix/lane2-from-booked-by).
+- vending-website: no code change. Channel rows and the marketing pace already count by Funnel Name (source), which
+  is Dom's model; the scorecard already reports `bookedByLane2` from Booked By. The goals-page "Lane 2" row is the
+  scraper-funnel SOURCE row; relabel it only when Dom's Booked By buckets are approved.
 
 ## Waiting on Dom (do not build)
 
