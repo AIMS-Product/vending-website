@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import {
   createLink,
@@ -15,14 +15,22 @@ import {
   adminPrimaryButtonClass,
   adminSmallButtonClass,
 } from "@/components/admin/AdminUi";
+import { CopyButton } from "@/components/admin/CopyButton";
+import { MarketingLinkRegistry } from "@/components/admin/MarketingLinkRegistry";
 import {
   buildStandardLink,
   LINK_DESTINATIONS,
   LINK_MEDIUMS,
   LINK_SOURCES,
+  isShareableLink,
   linkStandardSchema,
+  standardSourceFor,
+  toContentId,
+  toLinkSlug,
+  utmTupleKey,
 } from "@/lib/analytics/link-standard";
-import type { MarketingLink } from "@/lib/services/marketing-links";
+import { LINK_PAGES, LINK_PRESETS } from "@/lib/content/link-presets";
+import type { RegistryLink } from "@/lib/services/marketing-links";
 import { cn } from "@/lib/utils";
 
 const initialState: LinkBuilderActionState = { status: "idle" };
@@ -41,158 +49,252 @@ const DESTINATION_HELP: Record<(typeof LINK_DESTINATIONS)[number], string> = {
   none: "No call to action (profile, mention)",
 };
 
+type Draft = {
+  baseUrl: string;
+  source: string;
+  medium: string;
+  campaign: string;
+  content: string;
+  destination: string;
+  label: string;
+};
+
+const EMPTY_DRAFT: Draft = {
+  baseUrl: DEFAULT_BASE_URL,
+  source: "",
+  medium: "",
+  campaign: "",
+  content: "",
+  destination: "",
+  label: "",
+};
+
 export function MarketingLinkBuilder({
   links,
   bitlyConnected,
+  statsFailed,
 }: {
-  links: MarketingLink[];
+  links: RegistryLink[];
   bitlyConnected: boolean;
+  statsFailed: boolean;
 }) {
+  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [presetKey, setPresetKey] = useState<string | null>(null);
+  const formRef = useRef<HTMLElement>(null);
+
+  // A registry row (or an imported tag) becomes the starting point for a new
+  // link: same campaign, new content, sources mapped onto the standard.
+  const startFrom = (link: RegistryLink) => {
+    setPresetKey(null);
+    setDraft({
+      baseUrl:
+        link.base_url.startsWith("https://") && isShareableLink(link)
+          ? link.base_url
+          : DEFAULT_BASE_URL,
+      source: standardSourceFor(link.utm_source) ?? "",
+      medium: isOn(LINK_MEDIUMS, link.utm_medium) ? link.utm_medium : "",
+      campaign: toLinkSlug(link.utm_campaign),
+      content: toContentId(link.utm_content),
+      destination: isOn(LINK_DESTINATIONS, link.utm_term) ? link.utm_term : "",
+      label: link.label?.replace(/^Imported[^:]*:\s*/, "") ?? "",
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   return (
-    <div className="grid gap-5">
-      <BuilderForm bitlyConnected={bitlyConnected} />
-      <LinkRegistry links={links} />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
+      <BuilderForm
+        ref={formRef}
+        draft={draft}
+        setDraft={setDraft}
+        presetKey={presetKey}
+        setPresetKey={setPresetKey}
+        links={links}
+        bitlyConnected={bitlyConnected}
+      />
+      <MarketingLinkRegistry
+        links={links}
+        statsFailed={statsFailed}
+        onStartFrom={startFrom}
+      />
     </div>
   );
 }
 
-function BuilderForm({ bitlyConnected }: { bitlyConnected: boolean }) {
+function BuilderForm({
+  ref,
+  draft,
+  setDraft,
+  presetKey,
+  setPresetKey,
+  links,
+  bitlyConnected,
+}: {
+  ref: React.Ref<HTMLElement>;
+  draft: Draft;
+  setDraft: React.Dispatch<React.SetStateAction<Draft>>;
+  presetKey: string | null;
+  setPresetKey: (key: string | null) => void;
+  links: RegistryLink[];
+  bitlyConnected: boolean;
+}) {
   const [state, formAction] = useActionState(createLink, initialState);
-  const [draft, setDraft] = useState({
-    baseUrl: DEFAULT_BASE_URL,
-    source: "",
-    medium: "",
-    campaign: "",
-    content: "",
-    destination: "",
-  });
+  const preset = LINK_PRESETS.find((item) => item.key === presetKey) ?? null;
 
-  // The preview is the same function the server stores with, so what the
-  // admin sees is what gets saved.
-  const preview = useMemo(() => {
-    const parsed = linkStandardSchema.safeParse(draft);
-    return parsed.success
-      ? { url: buildStandardLink(parsed.data), problem: null }
-      : { url: null, problem: parsed.error.issues[0]?.message ?? null };
-  }, [draft]);
+  // Previewed with the same cleaning and the same function the server stores
+  // with, so what the admin sees is what gets saved.
+  const cleaned = {
+    ...draft,
+    campaign: toLinkSlug(draft.campaign),
+    content: toContentId(draft.content),
+  };
+  const parsed = linkStandardSchema.safeParse(cleaned);
+  const preview = parsed.success
+    ? { url: buildStandardLink(parsed.data), problem: null }
+    : { url: null, problem: parsed.error.issues[0]?.message ?? null };
+  const match = parsed.success ? findSameLink(links, cleaned) : null;
+  // The link just saved is in the refreshed list too; that is the success
+  // message's job, not a duplicate warning.
+  const existing =
+    match && !(state.status === "saved" && match.url === state.url)
+      ? match
+      : null;
 
   const update =
-    (key: keyof typeof draft) =>
+    (key: keyof Draft) =>
     (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
       setDraft((current) => ({ ...current, [key]: event.target.value }));
 
+  const applyPreset = (key: string) => {
+    const next = LINK_PRESETS.find((item) => item.key === key);
+    if (!next) return;
+    setPresetKey(key);
+    setDraft({
+      baseUrl: next.baseUrl,
+      source: next.source,
+      medium: next.medium,
+      campaign: next.campaign,
+      content: "",
+      destination: next.destination,
+      label: "",
+    });
+  };
+
   return (
-    <section className={adminPanelClass}>
+    <section ref={ref} className={cn(adminPanelClass, "scroll-mt-4")}>
       <form action={formAction} className="p-4">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div>
+          <p className={adminEyebrowClass}>Start from</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {LINK_PRESETS.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={presetKey === item.key}
+                onClick={() => applyPreset(item.key)}
+                className={cn(
+                  adminSmallButtonClass,
+                  presetKey === item.key &&
+                    "border-ui-accent text-ui-accent bg-ui-accent-soft",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => {
+                setPresetKey(null);
+                setDraft(EMPTY_DRAFT);
+              }}
+              className={cn(adminSmallButtonClass)}
+            >
+              Blank
+            </button>
+          </div>
+          <p className="text-ui-text-subtle mt-2 text-xs">
+            {preset
+              ? `${preset.hint} Only the content is left to fill in.`
+              : "Pick the kind of link and the fixed fields fill themselves. Or copy any link below with Use as template."}
+          </p>
+        </div>
+
+        <div className="border-ui-line mt-4 grid gap-4 border-t pt-4 lg:grid-cols-2">
           <label className="block lg:col-span-2">
-            <span className={adminLabelClass}>Destination URL</span>
+            <span className={adminLabelClass}>Page it sends people to</span>
             <input
               name="baseUrl"
               type="url"
               required
+              list="link-builder-pages"
               value={draft.baseUrl}
               onChange={update("baseUrl")}
               placeholder={DEFAULT_BASE_URL}
               className={controlClass}
             />
-          </label>
-
-          <label className="block">
-            <span className={adminLabelClass}>Source (utm_source)</span>
-            <select
-              name="source"
-              required
-              value={draft.source}
-              onChange={update("source")}
-              className={controlClass}
-            >
-              <option value="">Where the link is posted</option>
-              {LINK_SOURCES.map((source) => (
-                <option key={source} value={source}>
-                  {source}
+            <datalist id="link-builder-pages">
+              {LINK_PAGES.map((page) => (
+                <option key={page.url} value={page.url}>
+                  {page.label}
                 </option>
               ))}
-            </select>
+            </datalist>
           </label>
 
-          <label className="block">
-            <span className={adminLabelClass}>Medium (utm_medium)</span>
-            <select
-              name="medium"
-              required
-              value={draft.medium}
-              onChange={update("medium")}
-              className={controlClass}
-            >
-              <option value="">Paid, organic, owned, email, sms or chat</option>
-              {LINK_MEDIUMS.map((medium) => (
-                <option key={medium} value={medium}>
-                  {medium}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            name="source"
+            label="Where it is posted (source)"
+            value={draft.source}
+            onChange={update("source")}
+            placeholder="Pick a platform"
+            options={LINK_SOURCES.map((value) => ({ value, label: value }))}
+          />
+          <SelectField
+            name="medium"
+            label="How it reaches them (medium)"
+            value={draft.medium}
+            onChange={update("medium")}
+            placeholder="Paid, organic, owned, email, sms or chat"
+            options={LINK_MEDIUMS.map((value) => ({ value, label: value }))}
+          />
 
-          <label className="block">
-            <span className={adminLabelClass}>Campaign (utm_campaign)</span>
-            <input
-              name="campaign"
-              type="text"
-              required
-              value={draft.campaign}
-              onChange={update("campaign")}
-              placeholder="webinar-sept15"
-              className={controlClass}
-            />
-            <span className="text-ui-text-subtle mt-1 block text-xs">
-              The thing being promoted, as a lowercase slug.
-            </span>
-          </label>
+          <TextField
+            name="campaign"
+            label="Campaign"
+            value={draft.campaign}
+            onChange={update("campaign")}
+            placeholder="mh-podcast, webinar-oct13, vsl"
+            help="The thing being promoted. Spaces and capitals are cleaned up for you."
+          />
+          <TextField
+            name="content"
+            label="Content"
+            value={draft.content}
+            onChange={update("content")}
+            placeholder={
+              preset?.contentHint ?? "post, ad, video, show or message"
+            }
+            help="The one post, ad, video, show or message this link lives in. A new one gets its own link."
+          />
 
-          <label className="block">
-            <span className={adminLabelClass}>Content (utm_content)</span>
-            <input
-              name="content"
-              type="text"
-              required
-              value={draft.content}
-              onChange={update("content")}
-              placeholder="post id, ad id, video id or message step"
-              className={controlClass}
-            />
-            <span className="text-ui-text-subtle mt-1 block text-xs">
-              The specific post, ad, video or message this link lives in.
-            </span>
-          </label>
-
-          <label className="block">
-            <span className={adminLabelClass}>Destination (utm_term)</span>
-            <select
-              name="destination"
-              required
-              value={draft.destination}
-              onChange={update("destination")}
-              className={controlClass}
-            >
-              <option value="">Where are we sending them?</option>
-              {LINK_DESTINATIONS.map((destination) => (
-                <option key={destination} value={destination}>
-                  {destination} · {DESTINATION_HELP[destination]}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block">
-            <span className={adminLabelClass}>Label (optional)</span>
-            <input
-              name="label"
-              type="text"
-              placeholder="IG bio link, Sept webinar"
-              className={controlClass}
-            />
-          </label>
+          <SelectField
+            name="destination"
+            label="What the page asks them to do (term)"
+            value={draft.destination}
+            onChange={update("destination")}
+            placeholder="Where are we sending them?"
+            options={LINK_DESTINATIONS.map((value) => ({
+              value,
+              label: `${value} · ${DESTINATION_HELP[value]}`,
+            }))}
+          />
+          <TextField
+            name="label"
+            label="Note (optional)"
+            value={draft.label}
+            onChange={update("label")}
+            placeholder="Side Hustle Pro, ep. 212, airs Oct 20"
+          />
         </div>
 
         <div className="border-ui-line mt-4 flex flex-col gap-3 border-t pt-4 lg:flex-row lg:items-center lg:justify-between">
@@ -210,31 +312,128 @@ function BuilderForm({ bitlyConnected }: { bitlyConnected: boolean }) {
               </span>
             ) : null}
           </label>
-          <SubmitButton disabled={!preview.url} />
+          <SubmitButton disabled={!preview.url || Boolean(existing)} />
         </div>
 
-        <Preview preview={preview} />
+        <Preview url={preview.url} problem={preview.problem} />
+        {existing ? <AlreadyExists link={existing} /> : null}
         <Result state={state} />
       </form>
     </section>
   );
 }
 
-function Preview({
-  preview,
+function TextField({
+  name,
+  label,
+  value,
+  onChange,
+  placeholder,
+  help,
 }: {
-  preview: { url: string | null; problem: string | null };
+  name: string;
+  label: string;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder: string;
+  help?: string;
+}) {
+  return (
+    <label className="block">
+      <span className={adminLabelClass}>{label}</span>
+      <input
+        name={name}
+        type="text"
+        required={name !== "label"}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={controlClass}
+      />
+      {help ? (
+        <span className="text-ui-text-subtle mt-1 block text-xs">{help}</span>
+      ) : null}
+    </label>
+  );
+}
+
+function SelectField({
+  name,
+  label,
+  value,
+  onChange,
+  placeholder,
+  options,
+}: {
+  name: string;
+  label: string;
+  value: string;
+  onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
+  placeholder: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <label className="block">
+      <span className={adminLabelClass}>{label}</span>
+      <select
+        name={name}
+        required
+        value={value}
+        onChange={onChange}
+        className={controlClass}
+      >
+        <option value="">{placeholder}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function Preview({
+  url,
+  problem,
+}: {
+  url: string | null;
+  problem: string | null;
 }) {
   return (
     <div className="bg-ui-canvas rounded-ui mt-4 px-3 py-2.5">
       <p className={adminEyebrowClass}>Preview</p>
-      {preview.url ? (
-        <p className="text-ui-text mt-1 text-sm break-all">{preview.url}</p>
+      {url ? (
+        <p className="text-ui-text mt-1 text-sm break-all">{url}</p>
       ) : (
         <p className="text-ui-text-subtle mt-1 text-sm">
-          {preview.problem ?? "Fill in every field to see the link."}
+          {problem ?? "Fill in every field to see the link."}
         </p>
       )}
+    </div>
+  );
+}
+
+function AlreadyExists({ link }: { link: RegistryLink }) {
+  const url = link.bitly_url ?? link.url;
+  return (
+    <div
+      role="status"
+      className="border-ui-warn/30 bg-ui-warn-fill rounded-ui mt-3 border px-3 py-2.5"
+    >
+      <p className="text-ui-warn-ink text-sm font-medium">
+        This exact link already exists. Reuse it so its results stay in one
+        place, or change the content to make a new one.
+        {link.stats
+          ? ` So far: ${link.stats.leads} leads, ${link.stats.booked} booked.`
+          : ""}
+      </p>
+      {isShareableLink(link) ? (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <code className="text-ui-text min-w-0 flex-1 break-all">{url}</code>
+          <CopyButton value={url} />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -253,7 +452,9 @@ function Result({ state }: { state: LinkBuilderActionState }) {
       role="status"
       className="border-ui-ok/30 bg-ui-ok-fill rounded-ui mt-3 border px-3 py-2.5"
     >
-      <p className="text-ui-ok-ink text-sm font-medium">{state.message}</p>
+      <p className="text-ui-ok-ink text-sm font-medium">
+        {state.message} Leads and bookings from it show on its row below.
+      </p>
       <CopyRow label="Long link" value={state.url} />
       {state.shortUrl ? (
         <CopyRow label="Short link" value={state.shortUrl} />
@@ -263,28 +464,13 @@ function Result({ state }: { state: LinkBuilderActionState }) {
 }
 
 function CopyRow({ label, value }: { label: string; value: string }) {
-  const [copied, setCopied] = useState(false);
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
       <span className="text-ui-text-muted w-20 shrink-0 text-xs font-semibold uppercase">
         {label}
       </span>
       <code className="text-ui-text min-w-0 flex-1 break-all">{value}</code>
-      <button
-        type="button"
-        className={adminSmallButtonClass}
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(value);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 1500);
-          } catch {
-            // Clipboard can be blocked; the text is selectable beside the button.
-          }
-        }}
-      >
-        {copied ? "Copied" : "Copy"}
-      </button>
+      <CopyButton value={value} />
     </div>
   );
 }
@@ -305,103 +491,34 @@ function SubmitButton({ disabled }: { disabled: boolean }) {
   );
 }
 
-function LinkRegistry({ links }: { links: MarketingLink[] }) {
+function findSameLink(
+  links: RegistryLink[],
+  draft: Draft,
+): RegistryLink | null {
+  const key = utmTupleKey({
+    source: draft.source,
+    medium: draft.medium,
+    campaign: draft.campaign,
+    content: draft.content,
+    term: draft.destination,
+  });
   return (
-    <section className={adminPanelClass} aria-label="Link registry">
-      <div className="border-ui-line border-b p-4">
-        <h2 className="text-ui-text text-base font-semibold">
-          Every link built
-        </h2>
-        <p className="text-ui-text-muted mt-1 text-sm">
-          What is going out, newest first. A link with no clicks yet still
-          belongs here.
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="divide-ui-line w-full min-w-[56rem] divide-y text-left text-sm">
-          <thead className="bg-ui-canvas text-ui-text-subtle text-xs font-semibold uppercase">
-            <tr>
-              <th scope="col" className="px-4 py-2.5">
-                Built
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                Source / medium
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                Campaign
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                Content
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                Destination
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                Link
-              </th>
-              <th scope="col" className="px-4 py-2.5">
-                By
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-ui-line bg-ui-surface divide-y">
-            {links.length ? (
-              links.map((link) => (
-                <tr key={link.id}>
-                  <td className="text-ui-text-muted px-4 py-2.5 whitespace-nowrap tabular-nums">
-                    {link.created_at.slice(0, 10)}
-                  </td>
-                  <td className="text-ui-text px-4 py-2.5">
-                    {link.utm_source}{" "}
-                    <span className="text-ui-text-subtle">
-                      / {link.utm_medium}
-                    </span>
-                  </td>
-                  <td className="text-ui-text px-4 py-2.5 font-medium">
-                    {link.utm_campaign}
-                    {link.label ? (
-                      <span className="text-ui-text-subtle block text-xs font-normal">
-                        {link.label}
-                      </span>
-                    ) : null}
-                  </td>
-                  <td className="text-ui-text-muted px-4 py-2.5">
-                    {link.utm_content}
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <span className="text-ui-accent bg-ui-accent-soft rounded-ui inline-flex items-center px-2 py-0.5 text-xs font-semibold">
-                      {link.utm_term}
-                    </span>
-                  </td>
-                  <td className="px-4 py-2.5">
-                    <a
-                      href={link.bitly_url ?? link.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-ui-accent block max-w-[20rem] truncate underline-offset-2 hover:underline"
-                      title={link.url}
-                    >
-                      {link.bitly_url ?? link.url}
-                    </a>
-                  </td>
-                  <td className="text-ui-text-subtle px-4 py-2.5 text-xs">
-                    {link.created_by}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td
-                  colSpan={7}
-                  className="text-ui-text-subtle px-4 py-8 text-center text-sm"
-                >
-                  No links built yet.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-    </section>
+    links.find(
+      (link) =>
+        utmTupleKey({
+          source: link.utm_source,
+          medium: link.utm_medium,
+          campaign: link.utm_campaign,
+          content: link.utm_content,
+          term: link.utm_term,
+        }) === key,
+    ) ?? null
   );
+}
+
+function isOn<T extends string>(
+  list: readonly T[],
+  value: string | null | undefined,
+): value is T {
+  return Boolean(value) && list.includes(value as T);
 }

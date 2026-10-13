@@ -206,3 +206,115 @@ export function checkLinkUtms(utms: LinkUtms): LinkStandardCheck {
 function isOneOf(list: readonly string[], value: string): boolean {
   return list.includes(value);
 }
+
+/**
+ * One key per link: the whole five-UTM tuple, lowercased. Matching on fewer
+ * than five fields would let two links that differ only in destination
+ * collapse into one, which is the exact confusion the registry exists to end.
+ * NUL-joined, not "|": Google Ads campaign names carry pipes.
+ */
+export function utmTupleKey(utms: LinkUtms): string {
+  return [utms.source, utms.medium, utms.campaign, utms.content, utms.term]
+    .map((value) => normalizeUtmTag(value)?.toLowerCase() ?? "")
+    .join("\u0000");
+}
+
+/**
+ * A tag value, or null when it is not a tag: blank, the Calendly link
+ * template's literal "_____" (351 bookings), or an unfilled `{{merge}}` field.
+ * Applied inside `utmTupleKey`, so a lead carrying "_____" and an imported
+ * registry row storing "" are the same link. The backfill script's `cleanTag`
+ * is the same rule; its test pins the two together.
+ */
+export function normalizeUtmTag(
+  value: string | null | undefined,
+): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed || /^_+$/.test(trimmed) || trimmed.includes("{{")) return null;
+  return trimmed;
+}
+
+/**
+ * Registry rows the backfill script imported from links already in the wild
+ * (`scripts/backfill-marketing-links.mjs`) rather than rows built at
+ * /admin/links. They are evidence of what went out, so they are listed with
+ * their results, but they never count as "built on the standard".
+ */
+export const IMPORTED_LINK_PREFIX = "backfill:";
+
+export function isImportedLink(createdBy: string | null | undefined): boolean {
+  return Boolean(createdBy?.startsWith(IMPORTED_LINK_PREFIX));
+}
+
+/**
+ * Whether a registry row holds a URL someone can actually post. Links seen
+ * only on Calendly bookings are imported with the bare `https://calendly.com/`
+ * base because Calendly does not report which scheduling page was used.
+ */
+export function isShareableLink(link: {
+  base_url: string;
+  bitly_url: string | null;
+}): boolean {
+  if (link.bitly_url) return true;
+  return !/^https:\/\/calendly\.com\/?$/.test(link.base_url);
+}
+
+/**
+ * What a person types, turned into a campaign/content slug: "MH Podcast" ->
+ * "mh-podcast". The builder applies it as they type so a space or a capital
+ * is never a validation error.
+ */
+export function toLinkSlug(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9_]+/g, "-")
+    .replace(/^[-_]+|[-_]+$/g, "")
+    .replace(/[-_]{2,}/g, "-");
+}
+
+/**
+ * The standard source for a tag the team typed by hand before the standard
+ * (`mike-ig` -> instagram, `internal-webinar` -> webinar). Used only to
+ * pre-fill a rebuild; null when nothing on the list fits, so the person picks.
+ */
+export function standardSourceFor(
+  raw: string | null | undefined,
+): LinkSource | null {
+  const value = raw?.trim().toLowerCase();
+  if (!value) return null;
+  if (isOneOf(LINK_SOURCES, value)) return value as LinkSource;
+  const suffix = value.split(/[-_]/).at(-1) ?? "";
+  const bySuffix: Record<string, LinkSource> = {
+    ig: "instagram",
+    instagram: "instagram",
+    yt: "youtube",
+    youtube: "youtube",
+    x: "x",
+    twitter: "x",
+    li: "linkedin",
+    linkedin: "linkedin",
+    fb: "facebook",
+    facebook: "facebook",
+    tt: "tiktok",
+    tiktok: "tiktok",
+    newsletter: "newsletter",
+    email: "newsletter",
+    webinar: "webinar",
+    podcast: "podcast",
+  };
+  return bySuffix[suffix] ?? null;
+}
+
+/**
+ * A content id as typed, cleaned the same way: spaces become hyphens and
+ * anything off the allowed characters is dropped. Case is kept, because a
+ * YouTube video id is case-sensitive.
+ */
+export function toContentId(value: string): string {
+  return value
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^A-Za-z0-9._-]/g, "")
+    .replace(/^[._-]+/, "");
+}

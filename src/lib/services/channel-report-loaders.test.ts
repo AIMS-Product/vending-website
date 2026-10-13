@@ -15,7 +15,7 @@ function builderFor(
   failure: Failure | null,
 ): Record<string, unknown> {
   const builder: Record<string, unknown> = {};
-  for (const method of ["select", "order", "in", "gte", "lte", "lt"]) {
+  for (const method of ["select", "order", "in", "gte", "lte", "lt", "not"]) {
     builder[method] = () => builder;
   }
   builder.limit = (n: number) =>
@@ -68,6 +68,22 @@ describe("fetchRuns", () => {
 });
 
 describe("fetchGoingOut", () => {
+  it("leaves imported links out: Going out is what the builder made", async () => {
+    const notCalls: unknown[][] = [];
+    const client = {
+      from: () => {
+        const builder = builderFor([], null);
+        builder.not = (...args: unknown[]) => {
+          notCalls.push(args);
+          return builder;
+        };
+        return builder;
+      },
+    } as unknown as ReportClient;
+    await fetchGoingOut(client, "2026-08-01", "2026-09-30", "2026-09-01");
+    expect(notCalls).toContainEqual(["created_by", "like", "backfill:%"]);
+  });
+
   const link = {
     id: "l1",
     url: "https://www.vendingpreneurs.com/book",

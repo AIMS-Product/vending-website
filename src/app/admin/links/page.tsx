@@ -5,7 +5,7 @@ import { adminLinkClass } from "@/components/admin/AdminUi";
 import { MarketingLinkBuilder } from "@/components/admin/MarketingLinkBuilder";
 import {
   bitlyConnected,
-  listMarketingLinks,
+  getLinkRegistry,
 } from "@/lib/services/marketing-links";
 import { requireReadAccess } from "@/lib/supabase/auth";
 
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AdminLinksPage() {
-  const [{ user, role }, links] = await Promise.all([
+  const [{ user, role }, registry] = await Promise.all([
     requireReadAccess(),
-    listMarketingLinks(),
+    getLinkRegistry(),
   ]);
 
   return (
@@ -27,7 +27,7 @@ export default async function AdminLinksPage() {
       activeSection="links"
       eyebrow="Marketing"
       title="Links"
-      description="Build every outbound link here. The five UTMs are the attribution, and utm_term says where the link sends people."
+      description="Make every outbound link here, then see what each one brought in. One link per post, show or send."
       userEmail={user.email}
       userRole={role}
     >
@@ -39,7 +39,11 @@ export default async function AdminLinksPage() {
           shows how many leads arrived on a link that is in this registry, and
           lists the ones that are missing from it.
         </p>
-        <MarketingLinkBuilder links={links} bitlyConnected={bitlyConnected()} />
+        <MarketingLinkBuilder
+          links={registry.links}
+          statsFailed={registry.statsFailed}
+          bitlyConnected={bitlyConnected()}
+        />
       </div>
     </AdminShell>
   );
