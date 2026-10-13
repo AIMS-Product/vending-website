@@ -1,6 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
+import { pacificToday } from "@/lib/admin/format-time";
 import { config } from "@/lib/config";
 import {
   buildCloseMtdFunnel,
@@ -15,8 +16,7 @@ const PAGE_SIZE = 1000;
 
 /** The company MTD dashboard's own numbers for the month, or why they are missing. */
 export type CompanyMtdRead =
-  | { ok: true; totals: CompanyMtdTotals }
-  | { ok: false; error: string };
+  { ok: true; totals: CompanyMtdTotals } | { ok: false; error: string };
 
 export type CloseMtdReport =
   | {
@@ -79,13 +79,6 @@ export async function fetchCompanyMtd(month: string): Promise<CompanyMtdRead> {
   }
 }
 
-/** Today in Pacific time, the day Close and the MTD dashboard both count in. */
-export function pacificDay(now: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "America/Los_Angeles",
-  }).format(now);
-}
-
 /** First day of `day`'s month. */
 export function monthStart(day: string): string {
   return `${day.slice(0, 7)}-01`;
@@ -103,7 +96,8 @@ export function monthStart(day: string): string {
 export async function getCloseMtdFunnel(
   input: { now?: Date } = {},
 ): Promise<CloseMtdReport> {
-  const today = pacificDay(input.now ?? new Date());
+  // Pacific, the day Close and the MTD dashboard both count in.
+  const today = pacificToday(input.now ?? new Date());
   const from = monthStart(today);
   if (!config.CLOSE_API_KEY) {
     return { ok: false, error: "CLOSE_API_KEY is not set." };
@@ -151,11 +145,19 @@ export async function getCloseMtdFunnel(
       }),
       fetchCompanyMtd(today.slice(0, 7)),
     ]);
+    // Until the sync has filled "Lead Owner", the roster cut is empty and
+    // would read as a mismatch; say it is not compared yet instead.
+    const ownersMirrored = calls.some((call) => call.leadOwner);
     return {
       ok: true,
       funnel: buildCloseMtdFunnel({ calls, deals, from, to: today }),
       mirrorSyncedAt,
-      company,
+      company: ownersMirrored
+        ? company
+        : {
+            ok: false,
+            error: "lead owners are not in our copy of Close yet.",
+          },
     };
   } catch (error) {
     console.error("Close MTD funnel read failed", error);

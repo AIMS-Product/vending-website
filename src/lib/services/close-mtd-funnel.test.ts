@@ -130,7 +130,18 @@ describe("companyView", () => {
         call({ leadOwner: null }),
         call({ leadOwner: "Joe Vaughan", businessLine: "The Land Geek (TLG)" }),
       ],
-      [deal({ value: 6000 }), deal({ closer: "Adam Wolfe", value: 9000 })],
+      [
+        deal({ value: 6000 }),
+        // MTD's excluded closer, by Close user id.
+        deal({
+          closerId: "user_1BdSGJ3dJ8llCciTSwvV9X8vHpBq2rHp4meX7Wlzsh0",
+          value: 9000,
+        }),
+        // A win MTD drops for the same lead-level reasons as a booking.
+        deal({ status: "🌎 Outside the US", value: 5997 }),
+        deal({ businessLine: "The Land Geek (TLG)", value: 1000 }),
+        deal({ funnel: "LTF - Quiz Funnel", value: 67 }),
+      ],
     );
     expect(funnel.companyView).toEqual({
       booked: 2,

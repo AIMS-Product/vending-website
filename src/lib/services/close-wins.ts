@@ -45,6 +45,12 @@ export type CloseDeal = {
    * (`call-credit.ts`); this is the other half.
    */
   closer: string | null;
+  /** The closer's Close user id, which the MTD dashboard's exclusions key on. */
+  closerId?: string | null;
+  /** The lead's current Close status label, for the same exclusions as a booking. */
+  status?: string | null;
+  /** The lead's "BTC Business Line". */
+  businessLine?: string | null;
 };
 
 export type CloseWinRow = { label: string; won: number; revenue: number };
@@ -208,21 +214,27 @@ export async function fetchCloseDeals(input: {
   );
 
   const leadIds = [...new Set(dated.map((opportunity) => opportunity.lead_id))];
-  const funnelByLead = new Map<string, string | null>();
+  const leadById = new Map<string, LeadFacts>();
   for (let from = 0; from < leadIds.length; from += 100) {
     const { data, error } = await input.mirror
       .from("close_lead_funnel")
-      .select("lead_id,funnel")
+      .select("lead_id,funnel,status_label,business_line")
       .in("lead_id", leadIds.slice(from, from + 100));
     if (error)
       throw new Error(`close_lead_funnel read failed: ${error.message}`);
-    for (const row of data ?? []) funnelByLead.set(row.lead_id, row.funnel);
+    for (const row of data ?? []) {
+      leadById.set(row.lead_id, {
+        funnel: row.funnel,
+        status: row.status_label,
+        businessLine: row.business_line,
+      });
+    }
   }
 
   // A handful at a time, never all at once: every won lead the mirror lacks
   // is one Close read, and firing them together is what tripped Close's rate
   // limit on the month-over-month tab (2026-09-22).
-  const missing = leadIds.filter((id) => !funnelByLead.has(id));
+  const missing = leadIds.filter((id) => !leadById.has(id));
   let next = 0;
   const workers = Array.from(
     { length: Math.min(LEAD_READ_CONCURRENCY, missing.length) },
@@ -231,11 +243,11 @@ export async function fetchCloseDeals(input: {
         const id = missing[next];
         next += 1;
         const lead = await input.close.getLead(id);
-        const funnel = lead?.custom?.[FIELD_LABELS.funnel];
-        funnelByLead.set(
-          id,
-          typeof funnel === "string" && funnel.trim() ? funnel : null,
-        );
+        leadById.set(id, {
+          funnel: customText(lead?.custom?.[FIELD_LABELS.funnel]),
+          status: lead?.status_label ?? null,
+          businessLine: customText(lead?.custom?.[FIELD_LABELS.businessLine]),
+        });
       }
     },
   );
@@ -245,9 +257,22 @@ export async function fetchCloseDeals(input: {
     leadId: opportunity.lead_id,
     dateWon: opportunity.dateWon,
     value: opportunity.value === null ? null : opportunity.value / 100,
-    funnel: funnelByLead.get(opportunity.lead_id) ?? null,
+    funnel: leadById.get(opportunity.lead_id)?.funnel ?? null,
     closer: opportunity.user_name?.trim() || null,
+    closerId: opportunity.user_id ?? null,
+    status: leadById.get(opportunity.lead_id)?.status ?? null,
+    businessLine: leadById.get(opportunity.lead_id)?.businessLine ?? null,
   }));
+}
+
+type LeadFacts = {
+  funnel: string | null;
+  status: string | null;
+  businessLine: string | null;
+};
+
+function customText(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
 }
 
 /**

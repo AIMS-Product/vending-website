@@ -275,7 +275,11 @@ export async function closeUserNames(
 ): Promise<Map<string, string>> {
   const names = new Map<string, string>();
   for (let page = 0; page < MAX_USER_PAGES; page += 1) {
-    const result = await close.listUsers(page * 100);
+    const result = await close.listUsers(page * 100).catch((error: unknown) => {
+      throw new Error(
+        `Close user list read failed (Lead Owner names): ${error instanceof Error ? error.message : String(error)}`,
+      );
+    });
     for (const user of result.data ?? []) {
       const name = `${user.first_name ?? ""} ${user.last_name ?? ""}`
         .split(/\s+/)

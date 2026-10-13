@@ -13,6 +13,7 @@ import {
 } from "@/lib/services/close-mtd-funnel";
 import type { CloseMtdReport } from "@/lib/services/close-mtd-funnel-data";
 import { formatUsd as money } from "@/lib/admin/format-number";
+import { formatPacificStampShort } from "@/lib/admin/format-time";
 
 /**
  * The month so far, in the shape of the company MTD funnel and none of its
@@ -133,7 +134,11 @@ export function CloseMtdFunnelPanel({
         </div>
       </section>
 
-      <CompanyMtdView funnel={funnel} company={report.company} />
+      <CompanyMtdView
+        funnel={funnel}
+        company={report.company}
+        mirrorSyncedAt={report.mirrorSyncedAt}
+      />
 
       <section
         className={adminPanelClass}
@@ -335,10 +340,13 @@ const COMPANY_STAGES = [
 function CompanyMtdView({
   funnel,
   company,
+  mirrorSyncedAt,
 }: {
   funnel: CloseMtdFunnel;
   company: Extract<CloseMtdReport, { ok: true }>["company"];
+  mirrorSyncedAt: string | null;
 }) {
+  const asOf = formatPacificStampShort(mirrorSyncedAt);
   const view = funnel.companyView;
   const mismatches = company.ok ? mtdMismatches(view, company.totals) : [];
   const ourBooked = funnel.stages[0]?.count ?? 0;
@@ -358,6 +366,9 @@ function CompanyMtdView({
             The same month, limited to the leads the company MTD dashboard
             counts: leads owned by the Lane 1 sales roster, other brands left
             out, and the closers it leaves out of closed-won.
+            {asOf
+              ? ` Our copy of Close as of ${asOf}; the MTD dashboard rebuilds every 15 minutes, so a call logged in between can differ by one until the next sync.`
+              : null}
           </p>
         </div>
         {!company.ok ? (
@@ -392,7 +403,7 @@ function CompanyMtdView({
           );
         })}
       </dl>
-      {extra > 0 ? (
+      {company.ok && extra > 0 ? (
         <p className="text-ui-text-subtle border-ui-line border-t px-4 py-3 text-xs">
           Our Booked above is {extra.toLocaleString("en-US")} higher because it
           also counts leads owned by Lane 2 and anyone off that roster.
