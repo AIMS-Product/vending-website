@@ -167,7 +167,9 @@ export function toRow(candidate) {
     bitly_id: candidate.bitlyId ?? null,
     bitly_url: candidate.bitlyUrl ?? null,
     created_by: `${IMPORTED_LINK_PREFIX}${candidate.origin}`,
-    ...(candidate.firstSeen ? { created_at: candidate.firstSeen } : {}),
+    // Every row carries every key: PostgREST rejects a bulk insert whose
+    // objects differ ("All object keys must match"). No sighting date = now.
+    created_at: candidate.firstSeen ?? new Date().toISOString(),
   };
 }
 
