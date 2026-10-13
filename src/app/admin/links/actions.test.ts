@@ -10,13 +10,16 @@ const mocks = vi.hoisted(() => {
   }
   return {
     MarketingLinkServiceError,
-    requireAdmin: vi.fn(),
+    requireReadAccess: vi.fn(),
     revalidatePath: vi.fn(),
     createMarketingLink: vi.fn(),
   };
 });
 
-vi.mock("@/lib/supabase/auth", () => ({ requireAdmin: mocks.requireAdmin }));
+vi.mock("@/lib/supabase/auth", () => ({
+  requireReadAccess: mocks.requireReadAccess,
+  canEditAdmin: (role: string) => role === "admin" || role === "super_admin",
+}));
 vi.mock("@/lib/services/marketing-links", () => ({
   MarketingLinkServiceError: mocks.MarketingLinkServiceError,
   createMarketingLink: mocks.createMarketingLink,
@@ -42,7 +45,7 @@ const fields = {
 describe("createLink action", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.requireAdmin.mockResolvedValue({
+    mocks.requireReadAccess.mockResolvedValue({
       user: { id: "u1", email: "adam@example.com" },
       role: "admin",
     });
@@ -70,6 +73,21 @@ describe("createLink action", () => {
       { createdBy: "adam@example.com" },
     );
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/links");
+  });
+
+  it("tells a viewer they cannot save, without calling the service", async () => {
+    mocks.requireReadAccess.mockResolvedValue({
+      user: { id: "u2", email: "team@example.com" },
+      role: "viewer",
+    });
+
+    const result = await createLink({ status: "idle" }, formData(fields));
+
+    expect(result).toEqual({
+      status: "error",
+      message: expect.stringContaining("can view links but not save"),
+    });
+    expect(mocks.createMarketingLink).not.toHaveBeenCalled();
   });
 
   it("shows the service's validation message inline", async () => {
