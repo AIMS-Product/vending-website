@@ -7,6 +7,47 @@ off-list value as `unknown` rather than guessing.
 
 Machine copy: `src/lib/analytics/link-standard.ts`. Change both together.
 
+## Make a link in 30 seconds
+
+1. Open `/admin/links`.
+2. Click the kind of link under **Start from** (Mike podcast, Anthony podcast,
+   YouTube description, Instagram bio, Newsletter, GHL text, Webinar invite).
+   Everything that never changes fills itself.
+3. Type the **content**: the one show, post, video or send this link lives in.
+   Spaces and capitals are cleaned up for you.
+4. **Save link**, then copy it. Its row below shows leads, booked calls,
+   calendar bookings and clicks as they arrive.
+
+One link per place it is posted. A new podcast, video or send gets a new
+content value, never a reused link, or its results blend with the old one.
+To spin up the next one, press **Use as template** on any row and change the
+content.
+
+Not sure a link is tracked? Paste it into the search box on `/admin/links`.
+It says whether the link is in the registry, what it brought in, and what is
+wrong with it if it is off the standard.
+
+### Podcasts
+
+| Who     | Page                  | Link                                                                                                        |
+| ------- | --------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Mike    | `/booking-t5-socials` | `?utm_source=podcast&utm_medium=organic&utm_campaign=mh-podcast&utm_content=<show-name>&utm_term=book-call` |
+| Anthony | `/booking-ak-t5`      | `?utm_source=podcast&utm_medium=organic&utm_campaign=ak-podcast&utm_content=<show-name>&utm_term=book-call` |
+
+Every podcast lead lands in the **Podcast** channel. Per show, per host, it is
+the row for that link.
+
+## Imported links
+
+Links that were already out before the builder (YouTube description links,
+webinar short links, setter and ad links seen on leads and Calendly bookings)
+were imported on 2026-10-13 by `scripts/backfill-marketing-links.mjs`. They
+show with an **Imported** chip and their real results, but they never count
+toward link coverage: they were not built on the standard. Most are off the
+standard (`mike-ig`, `internal-webinar`, no `utm_term`); the row says what is
+wrong, and **Use as template** pre-fills a corrected version. Re-run the script
+(dry run first) to pick up new tagged links seen since.
+
 ## The five fields
 
 | Field          | Meaning                                          | Values                                                                                                                                                                   |

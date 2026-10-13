@@ -2,6 +2,7 @@ import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { IMPORTED_LINK_PREFIX } from "@/lib/analytics/link-standard";
 import { readAllPages } from "@/lib/services/paged-read";
 import { logReadFailure } from "@/lib/services/read-failure";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -555,6 +556,8 @@ export async function fetchGoingOut(
       .select(
         "id,url,label,utm_source,utm_medium,utm_campaign,utm_content,utm_term,bitly_id,bitly_url,created_at",
       )
+      // Going out = links built at /admin/links; imported history stays there.
+      .not("created_by", "like", `${IMPORTED_LINK_PREFIX}%`)
       .order("created_at", { ascending: false })
       .limit(GOING_OUT_LIMIT);
     if (error) {

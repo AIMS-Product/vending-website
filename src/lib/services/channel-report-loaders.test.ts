@@ -15,7 +15,7 @@ function builderFor(
   failure: Failure | null,
 ): Record<string, unknown> {
   const builder: Record<string, unknown> = {};
-  for (const method of ["select", "order", "in", "gte", "lte", "lt"]) {
+  for (const method of ["select", "order", "in", "gte", "lte", "lt", "not"]) {
     builder[method] = () => builder;
   }
   builder.limit = (n: number) =>

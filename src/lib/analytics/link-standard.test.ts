@@ -128,3 +128,28 @@ describe("checkLinkStandard", () => {
     ).toBe(true);
   });
 });
+
+describe("builder helpers", () => {
+  it("cleans typed campaigns and content ids", async () => {
+    const { toLinkSlug, toContentId } = await import("./link-standard");
+    expect(toLinkSlug("MH Podcast ")).toBe("mh-podcast");
+    expect(toLinkSlug("Side Hustle Pro's Show!!")).toBe(
+      "side-hustle-pros-show",
+    );
+    expect(toContentId(" dQw4w9 WgXcQ ")).toBe("dQw4w9-WgXcQ");
+  });
+
+  it("maps hand-typed sources onto the list, or leaves them for a person", async () => {
+    const { standardSourceFor } = await import("./link-standard");
+    expect(standardSourceFor("mike-ig")).toBe("instagram");
+    expect(standardSourceFor("internal-webinar")).toBe("webinar");
+    expect(standardSourceFor("youtube")).toBe("youtube");
+    expect(standardSourceFor("google")).toBeNull();
+  });
+
+  it("knows an imported row by its creator", async () => {
+    const { isImportedLink } = await import("./link-standard");
+    expect(isImportedLink("backfill:leads")).toBe(true);
+    expect(isImportedLink("jess@modern-amenities.com")).toBe(false);
+  });
+});

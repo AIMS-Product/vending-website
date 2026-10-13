@@ -16,6 +16,7 @@ import {
   lookbackStart,
   type LeadLike,
 } from "@/lib/analytics/lead-definition";
+import { IMPORTED_LINK_PREFIX } from "@/lib/analytics/link-standard";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -60,6 +61,9 @@ export async function getLinkCoverage(input: {
           .select(
             "utm_source,utm_medium,utm_campaign,utm_content,utm_term,label",
           )
+          // Imported links are what already went out, not links built on the
+          // standard; counting them would read every old tag as covered.
+          .not("created_by", "like", `${IMPORTED_LINK_PREFIX}%`)
           .order("created_at")
           .range(from, to),
       "marketing_links",

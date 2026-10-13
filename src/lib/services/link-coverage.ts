@@ -20,7 +20,11 @@
  * visits here would divide a number we can check by one we cannot.
  */
 
-import { checkLinkUtms, type LinkUtms } from "@/lib/analytics/link-standard";
+import {
+  checkLinkUtms,
+  utmTupleKey,
+  type LinkUtms,
+} from "@/lib/analytics/link-standard";
 import { resolveChannel } from "@/lib/analytics/channel";
 
 /** A lead as the coverage report needs it: the five UTMs and where it landed. */
@@ -100,7 +104,7 @@ export function buildLinkCoverage(input: {
 }): LinkCoverageReport {
   const registry = new Set(
     input.links.map((link) =>
-      tupleKey({
+      utmTupleKey({
         source: link.utm_source,
         medium: link.utm_medium,
         campaign: link.utm_campaign,
@@ -131,7 +135,7 @@ export function buildLinkCoverage(input: {
       bucket.untagged += 1;
       continue;
     }
-    if (registry.has(tupleKey(utms))) {
+    if (registry.has(utmTupleKey(utms))) {
       totals.registered += 1;
       bucket.registered += 1;
       continue;
@@ -161,7 +165,7 @@ function addToWorklist(
   channel: string,
   sourcePath: string | null,
 ) {
-  const key = tupleKey(utms);
+  const key = utmTupleKey(utms);
   const existing = worklist.get(key);
   if (existing) {
     existing.leads += 1;
@@ -205,20 +209,6 @@ function clean(value: string | null | undefined): string | null {
 
 function isTagged(utms: LinkUtms): boolean {
   return Object.values(utms).some((value) => value !== null);
-}
-
-/**
- * The registry is keyed on the whole tuple, lowercased. Matching on fewer than
- * five fields would let two links that differ only in destination collapse into
- * one, which is the exact confusion the registry exists to end.
- */
-function tupleKey(utms: LinkUtms): string {
-  return (
-    [utms.source, utms.medium, utms.campaign, utms.content, utms.term]
-      .map((value) => value?.trim().toLowerCase() ?? "")
-      // NUL, not "|": Google Ads campaign names carry pipes.
-      .join("\u0000")
-  );
 }
 
 function emptyTotals(): LinkCoverageTotals {
