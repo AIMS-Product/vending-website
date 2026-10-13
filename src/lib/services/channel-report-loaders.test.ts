@@ -1,5 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchGoingOut, fetchRuns, type ReportClient } from "./channel-report";
+import {
+  fetchFacts,
+  fetchGoingOut,
+  fetchRuns,
+  type ReportClient,
+} from "./channel-report";
 import { logReadFailure } from "./read-failure";
 
 type Failure = { code?: string; message: string };
@@ -10,7 +15,7 @@ function builderFor(
   failure: Failure | null,
 ): Record<string, unknown> {
   const builder: Record<string, unknown> = {};
-  for (const method of ["select", "order", "in", "gte", "lte"]) {
+  for (const method of ["select", "order", "in", "gte", "lte", "lt"]) {
     builder[method] = () => builder;
   }
   builder.limit = () =>
@@ -110,5 +115,46 @@ describe("fetchGoingOut", () => {
       expect.anything(),
     );
     log.mockRestore();
+  });
+});
+
+describe("fetchFacts", () => {
+  it("reads every page of channel_daily and lead_submissions past 1,000 rows", async () => {
+    const stored = Array.from({ length: 2500 }, (_, index) => ({
+      day: "2026-08-10",
+      channel: "Webinar",
+      source: "meta_ads",
+      medium: "paid",
+      campaign: `c${index}`,
+      content: "(not set)",
+      destination: "unknown",
+      leads: 1,
+    }));
+    const leads = Array.from({ length: 1500 }, (_, index) => ({
+      created_at: "2026-08-10T10:00:00Z",
+      email: `lead${index}@buyer.com`,
+      full_name: "Pat",
+      utm_source: "youtube",
+      utm_medium: "video",
+      utm_campaign: null,
+      utm_content: null,
+      utm_term: null,
+      call_booked_at: null,
+      call_outcome: null,
+      closed_won_at: null,
+      metadata: null,
+    }));
+    const client = {
+      from: (table: string) =>
+        builderFor(table === "channel_daily" ? stored : leads, null),
+    } as unknown as ReportClient;
+
+    const facts = await fetchFacts(client, "2026-08-01", "2026-08-31");
+
+    const sum = (key: "leads" | "contacts") =>
+      (facts ?? []).reduce((total, fact) => total + (fact[key] ?? 0), 0);
+    expect(facts).toHaveLength(2501);
+    expect(sum("contacts")).toBe(2500);
+    expect(sum("leads")).toBe(1500);
   });
 });
