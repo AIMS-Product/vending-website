@@ -9,7 +9,7 @@ sales-manager-dashboard}. Measured 2026-10-13 05:30Z against our hourly mirror `
 - MTD (since Dom's 10-05 commit "Align MTD booked totals with rep scorecard"): "First Sales Call Booked Date" in
   month, minus Canceled (by Lead) / Outside the US, minus TLG + PPA business lines, Quiz funnel out of totals, AND
   lead owner on the Lane 1 scorecard roster + Joe. MTD archives for Aug (821) and Sep (966) were built under the
-  OLD meeting-activity rule and were not recomputed; that is where the "821" in AGENTS.md comes from.
+  OLD rule (Reactivation Scrapers counted from Next Steps meeting activities, not the field) and were not recomputed; that is where the "821" in AGENTS.md comes from.
 - "First Sales Call Booked Date" is written every 30 min by AIMS-Product/close-first-sales-meeting: earliest
   qualifying first-sales meeting by title (Vending Strategy Call, Vendingpreneurs Consultation/Strategy Call, New
   Vendingpreneur Strategy Call, Vending Consult\*), excluding follow-up/reschedule/Next Steps/enrollment/Q&A titles.
@@ -35,8 +35,9 @@ but Sales Team Lane = Lane 1: the webinar board counted them as the room's marke
 
 ## Decision taken here (not an open question in Dom's doc)
 
-Lane 2 booking credit = Booked By = "Lane 2" (Dom's field for credit); then Sales Team Lane, then the scraper funnel,
-when Booked By is blank. Funnel Name = source.
+Lane 2 booking credit = Booked By = "Lane 2" (Dom's field for credit); when blank (every marketing booking), the old
+scraper funnel label only. Sales Team Lane is never read: it follows the current owner (98 webinar self-books owned
+by Lane 2 closers would have left the room). Funnel Name = source.
 
 - vp-webinars `is_lane2`: changed (branch fix/lane2-from-booked-by).
 - vending-website: no code change. Channel rows and the marketing pace already count by Funnel Name (source), which

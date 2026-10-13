@@ -268,8 +268,9 @@ export function CloseMtdFunnelPanel({
           </h2>
           <p className="text-ui-text-subtle">
             Both read Close&apos;s &ldquo;First Sales Call Booked Date&rdquo;,
-            one booking per lead, and agree within one or two calls on every
-            marketing funnel. The totals differ for these reasons:
+            one booking per lead; over Oct 1&ndash;12 they agreed within one or
+            two calls on every marketing funnel. The totals differ for these
+            reasons:
           </p>
           <ul className="text-ui-text-subtle list-disc space-y-1 pl-5">
             <li>
@@ -284,8 +285,9 @@ export function CloseMtdFunnelPanel({
             </li>
             <li>
               <strong>Its August and September pages.</strong> Those were built
-              under its old rule (Close meeting activities by title) and read
-              higher: 821 and 966. Compare months from October on.
+              under its old rule, which counted Reactivation Scrapers from Close
+              meeting activities (Next Steps titles) instead of the booked date,
+              and read higher: 821 and 966. Compare months from October on.
             </li>
             <li>
               <strong>Its Leads column is left out on purpose.</strong> It read
