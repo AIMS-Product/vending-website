@@ -42,7 +42,7 @@ export async function ScorecardCard({ window }: { window: DashboardWindow }) {
   const from = weeks.at(-1)!.start;
   const to = weeks[0]!.end;
   const [calls, facts, qualified] = await Promise.all([
-    readCalls(from, to),
+    readCalls(from, to, window.marketingOnly),
     readFacts(from, window.today),
     readQualifiedDays(from),
   ]);

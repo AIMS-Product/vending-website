@@ -64,11 +64,18 @@ export function reactivationCalls(
   kept: readonly CloseCall[],
   googleClickLeads: ReadonlySet<string>,
 ): number {
-  return kept.filter(
-    (call) =>
-      !googleClickLeads.has(call.leadId) &&
-      flowChannelForFunnel(call.funnel) === "reactivation",
-  ).length;
+  return kept.filter((call) => isReactivation(call, googleClickLeads)).length;
+}
+
+/** One call or deal in the Sales reactivation band (see `reactivationCalls`). */
+export function isReactivation(
+  row: { leadId: string; funnel: string | null },
+  googleClickLeads: ReadonlySet<string>,
+): boolean {
+  return (
+    !googleClickLeads.has(row.leadId) &&
+    flowChannelForFunnel(row.funnel) === "reactivation"
+  );
 }
 
 export function countInRange<T>(

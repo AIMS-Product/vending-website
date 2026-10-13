@@ -3,7 +3,33 @@ import {
   DASHBOARD_WINDOW_LABELS,
   DASHBOARD_WINDOW_PRESETS,
   type DashboardWindow,
+  type DashboardWindowKey,
 } from "@/lib/analytics/dashboard-window";
+
+/** The analytics URL for a window, keeping the marketing-only switch. */
+function analyticsHref(
+  key: DashboardWindowKey,
+  window: DashboardWindow,
+  marketingOnly: boolean,
+): string {
+  const query = new URLSearchParams();
+  if (key.startsWith("custom:")) {
+    query.set("from", window.startDay);
+    query.set("to", window.endDay);
+  } else if (key !== "30d") {
+    query.set("range", key);
+  }
+  if (marketingOnly) query.set("marketing", "1");
+  const qs = query.toString();
+  return qs ? `/admin/analytics?${qs}` : "/admin/analytics";
+}
+
+const segmentClass = (active: boolean) =>
+  `rounded-[4px] px-2.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap transition ${
+    active
+      ? "bg-ui-accent-soft text-ui-accent"
+      : "text-ui-text-muted hover:text-ui-text"
+  }`;
 
 /**
  * Presets as links, a custom range as a GET form with native date inputs.
@@ -15,8 +41,33 @@ export function DashboardWindowControl({
   window: DashboardWindow;
 }) {
   const custom = window.key.startsWith("custom:");
+  const marketingOnly = Boolean(window.marketingOnly);
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <div
+        className="border-ui-line rounded-ui bg-ui-surface shadow-ui inline-flex border p-0.5"
+        role="group"
+        aria-label="Which calls count"
+      >
+        {[
+          { label: "All calls", on: false },
+          { label: "Marketing only", on: true },
+        ].map((option) => (
+          <Link
+            key={option.label}
+            href={analyticsHref(window.key, window, option.on)}
+            aria-current={option.on === marketingOnly ? "page" : undefined}
+            title={
+              option.on
+                ? "Leave Sales reactivation calls and wins out of every number on this page"
+                : undefined
+            }
+            className={segmentClass(option.on === marketingOnly)}
+          >
+            {option.label}
+          </Link>
+        ))}
+      </div>
       <div
         className="border-ui-line rounded-ui bg-ui-surface shadow-ui inline-flex max-w-full overflow-x-auto border p-0.5"
         role="group"
@@ -27,17 +78,9 @@ export function DashboardWindowControl({
           return (
             <Link
               key={key}
-              href={
-                key === "30d"
-                  ? "/admin/analytics"
-                  : `/admin/analytics?range=${key}`
-              }
+              href={analyticsHref(key, window, marketingOnly)}
               aria-current={active ? "page" : undefined}
-              className={`rounded-[4px] px-2.5 py-1 text-[0.8125rem] font-medium whitespace-nowrap transition ${
-                active
-                  ? "bg-ui-accent-soft text-ui-accent"
-                  : "text-ui-text-muted hover:text-ui-text"
-              }`}
+              className={segmentClass(active)}
             >
               {DASHBOARD_WINDOW_LABELS[key]}
             </Link>
@@ -54,6 +97,9 @@ export function DashboardWindowControl({
             : "border-ui-line bg-ui-surface"
         }`}
       >
+        {marketingOnly ? (
+          <input type="hidden" name="marketing" value="1" />
+        ) : null}
         <label className="sr-only" htmlFor="range-from">
           From
         </label>

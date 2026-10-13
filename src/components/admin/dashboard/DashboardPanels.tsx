@@ -223,7 +223,7 @@ function Delta({
 export async function AttentionChip({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
   const [closeCalls, stuck, trust] = await Promise.all([
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
     leadsNotInClose(span.from, window.today),
     readTrust(),
   ]);
@@ -296,7 +296,7 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
   const [booked, leads, calls] = await Promise.all([
     readBookedOn(days),
     readLeads(span.from),
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
   ]);
   const onDay = (d: string) => ({ startDay: d, endDay: d });
   const leadsOn = (d: string) =>
@@ -435,8 +435,8 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
   const dealsFrom = [window.prior.startDay, spark.startDay].sort()[0]!;
   const [leads, calls, deals, cac, googleClicks] = await Promise.all([
     readLeads(span.from),
-    readCalls(span.from, span.to),
-    readDeals(dealsFrom, window.today),
+    readCalls(span.from, span.to, window.marketingOnly),
+    readDeals(dealsFrom, window.today, window.marketingOnly),
     readCac(),
     readGoogleClickLeads(),
   ]);
@@ -507,9 +507,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         value={num(inWindow.length)}
         delta={<Delta value={deltaPct(inWindow.length, before)} />}
         caption={
-          reactivation === null
-            ? "Marketing / reactivation split unavailable"
-            : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`
+          window.marketingOnly
+            ? "Marketing only · reactivation left out"
+            : reactivation === null
+              ? "Marketing / reactivation split unavailable"
+              : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`
         }
         spark={sparkPoints(dailyCounts(kept, (c) => c.bookedDate, spark))}
         href="#bookings"
@@ -646,11 +648,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
   const [calls, facts, deals, googleClicks] = await Promise.all([
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
     // Captured is the window's own captures: read the window, not the six
     // months the cost card needs.
     readFacts(window.startDay, window.today),
-    readDeals(window.startDay, window.today),
+    readDeals(window.startDay, window.today, window.marketingOnly),
     readGoogleClickLeads(),
   ]);
   const error = failed(calls, facts, deals, googleClicks);
@@ -749,7 +751,7 @@ export function BarList({
 export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
   const [calls, googleClicks] = await Promise.all([
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
     readGoogleClickLeads(),
   ]);
   if (!calls.ok || !googleClicks.ok) {
@@ -915,7 +917,7 @@ export async function TrendCard({ window }: { window: DashboardWindow }) {
   const range = sparkRange(window);
   const [leads, calls] = await Promise.all([
     readLeads(span.from),
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
   ]);
   const error = failed(leads, calls);
   const leadSeries = leads.ok
