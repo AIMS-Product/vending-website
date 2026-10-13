@@ -16,11 +16,12 @@
  *   - It does not fold won into the booked cohort. Won is pulled by the day
  *     the deal was won, so a deal won this month may belong to a call booked
  *     two months ago. It is a different population and is labelled as one.
- *   - It does not reproduce Stephen's Booked. His is built from Close meeting
- *     activities and drops four meeting owners, one of whom (Spencer
- *     Reynolds) is an active VP setter. `close_lead_funnel` carries no
- *     meeting-owner field, so that filter cannot be applied here at all. The
- *     difference is stated on screen rather than reconciled away.
+ *   - It does not reproduce the company MTD's Booked total. Since 2026-10-05
+ *     MTD reads the same First Sales Call Booked Date but keeps only leads
+ *     owned by the Lane 1 scorecard roster and drops TLG/PPA business lines;
+ *     `close_lead_funnel` carries neither field. Per marketing funnel the two
+ *     agree within 0-2 (Oct 1-12); the gap is Lane 2. Stated on screen rather
+ *     than reconciled away.
  */
 
 import {
