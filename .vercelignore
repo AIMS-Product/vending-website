@@ -3,6 +3,6 @@
 apps/*
 !apps/mike-newsletter/
 !apps/mike-newsletter/**
-coverage/
+/coverage/
 node_modules/
 reports/
