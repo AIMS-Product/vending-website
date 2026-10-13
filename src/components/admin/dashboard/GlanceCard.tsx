@@ -40,7 +40,7 @@ export async function GlanceCard({ window }: GlanceCardProps) {
   const month = { startDay: `${today.slice(0, 7)}-01`, endDay: today };
   const from = week.startDay < month.startDay ? week.startDay : month.startDay;
   const [calls, googleClicks, value] = await Promise.all([
-    readCalls(from, today),
+    readCalls(from, today, window.marketingOnly),
     readGoogleClickLeads(),
     readChannelValue(window),
   ]);

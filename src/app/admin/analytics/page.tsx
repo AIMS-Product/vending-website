@@ -60,7 +60,12 @@ export default async function AdminAnalyticsPage({
     parseDashboardWindow(singleParam(params.range));
   // Auth before any read, so nothing queries for a visitor about to be sent away.
   const { user, role } = await requireReadAccess();
-  const window = resolveDashboardWindow(key, reportingDay());
+  const window = {
+    ...resolveDashboardWindow(key, reportingDay()),
+    marketingOnly: singleParam(params.marketing) === "1",
+  };
+  // A new key per view, so flipping the switch shows each card loading.
+  const view = `${window.key}${window.marketingOnly ? "-marketing" : ""}`;
   const longToday = new Date(`${window.today}T12:00:00Z`).toLocaleDateString(
     "en-US",
     {
@@ -125,7 +130,7 @@ export default async function AdminAnalyticsPage({
       </div>
 
       <Suspense
-        key={`kpi-${window.key}`}
+        key={`kpi-${view}`}
         fallback={<CardSkeleton label="key numbers" height="h-36" />}
       >
         <KpiStrip window={window} />
@@ -133,7 +138,7 @@ export default async function AdminAnalyticsPage({
 
       {/* Below the scorecard and key numbers, not above them (Adam, 2026-10-12). */}
       <Suspense
-        key={`glance-${window.key}`}
+        key={`glance-${view}`}
         fallback={
           <CardSkeleton label="booked calls by channel" height="h-64" />
         }
@@ -142,7 +147,7 @@ export default async function AdminAnalyticsPage({
       </Suspense>
 
       <Suspense
-        key={`flow-${window.key}`}
+        key={`flow-${view}`}
         fallback={<CardSkeleton label="channel flow" height="h-[26rem]" />}
       >
         <FlowCard window={window} />
@@ -150,7 +155,7 @@ export default async function AdminAnalyticsPage({
 
       <div className="mt-5">
         <Suspense
-          key={`value-${window.key}`}
+          key={`value-${view}`}
           fallback={<CardSkeleton label="channel value" height="h-72" />}
         >
           <ChannelValueCard window={window} />
@@ -159,7 +164,7 @@ export default async function AdminAnalyticsPage({
 
       <div className="mt-5">
         <Suspense
-          key={`paid-${window.key}`}
+          key={`paid-${view}`}
           fallback={<CardSkeleton label="paid ads" height="h-96" />}
         >
           <PaidAdsCard window={window} />
@@ -169,7 +174,7 @@ export default async function AdminAnalyticsPage({
       <div className="mt-5 grid gap-5 lg:grid-cols-5">
         <div className="min-w-0 lg:col-span-3">
           <Suspense
-            key={`bookings-${window.key}`}
+            key={`bookings-${view}`}
             fallback={<CardSkeleton label="bookings" height="h-80" />}
           >
             <BookingsCard window={window} />
@@ -177,7 +182,7 @@ export default async function AdminAnalyticsPage({
         </div>
         <div className="min-w-0 lg:col-span-2">
           <Suspense
-            key={`cost-${window.key}`}
+            key={`cost-${view}`}
             fallback={
               <CardSkeleton label="cost per booked call" height="h-80" />
             }
@@ -189,7 +194,7 @@ export default async function AdminAnalyticsPage({
 
       <div className="mt-5">
         <Suspense
-          key={`trend-${window.key}`}
+          key={`trend-${view}`}
           fallback={<CardSkeleton label="trend" height="h-72" />}
         >
           <TrendCard window={window} />

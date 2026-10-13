@@ -45,6 +45,8 @@ export type DashboardWindow = DayRange & {
   prior: DayRange;
   /** Today in the reporting time zone. */
   today: string;
+  /** Sales reactivation calls and wins left out of every card (`?marketing=1`). */
+  marketingOnly?: boolean;
 };
 
 /** The calendar day an instant falls on in the reporting time zone. */

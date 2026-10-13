@@ -54,9 +54,9 @@ function Cell({ children }: { children: ReactNode }) {
 export async function readChannelValue(window: DashboardWindow) {
   const span = callSpan(window);
   const [calls, facts, deals, googleClicks] = await Promise.all([
-    readCalls(span.from, span.to),
+    readCalls(span.from, span.to, window.marketingOnly),
     readFacts(window.startDay, window.today),
-    readDeals(window.startDay, window.today),
+    readDeals(window.startDay, window.today, window.marketingOnly),
     readGoogleClickLeads(),
   ]);
   const error = failed(calls, facts, deals, googleClicks);

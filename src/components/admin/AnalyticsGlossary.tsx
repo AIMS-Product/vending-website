@@ -100,6 +100,11 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "A person who booked a first sales call. One person counts once, however many times they reschedule. The sales team's spreadsheet counts every meeting instead, so its totals run about 1.7x ours; both are right, they count different things. On Channels, booked counts only calls a marketing channel can be credited for, roughly half the company total, because the sales team's own rebooking (Reactivation Scrapers) has no channel.",
   },
   {
+    term: "Marketing only",
+    meaning:
+      "The switch beside the dates. It leaves Sales reactivation booked calls and won deals out of every card on the page, credited as the flow card credits them (a lead with a Google click id stays in, as Google Ads). Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",
+  },
+  {
     term: "Skipped form (direct booking)",
     meaning:
       "Booked straight from a calendar link (Instagram bio, a DM, an email) without filling in a form on the site first. Counted as booked, never as a lead, and shown beside the count rather than folded into Book %. Calls booked from the webinar room's own button are not skipped-form: those people already registered, so they count in Book %.",

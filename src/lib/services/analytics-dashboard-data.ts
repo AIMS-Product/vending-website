@@ -15,6 +15,7 @@ import {
 import { QUALIFIED_BANDS } from "@/lib/analytics/weekly-scorecard";
 import {
   costPerBookedByMonth,
+  isReactivation,
   monthKeys,
   type CostRow,
 } from "@/lib/analytics/dashboard-metrics";
@@ -76,8 +77,18 @@ type DashboardCall = CloseCall & {
   setter: string | null;
 };
 
-/** Close first calls scheduled in [from, to], every one, exclusions applied later. */
-export const readCalls = cache((from: string, to: string) =>
+/**
+ * Close first calls scheduled in [from, to], every one, exclusions applied
+ * later. `marketingOnly` drops the Sales reactivation band.
+ */
+export const readCalls = cache(
+  async (from: string, to: string, marketingOnly = false) => {
+    const calls = await readAllCalls(from, to);
+    return marketingOnly ? withoutReactivation(calls) : calls;
+  },
+);
+
+const readAllCalls = cache((from: string, to: string) =>
   attempt("The Close mirror", async () => {
     const client = createAdminClient();
     const { rows, error } = await readAllPages<{
@@ -165,18 +176,16 @@ export const readLeads = cache((from: string) =>
     );
     if (error) throw new Error(error.message);
     return collapseToLeads(rows)
-      .map(
-        (lead): DashboardLead => ({
-          day: reportingDay(new Date(lead.created_at)),
-          channel: resolveChannel(lead.utm_source, {
-            medium: lead.utm_medium,
-            capturedByChatbot:
-              !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
-          }).channel,
-          inClose: lead.close_sync_status === "synced",
-          createdAt: lead.created_at,
-        }),
-      )
+      .map((lead): DashboardLead => ({
+        day: reportingDay(new Date(lead.created_at)),
+        channel: resolveChannel(lead.utm_source, {
+          medium: lead.utm_medium,
+          capturedByChatbot:
+            !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
+        }).channel,
+        inClose: lead.close_sync_status === "synced",
+        createdAt: lead.created_at,
+      }))
       .filter((lead) => lead.day >= from);
   }),
 );
@@ -241,8 +250,15 @@ export const readFacts = cache((from: string, to: string) =>
   }),
 );
 
-/** Won Close opportunities dated in [from, to]. */
-export const readDeals = cache((from: string, to: string) =>
+/** Won Close opportunities dated in [from, to]; `marketingOnly` as readCalls. */
+export const readDeals = cache(
+  async (from: string, to: string, marketingOnly = false) => {
+    const deals = await readAllDeals(from, to);
+    return marketingOnly ? withoutReactivation(deals) : deals;
+  },
+);
+
+const readAllDeals = cache((from: string, to: string) =>
   attempt("Close won deals", async (): Promise<CloseDeal[]> => {
     if (!config.CLOSE_API_KEY) throw new Error("CLOSE_API_KEY is not set");
     return fetchCloseDeals({
@@ -277,6 +293,23 @@ export const readGoogleClickLeads = cache(() =>
     return new Set(rows.map((row) => row.close_lead_id));
   }),
 );
+
+/**
+ * Drops Sales reactivation rows, credited as the flow card credits them. The
+ * Google click read decides which rows those are, so without it the filtered
+ * read fails rather than guessing.
+ */
+async function withoutReactivation<
+  T extends { leadId: string; funnel: string | null },
+>(read: Read<T[]>): Promise<Read<T[]>> {
+  if (!read.ok) return read;
+  const google = await readGoogleClickLeads();
+  if (!google.ok) return google;
+  return {
+    ok: true,
+    data: read.data.filter((row) => !isReactivation(row, google.data)),
+  };
+}
 
 /**
  * Cost per booked call by month for the six months to `today` (§9). The
