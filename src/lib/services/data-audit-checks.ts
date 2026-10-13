@@ -26,6 +26,11 @@ import {
   type CloseMonthlyReport,
 } from "@/lib/services/close-monthly-funnel-data";
 import { monthOverMonthChecks } from "@/lib/services/data-audit-mom-checks";
+import { companyMtdChecks } from "@/lib/services/data-audit-company-mtd";
+import {
+  getCloseMtdFunnel,
+  type CloseMtdReport,
+} from "@/lib/services/close-mtd-funnel-data";
 import {
   assertion,
   compare,
@@ -82,6 +87,7 @@ export type DataAuditDeps = {
   close?: CloseSearchClient | null;
   /** The month-over-month tab's loader, so its numbers can be checked. */
   monthly?: (input: { now: Date }) => Promise<CloseMonthlyReport>;
+  mtd?: (input: { now: Date }) => Promise<CloseMtdReport>;
 };
 
 export type CloseSearchClient = {
@@ -135,6 +141,9 @@ export async function runDataAudit(
         now,
         deps.monthly ?? getCloseMonthlyFunnel,
       ),
+    )),
+    ...(await safe("company-mtd", () =>
+      companyMtdChecks(now, deps.mtd ?? getCloseMtdFunnel),
     )),
     ...(await safe("calendly", () => calendlyChecks(client, calendly, now))),
     ...(await safe("ads", () =>

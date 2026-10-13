@@ -86,6 +86,7 @@ describe("fetchCloseDeals", () => {
             lead_id: "in-mirror",
             date_won: "2026-08-12",
             value: 899700,
+            user_id: "user_closer",
           },
         ],
         has_more: true,
@@ -111,14 +112,25 @@ describe("fetchCloseDeals", () => {
       },
       getLead: async (id: string) => ({
         id,
-        custom: { "Funnel Name DEAL (Opp)": "Internal Webinar" },
+        status_label: "🏆 Closed / Won",
+        custom: {
+          "Funnel Name DEAL (Opp)": "Internal Webinar",
+          "BTC Business Line": "Vendingpreneurs (VP)",
+        },
       }),
     };
     const mirror = {
       from: () => ({
         select: () => ({
           in: async () => ({
-            data: [{ lead_id: "in-mirror", funnel: "YouTube", closer: null }],
+            data: [
+              {
+                lead_id: "in-mirror",
+                funnel: "YouTube",
+                status_label: "🌎 Outside the US",
+                business_line: "The Land Geek (TLG)",
+              },
+            ],
             error: null,
           }),
         }),
@@ -140,6 +152,9 @@ describe("fetchCloseDeals", () => {
         value: 8997,
         funnel: "YouTube",
         closer: null,
+        closerId: "user_closer",
+        status: "🌎 Outside the US",
+        businessLine: "The Land Geek (TLG)",
       },
       {
         leadId: "not-in-mirror",
@@ -147,6 +162,9 @@ describe("fetchCloseDeals", () => {
         value: 5000,
         funnel: "Internal Webinar",
         closer: null,
+        closerId: null,
+        status: "🏆 Closed / Won",
+        businessLine: "Vendingpreneurs (VP)",
       },
     ]);
   });

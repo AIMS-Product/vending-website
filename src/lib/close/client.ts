@@ -516,6 +516,17 @@ export function createCloseClient({
       );
     },
     /**
+     * Every Close user, id and name. Read-only. A user custom field such as
+     * "Lead Owner" comes back as a user id; this turns it into the name the
+     * sales dashboards key their rosters on.
+     */
+    listUsers(skip = 0) {
+      return request<{
+        data?: Array<{ id: string; first_name?: string; last_name?: string }>;
+        has_more?: boolean;
+      }>("GET", `/user/?_limit=100&_skip=${skip}`);
+    },
+    /**
      * Close's Advanced Filtering endpoint, one page at a time.
      *
      * Read-only. The caller builds the structured query and walks `cursor`

@@ -85,6 +85,21 @@ describe("mapLead", () => {
     });
   });
 
+  it("stores the lead owner as a name and keeps the business line", () => {
+    const names = new Map([["user_luke", "Luke Herman"]]);
+    const lead = {
+      id: "lead_3",
+      "custom.cf_leadOwner": "user_luke",
+      "custom.cf_businessLine": "The Land Geek (TLG)",
+    };
+    expect(mapLead(lead, ids, "x", names)).toMatchObject({
+      lead_owner: "Luke Herman",
+      business_line: "The Land Geek (TLG)",
+    });
+    // An owner Close's user list does not know is kept, never dropped.
+    expect(mapLead(lead, ids, "x")?.lead_owner).toBe("user_luke");
+  });
+
   it("accepts the nested custom shape too and drops a lead with no id", () => {
     const row = mapLead(
       { id: "lead_2", custom: { cf_funnel: "YouTube" } },
@@ -135,6 +150,7 @@ describe("syncCloseLeadFunnel", () => {
     let call = 0;
     const close = {
       listCustomFields: async () => ({ data: definitions }),
+      listUsers: async () => ({ data: [], has_more: false }),
       searchLeads: async (body: Record<string, unknown>) => {
         if (call === 1) expect(body.cursor).toBe("p2");
         return pages[call++]!;
@@ -171,6 +187,7 @@ describe("syncCloseLeadFunnel", () => {
     let call = 0;
     const close = {
       listCustomFields: async () => ({ data: definitions }),
+      listUsers: async () => ({ data: [], has_more: false }),
       searchLeads: async () => pages[call++]!,
     };
     const { client, upserts } = fakeSupabase();
@@ -195,6 +212,7 @@ describe("syncCloseLeadFunnel", () => {
     // booked calls against Close's 171.
     const close = {
       listCustomFields: async () => ({ data: definitions }),
+      listUsers: async () => ({ data: [], has_more: false }),
       searchLeads: async () => ({
         data: [{ id: "lead_a", "custom.cf_funnel": "YouTube" }],
         cursor: null,
@@ -216,6 +234,7 @@ describe("syncCloseLeadFunnel", () => {
   it("never prunes when Close returned no leads at all", async () => {
     const close = {
       listCustomFields: async () => ({ data: definitions }),
+      listUsers: async () => ({ data: [], has_more: false }),
       searchLeads: async () => ({ data: [], cursor: null }),
     };
     const { client, prunes } = fakeSupabase();

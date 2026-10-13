@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NO_SOURCE_LABEL,
   buildCloseWeeks,
+  isExcludedCall,
   recentWeeks,
   weekStartOf,
 } from "./close-week-view";
@@ -174,5 +175,40 @@ describe("buildCloseWeeks", () => {
     });
     expect(result!.rows).toEqual([]);
     expect(result!.totals.booked).toBe(0);
+  });
+});
+
+describe("isExcludedCall", () => {
+  const call = {
+    leadId: "lead_1",
+    funnel: "Reactivation Scrapers",
+    status: null,
+    bookedDate: "2026-10-05",
+    showUp: null,
+    qualified: null,
+  };
+
+  it("leaves out other company brands, as the MTD dashboard does", () => {
+    expect(
+      isExcludedCall({ ...call, businessLine: "The Land Geek (TLG)" }),
+    ).toBe(true);
+    expect(
+      isExcludedCall({
+        ...call,
+        businessLine: "Publishing Profits Academy (PPA)",
+      }),
+    ).toBe(true);
+    expect(
+      isExcludedCall({ ...call, businessLine: "Vendingpreneurs (VP)" }),
+    ).toBe(false);
+    // Blank is kept: 26 of 903 Sep-Oct VP bookings carry no business line.
+    expect(isExcludedCall({ ...call, businessLine: null })).toBe(false);
+  });
+
+  it("still leaves out canceled, outside-the-US and quiz-funnel calls", () => {
+    expect(isExcludedCall({ ...call, status: "🔻 Canceled (by Lead)" })).toBe(
+      true,
+    );
+    expect(isExcludedCall({ ...call, funnel: "LTF - Quiz Funnel" })).toBe(true);
   });
 });

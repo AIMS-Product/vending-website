@@ -90,12 +90,13 @@ export const readCalls = cache((from: string, to: string) =>
       qualified: string | null;
       setter_name: string | null;
       booked_by: string | null;
+      business_line: string | null;
     }>(
       (start, end, count) =>
         client
           .from("close_lead_funnel")
           .select(
-            "lead_id,email,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,setter_name,booked_by",
+            "lead_id,email,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,setter_name,booked_by,business_line",
             { count },
           )
           .gte("first_sales_call_booked_date", from)
@@ -118,6 +119,7 @@ export const readCalls = cache((from: string, to: string) =>
               qualified: row.qualified,
               setter: row.setter_name,
               bookedBy: row.booked_by,
+              businessLine: row.business_line,
             },
           ]
         : [],

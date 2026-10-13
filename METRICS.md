@@ -135,10 +135,11 @@ rate built on it is always null. This is a defect, not a definition.
 A first call is excluded when the lead's **current** status or funnel matches
 (`close-week-view.ts:31-33, 107-112`):
 
-| Kind   | Literal values matched                 |
-| ------ | -------------------------------------- |
-| Status | `canceled (by lead)`, `outside the us` |
-| Funnel | `ltf - quiz funnel`                    |
+| Kind   | Literal values matched                                                                                                     |
+| ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Status | `canceled (by lead)`, `outside the us`                                                                                     |
+| Funnel | `ltf - quiz funnel`                                                                                                        |
+| Brand  | `BTC Business Line` is `the land geek (tlg)` or `publishing profits academy (ppa)` (2026-10-13, as the MTD dashboard does) |
 
 Status matching strips a leading emoji and spacing first, so `🔻 Canceled (by Lead)` matches
 (`close-week-view.ts:100-105`). The exclusion is applied **before** the booked, showed and qualified
@@ -556,28 +557,28 @@ the single highest-value question in this document.
 The comparison below uses the MTD dashboard's own document as the statement of its definitions, and
 the SteelTrap column as that document describes it.
 
-| Metric               | This repository                                             | MTD dashboard                                                  | SteelTrap                                              | Same?                                             |
-| -------------------- | ----------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------- |
-| Day boundary         | UTC                                                         | Pacific                                                        | Pacific; New York for won outcomes                     | **Different**                                     |
-| Week                 | Friday–Thursday (Close view), Monday–Sunday (analytics)     | Monday–Sunday                                                  | Inclusive of displayed range                           | **Different**                                     |
-| Booked               | Lead's First Sales Call Booked Date in window, one per lead | Same field, one per lead                                       | First native meeting creation, deduplicated per person | Same as MTD; different from SteelTrap             |
-| Showed               | `First Call Show Up (Opp)` equals `yes` exactly             | Same field; accepts `true`, `yes`, `1`                         | Native meeting held or completed                       | Near-identical to MTD; different from SteelTrap   |
-| Qualified            | `Qualified (Opp)` truthy, **over booked**                   | Same field, **over booked**                                    | Canonical boolean, **over showed**                     | Same as MTD; different denominator from SteelTrap |
-| Won                  | Close opportunities by `date_won`, opportunity grain        | Same, opportunity grain                                        | Normalised outcome by outcome date                     | Same grain and cohort                             |
-| Revenue              | Close `value` ÷ 100, nulls preserved                        | Close `value` ÷ 100 via a `$`/comma-stripping parser           | Upstream-normalised dollars                            | Same formula                                      |
-| Excluded statuses    | Canceled (by Lead), Outside the US, by label                | Same two, by status id                                         | Broad case-insensitive label match                     | Same intent                                       |
-| Quiz funnel          | **Dropped entirely**                                        | Row kept, excluded from totals only                            | Dropped at the Leads producer; kept elsewhere          | **Different**                                     |
-| Closer exclusions    | **None**                                                    | Five closer user ids dropped from won and revenue              | None in the CRM funnel projection                      | **Different**                                     |
-| Meeting-owner filter | **Impossible** — no such field                              | Four owners dropped on the live surface, per `REPORTING.md` §5 | n/a                                                    | **Cannot be matched**                             |
-| Scrapers             | Kept in totals, split out for the marketing line            | Not a separate concept                                         | Not a separate concept                                 | Ours only                                         |
-| Leads / acquisition  | Site form fills and total captured, from our own spine      | Close leads by `date_created`, known funnels only              | Canonical submission projection                        | **Not comparable**                                |
-| Book %               | booked ÷ (leads + contacts) per channel                     | booked ÷ leads created, exported only                          | booked ÷ leads created, shown                          | Different population                              |
-| Targets              | August 2026 baseline, +10% compounding per month            | Static per-funnel goals in `goals.json`                        | Per-business-day seed × business days                  | **Different**                                     |
-| Projection           | None                                                        | Calendar-day month projection                                  | None on that table                                     | Theirs only                                       |
-| ARR / MRR            | None                                                        | Package-tier rules                                             | None                                                   | Theirs only                                       |
-| Revenue per close    | None in the channel pipeline                                | Revenue ÷ closed won                                           | Not calculated                                         | Theirs only                                       |
-| Sales cycle          | None                                                        | `date_won` − booked date, arithmetic mean                      | Won − lead created, median                             | All three differ                                  |
-| Setter credit        | Six-rule precedence chain                                   | Not calculated                                                 | Separate UTM facts                                     | Ours only                                         |
+| Metric              | This repository                                             | MTD dashboard                                        | SteelTrap                                              | Same?                                             |
+| ------------------- | ----------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------- |
+| Day boundary        | UTC (Pacific on the month-to-date panel since 2026-10-13)   | Pacific                                              | Pacific; New York for won outcomes                     | **Different**                                     |
+| Week                | Friday–Thursday (Close view), Monday–Sunday (analytics)     | Monday–Sunday                                        | Inclusive of displayed range                           | **Different**                                     |
+| Booked              | Lead's First Sales Call Booked Date in window, one per lead | Same field, one per lead                             | First native meeting creation, deduplicated per person | Same as MTD; different from SteelTrap             |
+| Showed              | `First Call Show Up (Opp)` equals `yes` exactly             | Same field; accepts `true`, `yes`, `1`               | Native meeting held or completed                       | Near-identical to MTD; different from SteelTrap   |
+| Qualified           | `Qualified (Opp)` truthy, **over booked**                   | Same field, **over booked**                          | Canonical boolean, **over showed**                     | Same as MTD; different denominator from SteelTrap |
+| Won                 | Close opportunities by `date_won`, opportunity grain        | Same, opportunity grain                              | Normalised outcome by outcome date                     | Same grain and cohort                             |
+| Revenue             | Close `value` ÷ 100, nulls preserved                        | Close `value` ÷ 100 via a `$`/comma-stripping parser | Upstream-normalised dollars                            | Same formula                                      |
+| Excluded statuses   | Canceled (by Lead), Outside the US, by label                | Same two, by status id                               | Broad case-insensitive label match                     | Same intent                                       |
+| Quiz funnel         | **Dropped entirely**                                        | Row kept, excluded from totals only                  | Dropped at the Leads producer; kept elsewhere          | **Different**                                     |
+| Closer exclusions   | **None** (the Company MTD view applies its five)            | Five closer user ids dropped from won and revenue    | None in the CRM funnel projection                      | **Different**                                     |
+| Lead-owner filter   | None on our totals; the Company MTD view applies its roster | Lane 1 roster lead owners only (since 2026-10-05)    | n/a                                                    | **Cannot be matched**                             |
+| Scrapers            | Kept in totals, split out for the marketing line            | Not a separate concept                               | Not a separate concept                                 | Ours only                                         |
+| Leads / acquisition | Site form fills and total captured, from our own spine      | Close leads by `date_created`, known funnels only    | Canonical submission projection                        | **Not comparable**                                |
+| Book %              | booked ÷ (leads + contacts) per channel                     | booked ÷ leads created, exported only                | booked ÷ leads created, shown                          | Different population                              |
+| Targets             | August 2026 baseline, +10% compounding per month            | Static per-funnel goals in `goals.json`              | Per-business-day seed × business days                  | **Different**                                     |
+| Projection          | None                                                        | Calendar-day month projection                        | None on that table                                     | Theirs only                                       |
+| ARR / MRR           | None                                                        | Package-tier rules                                   | None                                                   | Theirs only                                       |
+| Revenue per close   | None in the channel pipeline                                | Revenue ÷ closed won                                 | Not calculated                                         | Theirs only                                       |
+| Sales cycle         | None                                                        | `date_won` − booked date, arithmetic mean            | Won − lead created, median                             | All three differ                                  |
+| Setter credit       | Six-rule precedence chain                                   | Not calculated                                       | Separate UTM facts                                     | Ours only                                         |
 
 ### Why our numbers will not equal theirs, in order of size
 

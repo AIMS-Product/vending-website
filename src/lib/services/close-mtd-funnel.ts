@@ -16,12 +16,10 @@
  *   - It does not fold won into the booked cohort. Won is pulled by the day
  *     the deal was won, so a deal won this month may belong to a call booked
  *     two months ago. It is a different population and is labelled as one.
- *   - It does not reproduce the company MTD's Booked total. Since 2026-10-05
- *     MTD reads the same First Sales Call Booked Date but keeps only leads
- *     owned by the Lane 1 scorecard roster and drops TLG/PPA business lines;
- *     `close_lead_funnel` carries neither field. Per marketing funnel the two
- *     agree within 0-2 (Oct 1-12); the gap is Lane 2. Stated on screen rather
- *     than reconciled away.
+ *   - Its totals keep every lead owner. The company MTD dashboard keeps only
+ *     leads owned by its Lane 1 roster, so its totals are lower; `companyView`
+ *     is the same month cut to that roster, compared to MTD on screen and
+ *     nightly (Oct 1-12: 212 / 126 / 91 / 15 / $121,814 on both sides).
  */
 
 import {
@@ -75,10 +73,56 @@ export type CloseMtdFunnel = {
   scrapers: CloseFunnelSplit;
   /** Per-funnel detail, booked descending. */
   rows: Array<CloseFunnelSplit & { label: string }>;
+  /** The same month cut to the company MTD dashboard's population. */
+  companyView: CompanyMtdTotals;
 };
 
+/** The five numbers the company MTD dashboard headlines. */
+export type CompanyMtdTotals = CloseFunnelSplit & {
+  won: number;
+  revenue: number;
+};
+
+/**
+ * The company MTD dashboard (aims-product.github.io/mtd-funnel-dashboard,
+ * `fetch_and_build.py`) counts a booked call only when the lead's owner is on
+ * its Lane 1 roster, and leaves these closers' wins out of closed-won. Copied
+ * from its source on 2026-10-13; the nightly `company-mtd-*` checks fail if
+ * its roster moves and these do not.
+ */
+export const MTD_BOOKING_OWNERS: ReadonlySet<string> = new Set([
+  "Ariella Irvine",
+  "Christian Hartwell",
+  "Eric Piccione",
+  "Joe Dysert",
+  "Joe Vaughan",
+  "Luke Herman",
+  "Oscar Pugh",
+  "Robin Perkins",
+  "Scott Seymour",
+  "Shreya Bechra",
+]);
+/** Close user ids, as MTD keys them: a renamed user stays excluded. */
+export const MTD_EXCLUDED_CLOSER_IDS: ReadonlySet<string> = new Set([
+  "user_yRF070m26JE67J6CJqzkAB3IqY7btNm1K5RisCglKa6", // Ahmad Bukhari
+  "user_5cZRqXu8kb4O1IeBVA98UMcMEhYZUhx1fnCHfSL0YMV", // Stephen Olivas
+  "user_4sfuKGMbv0LQZ4hpS8ipASv406kKTSNP5Xx79jOwSqM", // Spencer Reynolds
+  "user_SGISGe3kE7zhSm7LQgZ0Vrt7DKz5RVZ0JzFkI4S8llS", // Mallory Kent
+  "user_1BdSGJ3dJ8llCciTSwvV9X8vHpBq2rHp4meX7Wlzsh0", // Adam Wolfe
+]);
+
+/** Which of the five numbers differ from the company MTD dashboard's. */
+export function mtdMismatches(
+  ours: CompanyMtdTotals,
+  theirs: CompanyMtdTotals,
+): Array<{ key: keyof CompanyMtdTotals; ours: number; theirs: number }> {
+  return (["booked", "showed", "qualified", "won", "revenue"] as const)
+    .filter((key) => Math.round(ours[key]) !== Math.round(theirs[key]))
+    .map((key) => ({ key, ours: ours[key], theirs: theirs[key] }));
+}
+
 const BOOKED_SOURCE =
-  'Close "First Sales Call Booked Date", one row per lead, leaving out leads now "Canceled (by Lead)" or "Outside the US" and the "LTF - Quiz Funnel" funnel.';
+  'Close "First Sales Call Booked Date", one row per lead, leaving out leads now "Canceled (by Lead)" or "Outside the US", the "LTF - Quiz Funnel" funnel and other company brands (The Land Geek, Publishing Profits Academy).';
 const SHOWED_SOURCE =
   'Close "First Call Show Up (Opp)" = Yes. A call nobody logged is not counted as shown.';
 const QUALIFIED_SOURCE =
@@ -196,6 +240,36 @@ export function buildCloseMtdFunnel(input: {
     marketing,
     scrapers,
     rows,
+    companyView: companyView(kept, wonDeals),
+  };
+}
+
+function companyView(
+  kept: readonly CloseCall[],
+  wonDeals: readonly CloseDeal[],
+): CompanyMtdTotals {
+  const owned = kept.filter((call) =>
+    MTD_BOOKING_OWNERS.has(call.leadOwner ?? ""),
+  );
+  // MTD drops a win for the same lead-level reasons it drops a booking
+  // (status, brand, quiz funnel), plus its five excluded closers.
+  const counted = wonDeals.filter(
+    (deal) =>
+      !MTD_EXCLUDED_CLOSER_IDS.has(deal.closerId ?? "") &&
+      !isExcludedCall({
+        leadId: deal.leadId,
+        funnel: deal.funnel,
+        status: deal.status ?? null,
+        businessLine: deal.businessLine ?? null,
+        bookedDate: deal.dateWon,
+        showUp: null,
+        qualified: null,
+      }),
+  );
+  return {
+    ...split(owned),
+    won: counted.length,
+    revenue: counted.reduce((sum, deal) => sum + (deal.value ?? 0), 0),
   };
 }
 
