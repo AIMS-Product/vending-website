@@ -146,5 +146,13 @@ describe("marketing link backfill", () => {
       utm_term: "",
       created_by: "backfill:youtube",
     });
+    // Same keys with or without a sighting date, or a bulk insert is refused.
+    const dated = toRow({
+      origin: "leads",
+      tuple: tuple(),
+      baseUrl: "https://b.test/x",
+      firstSeen: "2026-08-01",
+    });
+    expect(Object.keys(row).sort()).toEqual(Object.keys(dated).sort());
   });
 });
