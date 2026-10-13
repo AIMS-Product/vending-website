@@ -267,21 +267,27 @@ export function CloseMtdFunnelPanel({
             dashboard
           </h2>
           <p className="text-ui-text-subtle">
-            Both read Close and both count one booking per lead, so they have
-            stayed within about 2% of each other on the same weeks. They follow
-            different rules, and these are the differences:
+            Both read Close&apos;s &ldquo;First Sales Call Booked Date&rdquo;,
+            one booking per lead; over Oct 1&ndash;12 they agreed within one or
+            two calls on every marketing funnel. The totals differ for these
+            reasons:
           </p>
           <ul className="text-ui-text-subtle list-disc space-y-1 pl-5">
             <li>
-              <strong>Meeting owners.</strong> That dashboard drops meetings
-              owned by four people, one of whom is an active VP setter. Our copy
-              of Close has no meeting-owner field, so that filter cannot be
-              applied here. Those meetings are counted above.
+              <strong>Lead owner.</strong> That dashboard keeps only leads owned
+              by the Lane 1 sales roster, so it shows fewer Reactivation
+              Scrapers bookings. Our copy of Close has no lead-owner field;
+              every booking is counted above.
             </li>
             <li>
-              <strong>What a booking is.</strong> We read the lead&apos;s
-              &ldquo;First Sales Call Booked Date&rdquo;. That dashboard reads
-              Close meeting activities and filters them by title.
+              <strong>Other brands.</strong> That dashboard leaves out The Land
+              Geek and Publishing Profits Academy leads.
+            </li>
+            <li>
+              <strong>Its August and September pages.</strong> Those were built
+              under its old rule, which counted Reactivation Scrapers from Close
+              meeting activities (Next Steps titles) instead of the booked date,
+              and read higher: 821 and 966. Compare months from October on.
             </li>
             <li>
               <strong>Its Leads column is left out on purpose.</strong> It read
