@@ -314,32 +314,30 @@ async function fetchSiteLeadRows(
   endDay: string,
 ): Promise<SpineLeadRow[] | null> {
   const endExclusive = `${dayKey(new Date(new Date(`${endDay}T00:00:00.000Z`).getTime() + DAY_MS))}T00:00:00.000Z`;
-  const rows: SpineLeadRow[] = [];
-  for (let from = 0; from < MAX_FACT_ROWS; from += PAGE_SIZE) {
-    const { data, error } = await client
-      .from("lead_submissions")
-      .select(
-        "created_at,email,full_name,lifecycle_status,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,closed_won_value,metadata",
-      )
-      .gte(
-        "created_at",
-        lookbackStart(`${startDay}T00:00:00.000Z`).toISOString(),
-      )
-      .lt("created_at", endExclusive)
-      .order("created_at")
-      .range(from, from + PAGE_SIZE - 1);
-    if (error) {
-      console.error("lead_submissions read for channel facts failed", {
-        code: error.code,
-        message: error.message,
-      });
-      return null;
-    }
-    const batch = (data ?? []) as unknown as SpineLeadRow[];
-    rows.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
+  // Pages concurrently: one page at a time took seconds on every dashboard.
+  const { rows, error } = await readAllPages(
+    (from, to, count) =>
+      client
+        .from("lead_submissions")
+        .select(
+          "created_at,email,full_name,lifecycle_status,utm_source,utm_medium,utm_campaign,utm_content,utm_term,call_booked_at,call_outcome,closed_won_at,closed_won_value,metadata",
+          { count },
+        )
+        .gte(
+          "created_at",
+          lookbackStart(`${startDay}T00:00:00.000Z`).toISOString(),
+        )
+        .lt("created_at", endExclusive)
+        .order("created_at")
+        .order("id")
+        .range(from, to),
+    { pageSize: PAGE_SIZE, maxRows: MAX_FACT_ROWS },
+  );
+  if (error) {
+    logReadFailure("lead_submissions for channel facts", error);
+    return null;
   }
-  return rows;
+  return rows as unknown as SpineLeadRow[];
 }
 
 async function fetchStoredFacts(
@@ -347,39 +345,37 @@ async function fetchStoredFacts(
   startDay: string,
   endDay: string,
 ): Promise<ChannelFact[] | null> {
-  const rows: ChannelFact[] = [];
   try {
-    for (let from = 0; from < MAX_FACT_ROWS; from += PAGE_SIZE) {
-      const { data, error } = await client
-        .from("channel_daily")
-        .select(
-          "day,channel,source,medium,campaign,content,destination,spend,impressions,reach,clicks,visits,leads,booked,showed,won,revenue",
-        )
-        .gte("day", startDay)
-        .lte("day", endDay)
-        .order("day")
-        .order("channel")
-        .order("source")
-        .order("medium")
-        .order("campaign")
-        .order("content")
-        .order("destination")
-        .range(from, from + PAGE_SIZE - 1);
-      if (error) {
-        console.error("channel_daily read failed", {
-          code: error.code,
-          message: error.message,
-        });
-        return null;
-      }
-      const batch = (data ?? []) as ChannelFact[];
-      rows.push(...batch);
-      if (batch.length < PAGE_SIZE) break;
+    // Pages concurrently: 14 pages in a row was ~4 s of every dashboard load.
+    const { rows, error } = await readAllPages(
+      (from, to, count) =>
+        client
+          .from("channel_daily")
+          .select(
+            "day,channel,source,medium,campaign,content,destination,spend,impressions,reach,clicks,visits,leads,booked,showed,won,revenue",
+            { count },
+          )
+          .gte("day", startDay)
+          .lte("day", endDay)
+          .order("day")
+          .order("channel")
+          .order("source")
+          .order("medium")
+          .order("campaign")
+          .order("content")
+          .order("destination")
+          .range(from, to),
+      { pageSize: PAGE_SIZE, maxRows: MAX_FACT_ROWS },
+    );
+    if (error) {
+      logReadFailure("channel_daily", error);
+      return null;
     }
-  } catch {
+    return rows as ChannelFact[];
+  } catch (error) {
+    logReadFailure("channel_daily", error);
     return null;
   }
-  return rows;
 }
 
 /**
