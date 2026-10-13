@@ -5,7 +5,7 @@ import {
   createMarketingLink,
   MarketingLinkServiceError,
 } from "@/lib/services/marketing-links";
-import { requireAdmin } from "@/lib/supabase/auth";
+import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export type LinkBuilderActionState =
   | { status: "idle" }
@@ -13,6 +13,8 @@ export type LinkBuilderActionState =
   | { status: "error"; message: string };
 
 const ADMIN_LINKS_PATH = "/admin/links";
+const VIEWER_MESSAGE =
+  "This login can view links but not save them. Ask an admin for an editor login.";
 
 /** Builds, validates, optionally shortens and stores one marketing link. */
 export async function createLink(
@@ -20,7 +22,12 @@ export async function createLink(
   formData: FormData,
 ): Promise<LinkBuilderActionState> {
   try {
-    const { user } = await requireAdmin();
+    // Not requireAdmin(): its redirect() would be caught below and shown as
+    // "Could not save the link." A viewer gets told why instead.
+    const { user, role } = await requireReadAccess();
+    if (!canEditAdmin(role)) {
+      return { status: "error", message: VIEWER_MESSAGE };
+    }
     const link = await createMarketingLink(
       {
         baseUrl: String(formData.get("baseUrl") ?? ""),

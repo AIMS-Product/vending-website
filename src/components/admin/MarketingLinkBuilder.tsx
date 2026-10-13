@@ -73,10 +73,12 @@ export function MarketingLinkBuilder({
   links,
   bitlyConnected,
   statsFailed,
+  canSave,
 }: {
   links: RegistryLink[];
   bitlyConnected: boolean;
   statsFailed: boolean;
+  canSave: boolean;
 }) {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [presetKey, setPresetKey] = useState<string | null>(null);
@@ -111,6 +113,7 @@ export function MarketingLinkBuilder({
         setPresetKey={setPresetKey}
         links={links}
         bitlyConnected={bitlyConnected}
+        canSave={canSave}
       />
       <MarketingLinkRegistry
         links={links}
@@ -129,6 +132,7 @@ function BuilderForm({
   setPresetKey,
   links,
   bitlyConnected,
+  canSave,
 }: {
   ref: React.Ref<HTMLElement>;
   draft: Draft;
@@ -137,6 +141,7 @@ function BuilderForm({
   setPresetKey: (key: string | null) => void;
   links: RegistryLink[];
   bitlyConnected: boolean;
+  canSave: boolean;
 }) {
   const [state, formAction] = useActionState(createLink, initialState);
   const preset = LINK_PRESETS.find((item) => item.key === presetKey) ?? null;
@@ -312,7 +317,14 @@ function BuilderForm({
               </span>
             ) : null}
           </label>
-          <SubmitButton disabled={!preview.url || Boolean(existing)} />
+          {canSave ? (
+            <SubmitButton disabled={!preview.url || Boolean(existing)} />
+          ) : (
+            <p className="text-ui-text-subtle text-xs">
+              This login can view links but not save them. Copy the preview, or
+              ask an admin for an editor login.
+            </p>
+          )}
         </div>
 
         <Preview url={preview.url} problem={preview.problem} />

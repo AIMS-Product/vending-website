@@ -7,7 +7,7 @@ import {
   bitlyConnected,
   getLinkRegistry,
 } from "@/lib/services/marketing-links";
-import { requireReadAccess } from "@/lib/supabase/auth";
+import { canEditAdmin, requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
   title: "Links",
@@ -43,6 +43,7 @@ export default async function AdminLinksPage() {
           links={registry.links}
           statsFailed={registry.statsFailed}
           bitlyConnected={bitlyConnected()}
+          canSave={canEditAdmin(role)}
         />
       </div>
     </AdminShell>
