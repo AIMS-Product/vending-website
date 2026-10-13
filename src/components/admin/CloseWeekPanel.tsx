@@ -186,7 +186,8 @@ export function CloseWeekTab({
               {week.excluded} first{" "}
               {week.excluded === 1 ? "call is" : "calls are"} left out because
               the lead is now Canceled (by Lead) or Outside the US, or in the
-              LTF Quiz Funnel. SteelTrap leaves the same calls out.
+              LTF Quiz Funnel, or belongs to another company brand (The Land
+              Geek, Publishing Profits Academy).
             </p>
           ) : null}
           {week.unvalued > 0 ? (

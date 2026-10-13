@@ -16,7 +16,8 @@ const METRICS = [
  * numbers that dashboard publishes. "Ours" is the Months page's own loader, so
  * what is verified is the line on screen. Both sides refresh during the day
  * (MTD every 15 minutes, our mirror hourly), so a call logged between the two
- * runs can differ by one; past 1% the check warns, past 2% it fails.
+ * runs can differ by one; past 1% (or one call, whichever is more) the check
+ * warns, past twice that it fails.
  */
 export async function companyMtdChecks(
   now: Date,
@@ -40,7 +41,11 @@ export async function companyMtdChecks(
       sourceName: "MTD dashboard",
       ours: ours[key],
       source: theirs ? theirs[key] : null,
-      tolerancePct: 1,
+      // One call either way always passes: 1% of 15 wins is not a call.
+      tolerancePct:
+        theirs && key !== "revenue" && theirs[key] > 0
+          ? Math.max(1, 100 / theirs[key])
+          : 1,
       unit: key === "revenue" ? "money" : "count",
       note,
     }),

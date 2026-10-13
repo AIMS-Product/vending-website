@@ -51,6 +51,8 @@ export async function fetchCompanyMtd(month: string): Promise<CompanyMtdRead> {
   try {
     const response = await fetch(COMPANY_MTD_URL(month), {
       next: { revalidate: 900 },
+      // A stalled GitHub Pages must not hold the Months page or the audit.
+      signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) {
       return { ok: false, error: `MTD dashboard answered ${response.status}.` };

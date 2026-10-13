@@ -48,6 +48,17 @@ describe("companyMtdChecks", () => {
     expect(results.filter((r) => r.status === "pass")).toHaveLength(4);
   });
 
+  it("passes one call of timing on a small count, fails three", async () => {
+    const status = async (won: number) =>
+      (
+        await companyMtdChecks(now, async () =>
+          report({ ...october, won }, { ok: true, totals: october }),
+        )
+      ).find((r) => r.checkId === "company-mtd-won")?.status;
+    expect(await status(16)).toBe("pass");
+    expect(await status(18)).toBe("fail");
+  });
+
   it("never reads an unreachable dashboard as agreement", async () => {
     const results = await companyMtdChecks(now, async () =>
       report(october, { ok: false, error: "MTD dashboard answered 404." }),

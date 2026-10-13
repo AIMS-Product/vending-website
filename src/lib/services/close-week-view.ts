@@ -26,7 +26,7 @@ import type { CloseDeal } from "@/lib/services/close-wins";
 export const NO_SOURCE_LABEL = "No source";
 
 export const CLOSE_VIEW_SOURCE =
-  'Close: first calls by "First Sales Call Booked Date", leaving out leads now "Canceled (by Lead)" or "Outside the US" and the "LTF - Quiz Funnel" funnel (the SteelTrap rule); showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
+  'Close: first calls by "First Sales Call Booked Date", leaving out leads now "Canceled (by Lead)" or "Outside the US" the "LTF - Quiz Funnel" funnel (the SteelTrap rule), and other company brands (The Land Geek, Publishing Profits Academy) as the MTD dashboard does; showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
 
 /** Close lead statuses SteelTrap leaves out of booked, matched without emoji. */
 const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
