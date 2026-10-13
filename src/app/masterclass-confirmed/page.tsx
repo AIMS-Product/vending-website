@@ -16,6 +16,7 @@ import { ShowUpLive } from "@/components/sections/masterclass/ShowUpLive";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { RegisteredTracker } from "@/components/sections/masterclass/RegisteredTracker";
+import { CalendarAddRecorder } from "@/components/sections/masterclass/CalendarAddRecorder";
 import { config } from "@/lib/config";
 import {
   calendarLinks,
@@ -105,6 +106,7 @@ export default async function MasterclassConfirmedPage({
       <TrackedClicks />
       <StripPiiParams />
       <RegisteredTracker justRegistered={registeredAs !== undefined} />
+      {hasSession ? <CalendarAddRecorder /> : null}
       <RevealObserver />
       <ConfirmedHero
         first={first}

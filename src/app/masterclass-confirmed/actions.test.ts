@@ -8,7 +8,7 @@ import {
   SESSION_TTL_MS,
   signMasterclassSession,
 } from "@/lib/masterclass-session";
-import { saveMasterclassIntake } from "./actions";
+import { recordCalendarAdd, saveMasterclassIntake } from "./actions";
 
 const SECRET = "k".repeat(32);
 
@@ -26,6 +26,16 @@ vi.mock("next/headers", () => ({
   cookies: async () => ({ get: mocks.cookie, set: mocks.cookieSet }),
 }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
+const event = vi.hoisted(() => ({
+  label: "October 20, 2026 at 7:30 PM CDT" as string | null,
+}));
+vi.mock("@/lib/services/masterclass-event", () => ({
+  getMasterclassEvent: async () => ({
+    label: event.label,
+    startsAt: null,
+    anthony: null,
+  }),
+}));
 vi.mock("@/lib/public-rate-limit", async () => ({
   ...(await vi.importActual<typeof import("@/lib/public-rate-limit")>(
     "@/lib/public-rate-limit",
@@ -222,5 +232,61 @@ describe("saveMasterclassIntake", () => {
     expect(state.values).toEqual(ANSWERS);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(mocks.cookieSet).not.toHaveBeenCalled();
+  });
+});
+
+describe("recordCalendarAdd", () => {
+  beforeEach(() => {
+    event.label = "October 20, 2026 at 7:30 PM CDT";
+  });
+
+  it("tags the cookie's contact with this room's calendar tag", async () => {
+    expect(await recordCalendarAdd("google")).toEqual({ recorded: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://services.leadconnectorhq.com/contacts/c1/tags");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual({
+      tags: ["webinar-oct20-calendar-google"],
+    });
+    expect(mocks.checkPublicRateLimit).toHaveBeenCalledWith(
+      "masterclass_calendar",
+      { ip: null, email: "contact:c1" },
+      { failClosed: true },
+    );
+  });
+
+  it.each([["yahoo"], [undefined], [{ app: "google" }]])(
+    "refuses an app outside the three buttons (%s)",
+    async (app) => {
+      expect(await recordCalendarAdd(app)).toEqual({ recorded: false });
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it("writes nothing without a valid signed session", async () => {
+    mocks.cookie.mockImplementation((name: string) =>
+      name === SESSION_COOKIE
+        ? { name, value: signMasterclassSession("c1", "x".repeat(32)) }
+        : undefined,
+    );
+    expect(await recordCalendarAdd("apple")).toEqual({ recorded: false });
+    mocks.cookie.mockReturnValue(undefined);
+    expect(await recordCalendarAdd("apple")).toEqual({ recorded: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("writes nothing when rate limited or the room date is unreadable", async () => {
+    mocks.checkPublicRateLimit.mockResolvedValueOnce(false);
+    expect(await recordCalendarAdd("outlook")).toEqual({ recorded: false });
+    event.label = null;
+    expect(await recordCalendarAdd("outlook")).toEqual({ recorded: false });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("returns not recorded, never throws, when GHL refuses", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    fetchMock.mockResolvedValue(new Response("no", { status: 400 }));
+    expect(await recordCalendarAdd("google")).toEqual({ recorded: false });
   });
 });
