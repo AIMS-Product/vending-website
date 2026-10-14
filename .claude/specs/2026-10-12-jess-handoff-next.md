@@ -186,3 +186,33 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
    Expect 10-15's run to pass day-holes unless a real interior gap appears.
 6. Open PRs left alone (owned by other sessions or Adam): vending-website #170 #168 #122 #119 #92 #90 #82 + 11
    dependabot; vp-webinars #35 (Oct 20 GHL tag "webinar-20oct", handles the missing tag) #28 #21 #7 #6.
+
+## Session 2026-10-14 ~15:00Z (Oct 14 morning PT, account .claude-aims)
+
+1. Too early: the Oct 15 12:30Z audit (#175's first run), the Oct 16 GHL delivery report, and the Adv+ vs LLA recompute
+   (Oct 13 7-day booking window closes Oct 20). Next session: run items 1, 4, 5 of the prompt from there.
+2. GitHub 403 for the MTD build time: none. `vercel logs --environment production --since 2026-10-14T05:30Z --query
+   "MTD build time"` returned 0 rows (same search for level=error returned 11 rows, so the search itself works).
+3. MTD dispatcher: still Dom's laptop. archives/data-2026-10.json commits since 10-09 20:27Z are all "Local automation"
+   by Dom Ellis at 1-7 h gaps (last 10-14 11:39Z); the Actions runs are Pages deploys from those pushes. Not back on the
+   15-min schedule. Ask Dom again.
+4. Oct 20 room, read only (GET 15:00Z): Zoom 82284428904 still starts 23:00Z (6:00 PM CT), reminders enable=False type=0.
+   Not fixed yet. `preflight.py 2026-10-20`: 10 pass, 10 fail. FAILs: both /masterclass pages (show 7:30, Zoom says 6:00;
+   correct failure), 6 short links (unchanged: oct06/sept01, Bitly, Adam), Zoom reminders, Close.
+   GHL tag webinar-20oct (#35 merged): 59 tagged, 59 in Zoom with a link, PASS.
+   NEW: 5 of 59 Oct 20 GHL registrants are not in Close (email or phone). All 5 registered 00:58-01:21Z Oct 14, during
+   the Oct 13 room, source "Site Masterclass Registration"; every later registrant reached Close. Masterclass sign-ups
+   do not go through lead_submissions (only 3 contact rows in that window, all synced), so the drop is in the GHL->Close
+   Zapier. Read-only: check Zapier task history for that window (Ivan) or re-run the zap for those 5.
+5. Item 6 LOW (#175, leading empty days count as holes): no change. Both probes (channel_daily visits,
+   youtube_video_daily views) are mature feeds with data before the 15-day window, so an empty first day is a real
+   hole. Only a feed that starts inside the window would false-alarm; none does.
+6. Handoff artifact NVWBNZzvXKeDsraYubZVAV readable from .claude-aims (the owner). Numbers section republished (v4):
+   scorecard Oct 5-11 175 booked (was 176) / 620 MQLs / $11,287 / $18.20 (+17%); paid 30d (Sept 15-Oct 14) Meta $42,587,
+   3,027 sign-ups, 159 booked, 8 won (Paid ads card network row); Google $6,726, 107 leads, 55 booked, $122, $21,891
+   (Google Ads page totals, same source as before); Oct 13 result 598 reg / 125 att / peak 79 / 13 booked / $10,650 /
+   $819 per booked (board recap). Figures read with the admin's own loaders (tsx, server-only + next/cache stubbed).
+   Open items section NOT updated: "Tomorrow" item is stale, and the Meta "Decide" item still reads the pre-correction
+   Adv+ framing (see 06:30Z finding 1). Needs Adam's call on wording.
+7. Production: the site chatbot fails every turn since at least 10-14 00:07Z: "OpenAI rejected the chat request: You
+   have no credits remaining" (8 failures in logs). Billing, Adam.
