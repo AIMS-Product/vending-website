@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { adminCardClass } from "@/components/admin/AdminUi";
+import { adminCardClass, adminLinkClass } from "@/components/admin/AdminUi";
 import { BookedCallsV2Panel } from "@/components/admin/BookedCallsV2Panel";
 import { CloseMonthlyPanel } from "@/components/admin/CloseMonthlyPanel";
 import { CloseMtdFunnelPanel } from "@/components/admin/CloseMtdFunnelPanel";
@@ -51,6 +51,19 @@ export default async function AnalyticsMonthsPage({
       trust={trust}
     >
       <div className="space-y-5">
+        {/* Dom and the sales floor compare this page against the MTD
+            dashboard; say up front that two rules are on it. */}
+        <p className={`${adminCardClass} text-ui-text-muted text-sm`}>
+          Two booked-call rules run side by side on this page.{" "}
+          <a href="#booked-v2" className={adminLinkClass}>
+            Booked calls V2
+          </a>{" "}
+          is Dom&apos;s shared rule: one credit per qualifying Close meeting,
+          dated by the day the meeting was booked. Every other panel is the
+          legacy rule: one row per lead, dated by its First Sales Call Booked
+          Date (the day the call is scheduled for). The two do not match, by
+          design.
+        </p>
         <Suspense fallback={<Skeleton label="months" />}>
           <MonthlyBody
             report={monthly}

@@ -774,3 +774,49 @@ describe("staleOnOwnDay", () => {
     expect(staleOnOwnDay(rows, () => "leads")).toEqual([rows[1]]);
   });
 });
+
+describe("close-meetings", () => {
+  const meetingsRun = (stored: number, calls: string[]) =>
+    runDataAudit({
+      now,
+      client: fakeClient({
+        close_meetings: Array.from({ length: stored }, (_, i) => ({ id: i })),
+      }),
+      ga4: null,
+      calendly: null,
+      metricool: null,
+      youtube: null,
+      ghl: null,
+      monthly: async () => ({ ok: false, error: "not under test" }) as never,
+      mtd: async () => ({ ok: false, error: "not under test" }) as never,
+      close: {
+        listCustomFields: async () => ({ data: [] }),
+        searchLeads: async () => ({}),
+        // Close has no count for meetings: two pages, 105 meetings.
+        listMeetings: async (gte: string, lt: string, skip = 0) => {
+          calls.push(`${gte}|${lt}|${skip}`);
+          return {
+            data: Array.from({ length: skip === 0 ? 100 : 5 }),
+            has_more: skip === 0,
+          };
+        },
+      },
+    });
+
+  it("pages the settled week and passes when the mirror holds every meeting", async () => {
+    const calls: string[] = [];
+    const run = await meetingsRun(105, calls);
+    const check = run.results.find((r) => r.checkId === "close-meetings");
+    expect(check).toMatchObject({ status: "pass", ours: 105, source: 105 });
+    expect(calls).toEqual([
+      "2026-09-12T00:00:00Z|2026-09-19T00:00:00Z|0",
+      "2026-09-12T00:00:00Z|2026-09-19T00:00:00Z|100",
+    ]);
+  });
+
+  it("fails when the mirror is missing meetings Close has", async () => {
+    const run = await meetingsRun(100, []);
+    const check = run.results.find((r) => r.checkId === "close-meetings");
+    expect(check?.status).toBe("fail");
+  });
+});
