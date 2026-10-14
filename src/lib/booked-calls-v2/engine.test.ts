@@ -369,14 +369,24 @@ describe("sources", () => {
     ).toEqual({ source: "YouTube", basis: "contact_utm" });
   });
 
-  it("uses Resource Tag only with no UTM evidence, and only the webinar tag", () => {
+  // Dom's rules.json (v2.2) maps only website-application and newsletter
+  // tags; his certified pull held an internal-webinar-tagged lead
+  // (redacted_48bdbdc1b297) as origin unavailable.
+  it("uses Resource Tag only with no UTM evidence, and only Dom's mapped tags", () => {
+    expect(
+      resolveOrigin({
+        funnel: null,
+        contactUtms: [],
+        resourceTag: "website-application",
+      }),
+    ).toEqual({ source: "Website", basis: "resource_tag" });
     expect(
       resolveOrigin({
         funnel: null,
         contactUtms: [],
         resourceTag: "internal-webinar",
       }),
-    ).toEqual({ source: "Internal Webinar", basis: "resource_tag" });
+    ).toEqual({ source: null, basis: "unknown" });
     expect(
       resolveOrigin({
         funnel: null,
