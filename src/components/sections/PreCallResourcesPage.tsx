@@ -4,6 +4,9 @@ import {
   VidalyticsGlobalTag,
   VidalyticsPlayer,
 } from "@/components/media/VidalyticsPlayer";
+import { YouTubeEmbedFrame } from "@/components/sections/YouTubeEmbedFrame";
+import { youtubePoster } from "@/lib/content/masterclass-replay";
+import { getVideoEmbed } from "@/lib/page-builder/video-embeds";
 import {
   preCallHero,
   preCallNext,
@@ -154,7 +157,7 @@ function PreCallOperators() {
 }
 
 /**
- * One operator. Most are a Vidalytics video; the hardest-start tier includes
+ * One operator. Most are a YouTube video; the hardest-start tier includes
  * members whose story is a published /case-studies article rather than a
  * video, so those render their pull quote and link to the article instead.
  */
@@ -163,7 +166,10 @@ function OperatorCard({
 }: {
   operator: (typeof preCallOperators.items)[number];
 }) {
-  const embedId = "embedId" in operator ? operator.embedId : null;
+  const youtubeId = "youtubeId" in operator ? operator.youtubeId : null;
+  const embed = youtubeId
+    ? getVideoEmbed(`https://www.youtube.com/watch?v=${youtubeId}`)
+    : null;
   const href = "href" in operator ? operator.href : null;
   const quote = "quote" in operator ? operator.quote : null;
 
@@ -175,12 +181,12 @@ function OperatorCard({
       <p className="mt-2 text-[13px] font-black tracking-[0.08em] text-[#111111] uppercase">
         {operator.stats.join(" \u00b7 ")}
       </p>
-      {embedId ? (
-        <VidalyticsPlayer
-          embedId={embedId}
-          loadOn="click"
+      {embed ? (
+        <YouTubeEmbedFrame
+          embed={embed}
           title={operator.name}
-          className="mt-5"
+          thumbnailUrl={youtubePoster(embed.id)}
+          className="rounded-card border-ink shadow-card mt-5 aspect-video w-full border-2"
         />
       ) : (
         quote && (

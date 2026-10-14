@@ -175,8 +175,8 @@ export type ReplayVariant = {
 
 const youtube = (id: string): ReplayVideo => ({ kind: "youtube", id });
 /**
- * Vidalytics shows nothing until its player loads, so each meta testimonial
- * borrows the YouTube thumbnail of the same member's story as its poster.
+ * A YouTube video's own full-size thumbnail, for posters (the pre-call operator
+ * stories; until 2026-10-14 also the meta testimonials' Vidalytics players).
  * maxresdefault (1280x720, no letterbox) rather than hqdefault (480x360,
  * letterboxed), which was soft at the ~400px card width on retina. Resolved
  * by hand rather than at runtime: all five ids served a real maxresdefault on
@@ -186,14 +186,10 @@ const youtube = (id: string): ReplayVideo => ({ kind: "youtube", id });
 export const youtubePoster = (id: string) =>
   `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
 
-const vidalytics = (embedId: string, posterOf: string): ReplayVideo => ({
-  kind: "vidalytics",
-  embedId,
-  poster: youtubePoster(posterOf),
-});
-
 // Same five member videos as GHL, in the order of the five testimonials below
-// (Michael, Joe, Shannon, Mallorie, Katie + Graham).
+// (Michael, Joe, Shannon, Mallorie, Katie + Graham). Meta used Vidalytics
+// copies of the same five until 2026-10-14; every page now plays the YouTube
+// copies so plays feed YouTube history and ad audiences.
 const YOUTUBE_TESTIMONIAL_VIDEOS = [
   youtube("U7KKbZHqBvg"),
   youtube("gvvz2nMax0w"),
@@ -202,13 +198,19 @@ const YOUTUBE_TESTIMONIAL_VIDEOS = [
   youtube("heSbv_uG734"),
 ] as const;
 
-const META_TESTIMONIAL_VIDEOS = [
-  vidalytics("JcjYb4jILP6zsniI", "U7KKbZHqBvg"),
-  vidalytics("U1unfH4Jvr6TjBrS", "gvvz2nMax0w"),
-  vidalytics("OHz6S1sB3ahBvu8D", "yP4Y_BBAvq4"),
-  vidalytics("5IT3tUDRQOJfSJ2m", "io1Jkei-yFs"),
-  vidalytics("LchE9_kgP012adAZ", "heSbv_uG734"),
-] as const;
+/**
+ * The meta page's former Vidalytics testimonial ids -> the YouTube copy each
+ * was swapped for on 2026-10-14. Plays recorded before the swap are stored
+ * under the left-hand id; reports read them as the YouTube video.
+ */
+export const RETIRED_VIDALYTICS_TESTIMONIALS: Readonly<Record<string, string>> =
+  {
+    JcjYb4jILP6zsniI: "U7KKbZHqBvg",
+    U1unfH4Jvr6TjBrS: "gvvz2nMax0w",
+    OHz6S1sB3ahBvu8D: "yP4Y_BBAvq4",
+    "5IT3tUDRQOJfSJ2m": "io1Jkei-yFs",
+    LchE9_kgP012adAZ: "heSbv_uG734",
+  };
 
 /**
  * DNA's and Meta's booking copy. GHL's DNA paragraph said "schedule a
@@ -318,7 +320,7 @@ export const replayVariants: Record<ReplayVariantKey, ReplayVariant> = {
     hero: { label: "Book my free advisory call", target: "cta" },
     cta: READY_TO_BUILD,
     closing: { label: "Book my free advisory call", target: "cta" },
-    testimonialVideos: META_TESTIMONIAL_VIDEOS,
+    testimonialVideos: YOUTUBE_TESTIMONIAL_VIDEOS,
   },
   advisory: {
     key: "advisory",

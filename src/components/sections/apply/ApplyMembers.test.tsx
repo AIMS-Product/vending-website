@@ -13,7 +13,7 @@ import musaSadi from "../../../../data/case-studies/musa-sadi.json";
   preCallOperators, so a figure can never say one thing here and another there.
 */
 const TOP = preCallOperators.items.filter(
-  (item) => item.tier === "high" && "embedId" in item,
+  (item) => item.tier === "high" && "youtubeId" in item,
 );
 
 /** "Graham & Katie Parker" renders as "Graham &amp; Katie Parker". */
@@ -74,15 +74,16 @@ describe("ApplyMembers success stories", () => {
   });
 
   /*
-    Vidalytics autoplays muted. That suits the pre-call page, whose visitor has
-    already booked; here it would put four videos talking at someone in the
-    middle of the form, and load four player scripts before anyone asked for
-    one. The players mount on click instead.
+    Four videos playing at someone in the middle of the form, and four
+    players loaded before anyone asked for one, is what this section avoids.
+    The players mount on click instead.
   */
   it("mounts no player until a story is played", () => {
     expect(html).not.toContain("vidalytics_embed_");
+    expect(html).not.toContain("youtube.com/embed");
+    expect(TOP.length).toBeGreaterThan(0);
     for (const story of TOP) {
-      expect(html).not.toContain((story as { embedId: string }).embedId);
+      expect(html).not.toContain((story as { youtubeId: string }).youtubeId);
     }
   });
 

@@ -18,14 +18,31 @@
  */
 
 /**
- * The quarters.
+ * "Played with sound", stored as 1%: the visitor pressed play (or unmuted) and
+ * audio actually ran. Added 2026-10-14 so plays can be counted per page, not
+ * only quarters. Readers that mean "watched" start at WATCHED_FROM_PERCENT, so
+ * a five-second play never shows up as watching on a rep's note.
+ */
+export const PLAYED_PERCENT = 1;
+
+/** The first quarter: where "watched" starts for every rep-facing reader. */
+export const WATCHED_FROM_PERCENT = 25;
+
+/**
+ * The play, then the quarters.
  *
- * One event per crossing, carrying the furthest quarter reached — never one
+ * One event per crossing, carrying the furthest milestone reached — never one
  * per milestone. A scrub crosses several at once, storage keeps only the
  * maximum, and sending them separately made simultaneous writes race each
  * other for a number they all agreed on.
  */
-export const VIDEO_MILESTONES = [25, 50, 75, 100] as const;
+export const VIDEO_MILESTONES = [
+  PLAYED_PERCENT,
+  WATCHED_FROM_PERCENT,
+  50,
+  75,
+  100,
+] as const;
 
 /**
  * Percent of the video watched, or null when the player cannot yet say.
@@ -70,7 +87,11 @@ export function audiblePercentWatched(
   muted: boolean,
 ): number | null {
   if (muted) return null;
-  return percentWatched(currentTime, duration);
+  const percent = percentWatched(currentTime, duration);
+  // Any audible playback is at least the play milestone, even in the first
+  // 1% of a long video (the replay's first 1% is 100 seconds).
+  if (percent === 0 && currentTime > 0) return PLAYED_PERCENT;
+  return percent;
 }
 
 /**

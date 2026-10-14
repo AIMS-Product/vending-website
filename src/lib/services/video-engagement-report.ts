@@ -1,6 +1,9 @@
 import "server-only";
 
-import { preCallVideos } from "@/lib/content/pre-call-resources";
+import {
+  preCallVideoByEmbedId,
+  preCallVideos,
+} from "@/lib/content/pre-call-resources";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { chunk } from "@/lib/batch";
 import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
@@ -274,9 +277,7 @@ function buildWatcherRow(
 
   const deepest = views
     .map((view) => ({
-      label:
-        preCallVideos.find((video) => video.embedId === view.embed_id)?.label ??
-        view.embed_id,
+      label: preCallVideoByEmbedId.get(view.embed_id)?.label ?? view.embed_id,
       percent: view.max_percent,
     }))
     .sort((a, b) => b.percent - a.percent)[0];
@@ -382,7 +383,18 @@ function buildVideoBreakdown(viewRows: ViewRow[]): VideoBreakdownRow[] {
 
   return preCallVideos
     .map((video) => {
-      const views = byEmbed.get(video.embedId) ?? [];
+      // A story swapped to YouTube keeps the plays it had under Vidalytics;
+      // a browser that played both counts once, at its furthest point.
+      const bySession = new Map<string, ViewRow>();
+      for (const view of [
+        ...(byEmbed.get(video.embedId) ?? []),
+        ...(video.legacyEmbedId ? (byEmbed.get(video.legacyEmbedId) ?? []) : []),
+      ]) {
+        const seen = bySession.get(view.vp_session_id);
+        if (!seen || view.max_percent > seen.max_percent)
+          bySession.set(view.vp_session_id, view);
+      }
+      const views = [...bySession.values()];
       const at = (floor: number) =>
         views.filter((v) => v.max_percent >= floor).length;
 

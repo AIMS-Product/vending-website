@@ -62,6 +62,10 @@
       "schedule": "40 11 * * *"
     },
     {
+      "path": "/api/admin/youtube-playback-sync/run",
+      "schedule": "45 */3 * * *"
+    },
+    {
       "path": "/api/admin/search-console-sync/run",
       "schedule": "50 11 * * *"
     },

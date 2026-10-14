@@ -6,7 +6,10 @@ import {
 } from "@/lib/content/pre-call-resources";
 import { chunk, ID_BATCH } from "@/lib/batch";
 import type { BookingLinks } from "@/lib/services/calendly-booking-sessions";
-import { VIDEO_VIEWS_TRUSTED_FROM } from "@/lib/tracking/video-engagement";
+import {
+  VIDEO_VIEWS_TRUSTED_FROM,
+  WATCHED_FROM_PERCENT,
+} from "@/lib/tracking/video-engagement";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Json } from "@/types/database";
 
@@ -70,8 +73,13 @@ type VideoViewRow = {
  * engagement because we changed the page after they watched it.
  */
 export function summariseEngagement(
-  allRows: VideoViewRow[],
+  viewRows: VideoViewRow[],
 ): PreCallEngagement {
+  // A play that never reached the first quarter is a press, not watching: the
+  // rep's note keeps meaning what it meant before plays were recorded.
+  const allRows = viewRows.filter(
+    (row) => row.max_percent >= WATCHED_FROM_PERCENT,
+  );
   if (allRows.length === 0) return EMPTY_ENGAGEMENT;
 
   // One row per video: the same video seen in two sessions keeps its furthest.

@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import {
-  emitAttributionEvent,
-  readStoredAttributionSession,
-} from "@/lib/attribution-client";
+import { readStoredAttributionSession } from "@/lib/attribution-client";
 import {
   getVidalyticsPlayer,
   vidalyticsContainerId,
 } from "@/lib/tracking/vidalytics-player";
-import {
-  audiblePercentWatched,
-  milestonesReached,
-} from "@/lib/tracking/video-engagement";
+import { audiblePercentWatched } from "@/lib/tracking/video-engagement";
+import { createVideoProgressReporter } from "@/lib/tracking/video-progress-reporter";
 
 /**
  * Reports how far a visitor got through one Vidalytics video.
@@ -38,37 +33,9 @@ export function VideoEngagement({ embedId }: { embedId: string }) {
     const session = readStoredAttributionSession();
     if (!session) return;
 
-    const reported = new Set<number>();
+    const report = createVideoProgressReporter(embedId, session);
     let detach: (() => void) | undefined;
     let cancelled = false;
-
-    const report = (
-      percent: number,
-      pagePath: string,
-      durationSeconds: number,
-    ) => {
-      const crossed = milestonesReached(percent, reported);
-      if (crossed.length === 0) return;
-      for (const milestone of crossed) reported.add(milestone);
-
-      // One event carrying the furthest milestone, not one per milestone. A
-      // scrub crosses several at once and storage keeps only the maximum, so
-      // the extra beacons said nothing the first one did not — while racing
-      // each other and spending four times the rate-limit budget.
-      const milestone = crossed[crossed.length - 1];
-      emitAttributionEvent("video_progress", session, {
-        embed_id: embedId,
-        // Sent as a string because the attribution route's schema and the
-        // downstream ingest both take string properties; the service parses
-        // it back before storing.
-        percent: String(milestone),
-        page_path: pagePath,
-        // The video's full length, so a percent can be read back as time.
-        // Sent per event rather than looked up: only the player knows it,
-        // and marketing swaps videos without telling anyone.
-        duration_seconds: String(Math.round(durationSeconds)),
-      });
-    };
 
     // The container id is the key the player registers under; the embed id is
     // what we store, because that is what names a video to a human.

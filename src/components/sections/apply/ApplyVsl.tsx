@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { YouTubeTrackedIframe } from "@/components/media/YouTubeTrackedIframe";
 import { APPLY_VSL_ANCHOR, applyVsl } from "@/lib/content/apply-page";
 import { PlayIcon } from "./icons";
 
@@ -47,12 +48,10 @@ export function ApplyVsl({
       ) : null}
       <div className="relative aspect-video overflow-hidden rounded-[12px] border-2 border-[#111111] shadow-[8px_8px_0_#111111]">
         {isPlaying ? (
-          <iframe
-            className="absolute inset-0 size-full"
-            src={`https://www.youtube-nocookie.com/embed/${vsl.youtubeId}?autoplay=1&rel=0`}
+          <YouTubeTrackedIframe
+            videoId={vsl.youtubeId}
             title={`${vsl.watchLabel} — Vendingpreneurs`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
+            className="absolute inset-0 size-full"
           />
         ) : (
           <button

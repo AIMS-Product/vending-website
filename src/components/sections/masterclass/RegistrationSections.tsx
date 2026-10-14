@@ -82,6 +82,7 @@ export function HostBand({ stats }: { stats: AnthonyStats | null }) {
               title={hostCopy.videoTitle}
               thumbnailUrl={hostVideoPoster}
               className="aspect-video w-full rounded-[10px]"
+              autoplayMuted
             />
           </div>
         ) : null}

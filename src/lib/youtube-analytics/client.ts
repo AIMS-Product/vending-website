@@ -55,22 +55,28 @@ export class YouTubeAnalyticsError extends Error {
   }
 }
 
-type ResultTable = {
+export type ResultTable = {
   columnHeaders?: Array<{ name: string }>;
   rows?: Array<Array<string | number | null>>;
 };
 
-export function createYouTubeAnalyticsClient(options: {
+type ClientOptions = {
   clientId: string;
   clientSecret: string;
   refreshToken: string;
   fetchImpl?: typeof fetch;
   now?: () => number;
-}): YouTubeAnalyticsClient {
+};
+
+/**
+ * One authorised GET against the reports endpoint. The access token is cached
+ * until a minute before it expires, so a run of many reports refreshes once.
+ * `ids=channel==MINE` is always set; the caller passes everything else.
+ */
+export function createYouTubeReportRequester(options: ClientOptions) {
   const fetchImpl = options.fetchImpl ?? fetch;
   const now = options.now ?? (() => Date.now());
   let cached: { value: string; expiresAt: number } | null = null;
-  let metrics: readonly string[] = FULL_METRICS;
   const timedOut = (error: Error) =>
     new YouTubeAnalyticsError(error.message, 504);
 
@@ -116,18 +122,12 @@ export function createYouTubeAnalyticsClient(options: {
     return cached.value;
   }
 
-  async function query(day: string, startIndex: number): Promise<ResultTable> {
+  return async function request(
+    query: Record<string, string>,
+    what: string,
+  ): Promise<ResultTable> {
     const token = await accessToken();
-    const params = new URLSearchParams({
-      ids: "channel==MINE",
-      startDate: day,
-      endDate: day,
-      metrics: metrics.join(","),
-      dimensions: "video",
-      sort: "-views",
-      maxResults: String(PAGE_SIZE),
-      startIndex: String(startIndex),
-    });
+    const params = new URLSearchParams({ ids: "channel==MINE", ...query });
     const response = await fetchWithTimeout(
       fetchImpl,
       `${REPORTS_URL}?${params.toString()}`,
@@ -140,19 +140,49 @@ export function createYouTubeAnalyticsClient(options: {
       { label: "YouTube Analytics", onTimeout: timedOut },
     );
     const text = await response.text();
-    if (response.status === 400 && metrics === FULL_METRICS) {
-      // ponytail: one retry without thumbnail impressions; impressions stays
-      // null for the run rather than failing the whole connector.
-      metrics = CORE_METRICS;
-      return query(day, startIndex);
-    }
     if (!response.ok) {
       throw new YouTubeAnalyticsError(
-        `YouTube Analytics ${response.status} for ${day}: ${text.slice(0, 200)}`,
+        `YouTube Analytics ${response.status} for ${what}: ${text.slice(0, 200)}`,
         response.status,
       );
     }
     return JSON.parse(text) as ResultTable;
+  };
+}
+
+export function createYouTubeAnalyticsClient(
+  options: ClientOptions,
+): YouTubeAnalyticsClient {
+  const request = createYouTubeReportRequester(options);
+  let metrics: readonly string[] = FULL_METRICS;
+
+  async function query(day: string, startIndex: number): Promise<ResultTable> {
+    try {
+      return await request(
+        {
+          startDate: day,
+          endDate: day,
+          metrics: metrics.join(","),
+          dimensions: "video",
+          sort: "-views",
+          maxResults: String(PAGE_SIZE),
+          startIndex: String(startIndex),
+        },
+        day,
+      );
+    } catch (error) {
+      if (
+        error instanceof YouTubeAnalyticsError &&
+        error.status === 400 &&
+        metrics === FULL_METRICS
+      ) {
+        // ponytail: one retry without thumbnail impressions; impressions stays
+        // null for the run rather than failing the whole connector.
+        metrics = CORE_METRICS;
+        return query(day, startIndex);
+      }
+      throw error;
+    }
   }
 
   return {

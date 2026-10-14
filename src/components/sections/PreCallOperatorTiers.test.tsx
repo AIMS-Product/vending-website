@@ -36,7 +36,7 @@ describe("pre-call operator tiers", () => {
 
   it("gives every operator either a video or a linked, quoted article", () => {
     for (const operator of preCallOperators.items) {
-      const hasVideo = "embedId" in operator;
+      const hasVideo = "youtubeId" in operator;
       const hasArticle = "href" in operator && "quote" in operator;
       expect(hasVideo || hasArticle).toBe(true);
     }
