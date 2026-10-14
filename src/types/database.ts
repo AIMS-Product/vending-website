@@ -1629,6 +1629,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      youtube_playback_sync_state: {
+        Row: {
+          synced_at: string;
+          synced_through: string;
+          video_id: string;
+        };
+        Insert: {
+          synced_at?: string;
+          synced_through: string;
+          video_id: string;
+        };
+        Update: {
+          synced_at?: string;
+          synced_through?: string;
+          video_id?: string;
+        };
+        Relationships: [];
+      };
       youtube_video_daily: {
         Row: {
           card_clicks: number | null;
@@ -1653,6 +1671,66 @@ export type Database = {
           card_impressions?: number | null;
           day?: string;
           impressions?: number | null;
+          synced_at?: string;
+          video_id?: string;
+          views?: number | null;
+        };
+        Relationships: [];
+      };
+      youtube_video_embed_pages: {
+        Row: {
+          engaged_views: number | null;
+          minutes_watched: number | null;
+          month: string;
+          page: string;
+          synced_at: string;
+          video_id: string;
+          views: number | null;
+        };
+        Insert: {
+          engaged_views?: number | null;
+          minutes_watched?: number | null;
+          month: string;
+          page: string;
+          synced_at?: string;
+          video_id: string;
+          views?: number | null;
+        };
+        Update: {
+          engaged_views?: number | null;
+          minutes_watched?: number | null;
+          month?: string;
+          page?: string;
+          synced_at?: string;
+          video_id?: string;
+          views?: number | null;
+        };
+        Relationships: [];
+      };
+      youtube_video_playback_daily: {
+        Row: {
+          day: string;
+          engaged_views: number | null;
+          location_type: string;
+          minutes_watched: number | null;
+          synced_at: string;
+          video_id: string;
+          views: number | null;
+        };
+        Insert: {
+          day: string;
+          engaged_views?: number | null;
+          location_type: string;
+          minutes_watched?: number | null;
+          synced_at?: string;
+          video_id: string;
+          views?: number | null;
+        };
+        Update: {
+          day?: string;
+          engaged_views?: number | null;
+          location_type?: string;
+          minutes_watched?: number | null;
           synced_at?: string;
           video_id?: string;
           views?: number | null;
