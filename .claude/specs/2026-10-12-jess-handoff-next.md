@@ -176,3 +176,13 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
    registrants the corrected time, which is wanted.
 3. Audit nights 10-09..10-13: only known items (10-11 YouTube 10-08 hole, 10-12 Metricool Meta empty -> Meta API,
    10-13 company-mtd-booked = stale cache, fixed #171). Watching the 10-14 12:30Z run.
+4. First audit with #171 (10-14 12:30Z): company-mtd-* all PASS, exact: 251/138/99/17/$153,311 vs MTD (MTD built
+   11:39Z, so compared, not skipped). 28 pass, 1 fail: day-holes "YouTube views on 2026-10-11".
+5. MERGED #175 (cc414bc0, prod 12:44Z) after code-reviewer (safe; MEDIUM fixed). day-holes failed 6 of 24 nights since
+   09-01 (09-19, 09-20, 09-30, 10-01, 10-08, 10-11), all YouTube publishing day D after the D+3 11:40Z sync; every
+   one filled in later (checked in youtube_video_daily). Now only an empty day with data after it is a hole.
+   Reviewer MEDIUM: a fully dead feed then read ours=null -> skipped -> no alert; `storedOrZero` makes
+   youtube-views / ga4-visits-spine / ga4-page-views FAIL when we store nothing and the source has numbers.
+   Expect 10-15's run to pass day-holes unless a real interior gap appears.
+6. Open PRs left alone (owned by other sessions or Adam): vending-website #170 #168 #122 #119 #92 #90 #82 + 11
+   dependabot; vp-webinars #35 (Oct 20 GHL tag "webinar-20oct", handles the missing tag) #28 #21 #7 #6.
