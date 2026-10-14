@@ -323,7 +323,24 @@ export const LANE2_ROSTER = {
  * earning credit while the team page shows them as unclassified until someone
  * says which job they hold. Guessing is what this page exists to stop.
  */
-const OFF_ROSTER_BOOKERS = ["Beatrice Braescu Cojocaru", "Josh Stoffel"];
+const OFF_ROSTER_BOOKERS = [
+  "Beatrice Braescu Cojocaru",
+  "Josh Stoffel",
+  // Setters in Dom's V2 title map (booked_calls.v2.2) not yet on the sheet.
+  "Ashley Atencio",
+  "Brad Savage",
+  "Catalina",
+  "Connor Mason",
+  "Finley Eastlake",
+  "Ibraheem Khan",
+  "Igor Trojanowski",
+  "Jonathan Quinn",
+  "Kaylane Nunes",
+  "Monde",
+  "Owen Hart",
+  "Rob Maxfield",
+  "Tony Parton",
+];
 
 /** Everyone who books Lane 2 calls, as their name reads in Calendly and Close. */
 export const SETTER_NAMES = [

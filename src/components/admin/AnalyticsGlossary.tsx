@@ -100,6 +100,11 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "A person who booked a first sales call. One person counts once, however many times they reschedule. The sales team's spreadsheet counts every meeting instead, so its totals run about 1.7x ours; both are right, they count different things. On Channels, booked counts only calls a marketing channel can be credited for, roughly half the company total, because the sales team's own rebooking (Reactivation Scrapers) has no channel.",
   },
   {
+    term: "Booked calls V2",
+    meaning:
+      "Dom's shared booked-call rule, shown on the Months page beside the older views. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
+  },
+  {
     term: "Marketing only",
     meaning:
       "The switch beside the dates. It leaves Sales reactivation booked calls and won deals out of every card on the page, credited as the flow card credits them (a lead with a Google click id stays in, as Google Ads). Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",

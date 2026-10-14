@@ -516,6 +516,30 @@ export function createCloseClient({
       );
     },
     /**
+     * One page of the org's meeting activities created in [gte, lt). Read-only.
+     * Fences must be whole seconds: a fractional upper fence made Close drop
+     * the meeting at the latest creation timestamp (Dom, booked calls V2).
+     */
+    listMeetings(gte: string, lt: string, skip = 0) {
+      const params = new URLSearchParams({
+        date_created__gte: gte,
+        date_created__lt: lt,
+        _limit: "100",
+        _skip: String(skip),
+      });
+      return request<{
+        data?: Array<Record<string, unknown>>;
+        has_more?: boolean;
+      }>("GET", `/activity/meeting/?${params.toString()}`);
+    },
+    /** Custom meeting/call outcomes, id and name. Read-only. */
+    listOutcomes() {
+      return request<{ data?: Array<{ id: string; name?: string }> }>(
+        "GET",
+        "/outcome/?_limit=200",
+      );
+    },
+    /**
      * Every Close user, id and name. Read-only. A user custom field such as
      * "Lead Owner" comes back as a user id; this turns it into the name the
      * sales dashboards key their rosters on.

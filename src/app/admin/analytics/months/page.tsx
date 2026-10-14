@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { adminCardClass } from "@/components/admin/AdminUi";
+import { BookedCallsV2Panel } from "@/components/admin/BookedCallsV2Panel";
 import { CloseMonthlyPanel } from "@/components/admin/CloseMonthlyPanel";
 import { CloseMtdFunnelPanel } from "@/components/admin/CloseMtdFunnelPanel";
 import { CloseWeekTab } from "@/components/admin/CloseWeekPanel";
@@ -9,6 +10,7 @@ import {
   singleParam,
   type SearchParams,
 } from "@/components/admin/dashboard/AnalyticsDrillDown";
+import { getBookedCallsV2 } from "@/lib/services/booked-calls-v2-data";
 import { getCloseMonthlyFunnel } from "@/lib/services/close-monthly-funnel-data";
 import { getCloseMtdFunnel } from "@/lib/services/close-mtd-funnel-data";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
@@ -38,6 +40,7 @@ export default async function AnalyticsMonthsPage({
   const monthly = getCloseMonthlyFunnel();
   const mtd = getCloseMtdFunnel();
   const weeks = getCloseWeekView();
+  const v2 = getBookedCallsV2();
   return (
     <AnalyticsDrillDown
       path="/admin/analytics/months"
@@ -58,6 +61,11 @@ export default async function AnalyticsMonthsPage({
         <Suspense fallback={<Skeleton label="this month" />}>
           <MtdBody report={mtd} trust={trust} />
         </Suspense>
+        <section id="booked-v2" className="scroll-mt-6">
+          <Suspense fallback={<Skeleton label="booked calls V2" />}>
+            <V2Body report={v2} />
+          </Suspense>
+        </section>
         <section id="weeks" className="scroll-mt-6">
           <Suspense fallback={<Skeleton label="weeks" />}>
             <WeeksBody
@@ -103,6 +111,14 @@ async function MtdBody({
 }) {
   const [data, { flags }] = await Promise.all([report, trust]);
   return <CloseMtdFunnelPanel report={data} unverified={flags} />;
+}
+
+async function V2Body({
+  report,
+}: {
+  report: ReturnType<typeof getBookedCallsV2>;
+}) {
+  return <BookedCallsV2Panel report={await report} />;
 }
 
 async function WeeksBody({

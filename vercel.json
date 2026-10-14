@@ -70,6 +70,10 @@
       "schedule": "5 * * * *"
     },
     {
+      "path": "/api/admin/close-meetings-sync/run",
+      "schedule": "20 * * * *"
+    },
+    {
       "path": "/api/admin/data-audit/run",
       "schedule": "30 12 * * *"
     },

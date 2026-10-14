@@ -79,6 +79,11 @@ export const FEEDS = {
     staleAfterHours: HOURLY,
     source: { kind: "run", connector: "close-lead-funnel" },
   },
+  "close-meetings": {
+    label: "Close meetings (booked calls V2)",
+    staleAfterHours: HOURLY,
+    source: { kind: "run", connector: "close-meetings" },
+  },
   "ga4-visits": {
     label: "Google Analytics visits by channel",
     staleAfterHours: DAILY,
@@ -191,11 +196,7 @@ const SPINE: readonly FeedKey[] = [
 ];
 
 export type TrustScope =
-  | AnalyticsTabKey
-  | "dashboard"
-  | "data"
-  | "seo"
-  | "google-ads";
+  AnalyticsTabKey | "dashboard" | "data" | "seo" | "google-ads";
 
 /**
  * THE map of tab to the feeds its loader reads. Read off each tab's data
@@ -231,8 +232,9 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   booked: ["calendly", "close"],
   // close-week-view-data.ts + close-mtd-funnel-data.ts: Close mirror
   close: ["close"],
-  // close-monthly-funnel-data.ts: Close mirror, site leads
-  mom: ["close", "site-leads"],
+  // close-monthly-funnel-data.ts: Close mirror, site leads;
+  // booked-calls-v2-data.ts: Close meetings mirror
+  mom: ["close", "site-leads", "close-meetings"],
   // close-won-deals.ts: Close wins + mirror, site forms, Calendly (chats are live)
   won: ["close", "site-leads", "calendly"],
   // funnel-executive.ts: spend from the spine, funnel inputs
@@ -443,12 +445,7 @@ export function judgeAudit(
 // ---------------------------------------------------------------------------
 
 export type CoveredMetric =
-  | "leads"
-  | "booked"
-  | "won"
-  | "revenue"
-  | "calendly"
-  | "spend";
+  "leads" | "booked" | "won" | "revenue" | "calendly" | "spend";
 
 /** Days a check compares, inclusive, as YYYY-MM-DD. */
 export type DayRange = { from: string; to: string };
