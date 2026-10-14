@@ -139,3 +139,22 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
    Oct 13 column all populated. Publish (suite) gate passed 947/947, no open gate issue. Refresh runs
    show "failure" only from site-funnel preflight: 6 short links (Bitly, still Adam), Zoom reminder
    emails off, GHL registrants missing Zoom link. Data health: 1 open problem (short links).
+3. MTD scheduled build is broken since 2026-10-09 (Dom). Repo moved stephenolivas/ -> AIMS-Product on 10-09 ~07:00Z;
+   cron-job.org dispatches under stephenolivas end in `startup_failure` (63 runs, stopped 22:30Z); Dom-MA-ai dispatches
+   ran 07:00-07:30Z only. Since then "Local automation" commits from a laptop, gaps up to 63 h (10-09 20:27 -> 10-12
+   18:57). Sim of the new 2 h gate: 6 of the last 6 mornings (10-08..10-13) would skip; 10-01..10-07 all compared.
+   Ask Dom: re-point the 15-min dispatcher at AIMS-Product/mtd-funnel-dashboard with his own PAT (or add a `schedule:`).
+4. Registrations halved at flat ~$10k/week Meta spend since Sept 29 (cost/reg $10-13 -> $20-22). Cause: the
+   "VP Masterclass Webinar | Purchase | CBO | Adv+" campaign (optimizes for Purchase) took ~60% of spend.
+   Oct 13 week: Adv+ $5,915 -> 48 GHL regs, 16 attended ($370/attendee); LLA Leads $3,904 -> 510 regs, 83 attended
+   ($47). Oct 6: Adv+ $182/attendee vs LLA $42. Adv+ regs attend at 28-33% (LLA 10-20%) and one Sept 29 Adv+ reg
+   won $9,000; ad-level booked attribution too sparse to judge. New Adv+ "US - 2" adset 10-13: $3,793, 28,993 clicks,
+   22 regs (junk placements). Decision for Adam/Jess; Meta untouched.
+5. Oct 13 show rate 20.9% (125/598) = median (range 14.0-28.6% since June; Oct 6 28.6% was the high). The internet
+   drop hit at ~minute 35 (77 -> 32 in room by minute 70; Oct 6 still 85) -> 66 at offer vs 92 -> 13 booked vs 42.
+6. Oct 20 Zoom webinar 82284428904: start 23:00Z = 6:00 PM CT but /masterclass + confirmation say 7:30 PM CT;
+   reminder emails OFF (Oct 13 had type 7). 11 registrants. Owner Jess (run-steps zoom-create). Not changed (Zoom
+   edits email registrants): needs Adam's yes. vp-webinars #33 merged (ecd09e29): preflight now FAILs a page/Zoom
+   time mismatch (/run's zoom-webinar check compared Zoom to a registry copied from Zoom, so it could never fail).
+   Oct 20 GHL tag not set yet (last week set 10-07 04:49Z, right after the room).
+7. Handoff artifact NVWBNZzvXKeDsraYubZVAV: still "not found" from .claude-ma; refresh it from the owning account.
