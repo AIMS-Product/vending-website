@@ -258,7 +258,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   ],
   // booked-calls-data.ts: Calendly, Close
   booked: ["calendly", "close"],
-  // close-week-view-data.ts + close-mtd-funnel-data.ts: Close mirror
+  // close-week-view-data.ts + close-mtd-funnel-data.ts + marketing-mtd-data.ts:
+  // Close mirror
   close: ["close"],
   // close-monthly-funnel-data.ts: Close mirror, site leads;
   // booked-calls-v2-data.ts: Close meetings mirror

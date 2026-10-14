@@ -122,11 +122,21 @@ function bareStatus(status: string | null): string {
     .toLowerCase();
 }
 
+/** Status and brand exclusions alone, without the quiz-funnel rule. */
+export function isExcludedLead(lead: {
+  status?: string | null;
+  businessLine?: string | null;
+}): boolean {
+  return (
+    EXCLUDED_STATUSES.has(bareStatus(lead.status ?? null)) ||
+    EXCLUDED_BUSINESS_LINES.has((lead.businessLine ?? "").trim().toLowerCase())
+  );
+}
+
 export function isExcludedCall(call: CloseCall): boolean {
   return (
-    EXCLUDED_STATUSES.has(bareStatus(call.status)) ||
-    EXCLUDED_FUNNELS.has((call.funnel ?? "").trim().toLowerCase()) ||
-    EXCLUDED_BUSINESS_LINES.has((call.businessLine ?? "").trim().toLowerCase())
+    isExcludedLead(call) ||
+    EXCLUDED_FUNNELS.has((call.funnel ?? "").trim().toLowerCase())
   );
 }
 

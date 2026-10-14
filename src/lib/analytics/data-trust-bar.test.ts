@@ -97,7 +97,12 @@ describe("tab to feed mapping matches what each loader reads", () => {
       "site-video-report",
     ],
     booked: [],
-    close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
+    close: [
+      "close-week-view-data",
+      "close-mtd-funnel-data",
+      "marketing-mtd-data",
+      "close-wins",
+    ],
     mom: [
       "close-monthly-funnel-data",
       "close-monthly-leads",

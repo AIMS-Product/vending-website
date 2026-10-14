@@ -44,18 +44,9 @@ import {
  */
 export const REPORTING_TIME_ZONE = "America/New_York";
 
-/**
- * Jess's goal: book 25 new calls a day. It counts `newBookedOn` (D) only.
- *
- * This does NOT reconcile with the 800 a month in `channel-targets.ts`, and no
- * arithmetic should be drawn between them. That plan counts `firstCallsOnCalendar`
- * (A): Close first sales calls, deduplicated per lead, dated by the day the call
- * is SCHEDULED FOR. This goal counts Calendly bookings, not deduplicated, dated
- * by the day they were MADE, with Lane 2 removed. Different populations on
- * different date bases — 25 x 22 workdays = 550 against 800 is not a gap, it is
- * two unrelated measurements. Both are shown, each against its own target.
- */
-export const DAILY_NEW_CALL_GOAL = 25;
+// Jess's booking goal (125 a week, 25 a workday) is counted on Close's First
+// Sales Call Booked Date, not on Calendly: `WEEKLY_BOOKED_GOAL` in
+// `marketing-mtd.ts` (handoff of 2026-10-14).
 
 /** Whether a metric counts bookings by when they were made or when they land. */
 export type MetricBasis = "booked-on" | "lands-on";

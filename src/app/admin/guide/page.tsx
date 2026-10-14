@@ -54,6 +54,11 @@ const PAGES = [
     answers: "One channel at a time, from capture to sale.",
   },
   {
+    href: "/admin/analytics/marketing",
+    label: "Marketing MTD",
+    answers: "This month by marketing channel against the 125-a-week goal.",
+  },
+  {
     href: "/admin/analytics/months",
     label: "Month over month",
     answers: "Each month against the one before.",
