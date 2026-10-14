@@ -269,8 +269,27 @@ describe("registerWebinarContact", () => {
       await expect(
         registerWebinarContact(person, { ...auth, fetchImpl }),
       ).resolves.toMatchObject({ outcome: "already-registered" });
-      expect(calls.map((c) => c.method)).not.toContain("POST");
+      // The email lookup only: no upsert, no tag removal, no tag add.
+      expect(calls).toHaveLength(1);
     }
+  });
+
+  it("never counts another room's tags, in any spelling, as this room's", async () => {
+    const { calls, fetchImpl } = ghl({
+      duplicate: {
+        id: "c1",
+        tags: [
+          "webinar-16oct",
+          "oct16-webinar",
+          "webinar-oct16",
+          "webinar-oct60",
+        ],
+      },
+    });
+    await expect(
+      registerWebinarContact(person, { ...auth, fetchImpl }),
+    ).resolves.toMatchObject({ outcome: "registered" });
+    expect(calls).toHaveLength(4);
   });
 
   it("still registers when the event tag is unknown", async () => {
