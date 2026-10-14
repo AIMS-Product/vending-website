@@ -3,6 +3,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import { resolveChannel } from "@/lib/analytics/channel";
+import { flowChannelForFunnel } from "@/lib/analytics/channel-flow";
 import {
   addDays,
   reportingDay,
@@ -17,7 +18,9 @@ import {
   costPerBookedByMonth,
   isReactivation,
   monthKeys,
+  v2DashboardCalls,
   type CostRow,
+  type LeadFirstCall,
 } from "@/lib/analytics/dashboard-metrics";
 import { config } from "@/lib/config";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
@@ -42,7 +45,9 @@ import {
   fetchCloseDeals,
   type CloseDeal,
 } from "@/lib/services/close-wins";
+import { getBookedCallsV2 } from "@/lib/services/booked-calls-v2-data";
 import type { CloseCall } from "@/lib/services/close-week-view";
+import { pacificStartIso } from "@/lib/services/data-report";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -78,63 +83,57 @@ type DashboardCall = CloseCall & {
 };
 
 /**
- * Close first calls scheduled in [from, to], every one, exclusions applied
- * later. `marketingOnly` drops the Sales reactivation band.
+ * Booked calls in [from, to] (reporting days) under Dom's rule
+ * (booked_calls.v2.2, live since 2026-10-14): one per counted Close meeting,
+ * dated by the day it was booked. `marketingOnly` keeps the calls the
+ * marketing team booked (drops Lane 2 and Social DMs).
  */
 export const readCalls = cache(
   async (from: string, to: string, marketingOnly = false) => {
     const calls = await readAllCalls(from, to);
-    return marketingOnly ? withoutReactivation(calls) : calls;
+    if (!marketingOnly || !calls.ok) return calls;
+    return {
+      ok: true as const,
+      data: calls.data.filter((c) => !isReactivation(c)),
+    };
   },
 );
 
 const readAllCalls = cache((from: string, to: string) =>
-  attempt("The Close mirror", async () => {
+  attempt("Booked calls V2", async () => {
+    const report = await getBookedCallsV2({
+      from: pacificStartIso(from),
+      to: pacificStartIso(addDays(to, 1)),
+    });
+    if (!report.ok) throw new Error(report.error);
+    const leadIds = [
+      ...new Set(
+        report.decisions
+          .filter((d) => d.disposition === "counted")
+          .map((d) => d.leadId),
+      ),
+    ];
     const client = createAdminClient();
-    const { rows, error } = await readAllPages<{
-      lead_id: string;
-      email: string | null;
-      funnel: string | null;
-      status_label: string | null;
-      first_sales_call_booked_date: string | null;
-      first_call_show_up: string | null;
-      qualified: string | null;
-      setter_name: string | null;
-      booked_by: string | null;
-      business_line: string | null;
-    }>(
-      (start, end, count) =>
-        client
-          .from("close_lead_funnel")
-          .select(
-            "lead_id,email,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,setter_name,booked_by,business_line",
-            { count },
-          )
-          .gte("first_sales_call_booked_date", from)
-          .lte("first_sales_call_booked_date", to)
-          .order("lead_id")
-          .range(start, end),
-      { pageSize: PAGE, maxRows: MAX_ROWS },
-    );
-    if (error) throw new Error(error.message);
-    return rows.flatMap((row): DashboardCall[] =>
-      row.first_sales_call_booked_date
-        ? [
-            {
-              leadId: row.lead_id,
-              email: row.email,
-              funnel: row.funnel,
-              status: row.status_label,
-              bookedDate: row.first_sales_call_booked_date.slice(0, 10),
-              showUp: row.first_call_show_up,
-              qualified: row.qualified,
-              setter: row.setter_name,
-              bookedBy: row.booked_by,
-              businessLine: row.business_line,
-            },
-          ]
-        : [],
-    );
+    const leads = new Map<string, LeadFirstCall>();
+    // 100 ids keep the `in.(...)` filter well under URL length limits.
+    for (let i = 0; i < leadIds.length; i += 100) {
+      const { data, error } = await client
+        .from("close_lead_funnel")
+        .select(
+          "lead_id,email,first_sales_call_booked_date,first_call_show_up,qualified",
+        )
+        .in("lead_id", leadIds.slice(i, i + 100));
+      if (error) throw new Error(error.message);
+      for (const row of data ?? []) {
+        leads.set(row.lead_id, {
+          email: row.email,
+          firstCallDay: row.first_sales_call_booked_date,
+          showUp: row.first_call_show_up,
+          qualified: row.qualified,
+        });
+      }
+    }
+    return v2DashboardCalls(report.decisions, leads) as DashboardCall[];
   }),
 );
 
@@ -176,16 +175,18 @@ export const readLeads = cache((from: string) =>
     );
     if (error) throw new Error(error.message);
     return collapseToLeads(rows)
-      .map((lead): DashboardLead => ({
-        day: reportingDay(new Date(lead.created_at)),
-        channel: resolveChannel(lead.utm_source, {
-          medium: lead.utm_medium,
-          capturedByChatbot:
-            !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
-        }).channel,
-        inClose: lead.close_sync_status === "synced",
-        createdAt: lead.created_at,
-      }))
+      .map(
+        (lead): DashboardLead => ({
+          day: reportingDay(new Date(lead.created_at)),
+          channel: resolveChannel(lead.utm_source, {
+            medium: lead.utm_medium,
+            capturedByChatbot:
+              !lead.utm_source?.trim() && isChatbotCapture(lead.metadata),
+          }).channel,
+          inClose: lead.close_sync_status === "synced",
+          createdAt: lead.created_at,
+        }),
+      )
       .filter((lead) => lead.day >= from);
   }),
 );
@@ -250,11 +251,20 @@ export const readFacts = cache((from: string, to: string) =>
   }),
 );
 
-/** Won Close opportunities dated in [from, to]; `marketingOnly` as readCalls. */
+/**
+ * Won Close opportunities dated in [from, to]. Dom's rule says nothing about
+ * wins, so `marketingOnly` drops deals whose Close funnel is a Lane 2 funnel.
+ */
 export const readDeals = cache(
   async (from: string, to: string, marketingOnly = false) => {
     const deals = await readAllDeals(from, to);
-    return marketingOnly ? withoutReactivation(deals) : deals;
+    if (!marketingOnly || !deals.ok) return deals;
+    return {
+      ok: true as const,
+      data: deals.data.filter(
+        (d) => flowChannelForFunnel(d.funnel) !== "reactivation",
+      ),
+    };
   },
 );
 
@@ -269,47 +279,6 @@ const readAllDeals = cache((from: string, to: string) =>
     });
   }),
 );
-
-/**
- * Close lead ids of site leads with a Google click id, the population the
- * Google Ads page counts (`metadata.paid_attribution.gclid`). The flow
- * credits their calls to Google Ads whatever funnel Close filed them under.
- */
-export const readGoogleClickLeads = cache(() =>
-  attempt("Google click leads", async () => {
-    const client = createAdminClient();
-    const { rows, error } = await readAllPages<{ close_lead_id: string }>(
-      (start, end, count) =>
-        client
-          .from("lead_submissions")
-          .select("close_lead_id", { count })
-          .not("metadata->paid_attribution->>gclid", "is", null)
-          .not("close_lead_id", "is", null)
-          .order("id")
-          .range(start, end),
-      { pageSize: PAGE, maxRows: MAX_ROWS },
-    );
-    if (error) throw new Error(error.message);
-    return new Set(rows.map((row) => row.close_lead_id));
-  }),
-);
-
-/**
- * Drops Sales reactivation rows, credited as the flow card credits them. The
- * Google click read decides which rows those are, so without it the filtered
- * read fails rather than guessing.
- */
-async function withoutReactivation<
-  T extends { leadId: string; funnel: string | null },
->(read: Read<T[]>): Promise<Read<T[]>> {
-  if (!read.ok) return read;
-  const google = await readGoogleClickLeads();
-  if (!google.ok) return google;
-  return {
-    ok: true,
-    data: read.data.filter((row) => !isReactivation(row, google.data)),
-  };
-}
 
 /**
  * Cost per booked call by month for the six months to `today` (§9). The

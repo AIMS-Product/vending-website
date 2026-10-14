@@ -59,7 +59,7 @@ export function DashboardWindowControl({
             aria-current={option.on === marketingOnly ? "page" : undefined}
             title={
               option.on
-                ? "Leave Sales reactivation calls and wins out of every number on this page"
+                ? "Keep only calls the marketing team booked (Lane 2 and Social DMs left out)"
                 : undefined
             }
             className={segmentClass(option.on === marketingOnly)}

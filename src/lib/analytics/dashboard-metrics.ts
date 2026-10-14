@@ -5,7 +5,7 @@
 
 import {
   FLOW_CHANNELS,
-  flowChannelForFunnel,
+  callBand,
   flowChannelForSpine,
   type FlowChannelKey,
 } from "@/lib/analytics/channel-flow";
@@ -20,11 +20,8 @@ import {
   targetForMonth,
 } from "@/lib/services/channel-targets";
 import type { ChannelFact } from "@/lib/services/channel-report-rollup";
-import {
-  isExcludedCall,
-  isYes,
-  type CloseCall,
-} from "@/lib/services/close-week-view";
+import type { Decision } from "@/lib/booked-calls-v2/engine";
+import { isYes, type CloseCall } from "@/lib/services/close-week-view";
 
 /**
  * The first day site leads exist (`lead_submissions` starts here; AGENTS.md).
@@ -36,46 +33,44 @@ export const LEADS_RECORDED_FROM = "2026-07-06";
 export const inRange = (day: string, range: DayRange) =>
   day >= range.startDay && day <= range.endDay;
 
-/** Close first calls after the SteelTrap rule, one per lead (§3, §5). */
+/**
+ * Booked calls counted under Dom's rule (booked_calls.v2.2, since
+ * 2026-10-14), one per meeting. The rule has already excluded and held what
+ * it does not count, so nothing else is removed here.
+ */
 export function keptCalls<T extends CloseCall>(calls: readonly T[]): T[] {
   const seen = new Set<string>();
   return calls.filter((call) => {
-    if (isExcludedCall(call) || seen.has(call.leadId)) return false;
-    seen.add(call.leadId);
+    const key = call.meetingId ?? call.leadId;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 }
 
-/** Kept first calls dated `day`: the Today strip's calendar count (§3, §5). */
+/** The day a booked call is scheduled for (V2 rows carry it apart). */
+export const callDayOf = (call: CloseCall): string =>
+  call.callDay ?? call.bookedDate;
+
+/** Kept calls scheduled for `day`: the Today strip's calendar count (§3, §5). */
 export function firstCallsOn(
   calls: readonly CloseCall[],
   day: string,
 ): CloseCall[] {
-  return keptCalls(calls).filter((call) => call.bookedDate === day);
+  return keptCalls(calls).filter((call) => callDayOf(call) === day);
 }
 
-/**
- * Kept calls in the Sales reactivation band, credited as the flow card
- * credits them: a lead whose site form carried a Google click id is Google
- * Ads whatever Close funnel it sits under, so the KPI split and the flow's
- * bands agree.
- */
-export function reactivationCalls(
-  kept: readonly CloseCall[],
-  googleClickLeads: ReadonlySet<string>,
-): number {
-  return kept.filter((call) => isReactivation(call, googleClickLeads)).length;
+/** Kept calls a Lane 2 or Social DMs setter booked (Dom's rule, `callBand`). */
+export function reactivationCalls(kept: readonly CloseCall[]): number {
+  return kept.filter(isReactivation).length;
 }
 
-/** One call or deal in the Sales reactivation band (see `reactivationCalls`). */
-export function isReactivation(
-  row: { leadId: string; funnel: string | null },
-  googleClickLeads: ReadonlySet<string>,
-): boolean {
-  return (
-    !googleClickLeads.has(row.leadId) &&
-    flowChannelForFunnel(row.funnel) === "reactivation"
-  );
+/** One call in the sales band: booked by Lane 2 or Social DMs. */
+export function isReactivation(row: {
+  funnel: string | null;
+  bookedBy?: string | null;
+}): boolean {
+  return callBand(row) === "reactivation";
 }
 
 export function countInRange<T>(
@@ -113,8 +108,9 @@ export function showRateHeld(
   range: DayRange,
   today: string,
 ): { showed: number; held: number; rate: number | null } {
+  // Calls booked in the range whose scheduled day has passed.
   const held = keptCalls(calls).filter(
-    (call) => inRange(call.bookedDate, range) && call.bookedDate < today,
+    (call) => inRange(call.bookedDate, range) && callDayOf(call) < today,
   );
   const showed = held.filter((call) => isYes(call.showUp)).length;
   return {
@@ -197,16 +193,29 @@ export function planBooked(
   const seen = new Set<string>();
   let count = 0;
   for (const call of calls) {
+    const key = call.meetingId ?? call.leadId;
     if (
       !inRange(call.bookedDate, range) ||
       !monthHasPlan(call.bookedDate.slice(0, 7)) ||
-      seen.has(call.leadId)
+      seen.has(key)
     )
       continue;
-    seen.add(call.leadId);
-    if (PLAN_KEYS.has(channelKeyForFunnel(call.funnel) ?? "")) count += 1;
+    seen.add(key);
+    if (PLAN_KEYS.has(planKeyOf(call) ?? "")) count += 1;
   }
   return count;
+}
+
+/**
+ * The plan channel a booked call counts toward. Who booked it decides Lane 2
+ * (Social DMs has no plan row); a marketing call counts by its source, never
+ * as Lane 2.
+ */
+function planKeyOf(call: CloseCall): string | null {
+  if (call.bookedBy === "Lane 2") return "lane-2";
+  if (isReactivation(call)) return null;
+  const key = channelKeyForFunnel(call.funnel);
+  return key === "lane-2" ? null : key;
 }
 
 export const NO_SETTER = "No setter recorded";
@@ -339,3 +348,48 @@ export function costPerBookedByMonth(
 
 /** The same weekday a week earlier. */
 export const sameDayLastWeek = (day: string) => addDays(day, -7);
+
+/** What the dashboard reads per lead beside Dom's meeting decisions. */
+export type LeadFirstCall = {
+  email: string | null;
+  /** Close "First Sales Call Booked Date": the day the first call is for. */
+  firstCallDay: string | null;
+  showUp: string | null;
+  qualified: string | null;
+};
+
+/**
+ * Dom's counted meetings as dashboard calls: dated by the day booked,
+ * `callDay` the day scheduled, `bookedBy` from the meeting title, `funnel`
+ * the lead source. Close's First Call Show Up and Qualified describe the
+ * lead's FIRST sales call only (AGENTS.md), so they are read onto a meeting
+ * only when it is scheduled for that call's day.
+ */
+export function v2DashboardCalls(
+  decisions: readonly Decision[],
+  leads: ReadonlyMap<string, LeadFirstCall>,
+): Array<CloseCall & { email: string | null; setter: string | null }> {
+  return decisions
+    .filter((d) => d.disposition === "counted")
+    .map((d) => {
+      const lead = leads.get(d.leadId);
+      const first =
+        lead !== undefined &&
+        d.scheduledDay !== null &&
+        lead.firstCallDay?.slice(0, 10) === d.scheduledDay;
+      return {
+        leadId: d.leadId,
+        meetingId: d.meetingId,
+        email: lead?.email ?? null,
+        funnel: d.origin.source,
+        status: null,
+        bookedDate: d.createdDay,
+        callDay: d.scheduledDay,
+        showUp: first ? lead.showUp : null,
+        qualified: first ? lead.qualified : null,
+        setter: d.mappedSetter ?? d.caller,
+        bookedBy: d.bookedBy,
+        businessLine: null,
+      };
+    });
+}

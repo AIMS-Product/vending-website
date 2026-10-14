@@ -48,7 +48,9 @@ describe("channel flow", () => {
     expect(flow.totals).toEqual([110, 4, 2, 2, 1]);
   });
 
-  it("applies the SteelTrap rule before any stage and discloses it", () => {
+  // Since 2026-10-14 the calls are Dom's counted meetings: his rule already
+  // excluded and held what it does not count, so nothing more is removed.
+  it("counts every call Dom's rule counted, whatever the lead's status", () => {
     const flow = buildChannelFlow({
       captured: [],
       calls: [
@@ -58,8 +60,29 @@ describe("channel flow", () => {
       ],
       wins: [],
     });
-    expect(flow.excluded).toBe(2);
-    expect(flow.totals).toEqual([0, 1, 0, 0, 0]);
+    expect(flow.totals[1]).toBe(3);
+  });
+
+  it("puts a call in the sales band by who booked it, not by source", () => {
+    const flow = buildChannelFlow({
+      captured: [],
+      calls: [
+        call({ leadId: "a", funnel: "YouTube", bookedBy: "Lane 2" }),
+        call({ leadId: "b", funnel: "Instagram", bookedBy: "Social DMs" }),
+        call({
+          leadId: "c",
+          funnel: "Sales Reactivation",
+          bookedBy: "Marketing",
+        }),
+        call({ leadId: "d", funnel: "YouTube", bookedBy: "Marketing" }),
+      ],
+      wins: [],
+    });
+    const booked = (key: string) =>
+      flow.bands.find((b) => b.key === key)?.values[1] ?? 0;
+    expect(booked("reactivation")).toBe(2);
+    expect(booked("youtube")).toBe(1);
+    expect(booked("other")).toBe(1);
   });
 
   it("reads a win from the opportunity, not the current status", () => {
@@ -91,7 +114,13 @@ describe("channel flow", () => {
   it("drops empty bands and keeps a booked-only band", () => {
     const flow = buildChannelFlow({
       captured: [],
-      calls: [call({ leadId: "a", funnel: "Reactivation Scrapers" })],
+      calls: [
+        call({
+          leadId: "a",
+          funnel: "Reactivation Scrapers",
+          bookedBy: "Lane 2",
+        }),
+      ],
       wins: [],
     });
     expect(flow.bands.map((b) => b.key)).toEqual(["reactivation"]);
@@ -106,9 +135,21 @@ describe("channel flow", () => {
         { channel: "YouTube", count: 40 },
       ],
       calls: [
-        call({ leadId: "a", funnel: "Reactivation Scrapers" }),
-        call({ leadId: "b", funnel: "Reactivation Scrapers" }),
-        call({ leadId: "c", funnel: "Reactivation Scrapers" }),
+        call({
+          leadId: "a",
+          funnel: "Reactivation Scrapers",
+          bookedBy: "Lane 2",
+        }),
+        call({
+          leadId: "b",
+          funnel: "Reactivation Scrapers",
+          bookedBy: "Lane 2",
+        }),
+        call({
+          leadId: "c",
+          funnel: "Reactivation Scrapers",
+          bookedBy: "Lane 2",
+        }),
         call({ leadId: "d", funnel: "Internal Webinar" }),
         call({ leadId: "e", funnel: "Internal Webinar" }),
         call({ leadId: "f", funnel: null }),

@@ -1,5 +1,4 @@
-import { flowChannelForFunnel } from "@/lib/analytics/channel-flow";
-import { keptCalls } from "@/lib/analytics/dashboard-metrics";
+import { isReactivation, keptCalls } from "@/lib/analytics/dashboard-metrics";
 import { addDays, daysBetween } from "@/lib/analytics/dashboard-window";
 import type { CloseCall } from "@/lib/services/close-week-view";
 import type { ChannelFact } from "@/lib/services/channel-report-rollup";
@@ -113,9 +112,7 @@ export function buildScorecard(input: {
       complete: end < input.today,
       booked: input.calls.filter((c) => within(c.bookedDate)).length,
       bookedKept: keptInWeek.length,
-      bookedMarketing: keptInWeek.filter(
-        (c) => flowChannelForFunnel(c.funnel) !== "reactivation",
-      ).length,
+      bookedMarketing: keptInWeek.filter((c) => !isReactivation(c)).length,
       bookedByLane2: keptInWeek.filter((c) => c.bookedBy === LANE_2_BOOKED_BY)
         .length,
       mqls,
