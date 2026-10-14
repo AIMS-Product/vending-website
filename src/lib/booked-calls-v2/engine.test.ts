@@ -311,8 +311,9 @@ describe("validation fixes (Oct 1-13 rerun against Dom's pull)", () => {
 });
 
 describe("historical exceptions", () => {
+  // Patterns are Dom's rules.json, not the memo's wording (2026-10-14).
   it("Ariella Strategy counts as Lane 2 only before the cutoff", () => {
-    const title = "Vending Strategy Call with Ariella";
+    const title = "New Vendingpreneurs Strategy Call with Ariella";
     const [before] = decide([
       meeting({ title, dateCreated: "2026-10-13T23:59:00-07:00" }),
     ]);
@@ -337,17 +338,33 @@ describe("historical exceptions", () => {
       bookedBy: "Marketing",
       historicalException: null,
     });
+    // The memo's looser reading credited this; Dom's pattern does not.
+    const [loose] = decide([
+      meeting({
+        title: "Vending Strategy Call with Ariella",
+        dateCreated: "2026-10-13T23:59:00-07:00",
+      }),
+    ]);
+    expect(loose.historicalException).toBeNull();
   });
 
   it("William setter-gated Quick Discovery", () => {
     const lead = { ...youtube, setterName: "William Nowak" };
-    const [d] = decide([meeting({ title: "Vending Quick Discovery" })], lead);
+    const title = "Vendingpreneurs Quick Discovery";
+    const [d] = decide([meeting({ title })], lead);
     expect(d).toMatchObject({
       bookedBy: "Lane 2",
-      historicalException: "william_setter_quick_discovery",
+      historicalException: "william_quick_discovery_setter",
     });
-    const [other] = decide([meeting({ title: "Vending Quick Discovery" })]);
-    expect(other.reason).toBe("not_sales_call");
+    const [other] = decide([meeting({ title })]);
+    expect(other.historicalException).toBeNull();
+    expect(other.disposition).not.toBe("counted");
+    // Dom anchors the title at its start: a looser title is not his rule.
+    const [loose] = decide(
+      [meeting({ title: "Vending Quick Discovery" })],
+      lead,
+    );
+    expect(loose.historicalException).toBeNull();
   });
 });
 

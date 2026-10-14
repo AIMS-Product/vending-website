@@ -11,6 +11,8 @@
  * and check this file against its config SHA instead of the memo.
  */
 
+import domRules from "@/lib/booked-calls-v2/rules.v2.2.json";
+
 export const RULE_VERSION = "booked_calls.v2.2";
 /** Dom's config SHA-256 for v2.2; recorded so a screen can name what it ran. */
 export const RULE_CONFIG_SHA =
@@ -87,40 +89,35 @@ export const FIRST_CALL_FAMILIES: readonly RegExp[] = [
   /vendhub\s+consultation\s+call/i,
 ];
 
-const ARIELLA = /\bariella\b/i;
-const WILLIAM = /\bwilliam\b/i;
-const QUICK_DISCOVERY = /quick\s+discovery/i;
-
 export type HistoricalException = {
   key: string;
   matches: (title: string, leadSetter: string | null) => boolean;
 };
 
-/** Valid only for meetings created before `HISTORICAL_CUTOFF`. */
-export const HISTORICAL_EXCEPTIONS: readonly HistoricalException[] = [
-  {
-    key: "ariella_strategy",
-    matches: (t) => ARIELLA.test(t) && /strategy\s+call/i.test(t),
-  },
-  {
-    key: "ariella_follow_up",
-    matches: (t) => ARIELLA.test(t) && /follow[-\s]?up/i.test(t),
-  },
-  {
-    key: "ariella_rescheduled",
-    matches: (t) => ARIELLA.test(t) && /reschedul/i.test(t),
-  },
-  {
-    key: "william_quick_discovery",
-    matches: (t) => WILLIAM.test(t) && QUICK_DISCOVERY.test(t),
-  },
-  {
-    key: "william_setter_quick_discovery",
-    matches: (t, setter) =>
-      QUICK_DISCOVERY.test(t) &&
-      (setter ?? "").trim().toLowerCase() === "william nowak",
-  },
-];
+/** Dom's rules.json (v2.2) `title_rules` with `historical: true`, verbatim. */
+const historical = (key: string, source: string, requiredSetter?: string) => {
+  const pattern = new RegExp(source, "i");
+  return {
+    key,
+    matches: (title: string, leadSetter: string | null) =>
+      pattern.test(title) &&
+      (!requiredSetter ||
+        (leadSetter ?? "").trim().toLowerCase() ===
+          requiredSetter.toLowerCase()),
+  };
+};
+
+/**
+ * Valid only for meetings created before `HISTORICAL_CUTOFF`. Read from Dom's
+ * vendored rules.json, never re-typed: the memo's wording was looser than his
+ * patterns and credited three October meetings his pull did not.
+ */
+export const HISTORICAL_EXCEPTIONS: readonly HistoricalException[] =
+  domRules.title_rules
+    .filter((rule) => rule.historical)
+    .map((rule) =>
+      historical(rule.key, rule.pattern, rule.required_setter ?? undefined),
+    );
 
 /** Never credit: Stephen Olivas, Ahmad Bukhari. */
 export const EXCLUDED_CALLERS: ReadonlySet<string> = new Set([
