@@ -58,11 +58,11 @@ export default async function AnalyticsMonthsPage({
           <a href="#booked-v2" className={adminLinkClass}>
             Booked calls V2
           </a>{" "}
-          is Dom&apos;s shared rule: one credit per qualifying Close meeting,
-          dated by the day the meeting was booked. Every other panel is the
-          legacy rule: one row per lead, dated by its First Sales Call Booked
-          Date (the day the call is scheduled for). The two do not match, by
-          design.
+          is Dom&apos;s shared rule, the one the main dashboard counts by: one
+          credit per qualifying Close meeting, dated by the day the meeting was
+          booked. Every other panel here is the older rule: one row per lead,
+          dated by its First Sales Call Booked Date (the day the call is
+          scheduled for). The two do not match, by design.
         </p>
         <Suspense fallback={<Skeleton label="months" />}>
           <MonthlyBody
