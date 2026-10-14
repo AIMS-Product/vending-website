@@ -210,7 +210,7 @@ export async function registerForMasterclass(
   // tag, so the first email carries them. Never for a finished room.
   const beforeTrigger =
     !stale && event.startsAt
-      ? joinLinkFields(parsed.data, event.startsAt)
+      ? joinLinkFields(parsed.data.email, event.startsAt)
       : undefined;
   let contactId: string;
   let ownsContact: boolean;

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getMasterclassEvent: vi.fn(),
   readContactField: vi.fn(),
   checkPublicRateLimit: vi.fn(),
+  roomWebinarId: vi.fn(),
   config: {} as Record<string, string | undefined>,
 }));
 vi.mock("@/lib/config", () => ({
@@ -17,6 +18,12 @@ vi.mock("@/lib/config", () => ({
 }));
 vi.mock("@/lib/services/masterclass-event", () => ({
   getMasterclassEvent: mocks.getMasterclassEvent,
+}));
+vi.mock("@/lib/zoom/webinar-registrant", async () => ({
+  ...(await vi.importActual<typeof import("@/lib/zoom/webinar-registrant")>(
+    "@/lib/zoom/webinar-registrant",
+  )),
+  roomWebinarId: mocks.roomWebinarId,
 }));
 vi.mock("@/lib/public-rate-limit", () => ({
   checkPublicRateLimit: mocks.checkPublicRateLimit,
@@ -44,7 +51,11 @@ beforeEach(() => {
   Object.assign(mocks.config, {
     MASTERCLASS_CAL_SECRET: SECRET,
     GHL_WRITE_TOKEN: "pit-test",
+    ANTHONY_ZOOM_ACCOUNT_ID: "acct",
+    ANTHONY_ZOOM_CLIENT_ID: "id",
+    ANTHONY_ZOOM_CLIENT_SECRET: "secret",
   });
+  mocks.roomWebinarId.mockResolvedValue(82284428904);
   mocks.getMasterclassEvent.mockResolvedValue({
     label: "October 20, 2026 at 7:30 PM CDT",
     startsAt: start.toISOString(),
@@ -151,6 +162,30 @@ describe("GET /masterclass/cal/[token]", () => {
       { ip: null, email: "contact:c1" },
       { failClosed: true },
     );
+  });
+
+  it("never puts last week's link (a returning contact's stale field) in this room's event", async () => {
+    vi.useFakeTimers();
+    mocks.readContactField.mockResolvedValue(
+      "https://us06web.zoom.us/w/82546367729?tk=old",
+    );
+    const pending = get(token(), "ics");
+    await vi.advanceTimersByTimeAsync(JOIN_RETRY_MS);
+    const ics = await (await pending).text();
+    expect(ics).toContain("LOCATION:Zoom (link in your confirmation email)");
+    expect(ics).not.toContain("82546367729");
+  });
+
+  it("serves the generic event without Zoom credentials or a resolvable room", async () => {
+    mocks.roomWebinarId.mockResolvedValue(null);
+    expect(await (await get(token(), "ics")).text()).toContain(
+      "LOCATION:Zoom (link in your confirmation email)",
+    );
+    delete mocks.config.ANTHONY_ZOOM_CLIENT_SECRET;
+    expect(await (await get(token(), "ics")).text()).toContain(
+      "LOCATION:Zoom (link in your confirmation email)",
+    );
+    expect(mocks.readContactField).not.toHaveBeenCalled();
   });
 
   it("falls back to the generic event when GHL cannot be read", async () => {

@@ -78,27 +78,35 @@ export function pickWebinar(
   return matches.length === 1 ? matches[0].id : null;
 }
 
-/** A Zoom webinar join link: https, a zoom.us host, path /w/<id> (this webinar's id when given). */
-export function isJoinLinkFor(url: string, id?: number | string): boolean {
+/** A join link for webinar `id`: https, a zoom.us host, path /w/<id>. */
+export function isJoinLinkFor(url: string, id: number | string): boolean {
   try {
     const parsed = new URL(url);
     return (
       parsed.protocol === "https:" &&
       (parsed.hostname === "zoom.us" || parsed.hostname.endsWith(".zoom.us")) &&
-      (id === undefined
-        ? /^\/w\/\d+$/.test(parsed.pathname)
-        : parsed.pathname === `/w/${id}`)
+      parsed.pathname === `/w/${id}`
     );
   } catch {
     return false;
   }
 }
 
-export async function registerZoomRegistrant(
-  person: ZoomRegistrant,
+/** The link itself, normalized, when it is a Zoom link for `webinarId`; anything else is null. */
+export function joinLinkFor(
+  value: string | null,
+  webinarId: number,
+): string | null {
+  // Control characters would survive URL parsing's own stripping into the .ics.
+  if (!value || /[\u0000-\u001f\u007f]/.test(value)) return null;
+  return isJoinLinkFor(value, webinarId) ? new URL(value).href : null;
+}
+
+/** One Zoom session: a shared time budget, the cached S2S token, and authed calls. */
+function zoomSession(
   creds: ZoomCredentials,
-  { fetchImpl = fetch, now = Date.now }: Deps = {},
-): Promise<string | null> {
+  { fetchImpl = fetch, now = Date.now }: Deps,
+) {
   const signal = AbortSignal.timeout(ZOOM_BUDGET_MS);
   const call = async (step: string, url: string, init: RequestInit = {}) => {
     const response = await fetchImpl(url, { ...init, signal });
@@ -133,8 +141,7 @@ export async function registerZoomRegistrant(
       },
     });
   };
-
-  try {
+  const roomWebinar = async (startsAt: string) => {
     if (!webinars || webinars.until <= now()) {
       const parsed = webinarList.parse(
         await authed(
@@ -144,11 +151,49 @@ export async function registerZoomRegistrant(
       );
       webinars = { list: parsed.webinars, until: now() + WEBINAR_CACHE_MS };
     }
-    const id = pickWebinar(webinars.list, person.startsAt);
+    const id = pickWebinar(webinars.list, startsAt);
     if (id === null) throw new ZoomSkip("no single webinar on the room date");
+    return id;
+  };
+  return { authed, roomWebinar };
+}
+
+const skipped = (error: unknown) => {
+  console.warn("[masterclass] zoom-skip", {
+    reason:
+      error instanceof ZoomSkip
+        ? error.message
+        : error instanceof Error
+          ? error.name
+          : "unknown",
+  });
+  return null;
+};
+
+/** This room's webinar id (cached list), or null with a logged reason. Never throws. */
+export async function roomWebinarId(
+  startsAt: string,
+  creds: ZoomCredentials,
+  deps: Deps = {},
+): Promise<number | null> {
+  try {
+    return await zoomSession(creds, deps).roomWebinar(startsAt);
+  } catch (error) {
+    return skipped(error);
+  }
+}
+
+export async function registerZoomRegistrant(
+  person: ZoomRegistrant,
+  creds: ZoomCredentials,
+  deps: Deps = {},
+): Promise<string | null> {
+  try {
+    const session = zoomSession(creds, deps);
+    const id = await session.roomWebinar(person.startsAt);
     // Re-registering an email returns the same registrant, so the zap doing it too is harmless.
     const { join_url } = registrantResponse.parse(
-      await authed("register", `/webinars/${id}/registrants`, {
+      await session.authed("register", `/webinars/${id}/registrants`, {
         method: "POST",
         body: JSON.stringify({
           email: person.email,
@@ -159,16 +204,8 @@ export async function registerZoomRegistrant(
     );
     if (!isJoinLinkFor(join_url, id))
       throw new ZoomSkip("join link not for this webinar");
-    return join_url;
+    return new URL(join_url).href;
   } catch (error) {
-    console.warn("[masterclass] zoom-skip", {
-      reason:
-        error instanceof ZoomSkip
-          ? error.message
-          : error instanceof Error
-            ? error.name
-            : "unknown",
-    });
-    return null;
+    return skipped(error);
   }
 }

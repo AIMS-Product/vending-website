@@ -515,7 +515,10 @@ describe("registerWebinarContact: fields before the trigger tag", () => {
     const { calls, fetchImpl } = ghl({});
     const beforeTrigger = vi.fn(async () => [ZOOM]);
     await registerWebinarContact(person, { ...auth, fetchImpl, beforeTrigger });
-    expect(beforeTrigger).toHaveBeenCalledWith("c1");
+    expect(beforeTrigger).toHaveBeenCalledWith("c1", {
+      firstName: "Mary",
+      lastName: "Berg",
+    });
     expect(calls.slice(3).map(route)).toEqual([
       "PUT contacts/c1",
       "DELETE c1/tags",
@@ -562,6 +565,27 @@ describe("registerWebinarContact: fields before the trigger tag", () => {
       }),
     ).resolves.toMatchObject({ outcome: "registered" });
     expect(calls.at(-1)?.url).toMatch(/\/contacts\/c1\/tags$/);
+  });
+
+  it("hands the hook the names GHL keeps, never a stranger's form names", async () => {
+    // Someone who knows a lead's email (but not their phone) submits other names.
+    const { fetchImpl } = ghl({
+      duplicate: {
+        id: "c1",
+        tags: [],
+        email: "mary@example.com",
+        firstName: "Maria",
+        lastName: "Bergman",
+        phone: "+15415550000",
+      },
+      upsert: { contact: { id: "c1", tags: [] } },
+    });
+    const beforeTrigger = vi.fn(async () => []);
+    await registerWebinarContact(person, { ...auth, fetchImpl, beforeTrigger });
+    expect(beforeTrigger).toHaveBeenCalledWith("c1", {
+      firstName: "Maria",
+      lastName: "Bergman",
+    });
   });
 
   it("does not run the hook for someone already registered for this room", async () => {

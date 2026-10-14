@@ -5,11 +5,14 @@ import {
   masterclassCalendarEvent,
 } from "@/lib/content/masterclass";
 import { readContactField } from "@/lib/ghl/webinar-registration";
-import { ZOOM_URL_FIELD_ID } from "@/lib/masterclass-join-link";
+import {
+  ZOOM_URL_FIELD_ID,
+  zoomCredentials,
+} from "@/lib/masterclass-join-link";
 import { verifyCalendarToken } from "@/lib/masterclass-session";
 import { checkPublicRateLimit } from "@/lib/public-rate-limit";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
-import { isJoinLinkFor } from "@/lib/zoom/webinar-registrant";
+import { joinLinkFor, roomWebinarId } from "@/lib/zoom/webinar-registrant";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +25,12 @@ const PRIVATE = {
   "Referrer-Policy": "no-referrer",
 };
 
-async function readJoinUrl(contactId: string): Promise<string | null> {
-  if (!config.GHL_WRITE_TOKEN) return null;
+async function readJoinUrl(
+  contactId: string,
+  startsAt: string,
+): Promise<string | null> {
+  const creds = zoomCredentials();
+  if (!config.GHL_WRITE_TOKEN || !creds) return null;
   // Over budget, or the limiter is down: the generic event, no GHL read.
   const allowed = await checkPublicRateLimit(
     "masterclass_cal",
@@ -31,12 +38,16 @@ async function readJoinUrl(contactId: string): Promise<string | null> {
     { failClosed: true },
   );
   if (!allowed) return null;
-  const read = async () => {
-    const value = await readContactField(contactId, ZOOM_URL_FIELD_ID, {
-      token: config.GHL_WRITE_TOKEN ?? "",
-    });
-    return value && isJoinLinkFor(value) ? value : null;
-  };
+  // Only this room's link: a returning contact's field can still hold last week's.
+  const webinarId = await roomWebinarId(startsAt, creds);
+  if (webinarId === null) return null;
+  const read = async () =>
+    joinLinkFor(
+      await readContactField(contactId, ZOOM_URL_FIELD_ID, {
+        token: config.GHL_WRITE_TOKEN ?? "",
+      }),
+      webinarId,
+    );
   try {
     return (
       (await read()) ??
@@ -83,7 +94,7 @@ export async function GET(
     });
   }
 
-  const joinUrl = await readJoinUrl(verified.contactId);
+  const joinUrl = await readJoinUrl(verified.contactId, event.startsAt);
   const calendarEvent = masterclassCalendarEvent(new Date(event.startsAt), {
     joinUrl,
     uidKey: `${verified.contactId}-${verified.expiresAt}`,

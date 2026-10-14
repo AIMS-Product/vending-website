@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   isJoinLinkFor,
+  joinLinkFor,
   pickWebinar,
+  roomWebinarId,
   registerZoomRegistrant,
   resetZoomCache,
 } from "./webinar-registrant";
@@ -89,6 +91,41 @@ describe("isJoinLinkFor", () => {
     expect(isJoinLinkFor("https://zoom.us.evil.example/w/1", 1)).toBe(false);
     expect(isJoinLinkFor("http://zoom.us/w/1", 1)).toBe(false);
     expect(isJoinLinkFor("not a url", 1)).toBe(false);
+  });
+});
+
+describe("joinLinkFor", () => {
+  it("returns this webinar's link normalized, and nothing else", () => {
+    expect(joinLinkFor(JOIN, 82284428904)).toBe(JOIN);
+    // Last week's link on a returning contact is not this room's.
+    expect(
+      joinLinkFor("https://us06web.zoom.us/w/82546367729?tk=old", 82284428904),
+    ).toBeNull();
+    expect(joinLinkFor(null, 82284428904)).toBeNull();
+  });
+
+  it("refuses control characters that URL parsing would strip but the .ics would keep", () => {
+    expect(
+      joinLinkFor(`${JOIN}\r\nATTENDEE:mailto:x@example.com`, 82284428904),
+    ).toBeNull();
+    expect(
+      joinLinkFor(`https://us06web.zoom.us/w/82284428904?tk=a\tb`, 82284428904),
+    ).toBeNull();
+  });
+});
+
+describe("roomWebinarId", () => {
+  it("resolves the room's webinar from the cached list, null when none matches", async () => {
+    const { fetchImpl } = zoom();
+    await expect(
+      roomWebinarId(PERSON.startsAt, CREDS, { fetchImpl }),
+    ).resolves.toBe(82284428904);
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    resetZoomCache();
+    const empty = zoom({ list: { webinars: [] } });
+    await expect(
+      roomWebinarId(PERSON.startsAt, CREDS, { fetchImpl: empty.fetchImpl }),
+    ).resolves.toBeNull();
   });
 });
 

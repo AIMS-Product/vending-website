@@ -81,6 +81,8 @@ export function verifyMasterclassSession(
   return verifySigned(value, secret, "", now)?.[0] ?? null;
 }
 
+export const CALENDAR_TOKEN_TTL_AFTER_START_MS = 24 * 60 * 60 * 1000;
+
 /**
  * The personal calendar link's token (/masterclass/cal/<token>): the GHL
  * contact id and an expiry, HMAC-signed with its own secret and a "cal."
@@ -88,8 +90,6 @@ export function verifyMasterclassSession(
  * no PII and never the join link; the route reads that server-side. Spec:
  * .claude/specs/2026-10-13-personal-zoom-link.md.
  */
-export const CALENDAR_TOKEN_TTL_AFTER_START_MS = 24 * 60 * 60 * 1000;
-
 export function signCalendarToken(
   contactId: string,
   startsAt: Date,

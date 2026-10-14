@@ -120,7 +120,11 @@ type Options = {
    * workflow's first email can merge them (personal Zoom link, calendar link).
    * Optional extras: a failed write is logged and the registration goes on.
    */
-  beforeTrigger?: (contactId: string) => Promise<CustomFieldWrite[]>;
+  beforeTrigger?: (
+    contactId: string,
+    /** The names GHL holds after the upsert (a known contact keeps its own), never just the form's. */
+    stored: { firstName: string; lastName: string },
+  ) => Promise<CustomFieldWrite[]>;
 };
 
 /** A leading = + - @ makes a spreadsheet cell a formula (the zap writes a Sheet row). */
@@ -296,7 +300,12 @@ export async function registerWebinarContact(
   }
 
   try {
-    const extraFields = (await beforeTrigger?.(contact.id)) ?? [];
+    // A public form cannot rename a known contact, so neither can it name their Zoom registrant.
+    const stored = {
+      firstName: (fields.firstName ?? existing?.firstName ?? "").trim(),
+      lastName: (fields.lastName ?? existing?.lastName ?? "").trim(),
+    };
+    const extraFields = (await beforeTrigger?.(contact.id, stored)) ?? [];
     if (extraFields.length) {
       await call(
         "join-fields",

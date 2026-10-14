@@ -621,7 +621,10 @@ describe("registerForMasterclass: personal Zoom link", () => {
     // Like the real one: the hook runs after the upsert, before the tag.
     mocks.registerWebinarContact.mockImplementation(
       async (_person, options) => {
-        mocks.hookFields = await options.beforeTrigger?.("c1");
+        mocks.hookFields = await options.beforeTrigger?.("c1", {
+          firstName: "Mary",
+          lastName: "Berg",
+        });
         return { outcome: "registered", contactId: "c1", ownsContact: true };
       },
     );
@@ -664,14 +667,31 @@ describe("registerForMasterclass: personal Zoom link", () => {
     expect(calField.field_value).not.toContain("zoom");
   });
 
-  it("still confirms the seat when Zoom fails, leaving Zoom Url to the zap", async () => {
+  it("still confirms the seat when Zoom fails, clearing an earlier room's link for the zap", async () => {
     mocks.registerZoomRegistrant.mockResolvedValue(null);
     await expect(registerForMasterclass({}, form())).rejects.toThrow(
       "REDIRECT /masterclass-confirmed?",
     );
     expect(mocks.hookFields).toEqual([
+      { id: ZOOM_URL_FIELD_ID, field_value: "" },
       expect.objectContaining({ id: "calField" }),
     ]);
+  });
+
+  it("never calls Zoom without both stored names", async () => {
+    mocks.registerWebinarContact.mockImplementation(
+      async (_person, options) => {
+        mocks.hookFields = await options.beforeTrigger?.("c1", {
+          firstName: "Mary",
+          lastName: "",
+        });
+        return { outcome: "registered", contactId: "c1", ownsContact: true };
+      },
+    );
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT",
+    );
+    expect(mocks.registerZoomRegistrant).not.toHaveBeenCalled();
   });
 
   it("never registers in Zoom for a finished room", async () => {
