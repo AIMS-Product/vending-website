@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  eventTagSpellings,
   INTAKE_FIELD_IDS,
   readContactField,
   registerWebinarContact,
@@ -257,6 +258,38 @@ describe("registerWebinarContact", () => {
       ownsContact: false,
     });
     expect(calls).toHaveLength(1);
+  });
+
+  it("recognises someone already registered under the room's other tag spellings", async () => {
+    // Oct 20's workflow tags `webinar-20oct`; Oct 13's tagged `oct13-webinar`.
+    for (const tag of ["webinar-6oct", "oct6-webinar"]) {
+      const { calls, fetchImpl } = ghl({
+        duplicate: { id: "c1", tags: [tag] },
+      });
+      await expect(
+        registerWebinarContact(person, { ...auth, fetchImpl }),
+      ).resolves.toMatchObject({ outcome: "already-registered" });
+      // The email lookup only: no upsert, no tag removal, no tag add.
+      expect(calls).toHaveLength(1);
+    }
+  });
+
+  it("never counts another room's tags, in any spelling, as this room's", async () => {
+    const { calls, fetchImpl } = ghl({
+      duplicate: {
+        id: "c1",
+        tags: [
+          "webinar-16oct",
+          "oct16-webinar",
+          "webinar-oct16",
+          "webinar-oct60",
+        ],
+      },
+    });
+    await expect(
+      registerWebinarContact(person, { ...auth, fetchImpl }),
+    ).resolves.toMatchObject({ outcome: "registered" });
+    expect(calls).toHaveLength(4);
   });
 
   it("still registers when the event tag is unknown", async () => {
@@ -627,5 +660,17 @@ describe("readContactField", () => {
     await expect(
       readContactField("c1", "f1", { token: "t", fetchImpl }),
     ).rejects.toBeInstanceOf(WebinarRegistrationError);
+  });
+});
+
+describe("eventTagSpellings", () => {
+  it("lists the house, suffix and day-first spellings", () => {
+    expect(eventTagSpellings("webinar-oct20")).toEqual([
+      "webinar-oct20",
+      "oct20-webinar",
+      "webinar-20oct",
+    ]);
+    expect(eventTagSpellings("webinar-sept8")).toContain("webinar-8sept");
+    expect(eventTagSpellings("odd tag")).toEqual(["odd tag"]);
   });
 });

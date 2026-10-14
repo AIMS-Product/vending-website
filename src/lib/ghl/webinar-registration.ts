@@ -57,6 +57,18 @@ export function webinarEventTag(label: string): string | null {
   return month ? `webinar-${month}${Number(match[2])}` : null;
 }
 
+/**
+ * Every spelling a room's GHL tag has shipped under: "webinar-oct20" (house),
+ * "oct20-webinar" (Oct 13's workflow) and "webinar-20oct" (Oct 20's, like
+ * "webinar-18aug"). Same list as vp-webinars `roll_next_event.tag_candidates`.
+ */
+export function eventTagSpellings(tag: string): string[] {
+  const match = /^webinar-([a-z]+)(\d{1,2})$/.exec(tag);
+  if (!match) return [tag];
+  const [, month, day] = match;
+  return [tag, `${month}${day}-webinar`, `webinar-${day}${month}`];
+}
+
 export type WebinarRegistration = {
   firstName: string;
   lastName: string;
@@ -246,7 +258,8 @@ export async function registerWebinarContact(
   // browser its intake session. Register the email on its own contact instead,
   // without the number.
   const phoneOwner = existing ? null : await lookup({ number: person.phone });
-  if (person.eventTag && existing?.tags?.includes(person.eventTag)) {
+  const roomTags = person.eventTag ? eventTagSpellings(person.eventTag) : [];
+  if (existing && roomTags.some((tag) => existing.tags?.includes(tag))) {
     return {
       outcome: "already-registered",
       contactId: existing.id,
