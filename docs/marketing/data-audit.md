@@ -97,7 +97,10 @@ Plus the shapes past bugs left behind, checked against nothing but themselves:
 - **No day is missing.** A failed fetch leaves a hole that is invisible in a
   monthly total (YouTube had no Sep 10 until it was found this way). Visits
   are checked to two days back, YouTube to three: ending YouTube at two failed
-  this every night on a day YouTube had not reported yet.
+  this every night on a day YouTube had not reported yet. Only a day with data
+  after it counts as a hole; trailing empty days are a source that has not
+  reported yet (YouTube sometimes runs four days late), and a dead feed fails
+  that source's own comparison check instead.
 - **Every lead reached Close.** A lead that never synced is a lead no rep sees.
 - **Every connector ran cleanly.** Includes "nothing ran at all", which is a
   dead cron, not a healthy night.

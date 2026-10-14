@@ -345,6 +345,23 @@ describe("day-holes", () => {
     expect(check).toMatchObject({ status: "pass" });
   });
 
+  // 2026-10-14: YouTube had not reported 10-11 three days later; six of 24
+  // nights since 09-01 failed this way, and every day filled in by itself.
+  it("does not call trailing days missing when YouTube runs four days late", async () => {
+    const check = await holesRun(views("2026-09-04", "2026-09-15"));
+    expect(check).toMatchObject({ status: "pass" });
+  });
+
+  it("reports a middle hole but not the trailing days after the last data", async () => {
+    const check = await holesRun(
+      views("2026-09-04", "2026-09-13", ["2026-09-10"]),
+    );
+    expect(check).toMatchObject({ status: "fail" });
+    expect(check.detail).toBe(
+      "Nothing stored for YouTube views on 2026-09-10.",
+    );
+  });
+
   it("still catches a real hole in YouTube views", async () => {
     const check = await holesRun(
       views("2026-09-04", "2026-09-16", ["2026-09-10"]),
@@ -352,6 +369,42 @@ describe("day-holes", () => {
     expect(check).toMatchObject({ status: "fail" });
     expect(check.detail).toContain("YouTube views on 2026-09-10");
     expect(check.detail).not.toContain("2026-09-17");
+  });
+});
+
+describe("youtube-views", () => {
+  // A feed that stops writing leaves no rows at all. That read as "skipped",
+  // which never alerts, once the dead days filled the whole window.
+  it("fails, not skips, when we stored nothing and YouTube has views", async () => {
+    const run = await runDataAudit({
+      now,
+      client: fakeClient({ youtube_video_daily: [] }),
+      ga4: null,
+      close: null,
+      calendly: null,
+      metricool: null,
+      youtube: { fetchVideoDay: async () => [{ views: 500 }] } as never,
+      ghl: null,
+    });
+    expect(
+      run.results.find((r) => r.checkId === "youtube-views"),
+    ).toMatchObject({ status: "fail", ours: 0 });
+  });
+
+  it("still skips when neither side has a number", async () => {
+    const run = await runDataAudit({
+      now,
+      client: fakeClient({ youtube_video_daily: [] }),
+      ga4: null,
+      close: null,
+      calendly: null,
+      metricool: null,
+      youtube: { fetchVideoDay: async () => [] } as never,
+      ghl: null,
+    });
+    expect(
+      run.results.find((r) => r.checkId === "youtube-views"),
+    ).toMatchObject({ status: "skipped", ours: null });
   });
 });
 
