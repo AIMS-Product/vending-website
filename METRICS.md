@@ -598,6 +598,32 @@ the SteelTrap column as that document describes it.
 6. **Channel Book % is a different rate.** Ours denominates on everyone a channel acquired; theirs on
    Close leads created. Neither is wrong; they are not the same number.
 
+### Booked calls V2 — Dom's shared rule (`booked_calls.v2.2`, side by side)
+
+Since 2026-10-14 the Months page also shows **Booked calls V2** (`src/lib/booked-calls-v2/`), Dom's
+shared definition, beside the legacy views above. Nothing else on the dashboard reads it yet; the
+switch waits on a two-week side-by-side and Adam + Dom's sign-off.
+
+```
+Booked V2 = Close meeting activities created in the window (date_created, Pacific)
+            that pass, in order: not an excluded caller; active status and no
+            Cancelled/Rescheduled outcome; an approved title (25-entry Lane 2 / Social DMs
+            map, 5 historical exceptions before 2026-10-14 07:00Z, or one of 12 first-call
+            families); no live twin at the same start; >= 60 Pacific days after the
+            lead's immediately preceding scheduled meeting (any meeting); no unlinked
+            reschedule; and, for Marketing, a supported lead source.
+Booked By = title map (Lane 2, Social DMs), else Marketing. Lead source is shown
+            separately and never adds calls.
+```
+
+Differences from the legacy rule: one credit per meeting (not per lead), dated by creation (not the
+scheduled day), repeats after 60 days, Booked By from the title (not the lead "Booked By" field),
+`Reactivation Scrapers` retired as a source, TLG counted, no lead-status / Quiz / brand exclusions,
+and a held-for-review state that is never counted. Data: `close_meetings` + `close_meeting_leads`,
+hourly `close-meetings-sync`. Proof against Dom's certified Oct 1-13 pull (206 = 84 / 119 / 3):
+`scripts/booked-calls-v2-validate.ts`. The UTM and Resource Tag source maps are ours until Dom shares
+`sources.py`.
+
 ### What is already known to agree
 
 On matched windows our Close mirror tracks their Booked within three bookings, about 2%. The marketing
