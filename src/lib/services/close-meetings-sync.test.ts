@@ -91,7 +91,7 @@ describe("syncCloseMeetings", () => {
         };
       },
     };
-    const now = new Date("2022-01-20T00:00:00Z");
+    const now = new Date("2024-01-20T00:00:00Z");
     const seen: string[] = [];
     const close = {
       listOutcomes: async () => ({ data: [] }),
@@ -104,15 +104,15 @@ describe("syncCloseMeetings", () => {
       listMeetings: async (gte: string, lt: string, skip: number) => {
         seen.push(`${gte}|${lt}|${skip}`);
         const whole =
-          gte === "2022-01-01T00:00:00Z" && lt.startsWith("2022-01-20");
+          gte === "2024-01-01T00:00:00Z" && lt.startsWith("2024-01-20");
         // The whole window always says "more", forcing a split at the cap.
         return {
           data: [
             {
               id: whole ? `acti_${skip}` : `acti_half_${gte}`,
               lead_id: "lead_a",
-              date_created: "2022-01-10T00:00:00Z",
-              starts_at: "2022-01-12T00:00:00Z",
+              date_created: "2024-01-10T00:00:00Z",
+              starts_at: "2024-01-12T00:00:00Z",
             },
           ],
           has_more: whole,
@@ -125,7 +125,8 @@ describe("syncCloseMeetings", () => {
       now,
     });
     expect(outcome.error ?? null).toBeNull();
-    expect(seen.some((s) => s.endsWith("|1900"))).toBe(true);
+    // One month pages to 9,900 before splitting (January 2026 = 7,532 rows).
+    expect(seen.some((s) => s.endsWith("|9900"))).toBe(true);
     expect(seen.filter((s) => s.endsWith("|0")).length).toBe(3);
     const ids = (upserts.close_meetings ?? []).map(
       (r) => (r as { id: string }).id,

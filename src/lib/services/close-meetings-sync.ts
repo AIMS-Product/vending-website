@@ -27,8 +27,14 @@ type MeetingsClient = Pick<
 
 export const CLOSE_MEETINGS_CONNECTOR = "close-meetings";
 
-/** A window still paging past this many rows is split in two and reread. */
-const SKIP_CAP = 2_000;
+/**
+ * A window still paging past this many rows is split in two and reread.
+ * Close paged one meetings listing to _skip 22,400 (2026-10-14) and answers a
+ * skip over its real cap with a 400, so this only needs to clear the biggest
+ * month: January 2026 holds 7,532 meetings. At 2,000 every split reread its
+ * pages, and the crawl took 485 requests / 128s instead of ~250.
+ */
+const SKIP_CAP = 10_000;
 /** Leads with a meeting created this recently get their origin fields refreshed. */
 const LEAD_FACT_DAYS = 70;
 const LEAD_BATCH = 100;

@@ -31,8 +31,8 @@ export type LeadFieldIds = {
   utmMedium?: string;
 };
 
-/** Before the org's first meeting; monthly windows from here are cheap when empty. */
-export const HISTORY_START = "2022-01-01T00:00:00Z";
+/** Before the org's first meeting (2024-05-24); each empty month still costs a request. */
+export const HISTORY_START = "2024-01-01T00:00:00Z";
 
 /** Whole-second ISO, never fractional (see `listMeetings`). */
 export function wholeSecond(ms: number): string {
