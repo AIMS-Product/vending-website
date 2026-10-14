@@ -1478,8 +1478,11 @@ export type Database = {
           clicks_synced_at: string | null;
           created_at: string;
           created_by: string;
+          funnel_name: string | null;
+          funnel_set_by: string | null;
           id: string;
           label: string | null;
+          owner: string | null;
           url: string;
           utm_campaign: string;
           utm_content: string;
@@ -1494,8 +1497,11 @@ export type Database = {
           clicks_synced_at?: string | null;
           created_at?: string;
           created_by: string;
+          funnel_name?: string | null;
+          funnel_set_by?: string | null;
           id?: string;
           label?: string | null;
+          owner?: string | null;
           url: string;
           utm_campaign: string;
           utm_content: string;
@@ -1510,8 +1516,11 @@ export type Database = {
           clicks_synced_at?: string | null;
           created_at?: string;
           created_by?: string;
+          funnel_name?: string | null;
+          funnel_set_by?: string | null;
           id?: string;
           label?: string | null;
+          owner?: string | null;
           url?: string;
           utm_campaign?: string;
           utm_content?: string;

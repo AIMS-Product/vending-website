@@ -15,6 +15,7 @@ vi.mock("@/lib/config", () => ({ config: mocks.config }));
 import {
   createMarketingLink,
   MarketingLinkServiceError,
+  updateMarketingLinkMeta,
 } from "./marketing-links";
 
 function buildClient(
@@ -67,6 +68,7 @@ const input = {
   campaign: "webinar-sept15",
   content: "post-1",
   destination: "webinar-register",
+  funnelName: "Internal Webinar",
 };
 
 describe("createMarketingLink", () => {
@@ -180,5 +182,118 @@ describe("createMarketingLink", () => {
     ).rejects.toThrow(/Bitly could not create/);
     expect(inserted).toHaveLength(0);
     consoleError.mockRestore();
+  });
+});
+
+describe("funnel and owner", () => {
+  it("refuses a new link without a funnel", async () => {
+    const { client, inserted } = buildClient();
+    await expect(
+      createMarketingLink(
+        { ...input, funnelName: "" },
+        { createdBy: "jess@x", client, bitly: null },
+      ),
+    ).rejects.toThrow("Pick the funnel this link feeds.");
+    expect(inserted).toHaveLength(0);
+  });
+
+  it("refuses a funnel that is not a Close choice", async () => {
+    const { client, inserted } = buildClient();
+    await expect(
+      createMarketingLink(
+        { ...input, funnelName: "mike instagram" },
+        { createdBy: "jess@x", client, bitly: null },
+      ),
+    ).rejects.toBeInstanceOf(MarketingLinkServiceError);
+    expect(inserted).toHaveLength(0);
+  });
+
+  it("stores the funnel, who set it, and the owner", async () => {
+    const { client, inserted } = buildClient();
+    await createMarketingLink(
+      { ...input, owner: " Anthony " },
+      { createdBy: "jess@x", client, bitly: null },
+    );
+    expect(inserted[0]).toMatchObject({
+      funnel_name: "Internal Webinar",
+      funnel_set_by: "jess@x",
+      owner: "Anthony",
+    });
+  });
+});
+
+describe("updateMarketingLinkMeta", () => {
+  function updateClient(result: { data: unknown; error: unknown }) {
+    const calls: { patch?: Record<string, unknown>; id?: unknown } = {};
+    const from = vi.fn(() => ({
+      update: (patch: Record<string, unknown>) => {
+        calls.patch = patch;
+        return {
+          eq: (_column: string, id: unknown) => {
+            calls.id = id;
+            return {
+              select: () => ({ maybeSingle: async () => result }),
+            };
+          },
+        };
+      },
+    }));
+    return {
+      client: { from } as unknown as Pick<SupabaseClient<Database>, "from">,
+      calls,
+    };
+  }
+
+  it("sets funnel, owner and note, never the tags", async () => {
+    const { client, calls } = updateClient({
+      data: { id: "l1", funnel_name: "VSL", owner: null, label: "x" },
+      error: null,
+    });
+    await updateMarketingLinkMeta(
+      "l1",
+      { funnelName: "VSL", owner: "", label: " x " },
+      { editedBy: "jess@x", client },
+    );
+    expect(calls.id).toBe("l1");
+    expect(calls.patch).toEqual({
+      funnel_name: "VSL",
+      funnel_set_by: "jess@x",
+      owner: null,
+      label: "x",
+    });
+  });
+
+  it("clears who set the funnel when the funnel is cleared", async () => {
+    const { client, calls } = updateClient({
+      data: { id: "l1", funnel_name: null, owner: null, label: null },
+      error: null,
+    });
+    await updateMarketingLinkMeta(
+      "l1",
+      { funnelName: "" },
+      { editedBy: "jess@x", client },
+    );
+    expect(calls.patch).toMatchObject({
+      funnel_name: null,
+      funnel_set_by: null,
+    });
+  });
+
+  it("refuses an unknown funnel and reports a missing row", async () => {
+    const { client } = updateClient({ data: null, error: null });
+    await expect(
+      updateMarketingLinkMeta(
+        "l1",
+        { funnelName: "Newsletter" },
+        { editedBy: "a", client },
+      ),
+    ).rejects.toBeInstanceOf(MarketingLinkServiceError);
+    await expect(
+      updateMarketingLinkMeta(
+        "gone",
+        { funnelName: "VSL" },
+        { editedBy: "a", client },
+      ),
+    ).rejects.toThrow("That link no longer exists.");
   });
 });

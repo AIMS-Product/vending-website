@@ -743,6 +743,6 @@ function csvNumber(value: number | null): string {
   return value == null ? "" : String(value);
 }
 
-function csvCell(value: string): string {
+export function csvCell(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }

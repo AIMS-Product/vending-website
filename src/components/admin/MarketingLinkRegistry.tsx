@@ -10,6 +10,12 @@ import {
 } from "@/components/admin/AdminUi";
 import { CopyButton } from "@/components/admin/CopyButton";
 import {
+  FunnelTotals,
+  funnelSetBy,
+  LinkMetaForm,
+  totalsByFunnel,
+} from "@/components/admin/MarketingLinkFunnels";
+import {
   checkLinkStandard,
   isShareableLink,
   parseLinkUtms,
@@ -20,7 +26,7 @@ import {
 import type { RegistryLink } from "@/lib/services/marketing-links";
 import { cn } from "@/lib/utils";
 
-type Filter = "all" | "built" | "imported" | "fix";
+type Filter = "all" | "built" | "imported" | "fix" | "nofunnel";
 type Sort = "newest" | "leads";
 
 const FILTERS: { key: Filter; label: string }[] = [
@@ -28,20 +34,26 @@ const FILTERS: { key: Filter; label: string }[] = [
   { key: "built", label: "Built here" },
   { key: "imported", label: "Imported" },
   { key: "fix", label: "Needs fixing" },
+  { key: "nofunnel", label: "No funnel" },
 ];
+
+const ALL_FUNNELS = "";
 
 const PAGE = 50;
 
 export function MarketingLinkRegistry({
   links,
   statsFailed,
+  canSave,
   onStartFrom,
 }: {
   links: RegistryLink[];
   statsFailed: boolean;
+  canSave: boolean;
   onStartFrom: (link: RegistryLink) => void;
 }) {
   const [query, setQuery] = useState("");
+  const [funnel, setFunnel] = useState(ALL_FUNNELS);
   const [filter, setFilter] = useState<Filter>("all");
   const [sort, setSort] = useState<Sort>("leads");
   const [limit, setLimit] = useState(PAGE);
@@ -58,6 +70,7 @@ export function MarketingLinkRegistry({
 
   const visible = links
     .filter((link) => matchesFilter(link, filter))
+    .filter((link) => !funnel || link.funnel_name === funnel)
     .filter((link) =>
       pastedKey ? keyOf(link) === pastedKey : matchesText(link, query),
     )
@@ -73,7 +86,9 @@ export function MarketingLinkRegistry({
     built: links.filter((link) => !link.imported).length,
     imported: links.filter((link) => link.imported).length,
     fix: links.filter((link) => link.problems.length > 0).length,
+    nofunnel: links.filter((link) => !link.funnel_name).length,
   };
+  const funnelTotals = totalsByFunnel(links);
 
   return (
     <section className={adminPanelClass} aria-label="Link registry">
@@ -93,8 +108,8 @@ export function MarketingLinkRegistry({
             correct; reload to try again.
           </p>
         ) : null}
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-          <label className="relative block min-w-0 flex-1">
+        <div className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center">
+          <label className="relative block min-w-0 flex-1 lg:min-w-[18rem]">
             <span className="sr-only">
               Search links or paste one to check it
             </span>
@@ -140,6 +155,24 @@ export function MarketingLinkRegistry({
             ))}
           </div>
           <label className="text-ui-text-muted inline-flex items-center gap-2 text-sm">
+            Funnel
+            <select
+              value={funnel}
+              onChange={(event) => {
+                setFunnel(event.target.value);
+                setLimit(PAGE);
+              }}
+              className={cn(adminInputClass, "h-8 w-auto py-0")}
+            >
+              <option value={ALL_FUNNELS}>All funnels</option>
+              {funnelTotals.map((row) => (
+                <option key={row.funnel} value={row.funnel}>
+                  {row.funnel} ({row.links})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="text-ui-text-muted inline-flex items-center gap-2 text-sm">
             Sort
             <select
               value={sort}
@@ -151,6 +184,14 @@ export function MarketingLinkRegistry({
             </select>
           </label>
         </div>
+        <FunnelTotals
+          rows={funnelTotals}
+          statsFailed={statsFailed}
+          onPick={(name) => {
+            setFunnel(name);
+            setLimit(PAGE);
+          }}
+        />
         {pastedKey ? (
           <PastedCheck
             url={query.trim()}
@@ -186,7 +227,12 @@ export function MarketingLinkRegistry({
           </thead>
           <tbody className="divide-ui-line bg-ui-surface divide-y">
             {visible.slice(0, limit).map((link) => (
-              <LinkRow key={link.id} link={link} onStartFrom={onStartFrom} />
+              <LinkRow
+                key={link.id}
+                link={link}
+                canSave={canSave}
+                onStartFrom={onStartFrom}
+              />
             ))}
             {visible.length === 0 ? (
               <tr>
@@ -220,81 +266,125 @@ export function MarketingLinkRegistry({
 
 function LinkRow({
   link,
+  canSave,
   onStartFrom,
 }: {
   link: RegistryLink;
+  canSave: boolean;
   onStartFrom: (link: RegistryLink) => void;
 }) {
+  const [editing, setEditing] = useState(false);
   const shareUrl = link.bitly_url ?? link.url;
   const shareable = isShareableLink(link);
   return (
-    <tr className="align-top">
-      <td className="max-w-[28rem] px-4 py-2.5">
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-ui-text font-medium break-all">
-            {link.utm_campaign || "(no campaign)"}
-          </span>
-          {link.utm_term ? (
-            <span className="text-ui-accent bg-ui-accent-soft rounded-ui px-1.5 py-0.5 text-xs font-semibold">
-              {link.utm_term}
+    <>
+      <tr className="align-top">
+        <td className="max-w-[28rem] px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-ui-text font-medium break-all">
+              {link.utm_campaign || "(no campaign)"}
             </span>
-          ) : null}
-          {link.imported ? (
-            <AdminStatusBadge status="imported" label="Imported" tone="idle" />
-          ) : null}
-        </div>
-        <p className="text-ui-text-muted mt-0.5 text-xs break-all">
-          {[link.utm_source, link.utm_medium, link.utm_content]
-            .map((value) => value || "–")
-            .join(" · ")}
-        </p>
-        {link.label ? (
-          <p className="text-ui-text-subtle mt-0.5 text-xs">{link.label}</p>
-        ) : null}
-        {link.problems.length > 0 ? (
-          <p className="text-ui-warn-ink mt-0.5 text-xs">
-            {link.problems[0]}
-            {link.problems.length > 1
-              ? ` (+${link.problems.length - 1} more)`
-              : ""}
+            {link.utm_term ? (
+              <span className="text-ui-accent bg-ui-accent-soft rounded-ui px-1.5 py-0.5 text-xs font-semibold">
+                {link.utm_term}
+              </span>
+            ) : null}
+            {link.imported ? (
+              <AdminStatusBadge
+                status="imported"
+                label="Imported"
+                tone="idle"
+              />
+            ) : null}
+          </div>
+          <p className="text-ui-text-muted mt-0.5 text-xs break-all">
+            {[link.utm_source, link.utm_medium, link.utm_content]
+              .map((value) => value || "–")
+              .join(" · ")}
           </p>
-        ) : null}
-        {shareable ? (
-          <a
-            href={shareUrl}
-            target="_blank"
-            rel="noreferrer"
-            title={link.url}
-            className="text-ui-accent mt-0.5 block truncate text-xs underline-offset-2 hover:underline"
-          >
-            {shareUrl}
-          </a>
-        ) : (
-          <p className="text-ui-text-subtle mt-0.5 text-xs">
-            Seen on Calendly bookings; the calendar page was not recorded.
+          <p className="mt-0.5 text-xs">
+            {link.funnel_name ? (
+              <>
+                <span className="text-ui-text font-medium">
+                  {link.funnel_name}
+                </span>
+                <span className="text-ui-text-subtle">
+                  {" "}
+                  ({funnelSetBy(link.funnel_set_by)})
+                </span>
+              </>
+            ) : (
+              <span className="text-ui-warn-ink">No funnel</span>
+            )}
+            {link.owner ? (
+              <span className="text-ui-text-muted"> · {link.owner}</span>
+            ) : null}
           </p>
-        )}
-      </td>
-      <Cell value={link.stats?.leads} strong />
-      <Cell value={link.stats?.booked} />
-      <Cell value={link.stats?.calendarBookings} />
-      <Cell value={link.stats ? link.stats.clicks : undefined} />
-      <td className="text-ui-text-muted px-4 py-2.5 text-xs whitespace-nowrap tabular-nums">
-        {link.stats?.lastLeadAt?.slice(0, 10) ?? "–"}
-      </td>
-      <td className="px-4 py-2.5">
-        <div className="flex justify-end gap-1.5">
-          {shareable ? <CopyButton value={shareUrl} /> : null}
-          <button
-            type="button"
-            onClick={() => onStartFrom(link)}
-            className={adminSmallButtonClass}
-          >
-            Use as template
-          </button>
-        </div>
-      </td>
-    </tr>
+          {link.label ? (
+            <p className="text-ui-text-subtle mt-0.5 text-xs">{link.label}</p>
+          ) : null}
+          {link.problems.length > 0 ? (
+            <p className="text-ui-warn-ink mt-0.5 text-xs">
+              {link.problems[0]}
+              {link.problems.length > 1
+                ? ` (+${link.problems.length - 1} more)`
+                : ""}
+            </p>
+          ) : null}
+          {shareable ? (
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              title={link.url}
+              className="text-ui-accent mt-0.5 block truncate text-xs underline-offset-2 hover:underline"
+            >
+              {shareUrl}
+            </a>
+          ) : (
+            <p className="text-ui-text-subtle mt-0.5 text-xs">
+              Seen on Calendly bookings; the calendar page was not recorded.
+            </p>
+          )}
+        </td>
+        <Cell value={link.stats?.leads} strong />
+        <Cell value={link.stats?.booked} />
+        <Cell value={link.stats?.calendarBookings} />
+        <Cell value={link.stats ? link.stats.clicks : undefined} />
+        <td className="text-ui-text-muted px-4 py-2.5 text-xs whitespace-nowrap tabular-nums">
+          {link.stats?.lastLeadAt?.slice(0, 10) ?? "–"}
+        </td>
+        <td className="px-4 py-2.5">
+          <div className="flex justify-end gap-1.5">
+            {shareable ? <CopyButton value={shareUrl} /> : null}
+            {canSave ? (
+              <button
+                type="button"
+                aria-expanded={editing}
+                onClick={() => setEditing((open) => !open)}
+                className={adminSmallButtonClass}
+              >
+                Edit
+              </button>
+            ) : null}
+            <button
+              type="button"
+              onClick={() => onStartFrom(link)}
+              className={adminSmallButtonClass}
+            >
+              Use as template
+            </button>
+          </div>
+        </td>
+      </tr>
+      {editing ? (
+        <tr className="bg-ui-canvas">
+          <td colSpan={7} className="px-4 py-3">
+            <LinkMetaForm link={link} onDone={() => setEditing(false)} />
+          </td>
+        </tr>
+      ) : null}
+    </>
   );
 }
 
@@ -390,6 +480,7 @@ function matchesFilter(link: RegistryLink, filter: Filter): boolean {
   if (filter === "built") return !link.imported;
   if (filter === "imported") return link.imported;
   if (filter === "fix") return link.problems.length > 0;
+  if (filter === "nofunnel") return !link.funnel_name;
   return true;
 }
 
@@ -403,6 +494,8 @@ function matchesText(link: RegistryLink, query: string): boolean {
     link.utm_content,
     link.utm_term,
     link.label,
+    link.funnel_name,
+    link.owner,
     link.url,
     link.bitly_url,
   ].some((value) => value?.toLowerCase().includes(needle));
@@ -422,6 +515,9 @@ function linkFromPasted(url: string, utms: LinkUtms): RegistryLink {
     utm_content: utms.content ?? "",
     utm_term: utms.term ?? "",
     label: null,
+    funnel_name: null,
+    funnel_set_by: null,
+    owner: null,
     bitly_id: null,
     bitly_url: null,
     created_by: "",

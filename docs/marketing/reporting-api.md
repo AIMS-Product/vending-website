@@ -82,6 +82,23 @@ function pullKpi() {
 }
 ```
 
+## Links (the UTM sheet's replacement)
+
+`GET /api/reporting/links` returns every link on `/admin/links`: its five tags,
+URL and short link, **funnel** (a Close Funnel Name), owner, note, and what it
+brought in (leads, booked, calendar bookings, Bitly clicks, last lead). JSON by
+default, `?format=csv` for a sheet or a script. Link tags and counts only, no
+people.
+
+To find a funnel from tags, match all five lowercased tags to one row. Never
+map a `utm_source` alone: the same source feeds different funnels on different
+links (`newsletter` is Internal Webinar on one, VSL on another).
+
+```
+curl -H "Authorization: Bearer $REPORTING_API_KEY" \
+  "https://www.vendingpreneurs.com/api/reporting/links?format=csv"
+```
+
 ## Key
 
 `REPORTING_API_KEY` in `.env.local` and Vercel (Production and Preview).

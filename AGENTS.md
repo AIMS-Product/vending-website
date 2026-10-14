@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -159,3 +159,4 @@ When continuing this work:
 - 2026-10-12: report loaders page PostgREST with `readAllPages` (`paged-read.ts`), never a serial 1,000-row loop: `channel_daily` read page by page cost ~4 s of every /admin/analytics load (#160). Paid non-webinar Meta (VSL Leads) lands on watch.vendingpreneurs.com (ludicrous.cloud), so it never reaches `lead_submissions`; Close "Meta Ads" is its only booked record.
 - 2026-10-13: Channel rows count by Close Funnel Name (= source, Dom's rule); Lane 2 booking credit is Close "Booked By" (scorecard `bookedByLane2`), never "Sales Team Lane" (current owner). Oct 1-12 vs company MTD: every marketing funnel within 0-2; MTD's lower total is its Lane 1 roster filter. Details and what waits on Dom: `.claude/specs/2026-10-13-booked-calls-alignment.md`.
 - 2026-10-13: `/admin/links` shows each registry link's leads, booked, calendar bookings and clicks, matched on the whole five-UTM tuple (`utmTupleKey`). Rows with `created_by` starting `backfill:` were imported from links already in the wild (`scripts/backfill-marketing-links.mjs`); link coverage and Channels "Going out" exclude them, so never count them as built on the standard. Imported YouTube rows leave `bitly_id` null because `youtube_videos` already owns those clicks.
+- 2026-10-14: the UTM master sheet lives in `marketing_links` now (`funnel_name` = a Close Funnel Name choice, `funnel_set_by` = admin email, `sheet`, `close` or `rule`, plus `owner`). A funnel is a property of the whole five-tag link, never of `utm_source`: the sheet itself sent `newsletter` to Internal Webinar on one link and VSL on another, and `meta` to Meta Ads and VSL. Read it via `GET /api/reporting/links`. Re-imports never overwrite a funnel someone set.
