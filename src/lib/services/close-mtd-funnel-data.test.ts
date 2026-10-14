@@ -11,7 +11,10 @@ const company: CompanyMtdRead = {
 };
 const synced = "2026-10-13T12:05:00Z";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe("compareWhenFresh", () => {
   it("compares an MTD build within two hours of our mirror", () => {
@@ -27,8 +30,23 @@ describe("compareWhenFresh", () => {
     });
   });
 
-  it("keeps today's comparison when the build time is unknown", () => {
+  it("still compares a build exactly two hours behind", () => {
+    expect(compareWhenFresh(company, "2026-10-13T10:05:00Z", synced)).toBe(
+      company,
+    );
+  });
+
+  it("keeps today's comparison when the build time is unknown or unreadable", () => {
     expect(compareWhenFresh(company, null, synced)).toBe(company);
+    expect(compareWhenFresh(company, "not a date", synced)).toBe(company);
+  });
+
+  it("passes an unreachable dashboard through unchanged", () => {
+    const down: CompanyMtdRead = {
+      ok: false,
+      error: "MTD dashboard answered 404.",
+    };
+    expect(compareWhenFresh(down, "2026-10-13T01:00:00Z", synced)).toBe(down);
   });
 });
 
@@ -50,15 +68,23 @@ describe("fetchCompanyMtdBuiltAt", () => {
     );
   });
 
-  it("returns null, never throws, when GitHub is unreachable or refuses", async () => {
+  it("returns null, never throws, when GitHub is unreachable", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("timeout")));
     expect(await fetchCompanyMtdBuiltAt("2026-10")).toBeNull();
+  });
+
+  it("returns null when GitHub refuses (rate limit)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubGlobal(
       "fetch",
       vi.fn().mockResolvedValue(new Response("rate limited", { status: 403 })),
     );
     expect(await fetchCompanyMtdBuiltAt("2026-10")).toBeNull();
+  });
+
+  it("returns null when GitHub lists no commit", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json([])));
     expect(await fetchCompanyMtdBuiltAt("2026-10")).toBeNull();
   });

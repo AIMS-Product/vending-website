@@ -52,8 +52,8 @@ when its last build (the last GitHub commit to `archives/data-YYYY-MM.json`)
 is more than two hours behind our mirror's last sync, all five checks are
 **skipped** with "MTD dashboard last rebuilt <time>", and the Months page
 badge reads "Not compared: ..." instead of "Differs". If GitHub cannot say
-when it last built, the numbers are compared as before. The MTD JSON is
-fetched uncached: on 2026-10-13 a cached copy three rebuilds old made the
+when it last built, the numbers are compared as before. The MTD JSON is not
+cached on our side (GitHub's CDN may still hold it up to 10 minutes): on 2026-10-13 a cached copy three rebuilds old made the
 5:30am check fail (ours 225, cached copy 212, MTD itself 225).
 
 Plus the shapes past bugs left behind, checked against nothing but themselves:
