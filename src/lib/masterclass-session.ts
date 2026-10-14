@@ -51,20 +51,61 @@ export function signMasterclassSession(
   return `${payload}.${sign(payload, secret)}`;
 }
 
+/** [contactId, expiresMs] when `value` is `<id>.<expires>.<sig>` signed over `<prefix><id>.<expires>`. */
+function verifySigned(
+  value: string | null | undefined,
+  secret: string | undefined,
+  prefix: string,
+  now: Date,
+): [string, number] | null {
+  if (!value || !usable(secret)) return null;
+  const match = /^([A-Za-z0-9]{1,64})\.(\d{1,15})\.([\w-]{43})$/.exec(value);
+  if (!match) return null;
+  const [, contactId, expires, signature] = match;
+  const expected = Buffer.from(
+    sign(`${prefix}${contactId}.${expires}`, secret),
+  );
+  const given = Buffer.from(signature);
+  if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
+    return null;
+  }
+  return Number(expires) > now.getTime() ? [contactId, Number(expires)] : null;
+}
+
 /** The contact id, or null for a missing, tampered or expired cookie. */
 export function verifyMasterclassSession(
   value: string | null | undefined,
   secret: string | undefined,
   now: Date = new Date(),
 ): string | null {
-  if (!value || !usable(secret)) return null;
-  const match = /^([A-Za-z0-9]{1,64})\.(\d{1,15})\.([\w-]{43})$/.exec(value);
-  if (!match) return null;
-  const [, contactId, expires, signature] = match;
-  const expected = Buffer.from(sign(`${contactId}.${expires}`, secret));
-  const given = Buffer.from(signature);
-  if (given.length !== expected.length || !timingSafeEqual(given, expected)) {
-    return null;
-  }
-  return Number(expires) > now.getTime() ? contactId : null;
+  return verifySigned(value, secret, "", now)?.[0] ?? null;
+}
+
+export const CALENDAR_TOKEN_TTL_AFTER_START_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The personal calendar link's token (/masterclass/cal/<token>): the GHL
+ * contact id and an expiry, HMAC-signed with its own secret and a "cal."
+ * prefix, so a session cookie is never a calendar token or the reverse. Holds
+ * no PII and never the join link; the route reads that server-side. Spec:
+ * .claude/specs/2026-10-13-personal-zoom-link.md.
+ */
+export function signCalendarToken(
+  contactId: string,
+  startsAt: Date,
+  secret: string | undefined,
+): string | null {
+  if (!usable(secret) || !CONTACT_ID.test(contactId)) return null;
+  const expires = startsAt.getTime() + CALENDAR_TOKEN_TTL_AFTER_START_MS;
+  return `${contactId}.${expires}.${sign(`cal.${contactId}.${expires}`, secret)}`;
+}
+
+/** { contactId, expiresAt } or null for a malformed, tampered or expired token. */
+export function verifyCalendarToken(
+  value: string | null | undefined,
+  secret: string | undefined,
+  now: Date = new Date(),
+): { contactId: string; expiresAt: number } | null {
+  const verified = verifySigned(value, secret, "cal.", now);
+  return verified ? { contactId: verified[0], expiresAt: verified[1] } : null;
 }

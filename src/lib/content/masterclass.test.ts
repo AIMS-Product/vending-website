@@ -7,6 +7,7 @@ import {
   calendarIcs,
   calendarLinks,
   confirmedPlaybookParams,
+  masterclassCalendarEvent,
   liveDayWord,
   masterclassLiveEnd,
   masterclassPhase,
@@ -83,6 +84,51 @@ describe("calendarIcs", () => {
     expect(calendarIcs(event)).toContain(
       "DESCRIPTION:Zoom link in your email\\, from Anthony\\; see you there",
     );
+  });
+});
+
+describe("personal calendar event", () => {
+  const JOIN =
+    "https://us06web.zoom.us/w/82284428904?tk=abcdefghijklmnopqrstuvwxyz0123456789";
+  const start = new Date("2026-10-21T00:30:00.000Z");
+  const personal = masterclassCalendarEvent(start, {
+    joinUrl: JOIN,
+    uidKey: "c1-1761093000000",
+  });
+
+  it("puts the join link in LOCATION and URL with a per-registrant UID", () => {
+    const unfolded = calendarIcs(personal).replace(/\r\n /g, "");
+    expect(unfolded).toContain(`LOCATION:${JOIN}\r\n`);
+    expect(unfolded).toContain(`URL:${JOIN}\r\n`);
+    expect(unfolded).toContain(
+      "UID:masterclass-c1-1761093000000@vendingpreneurs.com\r\n",
+    );
+    expect(unfolded).toContain(`DESCRIPTION:Join here: ${JOIN}\\n`);
+  });
+
+  it("keeps every line within 75 octets (RFC 5545 folding)", () => {
+    for (const line of calendarIcs(personal).split("\r\n")) {
+      expect(new TextEncoder().encode(line).length).toBeLessThanOrEqual(75);
+    }
+  });
+
+  it("gives Google and Outlook the link as the location", () => {
+    const links = calendarLinks(personal);
+    expect(new URL(links.google).searchParams.get("location")).toBe(JOIN);
+    expect(new URL(links.outlook).searchParams.get("location")).toBe(JOIN);
+  });
+
+  it("falls back to today's generic event when the link is not known yet", () => {
+    const generic = masterclassCalendarEvent(start, {
+      joinUrl: null,
+      uidKey: "c1-1",
+    });
+    const ics = calendarIcs(generic);
+    expect(ics).toContain("LOCATION:Zoom (link in your confirmation email)");
+    expect(ics).not.toContain("URL:");
+    expect(
+      new URL(calendarLinks(generic).google).searchParams.has("location"),
+    ).toBe(false);
   });
 });
 

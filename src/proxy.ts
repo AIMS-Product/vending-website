@@ -79,8 +79,13 @@ const CODED_TWO_SEGMENT_PAGES = new Set<string>([
   "/playbook/thank-you",
 ]);
 
+/** The personal calendar route handler (/masterclass/cal/<token>), three segments deep. */
+const MASTERCLASS_CAL_PATH = /^\/masterclass\/cal\/[^/]+$/;
+
 async function isMissingPublicPage(path: string): Promise<boolean> {
-  if (CODED_TWO_SEGMENT_PAGES.has(path)) return false;
+  if (CODED_TWO_SEGMENT_PAGES.has(path) || MASTERCLASS_CAL_PATH.test(path)) {
+    return false;
+  }
   const segments = path.split("/").filter(Boolean);
   // The builder catch-all only serves /{prefix}/{slug}; every deeper public
   // path without its own branch above lands in its notFound().

@@ -117,6 +117,20 @@ const envSchema = z.object({
    */
   MASTERCLASS_SESSION_SECRET: optionalTrimmedOptionalEnv,
   /**
+   * Personal Zoom link at sign-up (.claude/specs/2026-10-13-personal-zoom-link.md).
+   * Zoom Server-to-Server app on Anthony's account (same as vp-webinars),
+   * scopes webinar:write:registrant:admin + webinar:read:list_webinars:admin.
+   * Any one absent -> the site does not register in Zoom; the GHL > Zoom zap
+   * fills `Zoom Url` as before.
+   */
+  ANTHONY_ZOOM_ACCOUNT_ID: optionalTrimmedOptionalEnv,
+  ANTHONY_ZOOM_CLIENT_ID: optionalTrimmedOptionalEnv,
+  ANTHONY_ZOOM_CLIENT_SECRET: optionalTrimmedOptionalEnv,
+  /** HMAC key (>= 32 chars) for /masterclass/cal/<token>. Absent -> generic calendar buttons, no Calendar Link. */
+  MASTERCLASS_CAL_SECRET: optionalTrimmedOptionalEnv,
+  /** Id of the GHL contact field "Calendar Link" (created by hand once). Absent -> that field is not written. */
+  GHL_CALENDAR_LINK_FIELD_ID: optionalTrimmedOptionalEnv,
+  /**
    * Forwarding leads OUT to WeScale's GoHighLevel sub-account — a different
    * account from the GHL_* pair above, which is our own and read-only.
    *
@@ -292,6 +306,11 @@ const parsed = envSchema.safeParse({
   GHL_LOCATION_ID: process.env.GHL_LOCATION_ID,
   GHL_WRITE_TOKEN: process.env.GHL_WRITE_TOKEN,
   MASTERCLASS_SESSION_SECRET: process.env.MASTERCLASS_SESSION_SECRET,
+  ANTHONY_ZOOM_ACCOUNT_ID: process.env.ANTHONY_ZOOM_ACCOUNT_ID,
+  ANTHONY_ZOOM_CLIENT_ID: process.env.ANTHONY_ZOOM_CLIENT_ID,
+  ANTHONY_ZOOM_CLIENT_SECRET: process.env.ANTHONY_ZOOM_CLIENT_SECRET,
+  MASTERCLASS_CAL_SECRET: process.env.MASTERCLASS_CAL_SECRET,
+  GHL_CALENDAR_LINK_FIELD_ID: process.env.GHL_CALENDAR_LINK_FIELD_ID,
   KIT_API_KEY: process.env.KIT_API_KEY,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
   WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,

@@ -33,6 +33,7 @@ import {
   signMasterclassSession,
 } from "@/lib/masterclass-session";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
+import { joinLinkFields } from "@/lib/masterclass-join-link";
 
 export type RegistrationState = {
   /** A non-error outcome shown in place of the redirect (stale event date). */
@@ -205,6 +206,12 @@ export async function registerForMasterclass(
       "masterclass: event tag unknown, repeat-registration check off",
     );
   }
+  // Personal Zoom link + calendar link onto the contact before the trigger
+  // tag, so the first email carries them. Never for a finished room.
+  const beforeTrigger =
+    !stale && event.startsAt
+      ? joinLinkFields(parsed.data.email, event.startsAt)
+      : undefined;
   let contactId: string;
   let ownsContact: boolean;
   try {
@@ -213,6 +220,7 @@ export async function registerForMasterclass(
       {
         token: config.GHL_WRITE_TOKEN,
         locationId: config.GHL_LOCATION_ID ?? GHL_LOCATION_ID,
+        ...(beforeTrigger ? { beforeTrigger } : {}),
       },
     ));
   } catch (error) {

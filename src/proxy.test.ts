@@ -332,6 +332,11 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect((await proxy(request("/playbook/nope"))).status).toBe(404);
   });
 
+  it("hands /masterclass/cal/<token> to its route handler, even a dotless token", async () => {
+    expect((await proxy(request("/masterclass/cal/garbage"))).status).toBe(200);
+    expect((await proxy(request("/masterclass/cal/a/b"))).status).toBe(404);
+  });
+
   it("lets configured custom-prefix pages without a redirect row render normally", async () => {
     const response = await proxy(
       request("/services/r3-services-proof-renamed"),
