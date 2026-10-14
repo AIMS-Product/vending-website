@@ -15,9 +15,10 @@ const METRICS = [
  * Our month so far, cut to the company MTD dashboard's population, against the
  * numbers that dashboard publishes. "Ours" is the Months page's own loader, so
  * what is verified is the line on screen. Both sides refresh during the day
- * (MTD every 15 minutes, our mirror hourly), so a call logged between the two
- * runs can differ by one; past 1% (or one call, whichever is more) the check
- * warns, past twice that it fails.
+ * (MTD irregularly, our mirror hourly), so a call logged between the two runs
+ * can differ by one; past 1% (or one call, whichever is more) the check warns,
+ * past twice that it fails. An MTD build over two hours behind our mirror is
+ * skipped, with its build time as the reason (compareWhenFresh).
  */
 export async function companyMtdChecks(
   now: Date,

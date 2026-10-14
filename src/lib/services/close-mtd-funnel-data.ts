@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { pacificToday } from "@/lib/admin/format-time";
+import { formatPacificStampShort, pacificToday } from "@/lib/admin/format-time";
 import { config } from "@/lib/config";
 import {
   buildCloseMtdFunnel,
@@ -16,7 +16,8 @@ const PAGE_SIZE = 1000;
 
 /** The company MTD dashboard's own numbers for the month, or why they are missing. */
 export type CompanyMtdRead =
-  { ok: true; totals: CompanyMtdTotals } | { ok: false; error: string };
+  | { ok: true; totals: CompanyMtdTotals }
+  | { ok: false; error: string };
 
 export type CloseMtdReport =
   | {
@@ -43,14 +44,15 @@ const companyMtdSchema = z.object({
 });
 
 /**
- * Reads the company MTD dashboard's totals for `month` (YYYY-MM). It rebuilds
- * every 15 minutes, so a short cache keeps the comparison honest. Never
- * throws: an unreachable dashboard is reported, not read as a mismatch.
+ * Reads the company MTD dashboard's totals for `month` (YYYY-MM). Not cached
+ * on our side: a cached copy served stale is how the Oct 13 audit compared
+ * against a build three rebuilds old. Never throws: an unreachable dashboard
+ * is reported, not read as a mismatch.
  */
 export async function fetchCompanyMtd(month: string): Promise<CompanyMtdRead> {
   try {
     const response = await fetch(COMPANY_MTD_URL(month), {
-      next: { revalidate: 900 },
+      cache: "no-store",
       // A stalled GitHub Pages must not hold the Months page or the audit.
       signal: AbortSignal.timeout(5000),
     });
@@ -79,6 +81,71 @@ export async function fetchCompanyMtd(month: string): Promise<CompanyMtdRead> {
     console.error("Company MTD dashboard read failed", error);
     return { ok: false, error: "MTD dashboard could not be reached." };
   }
+}
+
+const MTD_COMMITS_URL = (month: string) =>
+  `https://api.github.com/repos/AIMS-Product/mtd-funnel-dashboard/commits?path=archives/data-${month}.json&per_page=1`;
+
+const mtdCommitsSchema = z
+  .array(
+    z.object({
+      commit: z.object({ committer: z.object({ date: z.string() }) }),
+    }),
+  )
+  .min(1);
+
+/**
+ * When the MTD dashboard last rebuilt `month`: the last commit to its data
+ * file. It rebuilds from a local machine, irregularly (gaps of hours
+ * overnight). Never throws: null when GitHub cannot say.
+ */
+// ponytail: a rebuild that changes no number makes no commit, so a quiet spell
+// reads as stale and skips a comparison that would have passed. Ask Dom to
+// publish a built_at in data-YYYY-MM.json if that skips too often.
+export async function fetchCompanyMtdBuiltAt(
+  month: string,
+): Promise<string | null> {
+  try {
+    const response = await fetch(MTD_COMMITS_URL(month), {
+      cache: "no-store",
+      headers: { Accept: "application/vnd.github+json" },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) {
+      console.error(`MTD build time: GitHub answered ${response.status}`);
+      return null;
+    }
+    const parsed = mtdCommitsSchema.safeParse(await response.json());
+    if (!parsed.success) {
+      console.error("MTD build time: unexpected GitHub response shape");
+      return null;
+    }
+    return parsed.data[0]!.commit.committer.date;
+  } catch (error) {
+    console.error("MTD build time read failed", error);
+    return null;
+  }
+}
+
+const MAX_MTD_LAG_MS = 2 * 60 * 60 * 1000;
+
+/**
+ * The MTD numbers, unless the dashboard last rebuilt more than two hours
+ * before our mirror synced: then a gap is its staleness, not a disagreement,
+ * so say it was not compared. An unknown build time keeps the comparison.
+ */
+export function compareWhenFresh(
+  company: CompanyMtdRead,
+  builtAt: string | null,
+  mirrorSyncedAt: string | null,
+): CompanyMtdRead {
+  if (!company.ok || !builtAt || !mirrorSyncedAt) return company;
+  const lag = Date.parse(mirrorSyncedAt) - Date.parse(builtAt);
+  if (!(lag > MAX_MTD_LAG_MS)) return company;
+  return {
+    ok: false,
+    error: `MTD dashboard last rebuilt ${formatPacificStampShort(builtAt)}`,
+  };
 }
 
 /** First day of `day`'s month. */
@@ -138,7 +205,7 @@ export async function getCloseMtdFunnel(
       }
       if ((data ?? []).length < PAGE_SIZE) break;
     }
-    const [deals, company] = await Promise.all([
+    const [deals, company, builtAt] = await Promise.all([
       fetchCloseDeals({
         from,
         to: today,
@@ -146,6 +213,7 @@ export async function getCloseMtdFunnel(
         mirror: client,
       }),
       fetchCompanyMtd(today.slice(0, 7)),
+      fetchCompanyMtdBuiltAt(today.slice(0, 7)),
     ]);
     // Until the sync has filled "Lead Owner", the roster cut is empty and
     // would read as a mismatch; say it is not compared yet instead.
@@ -155,7 +223,7 @@ export async function getCloseMtdFunnel(
       funnel: buildCloseMtdFunnel({ calls, deals, from, to: today }),
       mirrorSyncedAt,
       company: ownersMirrored
-        ? company
+        ? compareWhenFresh(company, builtAt, mirrorSyncedAt)
         : {
             ok: false,
             error: "lead owners are not in our copy of Close yet.",

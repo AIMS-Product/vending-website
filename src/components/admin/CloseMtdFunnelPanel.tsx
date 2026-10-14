@@ -367,7 +367,7 @@ function CompanyMtdView({
             counts: leads owned by the Lane 1 sales roster, other brands left
             out, and the closers it leaves out of closed-won.
             {asOf
-              ? ` Our copy of Close as of ${asOf}; the MTD dashboard rebuilds every 15 minutes, so a call logged in between can differ by one until the next sync.`
+              ? ` Our copy of Close as of ${asOf}; the MTD dashboard rebuilds on its own schedule, so a call logged in between can differ by one, and when it is more than two hours behind our copy the two are not compared.`
               : null}
           </p>
         </div>

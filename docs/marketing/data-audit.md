@@ -25,21 +25,36 @@ Each check compares one stored number to the system that produced it, over a
 window that source has finished restating (GA4 settles in two days, ad spend
 in about one, YouTube in three — so the windows end before that).
 
-| Check                      | Ours                                   | Source                                            | Tolerance |
-| -------------------------- | -------------------------------------- | ------------------------------------------------- | --------- |
-| Channels & KPI visits      | `channel_daily.visits`                 | Google Analytics sessions                         | 2%        |
-| Funnels & Executive visits | `ga4_page_views.sessions`              | Google Analytics sessions                         | 2%        |
-| First calls booked         | `close_lead_funnel`                    | Close, counted by Close itself                    | 1%        |
-| Close mirror is current    | last crawl time                        | —                                                 | 3 hours   |
-| Calls on the calendar      | `calendly_bookings`, distinct events   | Calendly scheduled events                         | 2%        |
-| Ad spend                   | `channel_daily.spend`                  | Metricool, per campaign per day                   | 1%        |
-| Google Ads page spend      | `google_ads_campaign_daily.cost`       | GA4 `advertiserAdCost` (Google Ads link)          | 1%        |
-| Off-site form fills        | `channel_daily.leads` on the form keys | GoHighLevel submissions                           | 1%        |
-| YouTube views              | `youtube_video_daily.views`            | YouTube, or Metricool when OAuth is not connected | 2%        |
-| Webinar numbers arriving   | `webinar_events.received_at`           | the vp-webinars push                              | 8 days    |
-| Month over month: won      | the tab's own loader, last full month  | Close leads booked that month, stage Closed / Won | 3%        |
-| Month over month: revenue  | the tab's own loader, last full month  | won deal value on those same Close leads          | 3%        |
-| Month over month: leads    | the grid's Leads cells, per channel    | `lead_submissions`, per channel                   | exact     |
+| Check                      | Ours                                     | Source                                            | Tolerance    |
+| -------------------------- | ---------------------------------------- | ------------------------------------------------- | ------------ |
+| Channels & KPI visits      | `channel_daily.visits`                   | Google Analytics sessions                         | 2%           |
+| Funnels & Executive visits | `ga4_page_views.sessions`                | Google Analytics sessions                         | 2%           |
+| First calls booked         | `close_lead_funnel`                      | Close, counted by Close itself                    | 1%           |
+| Close mirror is current    | last crawl time                          | —                                                 | 3 hours      |
+| Calls on the calendar      | `calendly_bookings`, distinct events     | Calendly scheduled events                         | 2%           |
+| Ad spend                   | `channel_daily.spend`                    | Metricool, per campaign per day                   | 1%           |
+| Google Ads page spend      | `google_ads_campaign_daily.cost`         | GA4 `advertiserAdCost` (Google Ads link)          | 1%           |
+| Off-site form fills        | `channel_daily.leads` on the form keys   | GoHighLevel submissions                           | 1%           |
+| YouTube views              | `youtube_video_daily.views`              | YouTube, or Metricool when OAuth is not connected | 2%           |
+| Webinar numbers arriving   | `webinar_events.received_at`             | the vp-webinars push                              | 8 days       |
+| Month over month: won      | the tab's own loader, last full month    | Close leads booked that month, stage Closed / Won | 3%           |
+| Month over month: revenue  | the tab's own loader, last full month    | won deal value on those same Close leads          | 3%           |
+| Month over month: leads    | the grid's Leads cells, per channel      | `lead_submissions`, per channel                   | exact        |
+| Company MTD (5 checks)     | Months page's company view, month so far | the company MTD dashboard's `data-YYYY-MM.json`   | 1% or 1 call |
+
+**Company MTD** (`company-mtd-booked|showed|qualified|won|revenue`) compares
+our Close mirror, cut to MTD's Lane 1 roster and exclusions
+(`close-mtd-funnel.ts`), to the totals the company MTD dashboard
+(aims-product.github.io/mtd-funnel-dashboard) publishes. That dashboard
+rebuilds irregularly from a local machine (gaps of several hours overnight),
+and a build from before midnight PT has not counted the new day's calls. So
+when its last build (the last GitHub commit to `archives/data-YYYY-MM.json`)
+is more than two hours behind our mirror's last sync, all five checks are
+**skipped** with "MTD dashboard last rebuilt <time>", and the Months page
+badge reads "Not compared: ..." instead of "Differs". If GitHub cannot say
+when it last built, the numbers are compared as before. The MTD JSON is
+fetched uncached: on 2026-10-13 a cached copy three rebuilds old made the
+5:30am check fail (ours 225, cached copy 212, MTD itself 225).
 
 Plus the shapes past bugs left behind, checked against nothing but themselves:
 
