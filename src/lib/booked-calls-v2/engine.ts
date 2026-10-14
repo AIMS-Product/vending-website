@@ -134,7 +134,6 @@ function classifyTitle(m: Meeting, lead: LeadFacts | undefined): TitleVerdict {
   }
   if (m.userId && SETTER_ONLY_CALLERS.has(m.userId))
     return { kind: "not_sales_call" };
-  if (/quick\s+discovery/i.test(title)) return { kind: "not_sales_call" };
   const family = FIRST_CALL_FAMILIES.some((re) => re.test(title));
   if (FOLLOW_UP_ONLY.test(title)) return { kind: "follow_up" };
   if (family) return { kind: "family" };
