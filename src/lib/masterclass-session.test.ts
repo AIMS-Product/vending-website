@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  CALENDAR_TOKEN_TTL_AFTER_START_MS,
   SESSION_TTL_MS,
+  signCalendarToken,
   signMasterclassSession,
+  verifyCalendarToken,
   verifyMasterclassSession,
 } from "./masterclass-session";
 
@@ -61,5 +64,44 @@ describe("masterclass session cookie", () => {
     expect(signMasterclassSession("a.b", SECRET, NOW)).toBeNull();
     expect(signMasterclassSession("../x", SECRET, NOW)).toBeNull();
     expect(signMasterclassSession("", SECRET, NOW)).toBeNull();
+  });
+});
+
+describe("calendar token", () => {
+  const START = new Date("2026-10-21T00:30:00Z");
+
+  it("verifies until a day after the room starts", () => {
+    const token = signCalendarToken("abc123", START, SECRET);
+    const day = CALENDAR_TOKEN_TTL_AFTER_START_MS;
+    expect(verifyCalendarToken(token, SECRET, NOW)).toEqual({
+      contactId: "abc123",
+      expiresAt: START.getTime() + day,
+    });
+    expect(
+      verifyCalendarToken(token, SECRET, new Date(START.getTime() + day)),
+    ).toBeNull();
+  });
+
+  it("rejects a tampered contact id or signature", () => {
+    const token = signCalendarToken("abc123", START, SECRET)!;
+    expect(
+      verifyCalendarToken(token.replace("abc123", "abc124"), SECRET, NOW),
+    ).toBeNull();
+    expect(
+      verifyCalendarToken(`${token.slice(0, -1)}A`, SECRET, NOW),
+    ).toBeNull();
+    expect(verifyCalendarToken(token, "t".repeat(32), NOW)).toBeNull();
+  });
+
+  it("is never interchangeable with a session cookie", () => {
+    const session = signMasterclassSession("abc123", SECRET, NOW);
+    const token = signCalendarToken("abc123", START, SECRET);
+    expect(verifyCalendarToken(session, SECRET, NOW)).toBeNull();
+    expect(verifyMasterclassSession(token, SECRET, NOW)).toBeNull();
+  });
+
+  it("is not minted without a usable secret or a GHL-shaped id", () => {
+    expect(signCalendarToken("abc123", START, undefined)).toBeNull();
+    expect(signCalendarToken("a.b", START, SECRET)).toBeNull();
   });
 });

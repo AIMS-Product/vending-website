@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   SESSION_COOKIE,
+  verifyCalendarToken,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
+import { ZOOM_URL_FIELD_ID } from "@/lib/masterclass-join-link";
 import {
   HONEYPOT_FIELD,
   MASTERCLASS_BUSY_MESSAGE,
@@ -21,10 +23,12 @@ const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   registerWebinarContact: vi.fn(),
   getMasterclassEvent: vi.fn(),
+  registerZoomRegistrant: vi.fn(),
+  hookFields: undefined as unknown,
   config: {
     GHL_WRITE_TOKEN: "pit-test" as string | undefined,
     MASTERCLASS_SESSION_SECRET: "k".repeat(32) as string | undefined,
-  },
+  } as Record<string, string | undefined>,
 }));
 
 vi.mock("next/headers", () => ({
@@ -35,7 +39,13 @@ vi.mock("next/headers", () => ({
   }),
 }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
-vi.mock("@/lib/config", () => ({ config: mocks.config }));
+vi.mock("@/lib/config", () => ({
+  config: mocks.config,
+  publicConfig: { siteUrl: "https://www.vendingpreneurs.com" },
+}));
+vi.mock("@/lib/zoom/webinar-registrant", () => ({
+  registerZoomRegistrant: mocks.registerZoomRegistrant,
+}));
 vi.mock("@/lib/public-rate-limit", async () => ({
   ...(await vi.importActual<typeof import("@/lib/public-rate-limit")>(
     "@/lib/public-rate-limit",
@@ -586,5 +596,95 @@ describe("registerForMasterclass around the event date", () => {
     // The log carries no email or phone.
     expect(JSON.stringify(warn.mock.calls)).not.toMatch(/mary|555/i);
     warn.mockRestore();
+  });
+});
+
+describe("registerForMasterclass: personal Zoom link", () => {
+  const JOIN = "https://us06web.zoom.us/w/82284428904?tk=abc";
+  const CAL_SECRET = "c".repeat(32);
+  const upcoming = () => new Date(Date.now() + 2 * 86_400_000).toISOString();
+
+  beforeEach(() => {
+    Object.assign(mocks.config, {
+      ANTHONY_ZOOM_ACCOUNT_ID: "acct",
+      ANTHONY_ZOOM_CLIENT_ID: "id",
+      ANTHONY_ZOOM_CLIENT_SECRET: "secret",
+      MASTERCLASS_CAL_SECRET: CAL_SECRET,
+      GHL_CALENDAR_LINK_FIELD_ID: "calField",
+    });
+    mocks.getMasterclassEvent.mockResolvedValue({
+      label: "October 20, 2026 at 7:30 PM CDT",
+      startsAt: upcoming(),
+      anthony: null,
+    });
+    mocks.registerZoomRegistrant.mockResolvedValue(JOIN);
+    // Like the real one: the hook runs after the upsert, before the tag.
+    mocks.registerWebinarContact.mockImplementation(
+      async (_person, options) => {
+        mocks.hookFields = await options.beforeTrigger?.("c1");
+        return { outcome: "registered", contactId: "c1", ownsContact: true };
+      },
+    );
+  });
+  afterEach(() => {
+    for (const key of [
+      "ANTHONY_ZOOM_ACCOUNT_ID",
+      "ANTHONY_ZOOM_CLIENT_ID",
+      "ANTHONY_ZOOM_CLIENT_SECRET",
+      "MASTERCLASS_CAL_SECRET",
+      "GHL_CALENDAR_LINK_FIELD_ID",
+    ]) {
+      delete mocks.config[key];
+    }
+  });
+
+  it("writes the join link and a signed calendar link before the tag", async () => {
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?",
+    );
+    expect(mocks.registerZoomRegistrant).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "mary@example.com",
+        firstName: "Mary",
+        lastName: "Berg",
+      }),
+      { accountId: "acct", clientId: "id", clientSecret: "secret" },
+    );
+    const [zoomField, calField] = mocks.hookFields as {
+      id: string;
+      field_value: string;
+    }[];
+    expect(zoomField).toEqual({ id: ZOOM_URL_FIELD_ID, field_value: JOIN });
+    expect(calField.id).toBe("calField");
+    const prefix = "https://www.vendingpreneurs.com/masterclass/cal/";
+    expect(calField.field_value.startsWith(prefix)).toBe(true);
+    const token = calField.field_value.slice(prefix.length);
+    expect(verifyCalendarToken(token, CAL_SECRET)?.contactId).toBe("c1");
+    // The join link is never in the calendar link.
+    expect(calField.field_value).not.toContain("zoom");
+  });
+
+  it("still confirms the seat when Zoom fails, leaving Zoom Url to the zap", async () => {
+    mocks.registerZoomRegistrant.mockResolvedValue(null);
+    await expect(registerForMasterclass({}, form())).rejects.toThrow(
+      "REDIRECT /masterclass-confirmed?",
+    );
+    expect(mocks.hookFields).toEqual([
+      expect.objectContaining({ id: "calField" }),
+    ]);
+  });
+
+  it("never registers in Zoom for a finished room", async () => {
+    mocks.getMasterclassEvent.mockResolvedValue({
+      label: "October 6, 2026 at 7:30 PM CDT",
+      startsAt: "2026-10-07T00:30:00.000Z",
+      anthony: null,
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await registerForMasterclass({}, form());
+    expect(mocks.registerWebinarContact.mock.calls[0][1]).not.toHaveProperty(
+      "beforeTrigger",
+    );
+    expect(mocks.registerZoomRegistrant).not.toHaveBeenCalled();
   });
 });

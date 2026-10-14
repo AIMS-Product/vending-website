@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   INTAKE_FIELD_IDS,
+  readContactField,
   registerWebinarContact,
   saveWebinarIntake,
   SITE_REGISTRATION_TAG,
@@ -499,5 +500,108 @@ describe("registerWebinarContact: a number another contact holds", () => {
     });
     await registerWebinarContact(person, { ...auth, fetchImpl });
     expect(calls.some((c) => c.url.includes("number="))).toBe(false);
+  });
+});
+
+describe("registerWebinarContact: fields before the trigger tag", () => {
+  const ZOOM = {
+    id: "zoomField",
+    field_value: "https://us06web.zoom.us/w/1?tk=a",
+  };
+  const route = (c: Call) =>
+    `${c.method} ${c.url.split("?")[0].split("/").slice(-2).join("/")}`;
+
+  it("writes the hook's fields onto the contact, then removes and adds the tag", async () => {
+    const { calls, fetchImpl } = ghl({});
+    const beforeTrigger = vi.fn(async () => [ZOOM]);
+    await registerWebinarContact(person, { ...auth, fetchImpl, beforeTrigger });
+    expect(beforeTrigger).toHaveBeenCalledWith("c1");
+    expect(calls.slice(3).map(route)).toEqual([
+      "PUT contacts/c1",
+      "DELETE c1/tags",
+      "POST c1/tags",
+    ]);
+    expect(calls[3].body).toEqual({ customFields: [ZOOM] });
+  });
+
+  it("makes no extra call when the hook has nothing to write", async () => {
+    const { calls, fetchImpl } = ghl({});
+    await registerWebinarContact(person, {
+      ...auth,
+      fetchImpl,
+      beforeTrigger: async () => [],
+    });
+    expect(calls.map((c) => c.method)).not.toContain("PUT");
+  });
+
+  it("still tags (registers) when the field write fails", async () => {
+    const { calls, fetchImpl } = ghl({ status: { "PUT tags": [400] } });
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      registerWebinarContact(person, {
+        ...auth,
+        fetchImpl,
+        beforeTrigger: async () => [ZOOM],
+      }),
+    ).resolves.toMatchObject({ outcome: "registered" });
+    expect(calls.at(-1)?.url).toMatch(/\/contacts\/c1\/tags$/);
+    expect(JSON.stringify(warn.mock.calls)).not.toMatch(/zoom\.us|mary/i);
+    warn.mockRestore();
+  });
+
+  it("still tags (registers) when the hook itself throws", async () => {
+    const { calls, fetchImpl } = ghl({});
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    await expect(
+      registerWebinarContact(person, {
+        ...auth,
+        fetchImpl,
+        beforeTrigger: async () => {
+          throw new Error("boom");
+        },
+      }),
+    ).resolves.toMatchObject({ outcome: "registered" });
+    expect(calls.at(-1)?.url).toMatch(/\/contacts\/c1\/tags$/);
+  });
+
+  it("does not run the hook for someone already registered for this room", async () => {
+    const { fetchImpl } = ghl({
+      duplicate: { id: "c1", tags: ["webinar-oct6"] },
+    });
+    const beforeTrigger = vi.fn(async () => [ZOOM]);
+    await registerWebinarContact(person, { ...auth, fetchImpl, beforeTrigger });
+    expect(beforeTrigger).not.toHaveBeenCalled();
+  });
+});
+
+describe("readContactField", () => {
+  const reader = (body: unknown, status = 200) =>
+    vi.fn(
+      async () => new Response(JSON.stringify(body), { status }),
+    ) as unknown as typeof fetch;
+
+  it("returns the field's text value", async () => {
+    const fetchImpl = reader({
+      contact: { id: "c1", customFields: [{ id: "f1", value: "https://x" }] },
+    });
+    await expect(
+      readContactField("c1", "f1", { token: "t", fetchImpl }),
+    ).resolves.toBe("https://x");
+  });
+
+  it("is null for a blank or missing field", async () => {
+    const fetchImpl = reader({ contact: { id: "c1", customFields: [] } });
+    await expect(
+      readContactField("c1", "f1", { token: "t", fetchImpl }),
+    ).resolves.toBeNull();
+  });
+
+  it("refuses an answer for a different contact", async () => {
+    const fetchImpl = reader({
+      contact: { id: "c2", customFields: [{ id: "f1", value: "https://x" }] },
+    });
+    await expect(
+      readContactField("c1", "f1", { token: "t", fetchImpl }),
+    ).rejects.toBeInstanceOf(WebinarRegistrationError);
   });
 });

@@ -133,6 +133,7 @@ export function ConfirmedHero({
               <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
                 Add it to your calendar now
               </p>
+              {/* ph-no-capture: an href can carry a personal calendar token. */}
               <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
                 <a
                   data-track="calendar_added"
@@ -140,7 +141,9 @@ export function ConfirmedHero({
                   href={links.google}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={buttonClass({ className: "col-span-2 gap-2.5" })}
+                  className={buttonClass({
+                    className: "ph-no-capture col-span-2 gap-2.5",
+                  })}
                 >
                   <span
                     aria-hidden="true"
@@ -157,7 +160,7 @@ export function ConfirmedHero({
                   className={buttonClass({
                     variant: "ghost",
                     className:
-                      "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                      "ph-no-capture gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
                   })}
                 >
                   <AppleLogo />
@@ -172,7 +175,7 @@ export function ConfirmedHero({
                   className={buttonClass({
                     variant: "ghost",
                     className:
-                      "gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
+                      "ph-no-capture gap-2 px-3 whitespace-nowrap sm:gap-2.5 sm:px-6",
                   })}
                 >
                   <OutlookLogo />

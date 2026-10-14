@@ -28,6 +28,9 @@ const LIMITS = {
   masterclass_register_phone: { windowMs: 24 * 60 * 60 * 1000, max: 5 },
   // Intake answers onto a contact the signed cookie names; keyed per contact.
   masterclass_intake: { windowMs: 10 * 60 * 1000, max: 10 },
+  // Personal calendar link (/masterclass/cal/<token>): GHL reads per click,
+  // keyed per contact, so one token cannot spend the location's API budget.
+  masterclass_cal: { windowMs: 10 * 60 * 1000, max: 20 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
   attribution_event: { windowMs: 60 * 1000, max: 60 },
   // Site chatbot (see .claude/specs/2026-08-20-site-chatbot.md §API): a chat

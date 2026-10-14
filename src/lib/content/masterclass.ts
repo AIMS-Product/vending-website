@@ -751,6 +751,10 @@ type CalendarEvent = {
   details: string;
   start: Date;
   minutes: number;
+  /** The registrant's own Zoom join link; absent -> the generic location. */
+  joinUrl?: string;
+  /** Per-registrant UID part, so re-adding (or a time change) updates one event. */
+  uidKey?: string;
 };
 
 const stamp = (date: Date) =>
@@ -801,7 +805,7 @@ export const MASTERCLASS_ICS_LOCATION =
  * RFC 5545 requires, not the start time.
  */
 export function calendarIcs(
-  { title, details, start, minutes }: CalendarEvent,
+  { title, details, start, minutes, joinUrl, uidKey }: CalendarEvent,
   now: Date = new Date(),
 ) {
   const end = new Date(start.getTime() + minutes * 60_000);
@@ -811,13 +815,14 @@ export function calendarIcs(
     "PRODID:-//Vendingpreneurs//Masterclass//EN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
-    `UID:masterclass-${stamp(start)}@vendingpreneurs.com`,
+    `UID:masterclass-${uidKey ?? stamp(start)}@vendingpreneurs.com`,
     `DTSTAMP:${stamp(now)}`,
     `DTSTART:${stamp(start)}`,
     `DTEND:${stamp(end)}`,
     `SUMMARY:${icsText(title)}`,
     `DESCRIPTION:${icsText(details)}`,
-    `LOCATION:${icsText(MASTERCLASS_ICS_LOCATION)}`,
+    `LOCATION:${icsText(joinUrl ?? MASTERCLASS_ICS_LOCATION)}`,
+    ...(joinUrl ? [`URL:${joinUrl}`] : []),
     "BEGIN:VALARM",
     "TRIGGER:-PT30M",
     "ACTION:DISPLAY",
@@ -837,7 +842,9 @@ export function calendarLinks({
   details,
   start,
   minutes,
+  joinUrl,
 }: CalendarEvent) {
+  const location: Record<string, string> = joinUrl ? { location: joinUrl } : {};
   const end = new Date(start.getTime() + minutes * 60_000);
   const google = `https://calendar.google.com/calendar/render?${new URLSearchParams(
     {
@@ -845,6 +852,7 @@ export function calendarLinks({
       text: title,
       dates: `${stamp(start)}/${stamp(end)}`,
       details,
+      ...location,
     },
   )}`;
   const outlook = `https://outlook.live.com/calendar/0/deeplink/compose?${new URLSearchParams(
@@ -855,18 +863,36 @@ export function calendarLinks({
       body: details,
       path: "/calendar/action/compose",
       rru: "addevent",
+      ...location,
     },
   )}`;
   return { google, outlook, ics: MASTERCLASS_ICS_PATH };
 }
 
 /** The confirmation-page event, shared by the calendar links and the .ics route. */
-export const masterclassCalendarEvent = (start: Date): CalendarEvent => ({
+export const masterclassCalendarEvent = (
+  start: Date,
+  personal?: { joinUrl: string | null; uidKey: string },
+): CalendarEvent => ({
   title: confirmedCopy.calendarTitle,
-  details: `Your personal Zoom link is in the confirmation email from ${SENDER_EMAIL} (check spam)`,
+  details: personal?.joinUrl
+    ? `Join here: ${personal.joinUrl}\nThis link is yours alone and lets you straight in, so please don't share it.`
+    : `Your personal Zoom link is in the confirmation email from ${SENDER_EMAIL} (check spam)`,
   start,
   minutes: MASTERCLASS_MINUTES,
+  ...(personal?.joinUrl ? { joinUrl: personal.joinUrl } : {}),
+  ...(personal ? { uidKey: personal.uidKey } : {}),
 });
+
+/** The personal calendar route; the token carries no PII and never the join link. */
+export const personalCalendarLinks = (token: string) => {
+  const base = `/masterclass/cal/${token}`;
+  return {
+    google: `${base}?to=google`,
+    outlook: `${base}?to=outlook`,
+    ics: `${base}?to=ics`,
+  };
+};
 
 /**
  * A member card's "Was:" line, short: the text before any "(" or ";" detail

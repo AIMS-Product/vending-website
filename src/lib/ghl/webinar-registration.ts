@@ -73,7 +73,9 @@ export type WebinarRegistrationStep =
   | "remove-tag"
   | "add-tag"
   | "intake-read"
-  | "intake";
+  | "intake"
+  | "join-fields"
+  | "join-read";
 
 export class WebinarRegistrationError extends Error {
   constructor(
@@ -105,12 +107,20 @@ const contactShape = z.object({
 const duplicateResponse = z.object({ contact: contactShape.nullish() });
 const upsertResponse = z.object({ contact: contactShape });
 
+export type CustomFieldWrite = { id: string; field_value: string };
+
 type Options = {
   token: string;
   locationId: string;
   fetchImpl?: typeof fetch;
   sleep?: (ms: number) => Promise<void>;
   now?: () => Date;
+  /**
+   * Fields to write onto the saved contact BEFORE the trigger tag, so the
+   * workflow's first email can merge them (personal Zoom link, calendar link).
+   * Optional extras: a failed write is logged and the registration goes on.
+   */
+  beforeTrigger?: (contactId: string) => Promise<CustomFieldWrite[]>;
 };
 
 /** A leading = + - @ makes a spreadsheet cell a formula (the zap writes a Sheet row). */
@@ -211,7 +221,7 @@ function matchesSubmitted(
 
 export async function registerWebinarContact(
   person: WebinarRegistration,
-  { locationId, now = () => new Date(), ...options }: Options,
+  { locationId, now = () => new Date(), beforeTrigger, ...options }: Options,
 ): Promise<WebinarRegistrationResult> {
   const call = ghlCaller(options);
 
@@ -283,6 +293,25 @@ export async function registerWebinarContact(
     (phoneOwner && phoneOwner.id === contact.id)
   ) {
     throw new WebinarRegistrationError("upsert", 409);
+  }
+
+  try {
+    const extraFields = (await beforeTrigger?.(contact.id)) ?? [];
+    if (extraFields.length) {
+      await call(
+        "join-fields",
+        "PUT",
+        `/contacts/${encodeURIComponent(contact.id)}`,
+        { customFields: extraFields },
+      );
+    }
+  } catch (error) {
+    // Never blocks the sign-up: the zap still writes the Zoom link, and the
+    // email falls back to Zoom's own.
+    console.warn("ghl webinar registration: join fields not written", {
+      status: error instanceof WebinarRegistrationError ? error.status : null,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
   }
 
   const tagPath = `/contacts/${encodeURIComponent(contact.id)}/tags`;
@@ -359,4 +388,27 @@ export async function saveWebinarIntake(
     })),
   });
   return blankKeys;
+}
+
+/** One custom field's text on a contact, or null when blank. Read-only. */
+export async function readContactField(
+  contactId: string,
+  fieldId: string,
+  options: Omit<Options, "locationId" | "now" | "beforeTrigger">,
+): Promise<string | null> {
+  const call = ghlCaller(options);
+  const read = intakeContact.safeParse(
+    await call(
+      "join-read",
+      "GET",
+      `/contacts/${encodeURIComponent(contactId)}`,
+    ),
+  );
+  if (!read.success || read.data.contact.id !== contactId) {
+    throw new WebinarRegistrationError("join-read", 200);
+  }
+  const value = read.data.contact.customFields?.find(
+    (f) => f.id === fieldId,
+  )?.value;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }

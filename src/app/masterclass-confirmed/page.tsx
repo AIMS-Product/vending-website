@@ -22,11 +22,13 @@ import {
   confirmedCopy,
   confirmedPlaybookParams,
   masterclassCalendarEvent,
+  personalCalendarLinks,
   safeFirstName,
 } from "@/lib/content/masterclass";
 import {
   REGISTERED_COOKIE,
   SESSION_COOKIE,
+  signCalendarToken,
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
@@ -70,12 +72,11 @@ export default async function MasterclassConfirmedPage({
   ]);
   // The intake form writes to the contact the signed cookie names, so it only
   // shows for a browser that just registered (and only with the secret set).
-  const hasSession = Boolean(
-    verifyMasterclassSession(
-      cookieStore.get(SESSION_COOKIE)?.value,
-      config.MASTERCLASS_SESSION_SECRET,
-    ),
+  const sessionContactId = verifyMasterclassSession(
+    cookieStore.get(SESSION_COOKIE)?.value,
+    config.MASTERCLASS_SESSION_SECRET,
   );
+  const hasSession = Boolean(sessionContactId);
   // Same name rule as the form: anything else falls back to the nameless
   // greeting and no name is forwarded to the checkout.
   // A real registration leaves the name in a short-lived cookie (never the
@@ -83,9 +84,21 @@ export default async function MasterclassConfirmedPage({
   const registeredAs = cookieStore.get(REGISTERED_COOKIE)?.value;
   const first = safeFirstName({ first: registeredAs ?? params.first });
   const renderedAt = renderTime();
-  const links = event.startsAt
-    ? calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)))
-    : null;
+  // The same session proves this browser registered the contact, so its
+  // calendar buttons may carry that contact's own join link (read by the route).
+  const calendarToken =
+    sessionContactId && event.startsAt
+      ? signCalendarToken(
+          sessionContactId,
+          new Date(event.startsAt),
+          config.MASTERCLASS_CAL_SECRET,
+        )
+      : null;
+  const links = !event.startsAt
+    ? null
+    : calendarToken
+      ? personalCalendarLinks(calendarToken)
+      : calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)));
 
   return (
     <div className={anton.variable}>
