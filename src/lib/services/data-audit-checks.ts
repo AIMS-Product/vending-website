@@ -229,7 +229,7 @@ async function ga4Checks(
       ...shared,
       checkId: "ga4-visits-spine",
       label: "Channels & KPI visits",
-      ours: spine,
+      ours: storedOrZero(spine, source),
       source,
       tolerancePct: 2,
       note: "Channels and KPI divide their rates by this.",
@@ -238,7 +238,7 @@ async function ga4Checks(
       ...shared,
       checkId: "ga4-page-views",
       label: "Funnels & Executive visits",
-      ours: pageViews,
+      ours: storedOrZero(pageViews, source),
       source,
       tolerancePct: 2,
     }),
@@ -605,7 +605,7 @@ async function youtubeCheck(
       ...shared,
       checkId: "youtube-views",
       label: "YouTube views",
-      ours,
+      ours: storedOrZero(ours, source),
       source,
       tolerancePct: 2,
     }),
@@ -915,6 +915,15 @@ async function connectorHealthCheck(
 /* ---------------------------------------------------------------- helpers */
 
 /** Null when no row carried the column: not observed is not zero. */
+/**
+ * Our stored total for a feed checked against its source. No stored rows while
+ * the source has numbers is a dead feed: read it as 0 so it fails, rather than
+ * skipped (which never alerts). A source with nothing too stays "nothing".
+ */
+function storedOrZero(ours: number | null, source: number): number | null {
+  return ours ?? (source > 0 ? 0 : null);
+}
+
 async function sumColumn(
   client: Client,
   table: TableName,
