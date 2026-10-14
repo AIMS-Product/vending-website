@@ -102,7 +102,7 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
 1. MERGED #163 (e6bfffb5) after code-reviewer (safe; 4 MEDIUM) + fix commit 236d681f: MTD fetch 5 s timeout, company-mtd
    count checks pass one call of timing (tolerance max(1%, 1/n)), week-view copy + AGENTS.md name the TLG/PPA exclusion.
    Full vitest 4,433 pass, tsc 0, CI 5/5. Not fixed (LOW/judgement): closeUserNames still throws (a /user/ failure fails
-   the hourly mirror; same key as search, so rare); company-mtd-* not in CHECK_COVERS (needs a month-to-date window type).
+   the hourly mirror; same key as search, so rare); company-mtd-\* not in CHECK_COVERS (needs a month-to-date window type).
    Migration was applied. Prod deploy 07:45Z; sync run 07:45Z wrote 8,762 rows; Oct rows: 309/310 have lead_owner.
    /admin/analytics/months badge: "Differs" 227/127/91/15/$121,814 vs MTD 212/126/91/15/$121,814. Reconciled by hand:
    our mirror cut to MTD's roster+exclusions = 212/126/91 through Oct 12 and 227/127/91 through Oct 13, every funnel
@@ -117,3 +117,25 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
    [vending machine business near me]: no rows on 10-12 (rows 10-09..10-11 only). 14 exact keywords served on 10-12;
    9 first seen after the 18:20 change incl. [vending preneurs] (Brand). Zero-impression keywords write no row.
 4. After the room: Wed Oct 14 (not started). Artifact NVWBNZzvXKeDsraYubZVAV still "not found" from .claude-ma.
+
+## Session 2026-10-14 ~05:30Z (Oct 13 night PT, account .claude-ma)
+
+1. MERGED #171 (1202364e) after code-reviewer (safe; 2 MEDIUM, LOWs fixed). Live 05:39Z.
+   Cause of the Oct 13 12:30Z `company-mtd-booked` fail (ours 225 vs 212): NOT MTD lag. MTD's 09:26Z
+   build already said 225/126/90/15/$121,814 = ours exactly; our fetch (`revalidate: 900`,
+   stale-while-revalidate) served a copy from before 07:01Z. Funnel-by-funnel vs MTD 01:40Z build:
+   every funnel equal, 231/136/99 (our "No source" 7 = MTD "Unknown (Needs Review)" 7).
+   Fix: MTD JSON `no-store`; build time = last GitHub commit to `archives/data-YYYY-MM.json`; over 2 h
+   behind our mirror sync -> 5 checks skipped + badge "Not compared: MTD dashboard last rebuilt <time>".
+   Chrome 05:40Z: badge reads "Not compared: ... Oct 13, 6:40 PM PT" (ours 10:05 PM PT), numbers equal.
+   Open (MEDIUM): (a) MTD commits only when numbers change, so quiet nights may skip the 5:30am check
+   and leave Months "Unverified"; watch a week. (b) GitHub unauth API 60/h per IP; a 403 falls back to
+   comparing. Swap to the Pages `Last-Modified` header on the JSON itself if (b) bites, or have Dom
+   publish `built_at` for (a).
+   First audit with the fix: Oct 14 12:30Z. Read `data_audit_runs` company-mtd-\* then.
+2. Oct 13 room is in (board read 05:35Z, headless via /api/login): Zoom 598 registered, 125 attended
+   (peak 79), 13 booked (12 in room, 1 after; 13/13 in Close), spend $10,375, $798/booked.
+   Recap /recap/2026-10-13-06d7993045902fea73e4, Booked calls (13 upcoming) and Weekly ad report
+   Oct 13 column all populated. Publish (suite) gate passed 947/947, no open gate issue. Refresh runs
+   show "failure" only from site-funnel preflight: 6 short links (Bitly, still Adam), Zoom reminder
+   emails off, GHL registrants missing Zoom link. Data health: 1 open problem (short links).
