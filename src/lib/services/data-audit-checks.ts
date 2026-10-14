@@ -805,10 +805,16 @@ async function findDayHoles(client: Client, now: Date): Promise<AuditResult> {
       byDay.set(day, (byDay.get(day) ?? 0) + Number(row[probe.column] ?? 0));
     }
     const days = daysBetween(from, to);
-    const busy = days.filter((day) => (byDay.get(day) ?? 0) > 0).length;
-    if (busy < 3) continue; // Nothing to compare against.
+    const busyDays = days.filter((day) => (byDay.get(day) ?? 0) > 0);
+    if (busyDays.length < 3) continue; // Nothing to compare against.
+    // Only a day with data after it is a hole. Trailing empty days are a source
+    // that has not reported yet (YouTube ran four days late on 2026-10-14);
+    // a dead feed shows in that source's own comparison check instead.
+    const lastBusy = busyDays[busyDays.length - 1]!;
     for (const day of days) {
-      if ((byDay.get(day) ?? 0) === 0) holes.push(`${probe.label} on ${day}`);
+      if (day < lastBusy && (byDay.get(day) ?? 0) === 0) {
+        holes.push(`${probe.label} on ${day}`);
+      }
     }
   }
 

@@ -345,6 +345,13 @@ describe("day-holes", () => {
     expect(check).toMatchObject({ status: "pass" });
   });
 
+  // 2026-10-14: YouTube had not reported 10-11 three days later; six of 24
+  // nights since 09-01 failed this way, and every day filled in by itself.
+  it("does not call trailing days missing when YouTube runs four days late", async () => {
+    const check = await holesRun(views("2026-09-04", "2026-09-15"));
+    expect(check).toMatchObject({ status: "pass" });
+  });
+
   it("still catches a real hole in YouTube views", async () => {
     const check = await holesRun(
       views("2026-09-04", "2026-09-16", ["2026-09-10"]),
