@@ -34,12 +34,16 @@ function labelForUtm(source: string, medium: string): string | null {
   if (/^(youtube|yt)$/.test(s)) return paid ? "YouTube Ads" : "YouTube";
   if (/^(google|adwords)$/.test(s)) return paid ? "Google Ads" : "Search - OG";
   if (/^(meta|facebook|fb)$/.test(s)) return paid ? "Meta Ads" : null;
-  if (/^(instagram|ig)$/.test(s)) return paid ? "Meta Ads" : "Instagram";
-  if (/^(linkedin|li)$/.test(s)) return paid ? "LinkedIn Ads" : "Linkedin";
+  if (/^(instagram|ig)\b/.test(s)) return paid ? "Meta Ads" : "Instagram";
+  if (/^(linkedin|li|anthony-li)$/.test(s))
+    return paid ? "LinkedIn Ads" : "Linkedin";
+  if (s === "ghl" && medium.trim().toLowerCase() === "pearl")
+    return "GoHighLevel";
+  if (s === "ltf") return "LTF - In-House";
   if (/^(tiktok|tt)$/.test(s)) return "TikTok";
   if (/^(x|twitter)$/.test(s)) return "X";
   if (/webinar/.test(s)) return "Internal Webinar";
-  if (/^(website|vendingpreneurs|vendingpreneurs\.com|chatbot)$/.test(s))
+  if (/^(web|website|vendingpreneurs|vendingpreneurs\.com|chatbot)$/.test(s))
     return "Website";
   if (s === "vsl") return "VSL";
   if (/newsletter/.test(s)) return "Mike Newsletter";
@@ -47,11 +51,9 @@ function labelForUtm(source: string, medium: string): string | null {
   return ACCEPTED.get(s) ?? null;
 }
 
+/** Only the webinar tag is an approved fallback: Dom's Oct pull used one. */
 function labelForResourceTag(tag: string): string | null {
-  const t = tag.toLowerCase();
-  if (/webinar|masterclass/.test(t)) return "Internal Webinar";
-  if (/website|chatbot|application/.test(t)) return "Website";
-  return null;
+  return /^internal[-_]webinar$/i.test(tag.trim()) ? "Internal Webinar" : null;
 }
 
 export function resolveOrigin(facts: LeadOriginFacts | undefined): Origin {
@@ -69,7 +71,12 @@ export function resolveOrigin(facts: LeadOriginFacts | undefined): Origin {
     return { source: [...fromUtms][0], basis: "contact_utm" };
   if (fromUtms.size > 1) return { source: null, basis: "unknown" };
 
-  const tag = facts.resourceTag ? labelForResourceTag(facts.resourceTag) : null;
+  // Resource Tag applies only when the contacts carry no UTM evidence at all.
+  const hasUtms = facts.contactUtms.some((u) => (u.source ?? "").trim());
+  const tag =
+    facts.resourceTag && !hasUtms
+      ? labelForResourceTag(facts.resourceTag)
+      : null;
   if (tag) return { source: tag, basis: "resource_tag" };
   return { source: null, basis: "unknown" };
 }

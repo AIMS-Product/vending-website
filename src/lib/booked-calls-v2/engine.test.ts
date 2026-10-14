@@ -270,6 +270,46 @@ describe("episodes", () => {
   });
 });
 
+describe("validation fixes (Oct 1-13 rerun against Dom's pull)", () => {
+  it("holds a reschedule before applying the 60-day rule to it", () => {
+    const original = meeting({
+      startsAt: "2026-10-06T18:00:00Z",
+      dateCreated: "2026-09-28T18:00:00Z",
+    });
+    const moved = meeting({
+      title: "Rescheduled: Vending Strategy Call",
+      startsAt: "2026-10-09T18:00:00Z",
+    });
+    const [d] = decide([original, moved]);
+    expect(d).toMatchObject({
+      meetingId: moved.id,
+      reason: "unlinked_reschedule",
+    });
+  });
+
+  it("ignores meetings created after the snapshot fence as preceding meetings", () => {
+    const candidate = meeting({
+      startsAt: "2026-10-20T18:00:00Z",
+      dateCreated: "2026-10-05T18:00:00Z",
+    });
+    const later = meeting({
+      startsAt: "2026-10-10T18:00:00Z",
+      dateCreated: "2026-10-13T22:00:00Z",
+    });
+    const out = evaluate({
+      meetings: [candidate, later],
+      leads: new Map([["lead_a", youtube]]),
+      from: FROM,
+      to: "2026-10-13T21:54:08Z",
+    });
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      disposition: "counted",
+      precedingMeetingId: null,
+    });
+  });
+});
+
 describe("historical exceptions", () => {
   it("Ariella Strategy counts as Lane 2 only before the cutoff", () => {
     const title = "Vending Strategy Call with Ariella";
@@ -327,6 +367,30 @@ describe("sources", () => {
         resourceTag: null,
       }),
     ).toEqual({ source: "YouTube", basis: "contact_utm" });
+  });
+
+  it("uses Resource Tag only with no UTM evidence, and only the webinar tag", () => {
+    expect(
+      resolveOrigin({
+        funnel: null,
+        contactUtms: [],
+        resourceTag: "internal-webinar",
+      }),
+    ).toEqual({ source: "Internal Webinar", basis: "resource_tag" });
+    expect(
+      resolveOrigin({
+        funnel: null,
+        contactUtms: [{ source: "_____" }],
+        resourceTag: "internal-webinar",
+      }),
+    ).toEqual({ source: null, basis: "unknown" });
+    expect(
+      resolveOrigin({
+        funnel: null,
+        contactUtms: [],
+        resourceTag: "typeform-application",
+      }),
+    ).toEqual({ source: null, basis: "unknown" });
   });
 
   it("competing contact UTMs stay unknown", () => {

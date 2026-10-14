@@ -9,7 +9,7 @@
  * Close is live, so small drift since Dom's read (2026-10-13 21:54:08Z) is
  * expected; each difference still needs a named reason before V2 is trusted.
  */
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import {
   LEAD_LABELS,
   mapLeadFacts,
@@ -105,13 +105,16 @@ async function crawl(
   }
 }
 
-async function main() {
+async function load(): Promise<{
+  meetings: Meeting[];
+  leads: Array<[string, LeadFacts]>;
+}> {
   const syncedAt = new Date().toISOString();
   const outcomes = new Map(
     (
       (
         await close<{ data?: Array<{ id: string; name?: string }> }>(
-          "/outcome/?_limit=200",
+          "/outcome/?_limit=100",
         )
       ).data ?? []
     ).map((o) => [o.id, o.name ?? o.id]),
@@ -196,6 +199,22 @@ async function main() {
     `candidate leads: ${leadIds.length} (Dom: 399), facts read: ${leads.size}`,
   );
 
+  return { meetings, leads: [...leads] };
+}
+
+async function main() {
+  // V2_CACHE=path reuses one Close read across runs (raw prospect data:
+  // keep it in a scratch directory, never in the repo).
+  const cache = process.env.V2_CACHE;
+  const data =
+    cache && existsSync(cache)
+      ? (JSON.parse(readFileSync(cache, "utf8")) as Awaited<
+          ReturnType<typeof load>
+        >)
+      : await load();
+  if (cache && !existsSync(cache)) writeFileSync(cache, JSON.stringify(data));
+  const meetings = data.meetings;
+  const leads = new Map(data.leads);
   const decisions = evaluate({ meetings, leads, from: FROM, to: FENCE });
   const s = summarize(decisions);
   const ours: Record<string, number> = {

@@ -36,13 +36,14 @@ describe("mapMeeting", () => {
         outcome_id: "outcome_ns",
         starts_at: "2026-10-08T18:00:00Z",
         date_created: "2026-10-05T18:00:00Z",
-        user_note_html: "<p>Rescheduled by invitee</p>",
+        user_note_html:
+          "Reschedule Reason: Rescheduled from connected calendar event",
       },
       new Map([["outcome_ns", "No Show"]]),
       "2026-10-13T00:00:00Z",
     );
     expect(row).toMatchObject({ outcome: "No Show", reschedule_note: true });
-    expect(JSON.stringify(row)).not.toContain("invitee");
+    expect(JSON.stringify(row)).not.toContain("Reason");
   });
 
   it("drops a meeting with no lead or creation time", () => {

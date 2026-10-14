@@ -168,6 +168,9 @@ export function evaluate(input: {
   const history = new Map<string, Meeting[]>();
   for (const m of input.meetings) {
     if (!m.startsAt || Number.isNaN(Date.parse(m.startsAt))) continue;
+    // A snapshot sees only meetings that existed at its fence: one created
+    // later must not become an earlier candidate's preceding meeting.
+    if (Date.parse(m.dateCreated) >= toMs) continue;
     const list = history.get(m.leadId) ?? [];
     list.push(m);
     history.set(m.leadId, list);
@@ -241,11 +244,11 @@ function decide(
     (h) => h.id !== m.id && h.startsAt === m.startsAt && !isCanceled(h),
   );
   if (twin) return out("held", "ambiguous_simultaneous");
-  if (base.intervalDays !== null && base.intervalDays < REPEAT_DAYS) {
-    return out("excluded", "repeat_within_60_days");
-  }
   if (RESCHEDULE_SIGNAL.test(m.title ?? "") || m.rescheduleNote) {
     return out("held", "unlinked_reschedule");
+  }
+  if (base.intervalDays !== null && base.intervalDays < REPEAT_DAYS) {
+    return out("excluded", "repeat_within_60_days");
   }
   if (verdict.kind === "family" && !origin.source)
     return out("held", "source_unavailable");

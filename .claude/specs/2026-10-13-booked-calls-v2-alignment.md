@@ -66,3 +66,14 @@ Out of repo: vp-webinars `is_lane2` reads the lead Booked By field (F3); fix the
 - Not done: step 4 run (no `CLOSE_API_KEY` locally), migration not applied, step 7 (switch) gated on sign-off.
 - Unverified against live Close: `/activity/meeting/` `date_created__gte/lt` filters, `/outcome/` list, the
   `or`-of-`id` lead search, contact `utm_source`/`utm_medium` labels. The validation script exercises all four.
+
+## Validation 2026-10-14 (step 4) — live Close, read-only, ~490 GETs
+
+Window/fence identical to Dom's. Candidates 524 = 524 and candidate leads 399 = 399 (exact). Counted 205 vs 206:
+Marketing 85/84, Lane 2 117/119, Social DMs 3/3; unknown origin 45/46. Marketing via Funnel Name = 84 exactly.
+Fixes the run forced: (1) Calendly's boilerplate "Reschedule: <link>" is in every note; the signal is
+"Rescheduled from connected calendar" (215 held -> 20); (2) reschedule hold before the 60-day check (Dom's
+order: repeat 55 -> 49, reschedule 14 -> 20); (3) snapshot fence also bounds history; (4) Resource Tag only
+with no UTMs and only `internal-webinar`; UTM map gains ghl+pearl, anthony-li, instagram*, ltf, web.
+Residual 1-2 per bucket; canceled 110 vs 104 shows Close edits since Dom's read. Row-level diff needs Dom's
+redacted decisions file.

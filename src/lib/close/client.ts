@@ -536,7 +536,7 @@ export function createCloseClient({
     listOutcomes() {
       return request<{ data?: Array<{ id: string; name?: string }> }>(
         "GET",
-        "/outcome/?_limit=200",
+        "/outcome/?_limit=100",
       );
     },
     /**

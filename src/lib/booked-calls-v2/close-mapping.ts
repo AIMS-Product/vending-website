@@ -6,6 +6,15 @@ import type { Json, TablesInsert } from "@/types/database";
  * numbers straight from Close with the same code the hourly sync uses.
  */
 
+/**
+ * Calendly's marker on a meeting it moved: "Reschedule Reason: Rescheduled
+ * from connected calendar event" (Dom's "connected-calendar-reschedule note").
+ * Not the bare "Reschedule: <link>" every Calendly note carries: matching
+ * that held 215 of October's 524 meetings instead of Dom's 21.
+ */
+const CONNECTED_CALENDAR_RESCHEDULE =
+  /rescheduled\s+from\s+connected\s+calendar/i;
+
 export type MeetingRow = TablesInsert<"close_meetings">;
 export type LeadRow = TablesInsert<"close_meeting_leads">;
 
@@ -70,8 +79,8 @@ export function mapMeeting(
     starts_at: text(raw.starts_at),
     date_created: created,
     date_updated: text(raw.date_updated),
-    reschedule_note: /reschedul/i.test(
-      `${text(raw.user_note_html) ?? ""} ${text(raw.note) ?? ""}`,
+    reschedule_note: CONNECTED_CALENDAR_RESCHEDULE.test(
+      `${text(raw.note) ?? ""} ${text(raw.user_note_html) ?? ""}`,
     ),
     synced_at: syncedAt,
   };
