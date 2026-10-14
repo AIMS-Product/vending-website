@@ -99,6 +99,11 @@ export type CloseSearchClient = {
     data?: unknown[];
     cursor?: string | null;
   }>;
+  listMeetings(
+    gte: string,
+    lt: string,
+    skip?: number,
+  ): Promise<{ data?: unknown[]; has_more?: boolean }>;
 };
 
 export type DataAuditRun = {
@@ -141,6 +146,9 @@ export async function runDataAudit(
         now,
         deps.monthly ?? getCloseMonthlyFunnel,
       ),
+    )),
+    ...(await safe("close-meetings", () =>
+      closeMeetingsCheck(client, close, now),
     )),
     ...(await safe("company-mtd", () =>
       companyMtdChecks(now, deps.mtd ?? getCloseMtdFunnel),
@@ -326,6 +334,46 @@ async function closeChecks(
       source,
       tolerancePct: 1,
       note: "The Close view subtracts canceled and out-of-US leads from this.",
+    }),
+  ];
+}
+
+/**
+ * Booked calls V2 reads `close_meetings`, a full hourly crawl of Close's
+ * meetings. Close has no count for meetings, so this pages the settled week
+ * (~5 requests). Without CLOSE_API_KEY the `close-config` row already says so.
+ */
+async function closeMeetingsCheck(
+  client: Client,
+  close: CloseSearchClient | null,
+  now: Date,
+): Promise<AuditResult[]> {
+  if (!close) return [];
+  const { from, exclusiveEnd, label } = settledWindow(
+    now,
+    SETTLED_LAG_DAYS.live,
+  );
+  const gte = `${from}T00:00:00Z`;
+  const lt = `${exclusiveEnd}T00:00:00Z`;
+  let source = 0;
+  for (let skip = 0; ; skip += 100) {
+    const page = await close.listMeetings(gte, lt, skip);
+    source += page.data?.length ?? 0;
+    if (!page.has_more) break;
+  }
+  const ours = await countRows(client, "close_meetings", (query) =>
+    query.gte("date_created", gte).lt("date_created", lt),
+  );
+  return [
+    compare({
+      checkId: "close-meetings",
+      label: "Close meetings (booked calls V2)",
+      window: `${label} (UTC)`,
+      sourceName: "Close",
+      ours,
+      source,
+      tolerancePct: 1,
+      note: "Booked calls V2 counts from these meetings.",
     }),
   ];
 }
