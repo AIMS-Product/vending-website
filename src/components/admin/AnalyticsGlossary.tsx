@@ -37,31 +37,31 @@ export const CARD_HELP = {
 export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: CARD_HELP.glance,
-    meaning: `Close first calls (SteelTrap rule, §5) by channel, credited as the flow card credits them. This week is Monday to today; this month is the 1st to today; days are Eastern time, as the sales floor counts them. Double down and Watch read the "What each channel's calls are worth" table for the window on screen: paid channels with at least ${SMALL_SAMPLE} booked calls, Double down when revenue won per $1 spent is $1 or more (best first), Watch when it is under $1 (worst first). Recent calls have had less time to close, so revenue per $1 reads low on short windows.`,
+    meaning: `Booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026) by channel: marketing calls by lead source, calls a Lane 2 or Social DMs setter booked in their own band. This week is Monday to today; this month is the 1st to today; days are the Pacific day the meeting was booked, as Dom counts them. Double down and Watch read the "What each channel's calls are worth" table for the window on screen: paid channels with at least ${SMALL_SAMPLE} booked calls, Double down when revenue won per $1 spent is $1 or more (best first), Watch when it is under $1 (worst first). Recent calls have had less time to close, so revenue per $1 reads low on short windows.`,
   },
   {
     term: CARD_HELP.today,
     meaning:
-      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: Close first calls dated today, SteelTrap rule (§3, §5), the same calls Showed so far splits. Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
+      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) scheduled for today, the same calls Showed so far splits. Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
   },
   {
     term: CARD_HELP.kpi,
     meaning:
-      "Each against the same length of time just before. Leads: people on site forms (§4), recorded from Jul 6, 2026. Booked calls: Close mirror, SteelTrap rule (§3, §5), split marketing and reactivation as the flow card credits them (a lead with a Google click id is marketing, whatever Close funnel it sits under). Show rate: of calls held (§7). Revenue won: by date won (§8). CAC: blended, monthly model, the newest month with inputs (§10).",
+      "Each against the same length of time just before. Leads: people on site forms (§4), recorded from Jul 6, 2026. Booked calls: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked), split by who booked them (the meeting title): marketing, or Lane 2 & Social DMs. Show rate: of those calls whose scheduled day has passed, the rep's logged first-call show (§7). Revenue won: by date won (§8). CAC: blended, monthly model, the newest month with inputs (§10).",
   },
   {
     term: CARD_HELP.scorecard,
     meaning:
-      "Monday to Sunday weeks, whatever the window. Total booked calls: Close first sales calls dated in the week (the day the call is scheduled for), every one, as the sheet's Total counts them; kept = after cancelled-by-lead, outside-the-US and quiz-funnel calls are removed (§3); mktg = kept, by lead source: without the Reactivation Scrapers funnel; by Lane 2 = kept calls a Lane 2 setter booked (Close \"Booked By\"), whatever the source. The two overlap and are never added. MQLs: every new marketing lead captured, site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days); scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting). Ad spend: Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Meta's own ads API, webinar campaigns included; incomplete = a network that spent in these weeks has days with nothing recorded. Cost per MQL: ad spend divided by MQLs for the same week.",
+      "Monday to Sunday weeks, whatever the window. Total booked calls: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked), in the week; kept = the same calls (Dom's rule has already left out what it does not count); mktg = calls the marketing team booked; by Lane 2 = calls a Lane 2 setter booked. Both come from the meeting title, so they never overlap. MQLs: every new marketing lead captured, site form leads plus webinar registrations, off-site form fills and ManyChat contacts (§4, UTC days); scored = site form fills the qualification quiz sent to a call (top closers, Lane 1, setting). Ad spend: Google Ads cost from Google Analytics (the property's Google Ads link) and Meta spend from Meta's own ads API, webinar campaigns included; incomplete = a network that spent in these weeks has days with nothing recorded. Cost per MQL: ad spend divided by MQLs for the same week.",
   },
   {
     term: CARD_HELP.flow,
     meaning:
-      "Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: Close first calls in the window and what became of them to date (§5, §6, §16), by Close funnel, except that a lead whose site form carried a Google click id counts as Google Ads. Calls the SteelTrap rule leaves out are not counted. A call qualified with no show logged counts as qualified, never as a show. Won deals with no value in Close count as won and add nothing to revenue. Chatbot leads are in Website & search, where Close files their calls.",
+      "Captured: leads and contacts on the channel spine (§4, UTC days). Booked onward: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) in the window and what became of them to date (§6, §16). Marketing calls sit in their lead source's band; calls a Lane 2 or Social DMs setter booked sit in the Lane 2 & Social DMs band, whatever the source. A Google click id never moves a call. A call qualified with no show logged counts as qualified, never as a show. Won deals with no value in Close count as won and add nothing to revenue. Chatbot leads are in Website & search, where Close files their calls.",
   },
   {
     term: CARD_HELP.value,
-    meaning: `The flow card's calls: Close first calls booked in the window and what became of them to date (§5, §6, §16), won deals and revenue from Close opportunities (§8). A lead whose site form carried a Google click id counts as Google Ads, whatever Close funnel it is filed under. Spend: ad spend on the channel spine in the window, as the cost card counts it (§9). Close rate is won over booked. Won deals lag: recent bookings have had less time to close, so compare channels on the same window and use 90 days for close rate. Under ${SMALL_SAMPLE} booked calls is a small sample (greyed). A dash means no ad spend or nothing to divide by.`,
+    meaning: `The flow card's calls: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) in the window and what became of them to date (§6, §16), won deals and revenue from Close opportunities (§8). Spend: ad spend on the channel spine in the window, as the cost card counts it (§9). Close rate is won over booked. Won deals lag: recent bookings have had less time to close, so compare channels on the same window and use 90 days for close rate. Under ${SMALL_SAMPLE} booked calls is a small sample (greyed). A dash means no ad spend or nothing to divide by.`,
   },
   {
     term: CARD_HELP.paid,
@@ -71,7 +71,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: CARD_HELP.bookings,
     meaning:
-      "Close first calls in the window, SteelTrap rule (§5), by channel as the flow card credits them. Plan: the booking plan's channels against its target for these days (§11), cancellations included as the plan counts them; the plan starts September 2026. Setter: as Close records it (§12).",
+      "Booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) in the window, by channel as the flow card credits them. Plan: the booking plan's channels against its target for these days (§11); Lane 2 counts calls a Lane 2 setter booked. The plan's targets were set from August under the older one-per-lead count; the plan starts September 2026. Setter: as Close records it (§12).",
   },
   {
     term: CARD_HELP.cost,
@@ -81,7 +81,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: CARD_HELP.trend,
     meaning:
-      "Site leads by the day they arrived (§4); Close first calls by the day they are dated (§5). A window shorter than 14 days is drawn over 14 days so the bars have a shape.",
+      "Site leads by the day they arrived (§4); booked calls by the day they were booked, under Dom's rule. A window shorter than 14 days is drawn over 14 days so the bars have a shape.",
   },
   { term: "Lead", meaning: LEAD_DEFINITION.body },
   {
@@ -97,17 +97,17 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Booked call",
     meaning:
-      "A person who booked a first sales call. One person counts once, however many times they reschedule. The sales team's spreadsheet counts every meeting instead, so its totals run about 1.7x ours; both are right, they count different things. On Channels, booked counts only calls a marketing channel can be credited for, roughly half the company total, because the sales team's own rebooking (Reactivation Scrapers) has no channel.",
+      "On the main dashboard (since Oct 14, 2026): Dom's rule, below (Booked calls V2). Elsewhere, until each page moves: a person who booked a first sales call, counted once by the day the call is scheduled for. The two differ: Oct 1-13 the older count had 120 marketing calls, Dom's 95, mostly calls booked in September for October and calls Lane 2 booked on marketing leads.",
   },
   {
     term: "Booked calls V2",
     meaning:
-      "Dom's shared booked-call rule, shown on the Months page beside the older views. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
+      "Dom's shared booked-call rule: the main dashboard's booked calls since Oct 14, 2026, and its own panel on the Months page. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
   },
   {
     term: "Marketing only",
     meaning:
-      "The switch beside the dates. It leaves Sales reactivation booked calls and won deals out of every card on the page, credited as the flow card credits them (a lead with a Google click id stays in, as Google Ads). Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",
+      "The switch beside the dates. It keeps only calls the marketing team booked (Dom's rule: Lane 2 and Social DMs calls left out) and leaves won deals on Lane 2 funnels out of every card on the page. Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",
   },
   {
     term: "Skipped form (direct booking)",

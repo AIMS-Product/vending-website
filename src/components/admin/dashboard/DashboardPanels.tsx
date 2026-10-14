@@ -58,7 +58,6 @@ import {
   readCalls,
   readCostByMonth,
   readDeals,
-  readGoogleClickLeads,
   readFacts,
   readLeads,
   readTrust,
@@ -433,12 +432,11 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
   const spark = sparkRange(window);
   const dealsFrom = [window.prior.startDay, spark.startDay].sort()[0]!;
-  const [leads, calls, deals, cac, googleClicks] = await Promise.all([
+  const [leads, calls, deals, cac] = await Promise.all([
     readLeads(span.from),
     readCalls(span.from, span.to, window.marketingOnly),
     readDeals(dealsFrom, window.today, window.marketingOnly),
     readCac(),
-    readGoogleClickLeads(),
   ]);
   const prior = window.prior;
   const cells: ReactNode[] = [];
@@ -483,11 +481,8 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
     const kept = keptCalls(calls.data);
     const inWindow = kept.filter((c) => inRange(c.bookedDate, window));
     const before = kept.filter((c) => inRange(c.bookedDate, prior)).length;
-    // Without the click ids the split cannot be the flow card's; say so
-    // rather than show Close's funnel split under the same words.
-    const reactivation = googleClicks.ok
-      ? reactivationCalls(inWindow, googleClicks.data)
-      : null;
+    // Dom's rule: who booked the call, from the meeting title.
+    const reactivation = reactivationCalls(inWindow);
     const show = showRateHeld(calls.data, window, window.today);
     const showBefore = showRateHeld(calls.data, prior, window.today);
     const showDaily = dailyCounts(kept, (c) => c.bookedDate, spark).map(
@@ -508,10 +503,8 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         delta={<Delta value={deltaPct(inWindow.length, before)} />}
         caption={
           window.marketingOnly
-            ? "Marketing only · reactivation left out"
-            : reactivation === null
-              ? "Marketing / reactivation split unavailable"
-              : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`
+            ? "Booked by marketing · Lane 2 and Social DMs left out"
+            : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} Lane 2 & Social DMs`
         }
         spark={sparkPoints(dailyCounts(kept, (c) => c.bookedDate, spark))}
         href="#bookings"
@@ -647,22 +640,20 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, facts, deals, googleClicks] = await Promise.all([
+  const [calls, facts, deals] = await Promise.all([
     readCalls(span.from, span.to, window.marketingOnly),
     // Captured is the window's own captures: read the window, not the six
     // months the cost card needs.
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today, window.marketingOnly),
-    readGoogleClickLeads(),
   ]);
-  const error = failed(calls, facts, deals, googleClicks);
+  const error = failed(calls, facts, deals);
   const flow =
-    calls.ok && facts.ok && deals.ok && googleClicks.ok
+    calls.ok && facts.ok && deals.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
-          googleClickLeads: googleClicks.data,
         })
       : null;
   return (
@@ -695,9 +686,8 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
 /** Booked calls per channel, credited and ordered as the flow card does. */
 export function bookedBars(
   calls: Parameters<typeof buildChannelFlow>[0]["calls"],
-  googleClickLeads: ReadonlySet<string>,
 ) {
-  return buildChannelFlow({ calls, captured: [], wins: [], googleClickLeads })
+  return buildChannelFlow({ calls, captured: [], wins: [] })
     .bands.filter((b) => b.values[1] > 0)
     .map((b) => ({
       key: b.key,
@@ -750,14 +740,11 @@ export function BarList({
 
 export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, googleClicks] = await Promise.all([
-    readCalls(span.from, span.to, window.marketingOnly),
-    readGoogleClickLeads(),
-  ]);
-  if (!calls.ok || !googleClicks.ok) {
+  const calls = await readCalls(span.from, span.to, window.marketingOnly);
+  if (!calls.ok) {
     return (
       <DashboardCard id="bookings" help="bookings">
-        {failed(calls, googleClicks)}
+        {failed(calls)}
       </DashboardCard>
     );
   }
@@ -767,7 +754,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const plan = planBooked(calls.data, window);
   const share = target ? plan / target : null;
   // The flow's credit and order: largest first, the remainder last.
-  const byChannel = bookedBars(inWindow, googleClicks.data);
+  const byChannel = bookedBars(inWindow);
   const setters = bySetter(inWindow).slice(0, 8);
   return (
     <DashboardCard
