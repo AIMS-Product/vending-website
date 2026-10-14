@@ -3,6 +3,7 @@ import type {
   LinkMedium,
   LinkSource,
 } from "@/lib/analytics/link-standard";
+import type { FunnelName } from "@/lib/analytics/funnel-names";
 
 /**
  * One-click starting points for /admin/links. A preset fills everything that
@@ -22,6 +23,8 @@ export type LinkPreset = {
   destination: LinkDestination;
   /** What to type in content, as the field's placeholder. */
   contentHint: string;
+  /** Set only where the kind of link decides the funnel; else the person picks. */
+  funnel?: FunnelName;
 };
 
 const SITE = "https://www.vendingpreneurs.com";
@@ -59,6 +62,7 @@ export const LINK_PRESETS: readonly LinkPreset[] = [
     campaign: "",
     destination: "book-call",
     contentHint: "the YouTube video id",
+    funnel: "YouTube",
   },
   {
     key: "instagram-bio",
@@ -103,6 +107,7 @@ export const LINK_PRESETS: readonly LinkPreset[] = [
     campaign: "",
     destination: "webinar-register",
     contentHint: "where it was posted, e.g. ig-story-oct13",
+    funnel: "Internal Webinar",
   },
 ];
 

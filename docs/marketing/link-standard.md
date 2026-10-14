@@ -37,6 +37,24 @@ wrong with it if it is off the standard.
 Every podcast lead lands in the **Podcast** channel. Per show, per host, it is
 the row for that link.
 
+## Funnels
+
+Every link names the funnel it feeds, picked from Close's "Funnel Name" choices
+(`src/lib/analytics/funnel-names.ts`). The builder requires one. On any row,
+**Edit** sets the funnel, owner and note; the five tags never change once a
+link is out. The row says where its funnel came from: the old sheet, Close
+records, the source (YouTube, Google Ads), or the person who set it. **No
+funnel** lists the rows still to decide; **Totals by funnel** is the sheet's old
+funnel view, with results.
+
+The funnel belongs to the link, never to its source. Dom's scripts and anyone
+else read the same rows from `GET /api/reporting/links`
+(`docs/marketing/reporting-api.md`).
+
+The UTM master sheet ("MARKETING SALES OPS") was imported on 2026-10-14 by
+`scripts/import-utm-sheet.py` (rows marked `backfill:sheet`). Make new links
+here, not in the sheet.
+
 ## Imported links
 
 Links that were already out before the builder (YouTube description links,

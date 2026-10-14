@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import {
   collapseToLeads,
   type LeadLike,
@@ -14,6 +15,7 @@ import {
   toContentId,
   toLinkSlug,
 } from "@/lib/analytics/link-standard";
+import { FUNNEL_NAMES } from "@/lib/analytics/funnel-names";
 import { createBitlyClient, type BitlyClient } from "@/lib/bitly/client";
 import { config } from "@/lib/config";
 import {
@@ -46,6 +48,9 @@ export type CreateMarketingLinkInput = {
   content: string;
   destination: string;
   label?: string | null;
+  /** Close Funnel Name the link feeds; required so every new link has one. */
+  funnelName: string;
+  owner?: string | null;
   /** Also mint a Bitly short link so clicks join through bitly_link_clicks. */
   mintShortLink?: boolean;
 };
@@ -80,8 +85,21 @@ export async function createMarketingLink(
     );
   }
 
+  const meta = linkMetaSchema.safeParse({
+    funnelName: input.funnelName,
+    owner: input.owner,
+    label: input.label,
+  });
+  if (!meta.success || !meta.data.funnelName) {
+    throw new MarketingLinkServiceError(
+      meta.success
+        ? "Pick the funnel this link feeds."
+        : (meta.error.issues[0]?.message ?? "Check the funnel and owner."),
+    );
+  }
+
   const url = buildStandardLink(parsed.data);
-  const label = input.label?.trim() || null;
+  const label = meta.data.label;
   const client = deps.client ?? createAdminClient();
 
   // Checked before any Bitly mint. Two rows with the same five tags would
@@ -133,6 +151,9 @@ export async function createMarketingLink(
       utm_content: parsed.data.content,
       utm_term: parsed.data.destination,
       label,
+      funnel_name: meta.data.funnelName,
+      funnel_set_by: deps.createdBy,
+      owner: meta.data.owner,
       bitly_id: bitlyId,
       bitly_url: bitlyUrl,
       created_by: deps.createdBy,
@@ -147,6 +168,70 @@ export async function createMarketingLink(
     });
     throw new MarketingLinkServiceError("Could not save the link.");
   }
+  return data;
+}
+
+const optionalText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, `Keep it to ${max} characters.`)
+    .nullish()
+    .transform((value) => value || null);
+
+/** The fields a person can set on any registry row, imported ones included. */
+const linkMetaSchema = z.object({
+  funnelName: z
+    .union([z.enum(FUNNEL_NAMES), z.literal("")])
+    .nullish()
+    .transform((value) => value || null),
+  owner: optionalText(60),
+  label: optionalText(500),
+});
+
+/** Loose on purpose: form strings in, the schema decides what is valid. */
+export type LinkMetaInput = {
+  funnelName?: string | null;
+  owner?: string | null;
+  label?: string | null;
+};
+
+/**
+ * Sets funnel, owner and note on one registry row. The tags themselves never
+ * change after a link is out: an edited tag would orphan every lead it already
+ * brought in. Records who set the funnel, and clears that when it is cleared.
+ */
+export async function updateMarketingLinkMeta(
+  id: string,
+  input: LinkMetaInput,
+  deps: { editedBy: string; client?: LinksClient },
+): Promise<Pick<MarketingLink, "id" | "funnel_name" | "owner" | "label">> {
+  const meta = linkMetaSchema.safeParse(input);
+  if (!meta.success) {
+    throw new MarketingLinkServiceError(
+      meta.error.issues[0]?.message ?? "Check the funnel and owner.",
+    );
+  }
+  const client = deps.client ?? createAdminClient();
+  const { data, error } = await client
+    .from("marketing_links")
+    .update({
+      funnel_name: meta.data.funnelName,
+      funnel_set_by: meta.data.funnelName ? deps.editedBy : null,
+      owner: meta.data.owner,
+      label: meta.data.label,
+    })
+    .eq("id", id)
+    .select("id,funnel_name,owner,label")
+    .maybeSingle();
+  if (error) {
+    console.error("marketing link update failed", {
+      code: error.code,
+      message: error.message,
+    });
+    throw new MarketingLinkServiceError("Could not save the change.");
+  }
+  if (!data) throw new MarketingLinkServiceError("That link no longer exists.");
   return data;
 }
 

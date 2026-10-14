@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createLink } from "./actions";
+import { createLink, updateLinkMeta } from "./actions";
 
 const mocks = vi.hoisted(() => {
   class MarketingLinkServiceError extends Error {
@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => {
     requireReadAccess: vi.fn(),
     revalidatePath: vi.fn(),
     createMarketingLink: vi.fn(),
+    updateMarketingLinkMeta: vi.fn(),
   };
 });
 
@@ -23,6 +24,7 @@ vi.mock("@/lib/supabase/auth", () => ({
 vi.mock("@/lib/services/marketing-links", () => ({
   MarketingLinkServiceError: mocks.MarketingLinkServiceError,
   createMarketingLink: mocks.createMarketingLink,
+  updateMarketingLinkMeta: mocks.updateMarketingLinkMeta,
 }));
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 
@@ -117,5 +119,45 @@ describe("createLink action", () => {
       message: "Could not save the link.",
     });
     consoleError.mockRestore();
+  });
+});
+
+describe("updateLinkMeta action", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("saves funnel, owner and note as the signed-in admin", async () => {
+    mocks.requireReadAccess.mockResolvedValue({
+      user: { id: "u1", email: "jess@example.com" },
+      role: "admin",
+    });
+    mocks.updateMarketingLinkMeta.mockResolvedValue({ id: "l1" });
+
+    const result = await updateLinkMeta(
+      { status: "idle" },
+      formData({ id: "l1", funnelName: "VSL", owner: "Mike", label: "n" }),
+    );
+
+    expect(result).toEqual({ status: "saved" });
+    expect(mocks.updateMarketingLinkMeta).toHaveBeenCalledWith(
+      "l1",
+      { funnelName: "VSL", owner: "Mike", label: "n" },
+      { editedBy: "jess@example.com" },
+    );
+    expect(mocks.revalidatePath).toHaveBeenCalledWith("/admin/links");
+  });
+
+  it("tells a viewer why, and writes nothing", async () => {
+    mocks.requireReadAccess.mockResolvedValue({
+      user: { id: "u2", email: "v@example.com" },
+      role: "viewer",
+    });
+    const result = await updateLinkMeta(
+      { status: "idle" },
+      formData({ id: "l1", funnelName: "VSL" }),
+    );
+    expect(result.status).toBe("error");
+    expect(mocks.updateMarketingLinkMeta).not.toHaveBeenCalled();
   });
 });

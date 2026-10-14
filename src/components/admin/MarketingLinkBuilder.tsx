@@ -29,6 +29,7 @@ import {
   toLinkSlug,
   utmTupleKey,
 } from "@/lib/analytics/link-standard";
+import { FUNNEL_NAMES } from "@/lib/analytics/funnel-names";
 import { LINK_PAGES, LINK_PRESETS } from "@/lib/content/link-presets";
 import type { RegistryLink } from "@/lib/services/marketing-links";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,8 @@ type Draft = {
   content: string;
   destination: string;
   label: string;
+  funnelName: string;
+  owner: string;
 };
 
 const EMPTY_DRAFT: Draft = {
@@ -67,6 +70,8 @@ const EMPTY_DRAFT: Draft = {
   content: "",
   destination: "",
   label: "",
+  funnelName: "",
+  owner: "",
 };
 
 export function MarketingLinkBuilder({
@@ -99,6 +104,8 @@ export function MarketingLinkBuilder({
       content: toContentId(link.utm_content),
       destination: isOn(LINK_DESTINATIONS, link.utm_term) ? link.utm_term : "",
       label: link.label?.replace(/^Imported[^:]*:\s*/, "") ?? "",
+      funnelName: link.funnel_name ?? "",
+      owner: link.owner ?? "",
     });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
@@ -118,6 +125,7 @@ export function MarketingLinkBuilder({
       <MarketingLinkRegistry
         links={links}
         statsFailed={statsFailed}
+        canSave={canSave}
         onStartFrom={startFrom}
       />
     </div>
@@ -182,6 +190,8 @@ function BuilderForm({
       content: "",
       destination: next.destination,
       label: "",
+      funnelName: next.funnel ?? "",
+      owner: "",
     });
   };
 
@@ -300,6 +310,22 @@ function BuilderForm({
             onChange={update("label")}
             placeholder="Side Hustle Pro, ep. 212, airs Oct 20"
           />
+
+          <SelectField
+            name="funnelName"
+            label="Funnel (Close Funnel Name)"
+            value={draft.funnelName}
+            onChange={update("funnelName")}
+            placeholder="Which funnel does this link feed?"
+            options={FUNNEL_NAMES.map((value) => ({ value, label: value }))}
+          />
+          <TextField
+            name="owner"
+            label="Owner (optional)"
+            value={draft.owner}
+            onChange={update("owner")}
+            placeholder="Mike, Anthony, a setter"
+          />
         </div>
 
         <div className="border-ui-line mt-4 flex flex-col gap-3 border-t pt-4 lg:flex-row lg:items-center lg:justify-between">
@@ -318,7 +344,9 @@ function BuilderForm({
             ) : null}
           </label>
           {canSave ? (
-            <SubmitButton disabled={!preview.url || Boolean(existing)} />
+            <SubmitButton
+              disabled={!preview.url || !draft.funnelName || Boolean(existing)}
+            />
           ) : (
             <p className="text-ui-text-subtle text-xs">
               This login can view links but not save them. Copy the preview, or
@@ -356,7 +384,7 @@ function TextField({
       <input
         name={name}
         type="text"
-        required={name !== "label"}
+        required={name !== "label" && name !== "owner"}
         value={value}
         onChange={onChange}
         placeholder={placeholder}

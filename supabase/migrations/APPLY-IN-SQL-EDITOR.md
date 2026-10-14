@@ -327,3 +327,18 @@ comment on table public.manychat_contacts is
 comment on table public.manychat_lead_matches is
   'Close lead -> ManyChat contact, with evidence. Count level = confirmed only; other levels are kept for audit.';
 ```
+
+## 12. Link funnel + owner (20261014130000)
+
+Before merging the link-funnel PR: `/admin/links` can save new links only once
+these columns exist. Then run `python3 -I scripts/import-utm-sheet.py "<sheet.xlsx>"`
+(dry run), then again with `--apply`.
+
+```sql
+alter table public.marketing_links
+  add column if not exists funnel_name text,
+  add column if not exists funnel_set_by text,
+  add column if not exists owner text;
+create index if not exists marketing_links_funnel_idx
+  on public.marketing_links (funnel_name);
+```
