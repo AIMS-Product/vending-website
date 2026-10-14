@@ -67,7 +67,7 @@ describe("masterclass replay content", () => {
     expect(replayVariants.advisory.closing?.target).toBe("cta");
   });
 
-  it("uses the GHL testimonial video ids (YouTube, or Vidalytics on meta)", () => {
+  it("uses the GHL testimonial YouTube ids on every page, meta included", () => {
     const ids = (key: ReplayVariantKey) =>
       replayVariants[key].testimonialVideos.map((v) =>
         v.kind === "youtube" ? v.id : v.embedId,
@@ -90,13 +90,8 @@ describe("masterclass replay content", () => {
     ]);
     expect(ids("adnb")).toEqual(ids("dna"));
     expect(ids("advisory")).toEqual(ids("dna"));
-    expect(ids("meta")).toEqual([
-      "JcjYb4jILP6zsniI",
-      "U1unfH4Jvr6TjBrS",
-      "OHz6S1sB3ahBvu8D",
-      "5IT3tUDRQOJfSJ2m",
-      "LchE9_kgP012adAZ",
-    ]);
+    // Meta's Vidalytics copies were swapped for these on 2026-10-14.
+    expect(ids("meta")).toEqual(ids("dna"));
   });
 
   it("orders every variant's cards Michael, Joe, Mallorie / Shannon, Katie + Graham, videos following", () => {
@@ -121,23 +116,12 @@ describe("masterclass replay content", () => {
     }
   });
 
-  it("gives every Vidalytics testimonial a poster: the same member's full-size YouTube thumbnail", () => {
-    const youtubeIds = replayVariants.dna.testimonialVideos.map((v) =>
-      v.kind === "youtube" ? v.id : null,
-    );
+  it("plays every testimonial from YouTube, so plays reach YouTube history", () => {
     for (const key of KEYS) {
-      replayVariants[key].testimonialVideos.forEach((video, index) => {
-        if (video.kind !== "vidalytics") return;
-        expect(video.poster).toBe(
-          `https://i.ytimg.com/vi/${youtubeIds[index]}/maxresdefault.jpg`,
-        );
-      });
+      expect(
+        replayVariants[key].testimonialVideos.every((v) => v.kind === "youtube"),
+      ).toBe(true);
     }
-    expect(
-      replayVariants.meta.testimonialVideos.every(
-        (v) => v.kind === "vidalytics" && Boolean(v.poster),
-      ),
-    ).toBe(true);
   });
 
   it("links the DNA booking step and closes meta with a CTA to the form", () => {

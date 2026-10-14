@@ -56,6 +56,8 @@ const CONNECT_HOSTS = [
   "https://*.hs-scripts.com",
   "https://fast.vidalytics.com",
   "https://*.vidalytics.com",
+  // YouTube IFrame Player API (iframe_api and the widget script it loads).
+  "https://www.youtube.com",
   "https://t.rightmessage.com",
   "https://*.rightmessage.com",
   "https://*.manychat.com",

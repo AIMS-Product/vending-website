@@ -69,7 +69,7 @@ export function applyVslStructuredData() {
       `https://i.ytimg.com/vi/${applyVsl.youtubeId}/maxresdefault.jpg`,
     ],
     uploadDate: applyVsl.publishedAt,
-    embedUrl: `https://www.youtube-nocookie.com/embed/${applyVsl.youtubeId}`,
+    embedUrl: `https://www.youtube.com/embed/${applyVsl.youtubeId}`,
     contentUrl: `https://www.youtube.com/watch?v=${applyVsl.youtubeId}`,
     url: absoluteUrl("/contact"),
     publisher: {

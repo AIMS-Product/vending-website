@@ -19,9 +19,9 @@ viewing on the site separately from YouTube, without inflating anything.
 
 | # | Slice | Tier | Depends | Status |
 |---|---|---|---|---|
-| 1 | `youtube-playback` connector: per video per day per playback location (views, engaged views, minutes), monthly embedding pages; self-backfilling | 2 | - | in_progress |
-| 2 | YouTube player with play / 25-100% tracking (sound on only), tap-for-sound, end CTA; swap the 13 videos with YouTube twins; Apply VSL off youtube-nocookie | 2 | - | pending |
-| 3 | Admin Videos page: per video and page, site plays (ours) vs YouTube embedded vs on-YouTube, watch time, completion, booked | 3 | 1, 2 | pending |
+| 1 | `youtube-playback` connector: per video per day per playback location (views, engaged views, minutes), monthly embedding pages; self-backfilling | 2 | - | done (c0931a55; table needs §13 pasted) |
+| 2 | YouTube player with play / 25-100% tracking (sound on only), tap-for-sound; swap the 13 videos with YouTube twins; Apply VSL off youtube-nocookie | 2 | - | done (end-of-video CTA and /apply muted autoplay deferred) |
+| 3 | Admin Videos page: per video and page, site plays (ours) vs YouTube embedded vs on-YouTube, watch time, completion, booked | 3 | 1, 2 | in_progress |
 | 4 | Swap the 6 Vidalytics-only videos once uploaded; remove Vidalytics | 3 | 2, uploads | blocked (uploads) |
 
 ## Slice 1 notes
@@ -36,3 +36,13 @@ viewing on the site separately from YouTube, without inflating anything.
   resumes next run, so the first nights backfill everything with no manual step.
 - Tables ship before they exist in prod (hand-applied, APPLY-IN-SQL-EDITOR §13):
   a missing table is `skipped:`, never a failure.
+
+## Slice 2 evidence (2026-10-14, local dev on :3217, Aside browser)
+
+- /pre-call-resources: 8 operator stories render as youtube.com embeds; pressing
+  play sent `video_progress` {embed_id kb8ryBm6g9k, percent 1, duration 1349};
+  rows landed in lead_video_views (max_percent 1).
+- /masterclass: muted autoplay at 50% visible (`mute=1`), 0 events in 10s
+  muted; "Tap for sound" restarted from 0:00, sent percent 1, button removed.
+- "Watched" for reps (Close note, /admin/bookings) still starts at 25%
+  (`summariseEngagement` filter + test); report "started" now includes plays.

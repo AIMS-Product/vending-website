@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { VidalyticsPlayer } from "@/components/media/VidalyticsPlayer";
+import { YouTubeTrackedIframe } from "@/components/media/YouTubeTrackedIframe";
 import { applyMembers } from "@/lib/content/apply-page";
 import { preCallOperators } from "@/lib/content/pre-call-resources";
 import { PlayIcon } from "./icons";
@@ -15,14 +15,13 @@ import { PlayIcon } from "./icons";
 // Two across rather than three: at three the player was too small for a face to
 // read, which is the whole point of a video testimonial.
 const TOP_STORIES = preCallOperators.items.filter(
-  (item) => item.tier === "high" && "embedId" in item,
+  (item) => item.tier === "high" && "youtubeId" in item,
 );
 
-// The players are mounted on click, not on load. Vidalytics autoplays muted,
-// which suits the pre-call page — that visitor has already booked. Here it
-// would put four videos talking at someone mid-form, which is the distraction
-// the header and footer came off to avoid. It also keeps four player scripts
-// off the initial load.
+// The players are mounted on click, not on load: four videos playing at
+// someone mid-form is the distraction the header and footer came off to
+// avoid, and it keeps four players off the initial load. They are the
+// stories' YouTube copies since 2026-10-14 (see pre-call-resources.ts).
 // The poster is the video's own Vidalytics thumbnail, saved locally as
 // public/apply/stories/<story id>.jpg, so the section shows the member's face
 // before anyone presses play (it was a flat navy box until 2026-09-22).
@@ -31,17 +30,24 @@ export function storyPosterSrc(id: string) {
 }
 
 function StoryPlayer({
-  embedId,
+  youtubeId,
   name,
   poster,
 }: {
-  embedId: string;
+  youtubeId: string;
   name: string;
   poster: string;
 }) {
   const [playing, setPlaying] = useState(false);
 
-  if (playing) return <VidalyticsPlayer embedId={embedId} className="mt-4" />;
+  if (playing)
+    return (
+      <YouTubeTrackedIframe
+        videoId={youtubeId}
+        title={`${name}'s story`}
+        className="mt-4 block aspect-video w-full rounded-[12px] border-2 border-[#111111] bg-black shadow-[8px_8px_0_#111111]"
+      />
+    );
 
   return (
     <button
@@ -99,7 +105,7 @@ export function ApplyMembers() {
               {story.stats.join(" · ")}
             </p>
             <StoryPlayer
-              embedId={(story as { embedId: string }).embedId}
+              youtubeId={(story as { youtubeId: string }).youtubeId}
               name={story.name}
               poster={storyPosterSrc(story.id)}
             />

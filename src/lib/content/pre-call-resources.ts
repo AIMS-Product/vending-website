@@ -5,8 +5,11 @@
 // and seven operator stories. Body copy is marketing's, reproduced verbatim;
 // do not reword without them.
 //
-// Every `embedId` is a Vidalytics embed id under account erwZUUrS. See
-// src/components/media/VidalyticsPlayer.tsx.
+// Every `embedId` is a Vidalytics embed id under account erwZUUrS (see
+// src/components/media/VidalyticsPlayer.tsx). Operator stories moved to their
+// YouTube copies on 2026-10-14 (`youtubeId`, matched through
+// case_studies.youtube_video_id) so plays feed YouTube history and ad
+// audiences; `vidalyticsId` keeps the id earlier plays were stored under.
 
 export const preCallMeta = {
   title: "Pre-Call Resources",
@@ -115,7 +118,8 @@ export const preCallOperators = {
       stats: ["$43K/mo", "40 machines", "20 locations", "About two years in"],
       tier: "high",
       name: "Matthew Morrison",
-      embedId: "pW5bzDBuhVIVe6fD",
+      youtubeId: "tfjgFj0BLgI",
+      vidalyticsId: "pW5bzDBuhVIVe6fD",
       blurb:
         "A Denver-based software sales manager started vending on paternity leave as an AI-layoff hedge, growing to about $43K a month across roughly 40 machines.",
     },
@@ -124,7 +128,8 @@ export const preCallOperators = {
       stats: ["$41K/mo", "22 locations", "11 months in"],
       tier: "high",
       name: "Musa Sadi",
-      embedId: "TVEcsYOkteZsDDSK",
+      youtubeId: "kb8ryBm6g9k",
+      vidalyticsId: "TVEcsYOkteZsDDSK",
       blurb:
         "Musa Sadi was a burned-out hospitality manager who tragically lost his mother and brother in 2025. He binged every video on our founder Mike Hoffman\u2019s YouTube channel in one overnight sitting and less than a year after joining Vendingpreneurs, he hit $41,000 a month.",
     },
@@ -133,7 +138,8 @@ export const preCallOperators = {
       stats: ["$36K/mo", "16 machines", "About a year in"],
       tier: "high",
       name: "Graham & Katie Parker",
-      embedId: "RwOUq4VZcQtFH_yk",
+      youtubeId: "heSbv_uG734",
+      vidalyticsId: "RwOUq4VZcQtFH_yk",
       blurb:
         "A 20-year medical device sales rep and his stay-at-home wife, both once burned flipping houses, built a vending route to $36K/month in about a year.",
     },
@@ -142,7 +148,8 @@ export const preCallOperators = {
       stats: ["$22\u201325K/mo", "4 locations", "18 months in"],
       tier: "high",
       name: "Shannon R.",
-      embedId: "9fJu4zEUU2VSjD1K",
+      youtubeId: "yP4Y_BBAvq4",
+      vidalyticsId: "9fJu4zEUU2VSjD1K",
       blurb:
         "Shannon relocated to Seattle for her husband\u2019s job, started vending to help fund a home remodel, and turned one micro market into $22-25K a month.",
     },
@@ -162,7 +169,8 @@ export const preCallOperators = {
       stats: ["$10\u201312K/mo", "6 locations", "10 months in"],
       tier: "middle",
       name: "Madison G.",
-      embedId: "mLCe2YfuWrE0CJHN",
+      youtubeId: "5y5geBPe3mM",
+      vidalyticsId: "mLCe2YfuWrE0CJHN",
       blurb:
         "A stay-at-home mom of five years pushed her husband for three months to back a vending business, and ten months later runs six locations doing $10-12K a month.",
     },
@@ -171,7 +179,8 @@ export const preCallOperators = {
       stats: ["$10.5K/mo", "10 locations", "Around a full-time job"],
       tier: "middle",
       name: "Manuel Duval",
-      embedId: "FXc8GUF0L3jwq2Z4",
+      youtubeId: "-PO--G7fRq4",
+      vidalyticsId: "FXc8GUF0L3jwq2Z4",
       blurb:
         "A 22-year law enforcement veteran and detective sergeant built a 10-location vending route around his full-time job, with one location on track for $8K.",
     },
@@ -180,7 +189,8 @@ export const preCallOperators = {
       stats: ["$7K/mo", "18 locations", "30 days in"],
       tier: "hardest",
       name: "Jesse Lee",
-      embedId: "VhBEa5DZsGtnKkHJ",
+      youtubeId: "MmVigkdyzL4",
+      vidalyticsId: "VhBEa5DZsGtnKkHJ",
       blurb:
         "A food-truck owner, facing a saturated, seasonal market, bought an 18-location drink route, doing $7,000/month within his first 30 days in vending.",
     },
@@ -203,7 +213,8 @@ export const preCallOperators = {
       stats: ["$5.5K/mo", "15 locations", "Three years in"],
       tier: "hardest",
       name: "Joe H.",
-      embedId: "ulQZmXSCqGGiSrrg",
+      youtubeId: "gvvz2nMax0w",
+      vidalyticsId: "ulQZmXSCqGGiSrrg",
       blurb:
         "A 66-year-old retiring from auto sales built a 15-location vending route mostly on his own, drawn in by vending\u2019s low capital threshold.",
     },
@@ -259,9 +270,12 @@ export const preCallNext = {
  * anyone outside this file.
  */
 export type PreCallVideo = {
+  /** What a play is stored under: a Vidalytics embed id or a YouTube id. */
   embedId: string;
   label: string;
   group: "intro" | "objection" | "story";
+  /** The Vidalytics id a story played under before its YouTube swap. */
+  legacyEmbedId?: string;
 };
 
 export const preCallVideos: readonly PreCallVideo[] = [
@@ -272,13 +286,27 @@ export const preCallVideos: readonly PreCallVideo[] = [
     group: "objection" as const,
   })),
   ...preCallOperators.items.flatMap((item) =>
-    "embedId" in item
-      ? [{ embedId: item.embedId, label: item.name, group: "story" as const }]
+    "youtubeId" in item
+      ? [
+          {
+            embedId: item.youtubeId,
+            label: item.name,
+            group: "story" as const,
+            legacyEmbedId: item.vidalyticsId,
+          },
+        ]
       : [],
   ),
 ];
 
-/** Lookup for turning a stored embed id back into something readable. */
+/**
+ * Lookup for turning a stored embed id back into something readable. A story
+ * answers to both its YouTube id and the Vidalytics id it played under before
+ * 2026-10-14, so nobody's earlier watching disappears from a rep's view.
+ */
 export const preCallVideoByEmbedId = new Map(
-  preCallVideos.map((video) => [video.embedId, video]),
+  preCallVideos.flatMap((video) => [
+    [video.embedId, video] as const,
+    ...(video.legacyEmbedId ? [[video.legacyEmbedId, video] as const] : []),
+  ]),
 );

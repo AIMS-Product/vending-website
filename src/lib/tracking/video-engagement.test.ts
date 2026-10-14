@@ -33,12 +33,19 @@ describe("audiblePercentWatched", () => {
   it("counts normally once the visitor unmutes", () => {
     expect(audiblePercentWatched(30, 120, false)).toBe(25);
   });
+
+  it("counts any audible playback as played, even inside the first 1%", () => {
+    expect(audiblePercentWatched(2, 9960, false)).toBe(1);
+    expect(audiblePercentWatched(2, 9960, true)).toBeNull();
+    expect(audiblePercentWatched(0, 9960, false)).toBe(0);
+  });
 });
 
 describe("milestonesReached", () => {
   it("reports a milestone once", () => {
     const reported = new Set<number>();
-    expect(milestonesReached(26, reported)).toEqual([25]);
+    expect(milestonesReached(26, reported)).toEqual([1, 25]);
+    reported.add(1);
     reported.add(25);
     expect(milestonesReached(30, reported)).toEqual([]);
   });
@@ -47,8 +54,9 @@ describe("milestonesReached", () => {
     expect(milestonesReached(100, new Set())).toEqual([...VIDEO_MILESTONES]);
   });
 
-  it("reports nothing below the first quarter", () => {
-    expect(milestonesReached(24, new Set())).toEqual([]);
+  it("reports only the play below the first quarter", () => {
+    expect(milestonesReached(24, new Set())).toEqual([1]);
+    expect(milestonesReached(0, new Set())).toEqual([]);
   });
 });
 
@@ -58,7 +66,7 @@ describe("one event per crossing", () => {
   // stored progress was lower than what was actually watched.
   it("gives the caller the furthest milestone as the last element", () => {
     const crossed = milestonesReached(60, new Set());
-    expect(crossed).toEqual([25, 50]);
+    expect(crossed).toEqual([1, 25, 50]);
     expect(crossed[crossed.length - 1]).toBe(50);
   });
 

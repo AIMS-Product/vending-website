@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { preCallVideos } from "@/lib/content/pre-call-resources";
 import {
+  EMPTY_ENGAGEMENT,
   sessionIdFromLeadMetadata,
   summariseEngagement,
 } from "./pre-call-engagement";
@@ -28,6 +29,22 @@ describe("summariseEngagement", () => {
     // 25% is opened, not watched.
     expect(summary.finishedCount).toBe(1);
     expect(summary.lastSeenAt).toBe("2026-09-21T10:05:00Z");
+  });
+
+  it("leaves out a play that never reached the first quarter", () => {
+    const summary = summariseEngagement([
+      {
+        embed_id: hero.embedId,
+        max_percent: 1,
+        last_seen_at: "2026-10-14T10:00:00Z",
+      },
+      {
+        embed_id: second.embedId,
+        max_percent: 24,
+        last_seen_at: "2026-10-14T10:01:00Z",
+      },
+    ]);
+    expect(summary).toEqual(EMPTY_ENGAGEMENT);
   });
 
   it("labels each video for a reader, furthest first", () => {
