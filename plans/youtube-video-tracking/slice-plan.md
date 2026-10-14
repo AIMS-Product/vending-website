@@ -17,12 +17,12 @@ viewing on the site separately from YouTube, without inflating anything.
 - Out of scope: Google Ads audience setup (Adam, in Google Ads); uploading the
   six Vidalytics-only videos (Adam's team).
 
-| # | Slice | Tier | Depends | Status |
-|---|---|---|---|---|
-| 1 | `youtube-playback` connector: per video per day per playback location (views, engaged views, minutes), monthly embedding pages; self-backfilling | 2 | - | done (c0931a55; table needs §13 pasted) |
-| 2 | YouTube player with play / 25-100% tracking (sound on only), tap-for-sound; swap the 13 videos with YouTube twins; Apply VSL off youtube-nocookie | 2 | - | done (end-of-video CTA and /apply muted autoplay deferred) |
-| 3 | Admin Videos page: per video and page, site plays (ours) vs YouTube embedded vs on-YouTube, watch time, completion, booked | 3 | 1, 2 | in_progress |
-| 4 | Swap the 6 Vidalytics-only videos once uploaded; remove Vidalytics | 3 | 2, uploads | blocked (uploads) |
+| #   | Slice                                                                                                                                             | Tier | Depends    | Status                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ---------- | ---------------------------------------------------------- |
+| 1   | `youtube-playback` connector: per video per day per playback location (views, engaged views, minutes), monthly embedding pages; self-backfilling  | 2    | -          | done (c0931a55; table needs §13 pasted)                    |
+| 2   | YouTube player with play / 25-100% tracking (sound on only), tap-for-sound; swap the 13 videos with YouTube twins; Apply VSL off youtube-nocookie | 2    | -          | done (end-of-video CTA and /apply muted autoplay deferred) |
+| 3   | Admin Videos page: per video and page, site plays (ours) vs YouTube embedded vs on-YouTube, watch time, completion                                | 3    | 1, 2       | done (booked-after-watching per video deferred)            |
+| 4   | Swap the 6 Vidalytics-only videos once uploaded; remove Vidalytics                                                                                | 3    | 2, uploads | blocked (uploads)                                          |
 
 ## Slice 1 notes
 
@@ -46,3 +46,12 @@ viewing on the site separately from YouTube, without inflating anything.
   muted; "Tap for sound" restarted from 0:00, sent percent 1, button removed.
 - "Watched" for reps (Close note, /admin/bookings) still starts at 25%
   (`summariseEngagement` filter + test); report "started" now includes plays.
+
+## Slice 3 evidence (2026-10-14)
+
+- `getSiteVideoReport` against prod (30 days): 18 videos; Matthew Morrison's
+  Vidalytics plays merged into his YouTube row (51 plays, 3 pages);
+  `youtubeConnected: false` until §13 is pasted, panel says so.
+- `SiteVideosPanel` rendered from that live report: 18 rows, setup note shown.
+- Not seen in a browser: local /admin sign-in (guest) does not complete on
+  dev, so the panel's layout is unverified on screen.

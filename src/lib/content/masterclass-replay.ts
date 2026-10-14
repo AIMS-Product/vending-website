@@ -199,6 +199,20 @@ const YOUTUBE_TESTIMONIAL_VIDEOS = [
 ] as const;
 
 /**
+ * The meta page's former Vidalytics testimonial ids -> the YouTube copy each
+ * was swapped for on 2026-10-14. Plays recorded before the swap are stored
+ * under the left-hand id; reports read them as the YouTube video.
+ */
+export const RETIRED_VIDALYTICS_TESTIMONIALS: Readonly<Record<string, string>> =
+  {
+    JcjYb4jILP6zsniI: "U7KKbZHqBvg",
+    U1unfH4Jvr6TjBrS: "gvvz2nMax0w",
+    OHz6S1sB3ahBvu8D: "yP4Y_BBAvq4",
+    "5IT3tUDRQOJfSJ2m": "io1Jkei-yFs",
+    LchE9_kgP012adAZ: "heSbv_uG734",
+  };
+
+/**
  * DNA's and Meta's booking copy. GHL's DNA paragraph said "schedule a
  * Strategy Call", but both pages' steps, hero and buttons offer a "free
  * advisory call", so the form copy names that same call. Process copy only.

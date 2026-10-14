@@ -34,12 +34,14 @@ export function useYouTubeTracking(
   useEffect(() => {
     const iframe = iframeRef.current;
     if (!active || !iframe) return;
-    const session = readStoredAttributionSession();
-    const report = session
-      ? createVideoProgressReporter(videoId, session)
-      : null;
     // Captured once: a client-side route change must not relabel the video.
     const pagePath = window.location.pathname;
+    const session = readStoredAttributionSession();
+    // The page builder previews videos under /admin; that is us, not a visitor.
+    const report =
+      session && !pagePath.startsWith("/admin")
+        ? createVideoProgressReporter(videoId, session)
+        : null;
     let cancelled = false;
     let timer: ReturnType<typeof setInterval> | undefined;
 

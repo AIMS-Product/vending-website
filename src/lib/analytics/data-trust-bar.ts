@@ -41,7 +41,13 @@ export type FeedDef = {
    * never delivered anything, and the bar says "not connected" and what is
    * missing, instead of dating the source from a test run or a clean empty one.
    */
-  fills?: { table: "bitly_link_clicks" | "manychat_events"; missing: string };
+  fills?: {
+    table:
+      | "bitly_link_clicks"
+      | "manychat_events"
+      | "youtube_video_playback_daily";
+    missing: string;
+  };
 };
 
 const DAILY = 36;
@@ -128,6 +134,16 @@ export const FEEDS = {
     label: "YouTube Analytics",
     staleAfterHours: DAILY,
     source: { kind: "run", connector: "youtube-analytics" },
+  },
+  "youtube-playback": {
+    // Every 3 hours; a video is re-read at most once a day.
+    label: "YouTube views by where they played",
+    staleAfterHours: DAILY,
+    source: { kind: "run", connector: "youtube-playback" },
+    fills: {
+      table: "youtube_video_playback_daily",
+      missing: "no YouTube playback row has ever been stored",
+    },
   },
   "search-console": {
     label: "Google Search Console",
@@ -230,8 +246,16 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   channels: [...SPINE, "close", "calendly", "site-leads"],
   // youtube-attribution.ts: leads, Bitly clicks, YouTube videos, Close shows
   youtube: ["site-leads", "ga4-pages", "bitly", "youtube", "close"],
-  // video-engagement-report.ts: video views, leads, Calendly, Close
-  video: ["video-views", "site-leads", "calendly", "close"],
+  // video-engagement-report.ts: video views, leads, Calendly, Close;
+  // site-video-report.ts: video views, YouTube playback, YouTube titles
+  video: [
+    "video-views",
+    "site-leads",
+    "calendly",
+    "close",
+    "youtube-playback",
+    "youtube",
+  ],
   // booked-calls-data.ts: Calendly, Close
   booked: ["calendly", "close"],
   // close-week-view-data.ts + close-mtd-funnel-data.ts: Close mirror
