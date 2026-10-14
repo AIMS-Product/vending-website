@@ -158,3 +158,21 @@ to an allowlist in team.json; signed, salted session cookie with expiry; APP_PAS
    time mismatch (/run's zoom-webinar check compared Zoom to a registry copied from Zoom, so it could never fail).
    Oct 20 GHL tag not set yet (last week set 10-07 04:49Z, right after the room).
 7. Handoff artifact NVWBNZzvXKeDsraYubZVAV: still "not found" from .claude-ma; refresh it from the owning account.
+
+## Session 2026-10-14 ~06:30Z overnight (account .claude-ma)
+
+1. CORRECTION to finding 4 (Adv+): per attendee it is 4-8x dearer, but credit bookers to the ad on their own GHL
+   contact (acquisition adSets + closeUnmatchedByAd) and Adv+ wins on outcomes. Rooms Sept 22-Oct 13:
+   Adv+ $20,580 -> 351 regs, 100 att, 34 booked, 3 won, $28,344 ($605/booked, ROAS 1.38);
+   LLA Leads $17,803 -> 1,682 regs, 245 att, 25 booked, 0 won ($712/booked). The registration drop is a trade for
+   buyers, not waste. Do not cut Adv+ on registration numbers. Small samples; attribution leans on GHL ad ids.
+   Board /ads (Oct 13): Adv+ US-2 $3,793 / 27 regs / 12 att; US-1 $2,122 / 21 regs / 4 att.
+2. Oct 20 Zoom fix NOT applied: the auto-mode permission check refused the Zoom PATCH (real-world transaction).
+   Verified 7:30 PM CT is intended: GHL custom values "October 20, 2026 at 7:30 PM CDT" / "7:30 PM Central Time",
+   site, handoff guide, every room since Sept 15. Settings diff vs Oct 13: only start_time and reminders differ.
+   Fix (Jess in Zoom UI, or Adam via `!`): webinar 82284428904 -> start Oct 20 7:30 PM, America/Chicago; Email
+   Settings -> reminder to attendees/panelists ON, 1 week + 1 day + 1 hour (API: settings.
+   attendees_and_panelists_reminder_email_notification {enable: true, type: 7}). The time change emails the
+   registrants the corrected time, which is wanted.
+3. Audit nights 10-09..10-13: only known items (10-11 YouTube 10-08 hole, 10-12 Metricool Meta empty -> Meta API,
+   10-13 company-mtd-booked = stale cache, fixed #171). Watching the 10-14 12:30Z run.
