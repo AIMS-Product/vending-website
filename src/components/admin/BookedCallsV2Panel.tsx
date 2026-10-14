@@ -30,7 +30,9 @@ const REASON_LABEL: Record<Reason, string> = {
   missing_timestamp: "Held: missing scheduled time",
 };
 
-const TD = "px-3 py-1.5 text-right tabular-nums whitespace-nowrap";
+const TD = "px-2 py-1.5 text-right tabular-nums whitespace-nowrap sm:px-3";
+// Headers wrap ("Social / DMs") so the source table fits a 390px phone.
+const TH = "px-2 py-1.5 text-right align-bottom font-semibold sm:px-3";
 const TD_LEFT = "px-4 py-1.5 text-left whitespace-nowrap";
 
 export function BookedCallsV2Panel({
@@ -111,13 +113,15 @@ export function BookedCallsV2Panel({
             </caption>
             <thead className="text-ui-text-subtle text-xs">
               <tr>
-                <th className={`${TD_LEFT} font-semibold`}>Source</th>
+                <th className={`${TD_LEFT} align-bottom font-semibold`}>
+                  Source
+                </th>
                 {BUCKETS.map((b) => (
-                  <th key={b} className={`${TD} font-semibold`}>
+                  <th key={b} className={TH}>
                     {b}
                   </th>
                 ))}
-                <th className={`${TD} font-semibold`}>Total</th>
+                <th className={TH}>Total</th>
               </tr>
             </thead>
             <tbody className="divide-ui-line divide-y">
@@ -143,7 +147,10 @@ export function BookedCallsV2Panel({
             <tbody className="divide-ui-line divide-y">
               {reasons.map(([reason, count]) => (
                 <tr key={reason}>
-                  <td className={TD_LEFT}>{REASON_LABEL[reason]}</td>
+                  {/* Wraps: the longest label pushed the count off a phone. */}
+                  <td className="px-4 py-1.5 text-left">
+                    {REASON_LABEL[reason]}
+                  </td>
                   <td className={TD}>{count}</td>
                 </tr>
               ))}

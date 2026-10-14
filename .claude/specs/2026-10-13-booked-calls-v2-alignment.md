@@ -77,3 +77,21 @@ order: repeat 55 -> 49, reschedule 14 -> 20); (3) snapshot fence also bounds his
 with no UTMs and only `internal-webinar`; UTM map gains ghl+pearl, anthony-li, instagram*, ltf, web.
 Residual 1-2 per bucket; canceled 110 vs 104 shows Close edits since Dom's read. Row-level diff needs Dom's
 redacted decisions file.
+
+## Status 2026-10-14 late (sync -> DB -> panel proven)
+
+- Migration was NOT on aacisvhkmsaabqdvdmmf despite the earlier note; Adam applied it ~23:00 PT. PostgREST now
+  lists both tables.
+- Sync run locally against the real tables: 106s wall incl. writes, 278 Close requests, 0 429s.
+  `close_meetings` 22,423; `close_meeting_leads` 2,102 = every lead with a meeting created in the last 70 days.
+- Fix: the 2,000-row skip cap split January 2026 (7,532 meetings) and March (2,473) and reread them, 485
+  requests / 128s for the crawl alone. Cap 10,000 (Close paged to `_skip` 22,400; over its real cap it 400s),
+  HISTORY_START 2024-01 (first meeting 2024-05-24). Close IGNORES `date_updated__gte` on `/activity/meeting/`,
+  so an hourly incremental-by-update crawl is impossible; the full hourly crawl fits, so no nightly split.
+- DB path (`getBookedCallsV2`, Dom's window/fence) = validation script exactly: 524 candidates, 205 counted
+  (85/117/3), and all 524 decisions identical field by field.
+- Panel rendered with live MTD data (558 = 222 + 299 + 37). Phone fix: reason labels wrap (the count was cut
+  off at 390px) and source-table headers wrap; no overflow at 390px, source table scrolls in place at 320px.
+- Two local-network TLS resets ("bad record mac") failed upsert batches mid-run; reruns were clean. Watch the
+  first prod runs on the trust bar; add a batch retry only if prod shows it.
+- Left: Dom's decisions file / rules.json / sources.py for the last 1-2 per bucket; step 7 switch.
