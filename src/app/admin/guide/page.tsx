@@ -54,6 +54,12 @@ const PAGES = [
     answers: "One channel at a time, from capture to sale.",
   },
   {
+    href: "/admin/analytics/marketing",
+    label: "Marketing MTD",
+    answers:
+      "This month by lead source on Dom's rule against last month, plus the Q4 scorecard rows.",
+  },
+  {
     href: "/admin/analytics/months",
     label: "Month over month",
     answers: "Each month against the one before.",

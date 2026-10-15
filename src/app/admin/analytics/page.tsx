@@ -43,6 +43,7 @@ export const dynamic = "force-dynamic";
 const DRILL_DOWNS = [
   { href: "/admin/analytics/board", label: "Funnel board" },
   { href: "/admin/analytics/channels", label: "Channels" },
+  { href: "/admin/analytics/marketing", label: "Marketing MTD" },
   { href: "/admin/analytics/months", label: "Month over month" },
   { href: "/admin/analytics/youtube", label: "YouTube" },
   { href: "/admin/analytics/google-ads", label: "Google Ads" },
