@@ -50,6 +50,7 @@ import {
   type DayRange,
   windowPhrase,
 } from "@/lib/analytics/dashboard-window";
+import { pacificToday } from "@/lib/admin/format-time";
 import { isYes } from "@/lib/services/close-week-view";
 import {
   callSpan,
@@ -291,6 +292,10 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
   const yesterday = addDays(today, -1);
   const lastWeek = sameDayLastWeek(today);
   const days = [today, yesterday, lastWeek];
+  // Dom's calls are dated by the Pacific day booked; the window's days are
+  // New York's, which run a day ahead from 9pm to midnight Pacific.
+  const pacific = pacificToday();
+  const bookedDays = [pacific, addDays(pacific, -1), sameDayLastWeek(pacific)];
   const span = callSpan(window);
   const [leads, calls] = await Promise.all([
     readLeads(span.from),
@@ -317,7 +322,7 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
     {
       // Dom's counted calls booked that day by Marketing (Lane 2 out).
       label: "Calls booked today",
-      values: days.map((d) =>
+      values: bookedDays.map((d) =>
         calls.ok
           ? calls.data.filter((c) => c.bookedDate === d && !isReactivation(c))
               .length

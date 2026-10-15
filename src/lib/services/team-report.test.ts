@@ -94,6 +94,45 @@ describe("isFirstCallCalendar", () => {
 });
 
 describe("buildSetters", () => {
+  it("credits a lead's won deal once when Dom's rule counts two of its calls", () => {
+    const won = { lead_id: "lead_w", status_label: "🏆 Closed / Won" };
+    const report = buildSetters({
+      leads: [
+        lead({
+          ...won,
+          title_setter: "Pearl Diaz",
+          first_sales_call_booked_date: "2026-09-02",
+          first_call_show_up: "Yes",
+        }),
+        lead({
+          ...won,
+          title_setter: "Connor George",
+          first_sales_call_booked_date: "2026-09-25",
+          first_call_show_up: "Yes",
+        }),
+      ],
+      bookings: [],
+      period: september,
+      firstMonth: "2026-09",
+      months: 1,
+      targetsApply: false,
+    });
+    const by = Object.fromEntries(report.rows.map((r) => [r.who, r]));
+    expect(by["Pearl Diaz"]).toMatchObject({
+      booked: 1,
+      showed: 1,
+      won: 0,
+      closed: 0,
+    });
+    expect(by["Connor George"]).toMatchObject({
+      booked: 1,
+      showed: 1,
+      won: 1,
+      closed: 1,
+    });
+    expect(report.total).toMatchObject({ booked: 2, won: 1 });
+  });
+
   it("credits the setter Dom's rule reads from the meeting title before Calendly", () => {
     const report = buildSetters({
       leads: [lead({ email: "t@x.com", title_setter: "Pearl Diaz" })],
