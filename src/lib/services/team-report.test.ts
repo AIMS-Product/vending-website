@@ -94,6 +94,23 @@ describe("isFirstCallCalendar", () => {
 });
 
 describe("buildSetters", () => {
+  it("credits the setter Dom's rule reads from the meeting title before Calendly", () => {
+    const report = buildSetters({
+      leads: [lead({ email: "t@x.com", title_setter: "Pearl Diaz" })],
+      bookings: [
+        booking({ email: "t@x.com", credit: rep("Connor George", "calendly") }),
+      ],
+      period: september,
+      firstMonth: "2026-09",
+      months: 1,
+      targetsApply: false,
+    });
+    expect(report.rows.map((row) => [row.who, row.booked])).toContainEqual([
+      "Pearl Diaz",
+      1,
+    ]);
+  });
+
   it("credits Close first calls through Calendly, then Close's setter field, and splits the basis", () => {
     const report = buildSetters({
       leads: [

@@ -33,6 +33,7 @@ import {
   deltaPct,
   firstCallsOn,
   inRange,
+  isReactivation,
   keptCalls,
   LEADS_RECORDED_FROM,
   planBooked,
@@ -53,7 +54,6 @@ import { isYes } from "@/lib/services/close-week-view";
 import {
   callSpan,
   leadsNotInClose,
-  readBookedOn,
   readCac,
   readCalls,
   readCostByMonth,
@@ -292,8 +292,7 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
   const lastWeek = sameDayLastWeek(today);
   const days = [today, yesterday, lastWeek];
   const span = callSpan(window);
-  const [booked, leads, calls] = await Promise.all([
-    readBookedOn(days),
+  const [leads, calls] = await Promise.all([
     readLeads(span.from),
     readCalls(span.from, span.to, window.marketingOnly),
   ]);
@@ -316,9 +315,13 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
     note?: string;
   }> = [
     {
+      // Dom's counted calls booked that day by Marketing (Lane 2 out).
       label: "Calls booked today",
       values: days.map((d) =>
-        booked.ok ? (booked.data[d]?.newBooked ?? null) : null,
+        calls.ok
+          ? calls.data.filter((c) => c.bookedDate === d && !isReactivation(c))
+              .length
+          : null,
       ),
     },
     {
@@ -366,14 +369,12 @@ export async function TodayStrip({ window }: { window: DashboardWindow }) {
           );
         })}
       </div>
-      {!booked.ok || !leads.ok || !calls.ok ? (
+      {!leads.ok || !calls.ok ? (
         <p
           role="alert"
           className="border-ui-line text-ui-bad-ink border-t px-4 py-2 text-xs"
         >
-          {[booked, leads, calls]
-            .flatMap((r) => (r.ok ? [] : [r.error]))
-            .join(" ")}
+          {[leads, calls].flatMap((r) => (r.ok ? [] : [r.error])).join(" ")}
         </p>
       ) : null}
     </section>

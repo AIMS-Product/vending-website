@@ -131,7 +131,7 @@ export function SettersTable({
   return (
     <Panel
       title="Setters and scrapers"
-      note="Setters and scrapers both book Lane 2 calls; the Role column says which job each person holds, from the Lane 2 roster. Booked is a Close first sales call booked in the period. Set adds the calls a person booked that Close does not hold as a first call. Recorded means Calendly or Close named them; tagged means their own booking link; inferred means the last rep to call or text before the booking."
+      note="Setters and scrapers both book Lane 2 calls; the Role column says which job each person holds, from the Lane 2 roster. Booked is a call counted on Dom's rule (booked_calls.v2.2), by the day it was booked. Set adds the calls a person booked that Dom's rule does not count. Recorded means Calendly or Close named them; tagged means their own booking link; inferred means the last rep to call or text before the booking."
       footer={
         <>
           {report.target != null ? (
@@ -155,10 +155,11 @@ export function SettersTable({
             </p>
           ) : null}
           <p>
-            Close ranks setter evidence as Calendly&apos;s record, then a tagged
-            link, then Close&apos;s setter field, then an inferred touch. Show,
-            close and won are read from the Close lead. Close means Contract
-            Sent or Closed / Won.
+            Setter evidence ranks the setter named in the Close meeting title
+            (Dom&apos;s rule) first, then Calendly&apos;s record, then a tagged
+            link, then an inferred touch. Show (first call only), close and won
+            are read from the Close lead. Close means Contract Sent or Closed /
+            Won.
           </p>
         </>
       }

@@ -243,8 +243,8 @@ than one counted call, so a win is never read off the lead row). Prove a change 
 
 ### Close mirror (legacy first-call count)
 
-Still used by Channels, Team, the KPI export, the Today strip's "Calls booked today" and the nightly
-company-MTD and first-call audits, until each moves.
+Still used by Channels, the KPI export, Team's Closers tab (calendar-hosted calls, a different measure)
+and the nightly company-MTD and first-call audits, until each moves.
 
 ```
 Booked = count of rows whose first_sales_call_booked_date falls in the window,
@@ -713,7 +713,7 @@ rows below in short. What each card counts:
 | -------------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Booked by channel    | This week, this month       | Close first calls (§3, §5) credited as the flow card credits them (gclid leads to Google Ads), Monday to today and the 1st to today, Eastern days. Independent of the window                                                                        |
 |                      | Double down / Watch         | At most 3 lines from the Channel value rows for the window: paid, at least 10 booked, revenue per $1 known. Double down at $1 or more back per $1 (best first, at most 2 while a Watch exists), Watch under $1 (worst first)                        |
-| Today strip          | Calls booked today          | §5 "New calls booked", New York day                                                                                                                                                                                                                 |
+| Today strip          | Calls booked today          | §5 Dom's rule: counted calls Marketing booked that Pacific day (Lane 2 and Social DMs out)                                                                                                                                                          |
 |                      | First calls on the calendar | §5 "First calls on calendar" after §3, the same kept calls "Showed so far" splits (header chip too)                                                                                                                                                 |
 |                      | Leads in today              | §4 site leads, people, by New York day of first submission                                                                                                                                                                                          |
 |                      | Showed so far               | §6, rep-logged `yes` on calls dated today; no-show and not-logged-yet beside it                                                                                                                                                                     |

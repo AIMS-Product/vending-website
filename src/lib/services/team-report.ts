@@ -40,6 +40,8 @@ export type FunnelLeadRow = {
   first_call_show_up: string | null;
   status_label: string | null;
   setter_name: string | null;
+  /** Dom's rule: the setter the Close meeting title names. Outranks every other credit. */
+  title_setter?: string | null;
 };
 
 /** A Calendly booking with who set it already resolved. */
@@ -226,6 +228,16 @@ function creditForLead(
   lead: FunnelLeadRow,
   booking: CreditedBooking | null,
 ): CallCredit {
+  const titled = lead.title_setter?.trim();
+  if (titled) {
+    return {
+      kind: "rep",
+      basis: "close",
+      who: titled,
+      evidence: "Named in the Close meeting title (Dom's booked-call rule).",
+      repUri: null,
+    };
+  }
   const credit = booking?.credit;
   if (credit?.kind === "rep" && credit.basis !== "touch") return credit;
   const closeSetter = lead.setter_name?.trim();

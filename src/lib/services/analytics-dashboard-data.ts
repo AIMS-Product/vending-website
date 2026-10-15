@@ -22,16 +22,6 @@ import {
 } from "@/lib/analytics/dashboard-metrics";
 import { config } from "@/lib/config";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
-import {
-  fetchBookings,
-  fetchFunnels,
-} from "@/lib/services/booked-metrics-data";
-import {
-  REPORTING_TIME_ZONE,
-  readBookedMetric,
-  type BookingRow,
-  type FunnelRow,
-} from "@/lib/services/booked-metrics";
 import { getCacPageData } from "@/lib/services/cac-report-data";
 import { fetchFacts } from "@/lib/services/channel-report";
 import {
@@ -269,55 +259,6 @@ const cachedCostRows = unstable_cache(
 export const readCostByMonth = cache((today: string) =>
   attempt("The channel spine", () => cachedCostRows(today)),
 );
-
-const readBookingInputs = cache(() =>
-  attempt("Calendly bookings", async () => {
-    const client = createAdminClient();
-    const today = reportingDay();
-    const [bookings, funnels] = await Promise.all([
-      fetchBookings(client, addDays(today, -14)),
-      fetchFunnels(client),
-    ]);
-    if (!bookings || !funnels) throw new Error("bookings or mirror unreadable");
-    return { bookings, funnels };
-  }),
-);
-
-export type BookedOnDay = {
-  /** New calls booked that day, Lane 2 out (§5 booked-call measures). */
-  newBooked: number | null;
-  /** First calls on the calendar that day (§5). */
-  onCalendar: number | null;
-};
-
-/** The two booked-call measures for each day asked, from one read. */
-export async function readBookedOn(
-  days: readonly string[],
-): Promise<Read<Record<string, BookedOnDay>>> {
-  const inputs = await readBookingInputs();
-  if (!inputs.ok) return inputs;
-  const base: {
-    bookings: BookingRow[];
-    funnels: FunnelRow[];
-    timeZone: string;
-  } = {
-    ...inputs.data,
-    timeZone: REPORTING_TIME_ZONE,
-  };
-  return {
-    ok: true,
-    data: Object.fromEntries(
-      days.map((day) => [
-        day,
-        {
-          newBooked: readBookedMetric("newBookedOn", { ...base, day }).value,
-          onCalendar: readBookedMetric("firstCallsOnCalendar", { ...base, day })
-            .value,
-        },
-      ]),
-    ),
-  };
-}
 
 type CacPoint = { month: string; label: string; cac: number | null };
 

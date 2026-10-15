@@ -41,7 +41,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: CARD_HELP.today,
     meaning:
-      "Calls booked today: new calls booked, Lane 2 out (§5). First calls on the calendar: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) scheduled for today, the same calls Showed so far splits. Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
+      "Calls booked today: calls counted on Dom's rule that Marketing booked that day, Lane 2 and Social DMs out (§5). First calls on the calendar: booked calls under Dom's rule (booked_calls.v2.2, since Oct 14, 2026: one per qualifying Close meeting, dated by the Pacific day it was booked) scheduled for today, the same calls Showed so far splits. Leads in today: site leads, people (§4). Showed so far: the rep logged the first-call show (§6). Each compares with yesterday and the same weekday last week. A dash means not read, never zero.",
   },
   {
     term: CARD_HELP.kpi,
@@ -96,7 +96,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Booked call",
     meaning:
-      "Dom's rule, below (Booked calls V2), on the main dashboard, Marketing MTD, Month over month and the Funnel board. Elsewhere, until each page moves: a person who booked a first sales call, counted once by the day the call is scheduled for. The two differ: Oct 1-13 the older count had 120 marketing calls, Dom's 95, mostly calls booked in September for October and calls Lane 2 booked on marketing leads.",
+      "Dom's rule, below (Booked calls V2), on the main dashboard, Marketing MTD, Month over month, the Funnel board and Team setters. Elsewhere, until each page moves: a person who booked a first sales call, counted once by the day the call is scheduled for. The two differ: Oct 1-13 the older count had 120 marketing calls, Dom's 95, mostly calls booked in September for October and calls Lane 2 booked on marketing leads.",
   },
   {
     term: "Booked calls V2",

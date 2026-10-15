@@ -370,7 +370,14 @@ export type LeadFirstCall = {
 export function v2DashboardCalls(
   decisions: readonly Decision[],
   leads: ReadonlyMap<string, LeadFirstCall>,
-): Array<CloseCall & { email: string | null; setter: string | null }> {
+): Array<
+  CloseCall & {
+    email: string | null;
+    setter: string | null;
+    /** The setter the meeting title names (Lane 2 / Social DMs), Dom's credit. */
+    titleSetter: string | null;
+  }
+> {
   return decisions
     .filter((d) => d.disposition === "counted")
     .map((d) => {
@@ -390,6 +397,7 @@ export function v2DashboardCalls(
         showUp: first ? lead.showUp : null,
         qualified: first ? lead.qualified : null,
         setter: d.mappedSetter ?? d.caller,
+        titleSetter: d.mappedSetter,
         bookedBy: d.bookedBy,
         businessLine: null,
       };

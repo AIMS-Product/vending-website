@@ -26,6 +26,7 @@ import {
   type WebinarsReport,
 } from "@/lib/services/team-report";
 import { logReadFailure } from "@/lib/services/read-failure";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -84,7 +85,7 @@ export async function getTeamTab(input: {
 
   if (input.tab === "setters") {
     const [leads, bookings] = await Promise.all([
-      fetchLeads(client, period.start, period.end),
+      fetchDomCalls(period.start, period.end),
       fetchCreditedBookings(client, period),
     ]);
     return {
@@ -149,6 +150,34 @@ export async function getTeamTab(input: {
     connected: facts !== null,
     ads: buildAds({ facts: (facts ?? []) as ChannelFact[] }),
   };
+}
+
+/**
+ * Dom's counted meetings in the period (`getV2Calls`, the dashboard's read),
+ * one row each, dated by the day booked. Null when they cannot be read.
+ */
+async function fetchDomCalls(
+  startDay: string,
+  endDay: string,
+): Promise<FunnelLeadRow[] | null> {
+  const read = await getV2Calls(startDay, endDay);
+  if (!read.ok) {
+    console.error("Team: Dom's-rule calls read failed", read.error);
+    return null;
+  }
+  return read.calls
+    .filter((call) => !isInternalLead(call.email, null))
+    .map((call) => ({
+      lead_id: call.leadId,
+      display_name: null,
+      email: call.email,
+      funnel: call.funnel,
+      first_sales_call_booked_date: call.bookedDate,
+      first_call_show_up: call.showUp,
+      status_label: call.status,
+      setter_name: null,
+      title_setter: call.titleSetter,
+    }));
 }
 
 /** Null (not empty) when the mirror table cannot be read. */
