@@ -5,6 +5,7 @@ import {
   getBookedCallsV2,
   type BookedCallsV2Report,
 } from "@/lib/services/booked-calls-v2-data";
+import { isMissingTable } from "@/lib/seo/db";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -44,7 +45,7 @@ export async function snapshotV2Decisions(
     load?: (w: { from: string; to: string }) => Promise<BookedCallsV2Report>;
     now?: Date;
   } = {},
-): Promise<{ rowsWritten: number }> {
+): Promise<{ rowsWritten: number; skipped?: string }> {
   const now = deps.now ?? new Date();
   const client = deps.client ?? createAdminClient();
   const load = deps.load ?? getBookedCallsV2;
@@ -61,6 +62,16 @@ export async function snapshotV2Decisions(
     const { error } = await client
       .from("close_meeting_decisions")
       .upsert(rows.slice(i, i + UPSERT_BATCH), { onConflict: "meeting_id" });
+    // Until migration 20261015120000 is applied: skip, so the hourly mirror sync stays green.
+    if (i === 0 && isMissingTable(error)) {
+      console.warn(
+        "close_meeting_decisions table missing; decisions not written",
+      );
+      return {
+        rowsWritten: 0,
+        skipped: "close_meeting_decisions table missing",
+      };
+    }
     if (error)
       throw new Error(
         `close_meeting_decisions upsert failed after ${i} rows: ${error.message}`,

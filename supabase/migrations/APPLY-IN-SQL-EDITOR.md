@@ -408,9 +408,9 @@ comment on table public.youtube_playback_sync_state is
 
 ## 14. Booked calls V2 decisions (20261015120000)
 
-Apply BEFORE merging feat/v2-decisions-table: after merge the hourly
-close-meetings sync writes this table and fails (500) until it exists. Read by
-vp-webinars room cards through its service-role pull.
+Without it the hourly close-meetings sync skips writing Dom's decisions (a
+warning, not a failure), and vp-webinars room cards keep their last Dom's-rule
+figure instead of refreshing. Safe to run twice.
 
 ```sql
 create table if not exists public.close_meeting_decisions (

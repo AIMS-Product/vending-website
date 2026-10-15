@@ -97,4 +97,31 @@ describe("snapshotV2Decisions", () => {
     ).rejects.toThrow("close_meeting_decisions upsert failed");
     expect(calls.map((c) => c.op)).toEqual(["upsert"]);
   });
+
+  it("skips without failing while the table does not exist yet", async () => {
+    const calls: string[] = [];
+    const client = {
+      from: () => ({
+        upsert: async () => {
+          calls.push("upsert");
+          return {
+            error: { code: "PGRST205", message: "Could not find the table" },
+          };
+        },
+        delete: () => ({
+          lt: async () => (calls.push("delete"), { error: null }),
+        }),
+      }),
+    } as never;
+    const out = await snapshotV2Decisions({
+      client,
+      load: async () => report([decision("m1")]),
+      now,
+    });
+    expect(out).toEqual({
+      rowsWritten: 0,
+      skipped: "close_meeting_decisions table missing",
+    });
+    expect(calls).toEqual(["upsert"]);
+  });
 });
