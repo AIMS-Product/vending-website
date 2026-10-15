@@ -1,8 +1,18 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Suspense } from "react";
-import { adminCardClass } from "@/components/admin/AdminUi";
-import { AnalyticsDrillDown } from "@/components/admin/dashboard/AnalyticsDrillDown";
+import { adminCardClass, adminPanelClass } from "@/components/admin/AdminUi";
+import {
+  AnalyticsDrillDown,
+  singleParam,
+  type SearchParams,
+} from "@/components/admin/dashboard/AnalyticsDrillDown";
 import { MarketingMtdPanel } from "@/components/admin/MarketingMtdPanel";
+import {
+  MarketingScorecardTab,
+  MarketingWebinars,
+} from "@/components/admin/MarketingScorecard";
+import { PrintButton } from "@/components/admin/PrintButton";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { getMarketingMtd } from "@/lib/services/marketing-mtd-data";
 import { requireReadAccess } from "@/lib/supabase/auth";
@@ -14,8 +24,21 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-/** Jess's marketing month to date: a fixed window, so no date range. */
-export default async function AnalyticsMarketingPage() {
+const VIEWS = [
+  { key: "mtd", label: "Month to date" },
+  { key: "scorecard", label: "Q4 scorecard" },
+] as const;
+
+/** The marketing month so far on Dom's rule: a fixed window, so no date range. */
+export default async function AnalyticsMarketingPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const view =
+    singleParam((await searchParams).view) === "scorecard"
+      ? "scorecard"
+      : "mtd";
   const { user, role } = await requireReadAccess();
   const report = getMarketingMtd();
   return (
@@ -23,10 +46,32 @@ export default async function AnalyticsMarketingPage() {
       path="/admin/analytics/marketing"
       tab="marketing"
       title="Marketing MTD"
-      description="Every marketing channel except Reactivation Scrapers: booked, shown, qualified, won and days to win, against the same dates last month and the 125-a-week goal."
+      description="Booked calls on Dom's rule by lead source, with shows, qualified, wins, spend and Lane 2 on marketing leads, against the same dates last month; plus the Q4 scorecard rows."
       user={{ email: user.email, role }}
-      trust={getTrustBar("close")}
+      trust={getTrustBar("marketing")}
     >
+      <nav
+        aria-label="Marketing MTD views"
+        className="flex flex-wrap items-center gap-2 print:hidden"
+      >
+        {VIEWS.map((v) => (
+          <Link
+            key={v.key}
+            href={
+              v.key === "mtd"
+                ? "/admin/analytics/marketing"
+                : `/admin/analytics/marketing?view=${v.key}`
+            }
+            aria-current={view === v.key ? "page" : undefined}
+            className={`rounded-md px-3 py-1.5 text-sm ${view === v.key ? "bg-ui-text text-ui-surface" : "text-ui-text-muted hover:bg-ui-canvas"}`}
+          >
+            {v.label}
+          </Link>
+        ))}
+        <span className="ml-auto">
+          <PrintButton />
+        </span>
+      </nav>
       <Suspense
         fallback={
           <div
@@ -36,7 +81,7 @@ export default async function AnalyticsMarketingPage() {
           />
         }
       >
-        <Body report={report} />
+        <Body report={report} view={view} />
       </Suspense>
     </AnalyticsDrillDown>
   );
@@ -44,8 +89,31 @@ export default async function AnalyticsMarketingPage() {
 
 async function Body({
   report,
+  view,
 }: {
   report: ReturnType<typeof getMarketingMtd>;
+  view: "mtd" | "scorecard";
 }) {
-  return <MarketingMtdPanel report={await report} />;
+  const loaded = await report;
+  if (!loaded.ok) {
+    return (
+      <section className={adminPanelClass}>
+        <p className="text-ui-bad px-4 py-4 text-sm">
+          The marketing month to date could not be read, so it is not shown:{" "}
+          {loaded.error}
+        </p>
+      </section>
+    );
+  }
+  if (view === "scorecard") {
+    return (
+      <MarketingScorecardTab card={loaded.scorecard} today={loaded.today} />
+    );
+  }
+  return (
+    <div className="space-y-5">
+      <MarketingMtdPanel report={loaded} />
+      <MarketingWebinars events={loaded.webinars} mtd={loaded.mtd} />
+    </div>
+  );
 }

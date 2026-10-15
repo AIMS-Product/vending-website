@@ -730,6 +730,22 @@ A network that recorded spend anywhere in the eight weeks but has a settled day 
 no spend row marks that week's spend and cost **Incomplete**. Verified 2026-10-08 against production:
 week of 9/28 = 140 calls, 694 MQLs, $10,215.22, $14.72, Google Ads missing 10/1-10/4.
 
+### Marketing MTD (`/admin/analytics/marketing`, `marketing-mtd.ts`, `marketing-scorecard.ts`)
+
+The 1st to today against the same dates last month, on Dom's `booked_calls.v2.2`. Its booked
+figures are the Months V2 panel's (`scripts/marketing-mtd-validate.ts` proves it per bucket and per
+source).
+
+| Column / row              | Definition                                                                                                                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Booked                    | Dom's counted meetings booked by Marketing, dated by the Pacific day booked, in the row of the lead's source on his map                                                                                                   |
+| Lane 2 on marketing leads | Counted meetings a Lane 2 setter booked, same source rows; never added to Booked. "No marketing source" holds Lane 2 calls and wins with no source on his map                                                             |
+| Open calls / show rate    | Open = scheduled after today. Show rate = First Call Show Up yes over booked minus open (first-call flag only, so repeat credits read unlogged). Qualified = shown and qualified, over shown                              |
+| Won, value, sales cycle   | Close opportunities by `date_won`, minus TLG/PPA, Reactivation Scrapers and the five MTD closers, filed under Dom's label for the deal's funnel; cycle = median Pacific days lead created to won                          |
+| Spend, cost per booked    | Spine spend on the one source its band maps to (Webinar to Internal Webinar, Google Ads, Meta Ads); cost per booked = spend / Booked                                                                                      |
+| Scorecard tab             | Monday-Friday weeks from 2026-09-28, by booked day: total, Marketing by source, Lane 2, the "webinar leads booked by Lane 2" track row, Social DMs, weekend bookings, spend over the same days, cost per marketing booked |
+| Webinars                  | `webinar_events` rooms in the dates; "booked from the room link" is the board's count, the Dom's-rule line is the Internal Webinar row                                                                                    |
+
 ### Funnel board (`/admin/analytics/board`, `funnel-board.ts`)
 
 Every Close first call by the day it is scheduled, two Monday-Sunday weeks, **no §3 rule**: it is

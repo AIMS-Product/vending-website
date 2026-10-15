@@ -56,7 +56,8 @@ const PAGES = [
   {
     href: "/admin/analytics/marketing",
     label: "Marketing MTD",
-    answers: "This month by marketing channel against the 125-a-week goal.",
+    answers:
+      "This month by lead source on Dom's rule against last month, plus the Q4 scorecard rows.",
   },
   {
     href: "/admin/analytics/months",

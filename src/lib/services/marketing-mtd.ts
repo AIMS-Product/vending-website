@@ -1,27 +1,36 @@
 /**
- * Marketing MTD: Jess's marketing view of the month so far (handoff of
- * 2026-10-14, `.claude/specs/2026-10-14-marketing-mtd.md`). Pure and
- * client-safe.
+ * Marketing MTD: the marketing month so far on Dom's booked-call rule
+ * (`booked_calls.v2.2`), against the same dates last month. Layout from Jess's
+ * handoff of 2026-10-14 (`.claude/specs/2026-10-14-marketing-mtd.md`). Pure
+ * and client-safe.
  *
- * Field-based, one row per lead, not Dom's meeting rule (booked calls V2):
- *
- *   - Booked: leads whose "First Sales Call Booked Date" is in the range,
- *     leaving out leads now "Canceled (by Lead)" or "Outside the US", other
- *     company brands (TLG, PPA), Reactivation Scrapers, and leads whose owner
- *     is off the MTD dashboard's Lane 1 roster. The LTF Quiz funnel counts.
- *   - Qualified is nested: shown AND qualified, over shown. A lead marked
- *     qualified with no logged show is a conflict, listed, never re-flagged.
+ *   - Booked: Dom's counted meetings booked by Marketing, dated by the day the
+ *     meeting was created (Pacific), in the row of the lead's original source
+ *     (Dom's `sources.py`). The input is `v2DashboardCalls`, the same calls the
+ *     main dashboard and the Months V2 panel count.
+ *   - Lane 2 on marketing leads: Dom's counted meetings a Lane 2 setter booked,
+ *     in the same source rows. Never added to Booked.
+ *   - Open: booked calls scheduled after today. Show rate is shown over the
+ *     calls that are due (booked minus open); qualified is shown AND qualified,
+ *     over shown. Close keeps both flags for a lead's FIRST call only, so a
+ *     repeat credit reads unlogged, never no-show.
  *   - Won is its own population (deals won in the range, whenever booked):
- *     same lead rules, no roster, minus the MTD dashboard's five closers.
+ *     Jess's lead rules, minus the MTD dashboard's five closers, filed under
+ *     the source Dom's map gives the deal's Close funnel. Dom's rule says
+ *     nothing about wins.
  *   - Sales cycle: Pacific day won minus Pacific day the lead was created.
- *
- * Sep 1-14 reproduces Jess's 154 / 95 / 66 / 15 / $103,290 / 10 days exactly
- * (`scripts/marketing-mtd-validate.ts`).
+ *   - Spend: the channel spine's spend, on the one source row its band maps
+ *     to (Webinar -> Internal Webinar, Google Ads, Meta Ads); spend a band
+ *     spreads over several sources is in the total only.
  */
 
 import { pacificToday } from "@/lib/admin/format-time";
 import {
-  MTD_BOOKING_OWNERS,
+  FLOW_CHANNELS,
+  flowChannelForSpine,
+} from "@/lib/analytics/channel-flow";
+import { resolveOrigin } from "@/lib/booked-calls-v2/sources";
+import {
   MTD_EXCLUDED_CLOSER_IDS,
   SCRAPER_FUNNEL,
 } from "@/lib/services/close-mtd-funnel";
@@ -29,33 +38,44 @@ import { isExcludedLead, type CloseCall } from "@/lib/services/close-week-view";
 import type { CloseDeal } from "@/lib/services/close-wins";
 import { daysBetween, workdaysBetween } from "@/lib/services/goal-pace";
 
-export const UNKNOWN_CHANNEL = "Unknown (Needs Review)";
+/** Lane 2 calls and won deals whose lead has no source on Dom's map. */
+export const UNKNOWN_CHANNEL = "No marketing source";
 /** Jess's goal: 125 booked calls a week, planned over Monday to Friday. */
 export const WEEKLY_BOOKED_GOAL = 125;
 export const DAILY_BOOKED_GOAL = WEEKLY_BOOKED_GOAL / 5;
-
-/** Close stores some funnel names in a spelling the page should not repeat. */
-const DISPLAY_LABELS: Record<string, string> = { linkedin: "LinkedIn" };
 
 export type Range = { from: string; to: string };
 
 export type ConflictLead = { leadId: string; name: string | null };
 
+/** A counted V2 meeting as `v2DashboardCalls` returns it. */
+export type MtdCall = CloseCall & { name?: string | null };
+
+/** One spine row's spend. */
+export type SpendFact = {
+  day: string;
+  channel: string | null;
+  spend: number | null;
+};
+
 export type MarketingFigures = {
   booked: number;
+  /** Booked calls scheduled after today. */
+  open: number;
   shown: number;
   /** Shown and qualified. */
   qualified: number;
   /** Qualified flags with no logged show: not in `qualified`. */
   conflicts: ConflictLead[];
+  /** Counted calls a Lane 2 setter booked on this source's leads. */
+  lane2: number;
   won: number;
   revenue: number;
   /** Won deals with no value in Close: counted in won, absent from revenue. */
   unvalued: number;
   /** Lead-to-win days of every won deal that has both dates, unsorted. */
   cycleDays: number[];
-  /** Stored Funnel Name spellings behind this row, for audit. */
-  rawValues: string[];
+  spend: number;
 };
 
 export type MarketingRow = {
@@ -69,40 +89,29 @@ export type MarketingMtd = {
   prior: Range;
   rows: MarketingRow[];
   total: { current: MarketingFigures; prior: MarketingFigures };
+  /** Counted calls Social DMs booked: in Dom's total, in no row. */
+  socialDms: { current: number; prior: number };
 };
 
 const yes = (value: string | null | undefined) =>
   ["yes", "true", "1"].includes((value ?? "").trim().toLowerCase());
 
-export function channelLabel(funnel: string | null | undefined): string {
-  const raw = (funnel ?? "").trim();
-  if (!raw) return UNKNOWN_CHANNEL;
-  return DISPLAY_LABELS[raw.toLowerCase()] ?? raw;
-}
-
-const isScraper = (funnel: string | null | undefined) =>
-  (funnel ?? "").trim().toLowerCase() === SCRAPER_FUNNEL.toLowerCase();
-
 const inRange = (day: string | null | undefined, range: Range) =>
   !!day && day.slice(0, 10) >= range.from && day.slice(0, 10) <= range.to;
 
-/** A booked lead Jess's view counts. */
-export function countsAsBooked(call: CloseCall): boolean {
-  return (
-    !isExcludedLead(call) &&
-    !isScraper(call.funnel) &&
-    MTD_BOOKING_OWNERS.has((call.leadOwner ?? "").trim())
-  );
-}
-
-/** A won deal Jess's view counts. */
+/** A won deal the view counts. */
 export function countsAsWon(deal: CloseDeal): boolean {
   return (
     !isExcludedLead(deal) &&
-    !isScraper(deal.funnel) &&
+    (deal.funnel ?? "").trim().toLowerCase() !== SCRAPER_FUNNEL.toLowerCase() &&
     !MTD_EXCLUDED_CLOSER_IDS.has(deal.closerId ?? "")
   );
 }
+
+/** The deal's Close funnel on Dom's source map, or the unknown row. */
+export const dealChannel = (deal: CloseDeal) =>
+  resolveOrigin({ funnel: deal.funnel, contactUtms: [], resourceTag: null })
+    .source ?? UNKNOWN_CHANNEL;
 
 /** Pacific day won minus Pacific day created, or null when unknown or negative. */
 export function leadToWinDays(deal: CloseDeal): number | null {
@@ -112,93 +121,132 @@ export function leadToWinDays(deal: CloseDeal): number | null {
   return deal.dateWon.slice(0, 10) >= created ? days : null;
 }
 
-const empty = (): MarketingFigures => ({
+/**
+ * The source row a spend band lands on: the band's only Close funnel, on
+ * Dom's map. Null for a band spread over several sources.
+ */
+export function spendChannel(spineChannel: string | null): string | null {
+  const band = FLOW_CHANNELS.find(
+    (c) => c.key === flowChannelForSpine(spineChannel ?? ""),
+  );
+  if (band?.funnels.length !== 1) return null;
+  return (
+    resolveOrigin({
+      funnel: band.funnels[0]!,
+      contactUtms: [],
+      resourceTag: null,
+    }).source ?? null
+  );
+}
+
+export const emptyFigures = (): MarketingFigures => ({
   booked: 0,
+  open: 0,
   shown: 0,
   qualified: 0,
   conflicts: [],
+  lane2: 0,
   won: 0,
   revenue: 0,
   unvalued: 0,
   cycleDays: [],
-  rawValues: [],
+  spend: 0,
 });
 
+type Period = {
+  rows: Map<string, MarketingFigures>;
+  socialDms: number;
+  unallocatedSpend: number;
+};
+
 function figuresFor(
-  calls: readonly (CloseCall & { name?: string | null })[],
-  deals: readonly CloseDeal[],
+  input: {
+    calls: readonly MtdCall[];
+    deals: readonly CloseDeal[];
+    spend: readonly SpendFact[];
+    today: string;
+  },
   range: Range,
-): Map<string, MarketingFigures> {
-  const byLabel = new Map<string, MarketingFigures>();
-  const rowOf = (funnel: string | null | undefined) => {
-    const label = channelLabel(funnel);
-    const row = byLabel.get(label) ?? empty();
-    const raw = (funnel ?? "").trim();
-    byLabel.set(label, {
-      ...row,
-      rawValues:
-        raw && !row.rawValues.includes(raw)
-          ? [...row.rawValues, raw]
-          : row.rawValues,
-    });
-    return label;
-  };
+): Period {
+  const rows = new Map<string, MarketingFigures>();
   const bump = (
     label: string,
-    change: (row: MarketingFigures) => MarketingFigures,
-  ) => byLabel.set(label, change(byLabel.get(label)!));
+    change: (row: MarketingFigures) => Partial<MarketingFigures>,
+  ) => {
+    const row = rows.get(label) ?? emptyFigures();
+    rows.set(label, { ...row, ...change(row) });
+  };
 
-  const seenLeads = new Set<string>();
-  for (const call of calls) {
-    if (!inRange(call.bookedDate, range) || !countsAsBooked(call)) continue;
-    if (seenLeads.has(call.leadId)) continue;
-    seenLeads.add(call.leadId);
-    const shown = yes(call.showUp);
-    const qualified = yes(call.qualified);
-    bump(rowOf(call.funnel), (row) => ({
-      ...row,
-      booked: row.booked + 1,
-      shown: row.shown + (shown ? 1 : 0),
-      qualified: row.qualified + (shown && qualified ? 1 : 0),
-      conflicts:
-        qualified && !shown
-          ? [...row.conflicts, { leadId: call.leadId, name: call.name ?? null }]
-          : row.conflicts,
-    }));
+  let socialDms = 0;
+  for (const call of input.calls) {
+    if (!inRange(call.bookedDate, range)) continue;
+    const label = call.funnel ?? UNKNOWN_CHANNEL;
+    if (call.bookedBy === "Social DMs") socialDms += 1;
+    else if (call.bookedBy === "Lane 2")
+      bump(label, (row) => ({ lane2: row.lane2 + 1 }));
+    else {
+      const shown = yes(call.showUp);
+      const qualified = yes(call.qualified);
+      const open = !!call.callDay && call.callDay > input.today;
+      bump(label, (row) => ({
+        booked: row.booked + 1,
+        open: row.open + (open ? 1 : 0),
+        shown: row.shown + (shown ? 1 : 0),
+        qualified: row.qualified + (shown && qualified ? 1 : 0),
+        conflicts:
+          qualified && !shown
+            ? [
+                ...row.conflicts,
+                { leadId: call.leadId, name: call.name ?? null },
+              ]
+            : row.conflicts,
+      }));
+    }
   }
 
   const seenDeals = new Set<string>();
-  for (const deal of deals) {
+  for (const deal of input.deals) {
     if (!inRange(deal.dateWon, range) || !countsAsWon(deal)) continue;
     const key = deal.id ?? `${deal.leadId}:${deal.dateWon}:${deal.value}`;
     if (seenDeals.has(key)) continue;
     seenDeals.add(key);
     const days = leadToWinDays(deal);
-    bump(rowOf(deal.funnel), (row) => ({
-      ...row,
+    bump(dealChannel(deal), (row) => ({
       won: row.won + 1,
       revenue: row.revenue + (deal.value ?? 0),
       unvalued: row.unvalued + (deal.value === null ? 1 : 0),
       cycleDays: days === null ? row.cycleDays : [...row.cycleDays, days],
     }));
   }
-  return byLabel;
+
+  let unallocatedSpend = 0;
+  for (const fact of input.spend) {
+    if (!fact.spend || !inRange(fact.day, range)) continue;
+    const label = spendChannel(fact.channel);
+    if (label) bump(label, (row) => ({ spend: row.spend + fact.spend! }));
+    else unallocatedSpend += fact.spend;
+  }
+  return { rows, socialDms, unallocatedSpend };
 }
 
-function sum(rows: readonly MarketingFigures[]): MarketingFigures {
+export function sumFigures(
+  rows: readonly MarketingFigures[],
+): MarketingFigures {
   return rows.reduce(
     (total, row) => ({
       booked: total.booked + row.booked,
+      open: total.open + row.open,
       shown: total.shown + row.shown,
       qualified: total.qualified + row.qualified,
       conflicts: [...total.conflicts, ...row.conflicts],
+      lane2: total.lane2 + row.lane2,
       won: total.won + row.won,
       revenue: total.revenue + row.revenue,
       unvalued: total.unvalued + row.unvalued,
       cycleDays: [...total.cycleDays, ...row.cycleDays],
-      rawValues: [...total.rawValues, ...row.rawValues],
+      spend: total.spend + row.spend,
     }),
-    empty(),
+    emptyFigures(),
   );
 }
 
@@ -214,19 +262,21 @@ export function priorRange(current: Range): Range {
 }
 
 export function buildMarketingMtd(input: {
-  calls: readonly (CloseCall & { name?: string | null })[];
+  calls: readonly MtdCall[];
   deals: readonly CloseDeal[];
+  spend: readonly SpendFact[];
   current: Range;
 }): MarketingMtd {
   const prior = priorRange(input.current);
-  const now = figuresFor(input.calls, input.deals, input.current);
-  const then = figuresFor(input.calls, input.deals, prior);
-  const labels = [...new Set([...now.keys(), ...then.keys()])];
+  const today = input.current.to;
+  const now = figuresFor({ ...input, today }, input.current);
+  const then = figuresFor({ ...input, today }, prior);
+  const labels = [...new Set([...now.rows.keys(), ...then.rows.keys()])];
   const rows = labels
     .map((label) => ({
       label,
-      current: now.get(label) ?? empty(),
-      prior: then.get(label) ?? empty(),
+      current: now.rows.get(label) ?? emptyFigures(),
+      prior: then.rows.get(label) ?? emptyFigures(),
     }))
     .sort(
       (a, b) =>
@@ -236,14 +286,22 @@ export function buildMarketingMtd(input: {
         b.prior.booked - a.prior.booked ||
         a.label.localeCompare(b.label),
     );
+  const total = (
+    pick: (row: MarketingRow) => MarketingFigures,
+    spare: number,
+  ) => {
+    const sum = sumFigures(rows.map(pick));
+    return { ...sum, spend: sum.spend + spare };
+  };
   return {
     current: input.current,
     prior,
     rows,
     total: {
-      current: sum(rows.map((row) => row.current)),
-      prior: sum(rows.map((row) => row.prior)),
+      current: total((row) => row.current, now.unallocatedSpend),
+      prior: total((row) => row.prior, then.unallocatedSpend),
     },
+    socialDms: { current: now.socialDms, prior: then.socialDms },
   };
 }
 

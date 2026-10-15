@@ -97,12 +97,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
       "site-video-report",
     ],
     booked: [],
-    close: [
-      "close-week-view-data",
-      "close-mtd-funnel-data",
-      "marketing-mtd-data",
-      "close-wins",
-    ],
+    close: ["close-week-view-data", "close-mtd-funnel-data", "close-wins"],
     mom: [
       "close-monthly-funnel-data",
       "close-monthly-leads",
@@ -198,6 +193,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
     "google-ads": ["google-ads-dashboard"],
+    marketing: ["marketing-mtd-data", "booked-calls-v2-data", "close-wins"],
     dashboard: [
       "analytics-dashboard-data",
       "channel-report",

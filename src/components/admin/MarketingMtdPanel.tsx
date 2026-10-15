@@ -20,18 +20,21 @@ import { formatUsd as money } from "@/lib/admin/format-number";
 import { formatPacificStampShort } from "@/lib/admin/format-time";
 import type { MarketingMtdReport } from "@/lib/services/marketing-mtd-data";
 import {
+  UNKNOWN_CHANNEL,
   countChange,
   median,
   rate,
   rateChange,
   type Change,
   type MarketingFigures,
+  type MarketingMtd,
 } from "@/lib/services/marketing-mtd";
+import { toCsv } from "@/lib/services/marketing-scorecard";
 
 /**
- * Jess's marketing MTD view: every marketing channel except Reactivation
- * Scrapers, this month so far against the same dates last month, and the
- * 125-a-week booking goal. Rules: `marketing-mtd.ts`.
+ * The marketing month so far on Dom's booked-call rule, by lead source,
+ * against the same dates last month, and the 125-a-week booking goal. Rules:
+ * `marketing-mtd.ts`.
  */
 
 const STICKY_BASE = "sticky left-0 z-10 px-4 text-left whitespace-nowrap";
@@ -69,10 +72,13 @@ type Metric = {
   detail?: (f: MarketingFigures) => string;
 };
 
-const showRate = (f: MarketingFigures) => rate(f.shown, f.booked);
+const showRate = (f: MarketingFigures) => rate(f.shown, f.booked - f.open);
 const qualifiedRate = (f: MarketingFigures) => rate(f.qualified, f.shown);
 const wonPerBooked = (f: MarketingFigures) => rate(f.won, f.booked);
 const cycle = (f: MarketingFigures) => median(f.cycleDays);
+const costPerBooked = (f: MarketingFigures) =>
+  f.spend > 0 && f.booked > 0 ? f.spend / f.booked : null;
+const moneyOrDash = (v: number | null) => (v === null ? "—" : money(v));
 
 const KPIS: Metric[] = [
   {
@@ -85,7 +91,7 @@ const KPIS: Metric[] = [
     label: "Show rate",
     value: showRate,
     format: (v) => pct(v),
-    detail: (f) => `${f.shown}/${f.booked}`,
+    detail: (f) => `${f.shown}/${f.booked - f.open}`,
     kind: "rate",
   },
   {
@@ -102,7 +108,7 @@ const KPIS: Metric[] = [
     kind: "count",
   },
   {
-    label: "Median lead to win",
+    label: "Sales cycle (median)",
     value: cycle,
     format: (v) => days(v),
     detail: (f) => `n=${f.cycleDays.length}`,
@@ -139,13 +145,19 @@ const changeOf = (
     ? rateChange(metric.value(now), metric.value(then))
     : countChange(metric.value(now), metric.value(then));
 
-const COLUMNS: Metric[] = [
-  {
-    label: "Booked",
-    value: (f) => f.booked,
-    format: (v) => String(v ?? 0),
-    kind: "count",
-  },
+const count = (
+  label: string,
+  pick: (f: MarketingFigures) => number,
+): Metric => ({
+  label,
+  value: pick,
+  format: (v) => String(v ?? 0),
+  kind: "count",
+});
+
+export const COLUMNS: Metric[] = [
+  count("Booked", (f) => f.booked),
+  count("Open calls", (f) => f.open),
   { label: "Show rate", value: showRate, format: (v) => pct(v), kind: "rate" },
   {
     label: "Qualified rate",
@@ -153,12 +165,7 @@ const COLUMNS: Metric[] = [
     format: (v) => pct(v),
     kind: "rate",
   },
-  {
-    label: "Closed won",
-    value: (f) => f.won,
-    format: (v) => String(v ?? 0),
-    kind: "count",
-  },
+  count("Closed won", (f) => f.won),
   {
     label: "Won / booked",
     value: wonPerBooked,
@@ -166,7 +173,7 @@ const COLUMNS: Metric[] = [
     kind: "rate",
   },
   {
-    label: "Lead to win",
+    label: "Sales cycle",
     value: cycle,
     format: (v) => days(v),
     kind: "count",
@@ -178,7 +185,45 @@ const COLUMNS: Metric[] = [
     format: (v) => money(v ?? 0),
     kind: "count",
   },
+  {
+    label: "Spend",
+    value: (f) => (f.spend > 0 ? f.spend : null),
+    format: moneyOrDash,
+    kind: "count",
+  },
+  {
+    label: "Cost per booked",
+    value: costPerBooked,
+    format: moneyOrDash,
+    kind: "count",
+    lowerIsBetter: true,
+  },
+  count("Lane 2 on marketing leads", (f) => f.lane2),
 ];
+
+/** The channel table as CSV: this month, last month, per column. */
+export function channelCsv(mtd: MarketingMtd): string {
+  const raw = (metric: Metric, f: MarketingFigures) => {
+    const v = metric.value(f);
+    return v === null ? null : Math.round(v * 1000) / 1000;
+  };
+  const line = (
+    label: string,
+    now: MarketingFigures,
+    then: MarketingFigures,
+  ) => [label, ...COLUMNS.flatMap((m) => [raw(m, now), raw(m, then)])];
+  return toCsv([
+    [
+      "Channel",
+      ...COLUMNS.flatMap((m) => [
+        `${m.label} ${rangeLabel(mtd.current)}`,
+        `${m.label} ${rangeLabel(mtd.prior)}`,
+      ]),
+    ],
+    ...mtd.rows.map((row) => line(row.label, row.current, row.prior)),
+    line("Total", mtd.total.current, mtd.total.prior),
+  ]);
+}
 
 function Cells({
   now,
@@ -203,34 +248,28 @@ function Cells({
   ));
 }
 
-export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
-  if (!report.ok) {
-    return (
-      <section className={adminPanelClass}>
-        <p className="text-ui-bad text-sm">
-          The marketing month to date could not be read, so it is not shown:{" "}
-          {report.error}
-        </p>
-      </section>
-    );
-  }
+export function MarketingMtdPanel({
+  report,
+}: {
+  report: Extract<MarketingMtdReport, { ok: true }>;
+}) {
   const { mtd, goal } = report;
   const now = mtd.total.current;
   const then = mtd.total.prior;
   const conflicts = mtd.rows.flatMap((row) =>
     row.current.conflicts.map((lead) => ({ ...lead, channel: row.label })),
   );
+  const domTotal = now.booked + now.lane2 + mtd.socialDms.current;
 
   return (
     <div className="space-y-5">
       <p className="text-ui-text-muted text-sm">
-        {rangeLabel(mtd.current)} against {rangeLabel(mtd.prior)}, Pacific days.
-        Bookings and flags from our copy of Close as of{" "}
-        {report.bookingsAsOf
-          ? formatPacificStampShort(report.bookingsAsOf)
-          : "unknown"}
-        ; won deals read from Close within five minutes of{" "}
-        {formatPacificStampShort(report.winsAsOf)}.
+        {rangeLabel(mtd.current)} against {rangeLabel(mtd.prior)}, Pacific days,
+        on Dom&apos;s booked-call rule. Read from Close and our copy of it at{" "}
+        {formatPacificStampShort(report.readAt)}. Dom&apos;s total this month is{" "}
+        {domTotal}: {now.booked} booked by Marketing, {now.lane2} by Lane 2 and{" "}
+        {mtd.socialDms.current} by Social DMs, the Months V2 panel&apos;s
+        figures.
       </p>
 
       <AdminMetricStrip columns={6}>
@@ -253,16 +292,25 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
       <MarketingGoalPanel goal={goal} booked={now.booked} />
 
       <section className={adminPanelClass} aria-label="Marketing channels">
-        <div className="px-4 pt-4">
-          <h2 className={adminSectionTitleClass}>By channel</h2>
-          <p className="text-ui-text-subtle mt-1 text-xs">
-            This month on top; {rangeLabel(mtd.prior)} and the change beneath.
-            Every channel except Reactivation Scrapers, including any that
-            booked only last month.
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-2 px-4 pt-4">
+          <div>
+            <h2 className={adminSectionTitleClass}>By channel</h2>
+            <p className="text-ui-text-subtle mt-1 text-xs">
+              This month on top; {rangeLabel(mtd.prior)} and the change beneath.
+              One row per lead source on Dom&apos;s map, including any that
+              booked only last month.
+            </p>
+          </div>
+          <a
+            href={`data:text/csv;charset=utf-8,${encodeURIComponent(channelCsv(mtd))}`}
+            download={`marketing-mtd-channels-${report.today}.csv`}
+            className={`${adminLinkClass} text-xs print:hidden`}
+          >
+            Download CSV
+          </a>
         </div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[56rem] text-sm">
+        <div className="mt-3 overflow-x-auto print:overflow-visible">
+          <table className="w-full min-w-[72rem] text-sm print:min-w-0 print:text-[10px]">
             <thead className="bg-ui-canvas text-ui-text-muted text-xs">
               <tr>
                 <th
@@ -292,7 +340,7 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
               ))}
               <tr className="border-ui-line-strong border-t-2 font-semibold">
                 <th scope="row" className={STICKY}>
-                  Marketing total
+                  Total
                 </th>
                 <Cells now={now} then={then} />
               </tr>
@@ -317,6 +365,11 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
             not what a report showed on that day; today is still booking.
           </li>
           <li>
+            The 125-a-week goal was set on the old first-call count. Jess and
+            Dom are resetting the Q4 targets on Dom&apos;s rule; until then read
+            the goal panel as a guide.
+          </li>
+          <li>
             Qualified rate counts calls logged both shown and qualified.{" "}
             {conflicts.length === 0
               ? "No booked call this month is marked qualified without a logged show."
@@ -326,7 +379,7 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
         {conflicts.length > 0 && (
           <ul className="flex flex-wrap gap-x-4 gap-y-1 pl-5 text-xs">
             {conflicts.map((lead) => (
-              <li key={lead.leadId}>
+              <li key={`${lead.leadId}-${lead.channel}`}>
                 <a
                   href={`https://app.close.com/lead/${lead.leadId}/`}
                   target="_blank"
@@ -340,7 +393,7 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
             ))}
           </ul>
         )}
-        <details className="text-ui-text-muted">
+        <details className="text-ui-text-muted print:hidden">
           <summary className="text-ui-text cursor-pointer font-medium">
             Definitions
           </summary>
@@ -348,41 +401,63 @@ export function MarketingMtdPanel({ report }: { report: MarketingMtdReport }) {
             <div>
               <dt className="text-ui-text font-medium">Booked calls</dt>
               <dd>
-                Close leads whose First Sales Call Booked Date is in the dates,
-                one per lead, by the lead&apos;s Funnel Name. Left out: leads
-                now Canceled (by Lead) or Outside the US, The Land Geek and
-                Publishing Profits Academy, Reactivation Scrapers, and leads
-                whose owner is not on the MTD dashboard&apos;s Lane 1 roster. A
-                blank funnel is Unknown (Needs Review) and still counts. This is
-                not Dom&apos;s meeting-level rule (Booked calls V2 on Month over
-                month), so the two totals differ by design.
+                Dom&apos;s booked_calls.v2.2: one per Close meeting that counts
+                (not canceled, not a follow-up, no other meeting for the lead in
+                the 60 days before), dated by the day it was booked, booked by
+                Marketing (not a Lane 2 or Social DMs title). The row is the
+                lead&apos;s original source on Dom&apos;s map. The same calls as
+                the dashboard and the Months V2 panel.
               </dd>
             </div>
             <div>
-              <dt className="text-ui-text font-medium">Show rate</dt>
+              <dt className="text-ui-text font-medium">
+                Lane 2 on marketing leads
+              </dt>
               <dd>
-                Booked calls a rep logged First Call Show Up = yes, over booked.
-                Calls still ahead stay in the denominator; an unlogged show is
-                not a no-show.
+                Counted meetings a Lane 2 setter booked, in the row of the
+                lead&apos;s source. Never added to Booked. {UNKNOWN_CHANNEL}{" "}
+                holds Lane 2 calls and wins whose lead has no source on
+                Dom&apos;s map.
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ui-text font-medium">
+                Open calls and show rate
+              </dt>
+              <dd>
+                Open calls are booked calls scheduled after today. Show rate is
+                First Call Show Up = yes over the calls already due. Close keeps
+                that flag for a lead&apos;s first call only, so a repeat booking
+                reads unlogged, never a no-show.
               </dd>
             </div>
             <div>
               <dt className="text-ui-text font-medium">Closed won and value</dt>
               <dd>
-                Close opportunities won in the dates, same lead rules (no owner
-                roster), leaving out deals owned by Ahmad B., Stephen O.,
-                Spencer R., Mallory K. and Adam W. Value is the deal value in
-                Close, not cash collected.
+                Close opportunities won in the dates, leaving out other brands,
+                Reactivation Scrapers and deals owned by Ahmad B., Stephen O.,
+                Spencer R., Mallory K. and Adam W., filed under the source
+                Dom&apos;s map gives the deal&apos;s funnel. Value is the deal
+                value in Close, not cash collected.
                 {now.unvalued > 0 &&
                   ` ${now.unvalued} won this month carry no value.`}
               </dd>
             </div>
             <div>
-              <dt className="text-ui-text font-medium">Lead to win</dt>
+              <dt className="text-ui-text font-medium">Sales cycle</dt>
               <dd>
                 Days from the lead being created in Close to the deal being won,
-                Pacific days. The total is the median of every deal, not of
-                channel medians; n is how many deals had both dates.
+                Pacific days, median of every deal.
+              </dd>
+            </div>
+            <div>
+              <dt className="text-ui-text font-medium">
+                Spend and cost per booked
+              </dt>
+              <dd>
+                Ad spend on the channel spine (Meta and Google): webinar ads on
+                Internal Webinar, Google Ads and Meta Ads on their own rows.
+                Cost per booked is spend over Marketing booked.
               </dd>
             </div>
           </dl>

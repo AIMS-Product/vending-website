@@ -1,5 +1,10 @@
 # Marketing MTD view (Jess's handoff, 2026-10-14)
 
+**Superseded rule (Adam, 2026-10-14 evening): the page now counts on Dom's booked_calls.v2.2.**
+See AGENTS.md (2026-10-14 Marketing MTD) and METRICS.md §16 "Marketing MTD". The field-based rule below
+is kept as the record of Jess's reference; Sep 1-14 on Dom's rule = 142 booked vs her 154 (wins,
+value and cycle unchanged: 15 / $103,290 / 10 days).
+
 Source: "Adam Marketing Dashboard Handoff.docx" from Jess. Attachments
 (`marketing-mtd-dashboard.html`, `adam-marketing-dashboard-config.json`) not yet
 received.
