@@ -325,6 +325,7 @@ describe("per-action budgets (requests admitted per window, one IP)", () => {
     ["masterclass_register_phone", 5],
     ["masterclass_intake", 10],
     ["masterclass_cal", 20],
+    ["masterclass_calendar", 10],
     ["qualification_intake", 12],
     ["attribution_event", 60],
     ["chatbot_chat", 60],

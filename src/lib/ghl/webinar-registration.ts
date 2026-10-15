@@ -87,7 +87,8 @@ export type WebinarRegistrationStep =
   | "intake-read"
   | "intake"
   | "join-fields"
-  | "join-read";
+  | "join-read"
+  | "calendar-tag";
 
 export class WebinarRegistrationError extends Error {
   constructor(
@@ -433,4 +434,31 @@ export async function readContactField(
     (f) => f.id === fieldId,
   )?.value;
   return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+/** The confirmation page's add-to-calendar buttons. */
+export const CALENDAR_APPS = ["google", "apple", "outlook"] as const;
+export type CalendarApp = (typeof CALENDAR_APPS)[number];
+
+/**
+ * "webinar-oct20" + "google" -> "webinar-oct20-calendar-google". One tag per
+ * room and calendar, so the board counts a single tag for "who added it, where".
+ */
+export function calendarTag(eventTag: string, app: CalendarApp): string {
+  return `${eventTag}-calendar-${app}`;
+}
+
+/** Adds one calendar tag to the contact. Adding a tag it already has is a no-op. */
+export async function tagCalendarAdd(
+  contactId: string,
+  tag: string,
+  options: Omit<Options, "locationId" | "now">,
+): Promise<void> {
+  const call = ghlCaller(options);
+  await call(
+    "calendar-tag",
+    "POST",
+    `/contacts/${encodeURIComponent(contactId)}/tags`,
+    { tags: [tag] },
+  );
 }

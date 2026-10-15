@@ -8,7 +8,11 @@ import {
   MASTERCLASS_BUSY_MESSAGE,
 } from "@/lib/content/masterclass";
 import {
+  CALENDAR_APPS,
+  calendarTag,
   saveWebinarIntake,
+  tagCalendarAdd,
+  webinarEventTag,
   WebinarRegistrationError,
   type WebinarIntake,
 } from "@/lib/ghl/webinar-registration";
@@ -18,6 +22,7 @@ import {
   verifyMasterclassSession,
 } from "@/lib/masterclass-session";
 import { checkPublicRateLimit } from "@/lib/public-rate-limit";
+import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 
 type Key = keyof WebinarIntake;
 
@@ -106,4 +111,55 @@ export async function saveMasterclassIntake(
     maxAge: 0,
   });
   return { saved: true, values: parsed.data };
+}
+
+const calendarApp = z.enum(CALENDAR_APPS);
+
+/**
+ * Tags the contact named by the signed `mc_session` cookie with the calendar
+ * they just added this room to, so the board can show who added it and where.
+ * The contact never comes from the request. The button fires this and moves
+ * on: every miss is logged and returned, none blocks the calendar link.
+ * Spec: .claude/specs/2026-10-14-calendar-add-tracking.md
+ */
+export async function recordCalendarAdd(
+  app: unknown,
+): Promise<{ recorded: boolean }> {
+  const parsed = calendarApp.safeParse(app);
+  if (!parsed.success) return { recorded: false };
+  const contactId = verifyMasterclassSession(
+    (await cookies()).get(SESSION_COOKIE)?.value,
+    config.MASTERCLASS_SESSION_SECRET,
+  );
+  // No session (an email click, or the intake already saved): PostHog still
+  // counts the click; there is just no one to name.
+  if (!contactId) return { recorded: false };
+
+  const allowed = await checkPublicRateLimit(
+    "masterclass_calendar",
+    { ip: null, email: `contact:${contactId}` },
+    { failClosed: true },
+  );
+  if (!allowed) return { recorded: false };
+
+  const event = await getMasterclassEvent();
+  const eventTag = event.label ? webinarEventTag(event.label) : null;
+  if (!eventTag || !config.GHL_WRITE_TOKEN) {
+    console.error("masterclass calendar: not recorded", {
+      reason: eventTag ? "no-write-token" : "no-event-tag",
+    });
+    return { recorded: false };
+  }
+  try {
+    await tagCalendarAdd(contactId, calendarTag(eventTag, parsed.data), {
+      token: config.GHL_WRITE_TOKEN,
+    });
+  } catch (error) {
+    console.error("masterclass calendar: tag not saved", {
+      status: error instanceof WebinarRegistrationError ? error.status : null,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { recorded: false };
+  }
+  return { recorded: true };
 }

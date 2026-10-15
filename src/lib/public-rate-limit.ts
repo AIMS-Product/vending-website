@@ -31,6 +31,8 @@ const LIMITS = {
   // Personal calendar link (/masterclass/cal/<token>): GHL reads per click,
   // keyed per contact, so one token cannot spend the location's API budget.
   masterclass_cal: { windowMs: 10 * 60 * 1000, max: 20 },
+  // Confirmation-page calendar buttons: one GHL tag per click, per contact.
+  masterclass_calendar: { windowMs: 10 * 60 * 1000, max: 10 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
   attribution_event: { windowMs: 60 * 1000, max: 60 },
   // Site chatbot (see .claude/specs/2026-08-20-site-chatbot.md §API): a chat
