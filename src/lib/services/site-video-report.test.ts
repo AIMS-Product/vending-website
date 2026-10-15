@@ -124,6 +124,36 @@ describe("buildSiteVideoRows", () => {
     expect(row?.youtube).toBeNull();
   });
 
+  it("estimates views on YouTube as Metricool's total minus our plays", () => {
+    const [youtube, vidalytics] = buildSiteVideoRows({
+      views: [
+        view(anthony, "/masterclass", 1),
+        view(anthony, "/masterclass", 1),
+        view(intro, "/pre-call-resources", 30),
+      ],
+      playback: [],
+      embedPages: [],
+      titles: new Map(),
+      youtubeConnected: false,
+      totals: new Map([[anthony, 120]]),
+    });
+    expect(youtube?.youtubeTotal).toBe(120);
+    expect(youtube?.onYouTubeEstimate).toBe(118);
+    expect(vidalytics?.youtubeTotal).toBeNull();
+    expect(vidalytics?.onYouTubeEstimate).toBeNull();
+
+    const [unseen] = buildSiteVideoRows({
+      views: [view(anthony, "/masterclass", 1), view(anthony, "/x", 1)],
+      playback: [],
+      embedPages: [],
+      titles: new Map(),
+      youtubeConnected: false,
+      totals: new Map([[anthony, 1]]),
+    });
+    // Metricool lags our plays; never a negative estimate.
+    expect(unseen?.onYouTubeEstimate).toBe(0);
+  });
+
   it("lists the most played videos first", () => {
     const rows = buildSiteVideoRows({
       views: [

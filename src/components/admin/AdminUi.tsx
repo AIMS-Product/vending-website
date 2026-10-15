@@ -93,6 +93,7 @@ export const adminEyebrowClass =
 const STRIP_COLUMNS = {
   4: "sm:grid-cols-2 xl:grid-cols-4 xl:divide-y-0",
   5: "sm:grid-cols-3 lg:grid-cols-5 lg:divide-y-0",
+  6: "sm:grid-cols-3 xl:grid-cols-6 xl:divide-y-0",
 } as const;
 
 export function AdminMetricStrip({

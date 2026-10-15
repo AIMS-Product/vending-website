@@ -28,6 +28,9 @@ import type { Database } from "@/types/database";
  *   per the monthly page split); everything else is on YouTube itself.
  *   Engaged views are YouTube's stricter count; plain views now count an
  *   autoplay from the first frame, so engaged is the one shown first.
+ * - Metricool's (`youtube_video_daily`): every view of the video, wherever
+ *   it played. Until the playback connector has the channel owner's grant,
+ *   "on YouTube" is estimated as this total minus our site plays.
  *
  * Nothing here is added together: a site play and a YouTube embedded view are
  * the same event seen twice, never two events.
@@ -70,14 +73,23 @@ export type SiteVideoRow = {
   pages: SiteVideoPage[];
   /** Null for Vidalytics videos, which YouTube knows nothing about. */
   youtube: YouTubeSplit | null;
+  /** All views anywhere, from Metricool; null when it has no day for the video. */
+  youtubeTotal: number | null;
+  /** youtubeTotal minus our site plays, floored at 0. */
+  onYouTubeEstimate: number | null;
 };
 
 export type SiteVideoReport = {
   since: string;
   /** Our tracking is trustworthy from here (muted autoplay was counted before). */
   trackedFrom: string;
-  /** False until the youtube-playback tables exist (APPLY-IN-SQL-EDITOR §13). */
+  /**
+   * False until the youtube-playback connector has stored a row (it needs the
+   * channel owner's OAuth grant); the page then falls back to Metricool.
+   */
   youtubeConnected: boolean;
+  /** Newest Metricool day in the totals; it runs two to four days behind. */
+  youtubeTotalsThrough: string | null;
   videos: SiteVideoRow[];
 };
 
@@ -136,16 +148,19 @@ export async function getSiteVideoReport({
       .order("day")
       .range(from, to),
   );
-  const youtubeConnected = !isMissingTable(embedded.error);
-  if (embedded.error && youtubeConnected)
+  const tablesExist = !isMissingTable(embedded.error);
+  if (embedded.error && tablesExist)
     throw new Error(
       `youtube_video_playback_daily read failed: ${embedded.error.message}`,
     );
+  const youtubeConnected =
+    tablesExist &&
+    (embedded.rows.length > 0 || (await hasAnyPlaybackRow(client)));
 
   const viewRows = canonicalViews(views.rows);
   const ids = videoIds(viewRows, embedded.rows);
   const youtubeIds = ids.filter((id) => YOUTUBE_ID.test(id));
-  const [elsewhere, embedPages, titles] = await Promise.all([
+  const [elsewhere, embedPages, titles, totals] = await Promise.all([
     youtubeConnected
       ? readOnYouTube(client, youtubeIds, sinceDay)
       : Promise.resolve([]),
@@ -153,18 +168,21 @@ export async function getSiteVideoReport({
       ? readEmbedPages(client, youtubeIds, sinceDay)
       : Promise.resolve([]),
     readTitles(client, youtubeIds),
+    readTotals(client, youtubeIds, sinceDay),
   ]);
 
   return {
     since,
     trackedFrom: VIDEO_VIEWS_TRUSTED_FROM,
     youtubeConnected,
+    youtubeTotalsThrough: totals.through,
     videos: buildSiteVideoRows({
       views: viewRows,
       playback: [...embedded.rows, ...elsewhere],
       embedPages,
       titles,
       youtubeConnected,
+      totals: totals.views,
     }),
   };
 }
@@ -176,12 +194,15 @@ export function buildSiteVideoRows({
   embedPages,
   titles,
   youtubeConnected,
+  totals = new Map(),
 }: {
   views: ViewRow[];
   playback: PlaybackRow[];
   embedPages: Array<{ video_id: string; page: string; views: number | null }>;
   titles: Map<string, string>;
   youtubeConnected: boolean;
+  /** Metricool views per video over the window. */
+  totals?: Map<string, number>;
 }): SiteVideoRow[] {
   return videoIds(views, playback)
     .map((videoId) => {
@@ -192,11 +213,13 @@ export function buildSiteVideoRows({
         byPage.set(path, [...(byPage.get(path) ?? []), row]);
       }
       const isYouTube = YOUTUBE_ID.test(videoId);
+      const site = reach(mine);
+      const total = isYouTube ? (totals.get(videoId) ?? null) : null;
       return {
         videoId,
         label: labelFor(videoId, titles),
         player: isYouTube ? ("YouTube" as const) : ("Vidalytics" as const),
-        site: reach(mine),
+        site,
         pages: [...byPage.entries()]
           .map(([path, rows]) => ({ path, ...reach(rows) }))
           .sort((a, b) => b.played - a.played),
@@ -207,6 +230,12 @@ export function buildSiteVideoRows({
                 embedPages.filter((row) => row.video_id === videoId),
               )
             : null,
+        youtubeTotal: total,
+        // ponytail: YouTube counts a muted autoplay in an embed and we do not,
+        // and Metricool lags our plays by days; both make this approximate.
+        // The playback connector's EMBEDDED split replaces it once granted.
+        onYouTubeEstimate:
+          total === null ? null : Math.max(0, total - site.played),
       };
     })
     .sort(
@@ -374,6 +403,49 @@ async function readEmbedPages(
   if (error)
     throw new Error(`youtube_video_embed_pages read failed: ${error.message}`);
   return rows;
+}
+
+async function hasAnyPlaybackRow(client: Client): Promise<boolean> {
+  const { data, error } = await client
+    .from("youtube_video_playback_daily")
+    .select("video_id")
+    .limit(1);
+  if (error)
+    throw new Error(
+      `youtube_video_playback_daily read failed: ${error.message}`,
+    );
+  return (data ?? []).length > 0;
+}
+
+async function readTotals(
+  client: Client,
+  ids: string[],
+  sinceDay: string,
+): Promise<{ views: Map<string, number>; through: string | null }> {
+  if (ids.length === 0) return { views: new Map(), through: null };
+  const { rows, error } = await readAllPages<{
+    video_id: string;
+    day: string;
+    views: number | null;
+  }>((from, to, count) =>
+    client
+      .from("youtube_video_daily")
+      .select("video_id,day,views", { count })
+      .in("video_id", ids)
+      .gte("day", sinceDay)
+      .order("video_id")
+      .order("day")
+      .range(from, to),
+  );
+  if (error)
+    throw new Error(`youtube_video_daily read failed: ${error.message}`);
+  const views = new Map<string, number>();
+  let through: string | null = null;
+  for (const row of rows) {
+    views.set(row.video_id, (views.get(row.video_id) ?? 0) + (row.views ?? 0));
+    if (!through || row.day > through) through = row.day;
+  }
+  return { views, through };
 }
 
 async function readTitles(

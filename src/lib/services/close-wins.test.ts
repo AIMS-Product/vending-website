@@ -113,6 +113,7 @@ describe("fetchCloseDeals", () => {
       getLead: async (id: string) => ({
         id,
         status_label: "🏆 Closed / Won",
+        date_created: "2026-08-01T16:00:00Z",
         custom: {
           "Funnel Name DEAL (Opp)": "Internal Webinar",
           "BTC Business Line": "Vendingpreneurs (VP)",
@@ -129,6 +130,7 @@ describe("fetchCloseDeals", () => {
                 funnel: "YouTube",
                 status_label: "🌎 Outside the US",
                 business_line: "The Land Geek (TLG)",
+                lead_created_at: "2026-07-30T20:00:00Z",
               },
             ],
             error: null,
@@ -155,6 +157,8 @@ describe("fetchCloseDeals", () => {
         closerId: "user_closer",
         status: "🌎 Outside the US",
         businessLine: "The Land Geek (TLG)",
+        id: "o1",
+        leadCreatedAt: "2026-07-30T20:00:00Z",
       },
       {
         leadId: "not-in-mirror",
@@ -165,6 +169,8 @@ describe("fetchCloseDeals", () => {
         closerId: null,
         status: "🏆 Closed / Won",
         businessLine: "Vendingpreneurs (VP)",
+        id: "o2",
+        leadCreatedAt: "2026-08-01T16:00:00Z",
       },
     ]);
   });
