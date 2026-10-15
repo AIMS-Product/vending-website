@@ -183,8 +183,8 @@ export function ChannelKpis({
       {kpi("Spend", totals.spend, priorTotals.spend, "money")}
       {kpi("Leads", totals.leads, priorTotals.leads)}
       {kpi("Registrations & contacts", totals.contacts, priorTotals.contacts)}
-      {kpi("Booked", totals.booked, priorTotals.booked)}
-      {kpi("Won", totals.won, priorTotals.won)}
+      {kpi("Site bookings", totals.booked, priorTotals.booked)}
+      {kpi("Site won", totals.won, priorTotals.won)}
     </AdminMetricStrip>
   );
 }
@@ -299,9 +299,9 @@ const COLUMNS: ReadonlyArray<{
   { key: "leads", label: "Leads", format: "number" },
   // Webinar registrations, off-site GHL forms, ManyChat: not site leads.
   { key: "contacts", label: "Registrations & contacts", format: "number" },
-  { key: "booked", label: "Booked", format: "number" },
-  { key: "showed", label: "Showed", format: "number" },
-  { key: "won", label: "Won", format: "number" },
+  { key: "booked", label: "Site bookings", format: "number" },
+  { key: "showed", label: "Site shows", format: "number" },
+  { key: "won", label: "Site won", format: "number" },
 ];
 
 /**
@@ -379,12 +379,12 @@ export function ChannelTable({
     <section className={adminCardClass} aria-label={title}>
       <h2 className={adminEyebrowClass}>{title}</h2>
       <p className="text-ui-text-subtle mt-2 text-xs">
-        Sorted by leads, then calls booked, then visits. Booked credits the
-        channel that brought the person in, not the rep who set the call; the
-        Booked calls tab shows that. &ldquo;Skipped form&rdquo; next to a booked
-        count is how many of those people went straight to the calendar from a
-        link (bio, DM, email) without filling in a lead form first: they count
-        as booked, never as a lead.
+        Sorted by leads, then site bookings, then visits. Site bookings credit
+        the link that brought the person in, not the rep who set the call.
+        &ldquo;Skipped form&rdquo; next to a booked count is how many of those
+        people went straight to the calendar from a link (bio, DM, email)
+        without filling in a lead form first: they count as booked, never as a
+        lead.
       </p>
       {rows.length === 0 && tail.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">
@@ -479,6 +479,14 @@ const CHANNEL_TABLE_KEY: ReadonlyArray<readonly [string, string]> = [
   [
     "Registrations & contacts",
     "webinar registrations, off-site GHL forms and ManyChat contacts. Not counted as leads.",
+  ],
+  [
+    "Site bookings",
+    "calls booked on our Calendly links (Calendly, matched to the link), so campaigns and creatives can carry them. Not the booked-call count every other page uses: that is the Booked by channel table above.",
+  ],
+  [
+    "Site shows / Site won",
+    "of those site bookings, the ones traced to a site lead or webinar registration. A floor: the Booked by channel table and Close wins below are the full counts.",
   ],
   ["Lead %", "leads out of site visits."],
   [

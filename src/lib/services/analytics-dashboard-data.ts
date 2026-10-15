@@ -14,7 +14,12 @@ import {
 } from "@/lib/analytics/lead-definition";
 import { QUALIFIED_BANDS } from "@/lib/analytics/weekly-scorecard";
 import {
+  buildChannelFlow,
+  type ChannelFlow,
+} from "@/lib/analytics/channel-flow";
+import {
   costPerBookedByMonth,
+  inRange,
   isReactivation,
   monthKeys,
   type CostRow,
@@ -428,3 +433,34 @@ export function callSpan(window: DashboardWindow): {
     to: window.today,
   };
 }
+
+/**
+ * Booked, showed, qualified and won by channel band for [startDay, endDay],
+ * computed exactly as the dashboard's flow card computes it (Jess's rule,
+ * `keptByMtdRule`; gclid leads credited to Google Ads; wins dated from
+ * startDay to today). Channels and the KPI export read this, so all three
+ * agree. Captured is left empty: those pages have their own capture columns.
+ */
+export const readRuleFlow = cache(
+  async (startDay: string, endDay: string): Promise<Read<ChannelFlow>> => {
+    const today = reportingDay();
+    const [calls, deals, googleClicks] = await Promise.all([
+      readCalls(startDay, endDay),
+      readDeals(startDay, today),
+      readGoogleClickLeads(),
+    ]);
+    if (!calls.ok) return calls;
+    if (!deals.ok) return deals;
+    if (!googleClicks.ok) return googleClicks;
+    const range = { startDay, endDay };
+    return {
+      ok: true,
+      data: buildChannelFlow({
+        calls: calls.data.filter((c) => inRange(c.bookedDate, range)),
+        captured: [],
+        wins: deals.data.filter((d) => d.dateWon >= startDay),
+        googleClickLeads: googleClicks.data,
+      }),
+    };
+  },
+);
