@@ -20,6 +20,7 @@ const READ_ONLY_PAGES = [
   "analytics/board/page.tsx",
   "analytics/channels/page.tsx",
   "analytics/google-ads/page.tsx",
+  "analytics/marketing/page.tsx",
   "analytics/months/page.tsx",
   "analytics/video/page.tsx",
   "analytics/youtube/page.tsx",
