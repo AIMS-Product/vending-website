@@ -14,6 +14,7 @@ const call = (over: Partial<CloseCall> & { leadId: string }): CloseCall => ({
   bookedDate: "2026-09-10",
   showUp: null,
   qualified: null,
+  leadOwner: "Oscar Pugh",
   ...over,
 });
 
@@ -48,41 +49,19 @@ describe("channel flow", () => {
     expect(flow.totals).toEqual([110, 4, 2, 2, 1]);
   });
 
-  // Since 2026-10-14 the calls are Dom's counted meetings: his rule already
-  // excluded and held what it does not count, so nothing more is removed.
-  it("counts every call Dom's rule counted, whatever the lead's status", () => {
+  it("applies the Marketing MTD rule before any stage and discloses it", () => {
     const flow = buildChannelFlow({
       captured: [],
       calls: [
         call({ leadId: "a", status: "🔻 Canceled (by Lead)", showUp: "Yes" }),
         call({ leadId: "b", funnel: "LTF - Quiz Funnel" }),
+        call({ leadId: "d", leadOwner: "Off Roster" }),
         call({ leadId: "c" }),
       ],
       wins: [],
     });
-    expect(flow.totals[1]).toBe(3);
-  });
-
-  it("puts a call in the sales band by who booked it, not by source", () => {
-    const flow = buildChannelFlow({
-      captured: [],
-      calls: [
-        call({ leadId: "a", funnel: "YouTube", bookedBy: "Lane 2" }),
-        call({ leadId: "b", funnel: "Instagram", bookedBy: "Social DMs" }),
-        call({
-          leadId: "c",
-          funnel: "Sales Reactivation",
-          bookedBy: "Marketing",
-        }),
-        call({ leadId: "d", funnel: "YouTube", bookedBy: "Marketing" }),
-      ],
-      wins: [],
-    });
-    const booked = (key: string) =>
-      flow.bands.find((b) => b.key === key)?.values[1] ?? 0;
-    expect(booked("reactivation")).toBe(2);
-    expect(booked("youtube")).toBe(1);
-    expect(booked("other")).toBe(1);
+    expect(flow.excluded).toBe(2);
+    expect(flow.totals).toEqual([0, 2, 0, 0, 0]);
   });
 
   it("reads a win from the opportunity, not the current status", () => {
@@ -114,13 +93,7 @@ describe("channel flow", () => {
   it("drops empty bands and keeps a booked-only band", () => {
     const flow = buildChannelFlow({
       captured: [],
-      calls: [
-        call({
-          leadId: "a",
-          funnel: "Reactivation Scrapers",
-          bookedBy: "Lane 2",
-        }),
-      ],
+      calls: [call({ leadId: "a", funnel: "Reactivation Scrapers" })],
       wins: [],
     });
     expect(flow.bands.map((b) => b.key)).toEqual(["reactivation"]);
@@ -135,21 +108,9 @@ describe("channel flow", () => {
         { channel: "YouTube", count: 40 },
       ],
       calls: [
-        call({
-          leadId: "a",
-          funnel: "Reactivation Scrapers",
-          bookedBy: "Lane 2",
-        }),
-        call({
-          leadId: "b",
-          funnel: "Reactivation Scrapers",
-          bookedBy: "Lane 2",
-        }),
-        call({
-          leadId: "c",
-          funnel: "Reactivation Scrapers",
-          bookedBy: "Lane 2",
-        }),
+        call({ leadId: "a", funnel: "Reactivation Scrapers" }),
+        call({ leadId: "b", funnel: "Reactivation Scrapers" }),
+        call({ leadId: "c", funnel: "Reactivation Scrapers" }),
         call({ leadId: "d", funnel: "Internal Webinar" }),
         call({ leadId: "e", funnel: "Internal Webinar" }),
         call({ leadId: "f", funnel: null }),

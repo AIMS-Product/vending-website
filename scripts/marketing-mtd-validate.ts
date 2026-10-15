@@ -191,12 +191,17 @@ async function main() {
   const { mtd } = page;
 
   const diffs: string[] = [];
-  const check = (label: string, ours: number, theirs: number) => {
+  const check = (
+    label: string,
+    ours: number,
+    theirs: number,
+    names: [string, string] = ["page", "Jess"],
+  ) => {
     const same = Math.round(ours) === Math.round(theirs);
     if (!same) diffs.push(label);
     if (ours || theirs)
       console.log(
-        `${same ? "  ok  " : "  DIFF"} ${label}: page ${ours}, Jess ${theirs}`,
+        `${same ? "  ok  " : "  DIFF"} ${label}: ${names[0]} ${ours}, ${names[1]} ${theirs}`,
       );
   };
 
@@ -235,6 +240,23 @@ async function main() {
     check("median cycle days", median(t.cycleDays) ?? 0, JESS_CYCLE[period]);
     if (period === "current") check("open calls", t.open, JESS_OPEN);
   }
+
+  // The main dashboard must count what this page counts, marketing only.
+  const { readCalls, readDeals } =
+    await import("../src/lib/services/analytics-dashboard-data");
+  const { keptCalls } = await import("../src/lib/analytics/dashboard-metrics");
+  const { from, to } = mtd.current;
+  const [calls, deals] = await Promise.all([
+    readCalls(from, to, true),
+    readDeals(from, to, true),
+  ]);
+  if (!calls.ok || !deals.ok) throw new Error("Dashboard read failed.");
+  console.log(`\nMain dashboard (marketing only), ${from}..${to}`);
+  check("booked", keptCalls(calls.data).length, mtd.total.current.booked, [
+    "dashboard",
+    "page",
+  ]);
+  check("won", deals.data.length, mtd.total.current.won, ["dashboard", "page"]);
 
   const htmlPath = process.argv[2];
   if (htmlPath) {

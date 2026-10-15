@@ -1,5 +1,6 @@
 /**
- * The Q4 Leadership Scorecard's marketing rows on Dom's booked-call rule, and
+ * The Q4 Leadership Scorecard's marketing rows on Jess's field rule (the
+ * dashboard's `keptCalls`, one per lead by first-call booked date), and
  * the webinar summary, for the Marketing MTD page. Pure and client-safe.
  *
  * Weeks are Monday to Friday, as the Q4 sheet counts them: a call booked on a
@@ -8,9 +9,11 @@
  * for like.
  */
 
+import { isReactivation, keptCalls } from "@/lib/analytics/dashboard-metrics";
+import type { CloseCall } from "@/lib/services/close-week-view";
 import {
+  channelLabel,
   spendChannel,
-  type MtdCall,
   type Range,
   type SpendFact,
 } from "@/lib/services/marketing-mtd";
@@ -52,7 +55,7 @@ export function scorecardWeeks(from: string, today: string): Range[] {
 }
 
 export function buildScorecard(input: {
-  calls: readonly MtdCall[];
+  calls: readonly CloseCall[];
   spend: readonly SpendFact[];
   today: string;
   from?: string;
@@ -64,12 +67,10 @@ export function buildScorecard(input: {
 
   const total = zeros();
   const marketing = zeros();
-  const lane2 = zeros();
-  const social = zeros();
-  const webinarLane2 = zeros();
+  const scrapers = zeros();
   const weekend = zeros();
   const byChannel = new Map<string, number[]>();
-  for (const call of input.calls) {
+  for (const call of keptCalls(input.calls)) {
     const day = call.bookedDate.slice(0, 10);
     const wk = [0, 6].includes(weekday(day))
       ? weekOf(addDays(day, weekday(day) === 0 ? -6 : -5))
@@ -80,13 +81,10 @@ export function buildScorecard(input: {
       continue;
     }
     total[wk]! += 1;
-    if (call.bookedBy === "Lane 2") {
-      lane2[wk]! += 1;
-      if (call.funnel === WEBINAR_SOURCE) webinarLane2[wk]! += 1;
-    } else if (call.bookedBy === "Social DMs") social[wk]! += 1;
+    if (isReactivation(call)) scrapers[wk]! += 1;
     else {
       marketing[wk]! += 1;
-      const label = call.funnel ?? "No source";
+      const label = channelLabel(call.funnel);
       const row = byChannel.get(label) ?? zeros();
       row[wk]! += 1;
       byChannel.set(label, row);
@@ -112,18 +110,14 @@ export function buildScorecard(input: {
   return {
     weeks,
     rows: [
-      { label: "Booked calls (Dom's rule)", kind: "count", values: total },
+      { label: "Booked calls", kind: "count", values: total },
       { label: "Marketing booked", kind: "count", values: marketing },
       ...channels,
-      { label: "Lane 2 booked", kind: "count", values: lane2 },
       {
-        label: "Webinar leads booked by Lane 2",
+        label: "Reactivation Scrapers booked",
         kind: "count",
-        values: webinarLane2,
-        child: true,
-        track: true,
+        values: scrapers,
       },
-      { label: "Social DMs booked", kind: "count", values: social },
       {
         label: "Booked Sat-Sun (in no week)",
         kind: "count",

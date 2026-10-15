@@ -14,6 +14,7 @@ const call = (
   status: "Booked",
   showUp: null,
   qualified: null,
+  leadOwner: "Oscar Pugh",
   ...extra,
 });
 
@@ -51,27 +52,19 @@ describe("weeks", () => {
 describe("buildScorecard", () => {
   const today = "2026-10-08";
 
-  // Dom's rule (since 2026-10-14): every call is already a counted meeting,
-  // and who booked it (the meeting title) splits marketing from Lane 2.
-  it("splits a week's booked calls by who booked them", () => {
+  it("counts every first call as the total, and the §3 rule and Lane 2 beneath it", () => {
     const [, w1] = buildScorecard({
       today,
       count: 2,
       calls: [
-        call("a", "2026-09-28", { bookedBy: "Marketing" }),
-        // Lane 2 booked a webinar lead: Lane 2, whatever the source.
+        call("a", "2026-09-28"),
+        // Lane 2 booked a webinar lead: marketing by source, Lane 2 by booker.
         call("b", "2026-10-04", {
           funnel: "Internal Webinar",
           bookedBy: "Lane 2",
         }),
-        call("c", "2026-09-30", {
-          status: "🔻 Canceled (by Lead)",
-          bookedBy: "Marketing",
-        }),
-        call("d", "2026-10-01", {
-          funnel: "Reactivation Scrapers",
-          bookedBy: "Lane 2",
-        }),
+        call("c", "2026-09-30", { status: "🔻 Canceled (by Lead)" }),
+        call("d", "2026-10-01", { funnel: "Reactivation Scrapers" }),
         call("e", "2026-10-05"), // next week
       ],
       facts: [],
@@ -81,9 +74,9 @@ describe("buildScorecard", () => {
       start: "2026-09-28",
       complete: true,
       booked: 4,
-      bookedKept: 4,
+      bookedKept: 3,
       bookedMarketing: 2,
-      bookedByLane2: 2,
+      bookedByLane2: 1,
     });
   });
 

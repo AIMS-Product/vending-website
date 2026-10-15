@@ -52,13 +52,6 @@ export type CloseCall = {
   businessLine?: string | null;
   /** Close "Lead Owner", as the user's name. */
   leadOwner?: string | null;
-  /** Booked calls V2 only: the Close meeting this credit is for. */
-  meetingId?: string;
-  /**
-   * Booked calls V2 only: the day the call is scheduled for (Pacific).
-   * `bookedDate` is then the day it was booked, Dom's MTD date.
-   */
-  callDay?: string | null;
 };
 
 export type CloseWeekRow = {

@@ -5,11 +5,7 @@ import {
   CANCELED_TITLE,
   NON_NEW_CALL_TITLE,
 } from "@/lib/booked-calls-v2/rules";
-import {
-  readCalls,
-  readDeals,
-  readFacts,
-} from "@/lib/services/analytics-dashboard-data";
+import { readDeals, readFacts } from "@/lib/services/analytics-dashboard-data";
 import {
   buildGoalPlan,
   buildMarketingMtd,
@@ -17,7 +13,6 @@ import {
   type GoalPlan,
   type MarketingMtd,
   type MtdBooking,
-  type MtdCall,
 } from "@/lib/services/marketing-mtd";
 import {
   buildScorecard,
@@ -115,8 +110,8 @@ async function readOpenLeads(
 /**
  * The marketing month so far and the same dates last month on Jess's
  * field-based rule: bookings from `close_lead_funnel`, wins and spend from the
- * main dashboard's readers. The Q4 scorecard tab stays on Dom's counted
- * meetings. Never throws: a failed read says so, because a page of zeros
+ * main dashboard's readers; the Q4 scorecard tab counts the same bookings.
+ * Never throws: a failed read says so, because a page of zeros
  * reads as a bad month.
  */
 export async function getMarketingMtd(
@@ -130,9 +125,8 @@ export async function getMarketingMtd(
   const db = createAdminClient();
 
   try {
-    const [rows, calls, deals, facts, webinars] = await Promise.all([
-      readBookings(db, prior.from, today),
-      readCalls(SCORECARD_FROM, today),
+    const [rows, deals, facts, webinars] = await Promise.all([
+      readBookings(db, from, today),
       readDeals(from, today),
       readFacts(from, today),
       db
@@ -144,9 +138,9 @@ export async function getMarketingMtd(
         .lte("date", today)
         .order("date"),
     ]);
-    const failed = [calls, deals, facts].find((read) => !read.ok);
+    const failed = [deals, facts].find((read) => !read.ok);
     if (failed && !failed.ok) return { ok: false, error: failed.error };
-    if (!calls.ok || !deals.ok || !facts.ok) {
+    if (!deals.ok || !facts.ok) {
       return { ok: false, error: "A Close read failed." };
     }
     if (webinars.error) {
@@ -185,17 +179,13 @@ export async function getMarketingMtd(
       spend: facts.data,
       current,
     });
-    const scorecardCalls: MtdCall[] = calls.data.map((call) => ({
-      ...call,
-      name: call.email,
-    }));
     return {
       ok: true,
       today,
       mtd,
       goal: buildGoalPlan({ booked: mtd.total.current.booked, today }),
       scorecard: buildScorecard({
-        calls: scorecardCalls,
+        calls: bookings,
         spend: facts.data,
         today,
       }),

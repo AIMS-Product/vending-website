@@ -58,6 +58,7 @@ import {
   readCalls,
   readCostByMonth,
   readDeals,
+  readGoogleClickLeads,
   readFacts,
   readLeads,
   readTrust,
@@ -481,7 +482,6 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
     const kept = keptCalls(calls.data);
     const inWindow = kept.filter((c) => inRange(c.bookedDate, window));
     const before = kept.filter((c) => inRange(c.bookedDate, prior)).length;
-    // Dom's rule: who booked the call, from the meeting title.
     const reactivation = reactivationCalls(inWindow);
     const show = showRateHeld(calls.data, window, window.today);
     const showBefore = showRateHeld(calls.data, prior, window.today);
@@ -503,8 +503,10 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
         delta={<Delta value={deltaPct(inWindow.length, before)} />}
         caption={
           window.marketingOnly
-            ? "Booked by marketing · Lane 2 and Social DMs left out"
-            : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} Lane 2 & Social DMs`
+            ? "Marketing only · reactivation left out"
+            : reactivation === null
+              ? "Marketing / reactivation split unavailable"
+              : `${num(inWindow.length - reactivation)} marketing · ${num(reactivation)} reactivation`
         }
         spark={sparkPoints(dailyCounts(kept, (c) => c.bookedDate, spark))}
         href="#bookings"
@@ -640,20 +642,22 @@ export async function KpiStrip({ window }: { window: DashboardWindow }) {
 
 export async function FlowCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const [calls, facts, deals] = await Promise.all([
+  const [calls, facts, deals, googleClicks] = await Promise.all([
     readCalls(span.from, span.to, window.marketingOnly),
     // Captured is the window's own captures: read the window, not the six
     // months the cost card needs.
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today, window.marketingOnly),
+    readGoogleClickLeads(),
   ]);
-  const error = failed(calls, facts, deals);
+  const error = failed(calls, facts, deals, googleClicks);
   const flow =
-    calls.ok && facts.ok && deals.ok
+    calls.ok && facts.ok && deals.ok && googleClicks.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
+          googleClickLeads: googleClicks.data,
         })
       : null;
   return (
@@ -686,8 +690,9 @@ export async function FlowCard({ window }: { window: DashboardWindow }) {
 /** Booked calls per channel, credited and ordered as the flow card does. */
 export function bookedBars(
   calls: Parameters<typeof buildChannelFlow>[0]["calls"],
+  googleClickLeads: ReadonlySet<string>,
 ) {
-  return buildChannelFlow({ calls, captured: [], wins: [] })
+  return buildChannelFlow({ calls, captured: [], wins: [], googleClickLeads })
     .bands.filter((b) => b.values[1] > 0)
     .map((b) => ({
       key: b.key,
@@ -740,11 +745,14 @@ export function BarList({
 
 export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const span = callSpan(window);
-  const calls = await readCalls(span.from, span.to, window.marketingOnly);
-  if (!calls.ok) {
+  const [calls, googleClicks] = await Promise.all([
+    readCalls(span.from, span.to, window.marketingOnly),
+    readGoogleClickLeads(),
+  ]);
+  if (!calls.ok || !googleClicks.ok) {
     return (
       <DashboardCard id="bookings" help="bookings">
-        {failed(calls)}
+        {failed(calls, googleClicks)}
       </DashboardCard>
     );
   }
@@ -754,7 +762,7 @@ export async function BookingsCard({ window }: { window: DashboardWindow }) {
   const plan = planBooked(calls.data, window);
   const share = target ? plan / target : null;
   // The flow's credit and order: largest first, the remainder last.
-  const byChannel = bookedBars(inWindow);
+  const byChannel = bookedBars(inWindow, googleClicks.data);
   const setters = bySetter(inWindow).slice(0, 8);
   return (
     <DashboardCard

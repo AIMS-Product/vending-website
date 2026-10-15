@@ -10,7 +10,6 @@ import {
   spendChannel,
   UNKNOWN_CHANNEL,
   type MtdBooking,
-  type MtdCall,
   type SpendFact,
 } from "@/lib/services/marketing-mtd";
 import {
@@ -20,18 +19,6 @@ import {
   webinarTotals,
 } from "@/lib/services/marketing-scorecard";
 
-/** A counted V2 meeting as `v2DashboardCalls` hands it over. */
-const call = (over: Partial<MtdCall>): MtdCall => ({
-  leadId: `lead_${Math.random()}`,
-  funnel: "YouTube",
-  status: null,
-  bookedDate: "2026-10-05",
-  callDay: "2026-10-07",
-  showUp: null,
-  qualified: null,
-  bookedBy: "Marketing",
-  ...over,
-});
 /** A lead's first call from the Close mirror, owned by a Lane 1 rep. */
 const booking = (over: Partial<MtdBooking>): MtdBooking => ({
   leadId: `lead_${Math.random()}`,
@@ -191,20 +178,20 @@ describe("buildScorecard", () => {
     ]);
   });
 
-  it("counts weekday bookings by who booked, weekends on their own row", () => {
+  it("counts weekday bookings by Jess's rule, scrapers apart, weekends on their own row", () => {
     const card = buildScorecard({
       today: "2026-10-14",
       calls: [
-        call({ bookedDate: "2026-09-28" }),
-        call({
+        booking({ bookedDate: "2026-09-28" }),
+        booking({
           bookedDate: "2026-09-29",
-          bookedBy: "Lane 2",
-          funnel: "Internal Webinar",
+          funnel: "Reactivation Scrapers",
+          leadOwner: "Lane Two Rep",
         }),
-        call({ bookedDate: "2026-09-30", bookedBy: "Social DMs" }),
-        call({ bookedDate: "2026-10-03" }),
-        call({ bookedDate: "2026-10-04" }),
-        call({ bookedDate: "2026-10-13", funnel: "Internal Webinar" }),
+        booking({ bookedDate: "2026-09-30", leadOwner: "Off Roster" }),
+        booking({ bookedDate: "2026-10-03" }),
+        booking({ bookedDate: "2026-10-04" }),
+        booking({ bookedDate: "2026-10-13", funnel: "Internal Webinar" }),
       ],
       spend: [
         { day: "2026-09-28", channel: "Webinar", spend: 300 },
@@ -213,11 +200,9 @@ describe("buildScorecard", () => {
     });
     const row = (label: string) =>
       card.rows.find((r) => r.label === label)!.values;
-    expect(row("Booked calls (Dom's rule)")).toEqual([3, 0, 1]);
+    expect(row("Booked calls")).toEqual([2, 0, 1]);
     expect(row("Marketing booked")).toEqual([1, 0, 1]);
-    expect(row("Lane 2 booked")).toEqual([1, 0, 0]);
-    expect(row("Webinar leads booked by Lane 2")).toEqual([1, 0, 0]);
-    expect(row("Social DMs booked")).toEqual([1, 0, 0]);
+    expect(row("Reactivation Scrapers booked")).toEqual([1, 0, 0]);
     expect(row("Booked Sat-Sun (in no week)")).toEqual([2, 0, 0]);
     expect(row("Internal Webinar")).toEqual([0, 0, 1]);
     expect(row("Ad spend")).toEqual([300, 0, 0]);
