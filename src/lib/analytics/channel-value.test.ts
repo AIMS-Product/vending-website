@@ -18,6 +18,7 @@ const calls = (funnel: string, n: number, showed = 0): CloseCall[] =>
     bookedDate: "2026-09-10",
     showUp: i < showed ? "Yes" : null,
     qualified: null,
+    leadOwner: "Oscar Pugh",
   }));
 
 const window = { startDay: "2026-09-01", endDay: "2026-09-30" };
@@ -27,10 +28,7 @@ function build() {
     ...calls("Google Ads", 20, 10),
     ...calls("Internal Webinar", 12, 9),
     ...calls("YouTube", 4, 2),
-    ...calls("Sales Reactivation", 30, 15).map((c) => ({
-      ...c,
-      bookedBy: "Lane 2",
-    })),
+    ...calls("Sales Reactivation", 30, 15),
     ...calls("Not a funnel", 1),
   ];
   const wins: FlowWin[] = [
@@ -125,18 +123,24 @@ describe("channel value", () => {
     ]);
   });
 
-  it("never moves a call to Google Ads on a click id (Dom's rule)", () => {
+  it("credits a Google click lead to Google Ads, moved not copied", () => {
     const allCalls = [
       ...calls("Google Ads", 2),
-      ...calls("Sales Reactivation", 3).map((c) => ({
-        ...c,
-        bookedBy: "Lane 2",
-      })),
+      ...calls("Sales Reactivation", 3),
     ];
-    const flow = buildChannelFlow({ calls: allCalls, captured: [], wins: [] });
+    const wins: FlowWin[] = [{ leadId: "Sales Reactivation-0", value: 7000 }];
+    const flow = buildChannelFlow({
+      calls: allCalls,
+      captured: [],
+      wins,
+      googleClickLeads: new Set(["Sales Reactivation-0", "not-a-call"]),
+    });
     const band = (key: string) => flow.bands.find((b) => b.key === key)!;
-    expect(band("google-ads").values[1]).toBe(2);
-    expect(band("reactivation").values[1]).toBe(3);
+    expect(band("google-ads").values[1]).toBe(3);
+    expect(band("google-ads").values[4]).toBe(1);
+    expect(band("google-ads").revenue).toBe(7000);
+    expect(band("reactivation").values[1]).toBe(2);
+    expect(band("reactivation").revenue).toBe(0);
     expect(flow.totals[1]).toBe(5);
   });
 

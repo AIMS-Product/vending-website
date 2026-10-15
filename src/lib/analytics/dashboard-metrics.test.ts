@@ -1,4 +1,3 @@
-import type { Decision } from "@/lib/booked-calls-v2/engine";
 import { describe, expect, it } from "vitest";
 import type { ChannelFact } from "@/lib/services/channel-report-rollup";
 import type { CloseCall } from "@/lib/services/close-week-view";
@@ -16,7 +15,6 @@ import {
   showRateHeld,
   sparkPoints,
   windowPlanTarget,
-  v2DashboardCalls,
 } from "./dashboard-metrics";
 
 const call = (over: Partial<CloseCall> & { leadId: string }): CloseCall => ({
@@ -25,6 +23,7 @@ const call = (over: Partial<CloseCall> & { leadId: string }): CloseCall => ({
   bookedDate: "2026-10-01",
   showUp: null,
   qualified: null,
+  leadOwner: "Oscar Pugh",
   ...over,
 });
 
@@ -53,22 +52,19 @@ const fact = (over: Partial<ChannelFact>): ChannelFact =>
   }) as ChannelFact;
 
 describe("dashboard metrics", () => {
-  // Dom's rule dates a call by the day it was booked; whether it has been
-  // held depends on the day it is scheduled for (`callDay`).
   it("leaves calls that have not happened yet out of the show rate", () => {
     const range = { startDay: "2026-10-01", endDay: "2026-10-02" };
     const result = showRateHeld(
       [
         call({ leadId: "a", showUp: "Yes" }),
         call({ leadId: "b", showUp: "No" }),
-        call({ leadId: "c", callDay: "2026-10-02" }),
-        call({ leadId: "d", callDay: "2026-10-09", showUp: "Yes" }),
-        call({ leadId: "e", status: "Outside the US", showUp: "Yes" }),
+        call({ leadId: "c", bookedDate: "2026-10-02" }),
+        call({ leadId: "d", status: "Outside the US", showUp: "Yes" }),
       ],
       range,
       "2026-10-02",
     );
-    expect(result).toEqual({ showed: 2, held: 3, rate: 66.7 });
+    expect(result).toEqual({ showed: 1, held: 2, rate: 50 });
     expect(showRateHeld([], range, "2026-10-02").rate).toBeNull();
   });
 
@@ -112,21 +108,14 @@ describe("dashboard metrics", () => {
     ).toBeNull();
   });
 
-  it("counts plan actuals by who booked, without unplanned funnels", () => {
+  it("counts plan actuals with cancellations and without unplanned funnels", () => {
     const range = { startDay: "2026-10-01", endDay: "2026-10-31" };
     expect(
       planBooked(
         [
           call({ leadId: "a", status: "Canceled (by Lead)" }),
           call({ leadId: "b", funnel: "Google Ads" }),
-          call({ leadId: "c", funnel: "Google Ads", bookedBy: "Lane 2" }),
-          // A marketing call from a retired sales funnel is not Lane 2.
-          call({
-            leadId: "d",
-            funnel: "Sales Reactivation",
-            bookedBy: "Marketing",
-          }),
-          call({ leadId: "e", funnel: "Instagram", bookedBy: "Social DMs" }),
+          call({ leadId: "c", funnel: "Reactivation Scrapers" }),
         ],
         range,
       ),
@@ -201,121 +190,31 @@ describe("dashboard metrics", () => {
 });
 
 describe("firstCallsOn", () => {
-  it("counts the calls scheduled for the day, once per meeting", () => {
+  it("counts the day's calls on Jess's rule (LTF Quiz in), once per lead", () => {
     const calls = [
-      call({ leadId: "a", meetingId: "m1" }),
-      call({ leadId: "a", meetingId: "m1" }),
-      call({ leadId: "b", meetingId: "m2", status: "🔻 Canceled (by Lead)" }),
-      call({ leadId: "c", meetingId: "m3", callDay: "2026-10-02" }),
-      call({ leadId: "d", meetingId: "m4", bookedDate: "2026-09-28" }),
-      call({
-        leadId: "e",
-        meetingId: "m5",
-        bookedDate: "2026-09-28",
-        callDay: "2026-10-01",
-      }),
+      call({ leadId: "a" }),
+      call({ leadId: "a" }),
+      call({ leadId: "b", status: "🔻 Canceled (by Lead)" }),
+      call({ leadId: "c", status: "Outside the US" }),
+      call({ leadId: "d", funnel: "LTF - Quiz Funnel" }),
+      call({ leadId: "e", bookedDate: "2026-10-02" }),
+      call({ leadId: "f", showUp: "yes" }),
     ];
     expect(firstCallsOn(calls, "2026-10-01").map((c) => c.leadId)).toEqual([
       "a",
-      "b",
-      "e",
+      "d",
+      "f",
     ]);
   });
 });
 
 describe("reactivationCalls", () => {
-  it("counts calls Lane 2 or Social DMs booked, by the meeting title", () => {
+  it("counts only the Reactivation Scrapers funnel", () => {
     const kept = [
-      call({ leadId: "a", funnel: "YouTube", bookedBy: "Lane 2" }),
-      call({ leadId: "b", funnel: "Instagram", bookedBy: "Social DMs" }),
-      call({
-        leadId: "c",
-        funnel: "Sales Reactivation",
-        bookedBy: "Marketing",
-      }),
-      call({ leadId: "y", funnel: "YouTube", bookedBy: "Marketing" }),
+      call({ leadId: "a", funnel: "Reactivation Scrapers" }),
+      call({ leadId: "b", funnel: "Sales Reactivation" }),
+      call({ leadId: "y", funnel: "YouTube" }),
     ];
-    expect(reactivationCalls(kept)).toBe(2);
-  });
-});
-
-describe("v2DashboardCalls", () => {
-  const decision = (over: Partial<Decision>): Decision =>
-    ({
-      meetingId: "m1",
-      leadId: "lead_a",
-      createdDay: "2026-10-03",
-      scheduledDay: "2026-10-06",
-      disposition: "counted",
-      reason: "counted",
-      bookedBy: "Marketing",
-      mappedSetter: null,
-      currentSetter: null,
-      caller: "Joe",
-      origin: { source: "YouTube", basis: "funnel" },
-      offer: null,
-      historicalException: null,
-      precedingMeetingId: null,
-      intervalDays: null,
-      ruleVersion: "booked_calls.v2.2",
-      ...over,
-    }) as Decision;
-  const lead = (firstCallDay: string | null) =>
-    new Map([
-      [
-        "lead_a",
-        { email: "a@x.test", firstCallDay, showUp: "Yes", qualified: "Yes" },
-      ],
-    ]);
-
-  it("keeps counted meetings only, dated by the day booked", () => {
-    const calls = v2DashboardCalls(
-      [
-        decision({}),
-        decision({
-          meetingId: "m2",
-          disposition: "excluded",
-          reason: "canceled",
-        }),
-        decision({
-          meetingId: "m3",
-          disposition: "held",
-          reason: "unlinked_reschedule",
-        }),
-      ],
-      lead("2026-10-06"),
-    );
-    expect(calls).toHaveLength(1);
-    expect(calls[0]).toMatchObject({
-      meetingId: "m1",
-      bookedDate: "2026-10-03",
-      callDay: "2026-10-06",
-      funnel: "YouTube",
-      bookedBy: "Marketing",
-      setter: "Joe",
-      showUp: "Yes",
-    });
-  });
-
-  it("reads Close's first-call show only onto the first call", () => {
-    const [later] = v2DashboardCalls([decision({})], lead("2026-08-01"));
-    expect(later).toMatchObject({ showUp: null, qualified: null });
-  });
-
-  it("leaves an unknown source blank and keeps Lane 2 by booker", () => {
-    const [call] = v2DashboardCalls(
-      [
-        decision({
-          bookedBy: "Lane 2",
-          origin: { source: null, basis: "unknown" },
-        }),
-      ],
-      new Map(),
-    );
-    expect(call).toMatchObject({
-      funnel: null,
-      bookedBy: "Lane 2",
-      email: null,
-    });
+    expect(reactivationCalls(kept)).toBe(1);
   });
 });

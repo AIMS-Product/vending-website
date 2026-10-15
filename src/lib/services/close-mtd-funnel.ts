@@ -24,6 +24,7 @@
 
 import {
   isExcludedCall,
+  isExcludedLead,
   isYes,
   labelOf,
   NO_SOURCE_LABEL,
@@ -102,6 +103,32 @@ export const MTD_BOOKING_OWNERS: ReadonlySet<string> = new Set([
   "Scott Seymour",
   "Shreya Bechra",
 ]);
+export const isScraperFunnel = (funnel: string | null | undefined) =>
+  (funnel ?? "").trim().toLowerCase() === SCRAPER_FUNNEL.toLowerCase();
+
+/**
+ * A booked lead Marketing MTD counts (Jess's rule): not Canceled (by Lead),
+ * Outside the US or another brand, not Reactivation Scrapers, owned by
+ * someone on the Lane 1 roster. LTF Quiz counts.
+ */
+export function countsAsBooked(call: CloseCall): boolean {
+  return (
+    !isExcludedLead(call) &&
+    !isScraperFunnel(call.funnel) &&
+    MTD_BOOKING_OWNERS.has((call.leadOwner ?? "").trim())
+  );
+}
+
+/**
+ * A first call every booked-call surface keeps: Marketing MTD's leads plus
+ * Reactivation Scrapers leads by any owner, the band shown beside marketing.
+ */
+export function keptByMtdRule(call: CloseCall): boolean {
+  return isScraperFunnel(call.funnel)
+    ? !isExcludedLead(call)
+    : countsAsBooked(call);
+}
+
 /** Close user ids, as MTD keys them: a renamed user stays excluded. */
 export const MTD_EXCLUDED_CLOSER_IDS: ReadonlySet<string> = new Set([
   "user_yRF070m26JE67J6CJqzkAB3IqY7btNm1K5RisCglKa6", // Ahmad Bukhari

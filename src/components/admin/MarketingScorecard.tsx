@@ -19,7 +19,7 @@ import {
   type WebinarEvent,
 } from "@/lib/services/marketing-scorecard";
 
-/** Q4 sheet rows on Dom's rule, Monday-Friday weeks, newest on the right. */
+/** Q4 sheet rows on Jess's field rule, Monday-Friday weeks, newest on the right. */
 export function MarketingScorecardTab({
   card,
   today,
@@ -35,9 +35,10 @@ export function MarketingScorecardTab({
         <div>
           <h2 className={adminSectionTitleClass}>Q4 scorecard rows</h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            Dom&apos;s rule, by the day each call was booked, Monday to Friday.
-            Weekend bookings are in no week; their own row counts them. Spend
-            covers the same five days. The current week runs to today.
+            The Marketing MTD rule, one per lead by First Sales Call Booked
+            Date, Monday to Friday. Weekend bookings are in no week; their own
+            row counts them. Spend covers the same five days. The current week
+            runs to today.
           </p>
         </div>
         <a

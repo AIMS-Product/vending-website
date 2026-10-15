@@ -22,6 +22,7 @@ import {
   callSpan,
   readCalls,
   readDeals,
+  readGoogleClickLeads,
   readFacts,
 } from "@/lib/services/analytics-dashboard-data";
 
@@ -52,18 +53,20 @@ function Cell({ children }: { children: ReactNode }) {
  */
 export async function readChannelValue(window: DashboardWindow) {
   const span = callSpan(window);
-  const [calls, facts, deals] = await Promise.all([
+  const [calls, facts, deals, googleClicks] = await Promise.all([
     readCalls(span.from, span.to, window.marketingOnly),
     readFacts(window.startDay, window.today),
     readDeals(window.startDay, window.today, window.marketingOnly),
+    readGoogleClickLeads(),
   ]);
-  const error = failed(calls, facts, deals);
+  const error = failed(calls, facts, deals, googleClicks);
   const flow =
-    calls.ok && facts.ok && deals.ok
+    calls.ok && facts.ok && deals.ok && googleClicks.ok
       ? buildChannelFlow({
           calls: calls.data.filter((c) => inRange(c.bookedDate, window)),
           captured: capturedByChannel(facts.data, window),
           wins: deals.data.filter((d) => d.dateWon >= window.startDay),
+          googleClickLeads: googleClicks.data,
         })
       : null;
   const rows =

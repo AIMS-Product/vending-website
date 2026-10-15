@@ -22,8 +22,9 @@
  *     to (Webinar -> Internal Webinar, Google Ads, Meta Ads); spend a band
  *     spreads over several sources is in the total only.
  *
- * Dom's meeting rule (`booked_calls.v2.2`) still drives the Q4 scorecard tab
- * and the Months V2 panel; it is not this page's booked figure.
+ * The main dashboard and the Q4 scorecard tab count booked calls the same way
+ * (`keptCalls`). Dom's meeting rule (`booked_calls.v2.2`) lives on only in
+ * the Months V2 panel.
  */
 
 import { pacificToday } from "@/lib/admin/format-time";
@@ -33,9 +34,9 @@ import {
 } from "@/lib/analytics/channel-flow";
 import { resolveOrigin } from "@/lib/booked-calls-v2/sources";
 import {
-  MTD_BOOKING_OWNERS,
+  countsAsBooked,
+  isScraperFunnel,
   MTD_EXCLUDED_CLOSER_IDS,
-  SCRAPER_FUNNEL,
 } from "@/lib/services/close-mtd-funnel";
 import { isExcludedLead, type CloseCall } from "@/lib/services/close-week-view";
 import type { CloseDeal } from "@/lib/services/close-wins";
@@ -50,9 +51,6 @@ export const DAILY_BOOKED_GOAL = WEEKLY_BOOKED_GOAL / 5;
 export type Range = { from: string; to: string };
 
 export type ConflictLead = { leadId: string; name: string | null };
-
-/** A counted V2 meeting as `v2DashboardCalls` returns it (scorecard tab). */
-export type MtdCall = CloseCall & { name?: string | null };
 
 /** A lead's first sales call from the Close mirror, one row per lead. */
 export type MtdBooking = CloseCall & {
@@ -133,29 +131,19 @@ const inRange = (day: string | null | undefined, range: Range) =>
 const DISPLAY_LABELS: Record<string, string> = { linkedin: "LinkedIn" };
 
 /** The row for a Close Funnel Name: blank is the unknown row. */
+export { countsAsBooked };
+
 export function channelLabel(funnel: string | null | undefined): string {
   const raw = (funnel ?? "").trim();
   if (!raw) return UNKNOWN_CHANNEL;
   return DISPLAY_LABELS[raw.toLowerCase()] ?? raw;
 }
 
-const isScraper = (funnel: string | null | undefined) =>
-  (funnel ?? "").trim().toLowerCase() === SCRAPER_FUNNEL.toLowerCase();
-
-/** A booked lead the view counts. */
-export function countsAsBooked(call: CloseCall): boolean {
-  return (
-    !isExcludedLead(call) &&
-    !isScraper(call.funnel) &&
-    MTD_BOOKING_OWNERS.has((call.leadOwner ?? "").trim())
-  );
-}
-
 /** A won deal the view counts. */
 export function countsAsWon(deal: CloseDeal): boolean {
   return (
     !isExcludedLead(deal) &&
-    !isScraper(deal.funnel) &&
+    !isScraperFunnel(deal.funnel) &&
     !MTD_EXCLUDED_CLOSER_IDS.has(deal.closerId ?? "")
   );
 }

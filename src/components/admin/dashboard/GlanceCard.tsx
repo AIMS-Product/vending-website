@@ -15,7 +15,10 @@ import {
   addDays,
   type DashboardWindow,
 } from "@/lib/analytics/dashboard-window";
-import { readCalls } from "@/lib/services/analytics-dashboard-data";
+import {
+  readCalls,
+  readGoogleClickLeads,
+} from "@/lib/services/analytics-dashboard-data";
 
 interface GlanceCardProps {
   window: DashboardWindow;
@@ -36,22 +39,25 @@ export async function GlanceCard({ window }: GlanceCardProps) {
   const week = { startDay: mondayOf(today), endDay: today };
   const month = { startDay: `${today.slice(0, 7)}-01`, endDay: today };
   const from = week.startDay < month.startDay ? week.startDay : month.startDay;
-  const [calls, value] = await Promise.all([
+  const [calls, googleClicks, value] = await Promise.all([
     readCalls(from, today, window.marketingOnly),
+    readGoogleClickLeads(),
     readChannelValue(window),
   ]);
-  const error = failed(calls);
-  const periods = calls.ok
-    ? [
-        { name: "This week", range: week },
-        { name: "This month", range: month },
-      ].map((p) => {
-        const bars = bookedBars(
-          calls.data.filter((c) => inRange(c.bookedDate, p.range)),
-        );
-        return { ...p, bars, total: bars.reduce((s, b) => s + b.value, 0) };
-      })
-    : [];
+  const error = failed(calls, googleClicks);
+  const periods =
+    calls.ok && googleClicks.ok
+      ? [
+          { name: "This week", range: week },
+          { name: "This month", range: month },
+        ].map((p) => {
+          const bars = bookedBars(
+            calls.data.filter((c) => inRange(c.bookedDate, p.range)),
+            googleClicks.data,
+          );
+          return { ...p, bars, total: bars.reduce((s, b) => s + b.value, 0) };
+        })
+      : [];
   const lines = focusLines(value.rows);
   return (
     <DashboardCard id="glance" help="glance" className="mb-4">

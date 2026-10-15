@@ -273,14 +273,7 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // analytics-dashboard-data.ts: Close mirror, site leads, Calendly, the
   // spine (captures, spend) through channel-report, Close wins, CAC inputs;
   // google-ads-dashboard.ts for the paid card's Google campaigns
-  dashboard: [
-    ...SPINE,
-    "close",
-    "close-meetings",
-    "calendly",
-    "site-leads",
-    "google-ads",
-  ],
+  dashboard: [...SPINE, "close", "calendly", "site-leads", "google-ads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
@@ -484,12 +477,7 @@ export function judgeAudit(
 // ---------------------------------------------------------------------------
 
 export type CoveredMetric =
-  | "leads"
-  | "booked"
-  | "won"
-  | "revenue"
-  | "calendly"
-  | "spend";
+  "leads" | "booked" | "won" | "revenue" | "calendly" | "spend";
 
 /** Days a check compares, inclusive, as YYYY-MM-DD. */
 export type DayRange = { from: string; to: string };

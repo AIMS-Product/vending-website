@@ -4,10 +4,8 @@
  *
  * Populations (METRICS.md §5, §6, §16 "Channel flow"):
  *   - Captured: leads + contacts on the channel spine (§4), by channel.
- *   - Booked: calls counted under Dom's booked-call rule (`booked_calls.v2.2`,
- *     since 2026-10-14): one per qualifying Close meeting, dated by the day it
- *     was booked. Marketing calls sit in their lead source's band; calls a
- *     Lane 2 or Social DMs setter booked sit in the sales band (`callBand`).
+ *   - Booked: Close first calls scheduled in the window, SteelTrap rule
+ *     applied (§3, §5 Close mirror). One per lead.
  *   - Showed / Qualified: of those calls, the rep's logged "Yes" (§6). Each
  *     stage is what Close records for that call; a qualification never implies
  *     a show, so the two are counted independently and never inferred.
@@ -22,6 +20,7 @@
  */
 
 import { GOAL_CHANNELS } from "@/lib/services/channel-targets";
+import { keptByMtdRule } from "@/lib/services/close-mtd-funnel";
 import { isYes, type CloseCall } from "@/lib/services/close-week-view";
 
 export const FLOW_STAGES = [
@@ -119,7 +118,7 @@ export const FLOW_CHANNELS: readonly FlowChannelDef[] = [
   },
   {
     key: "reactivation",
-    label: "Lane 2 & Social DMs",
+    label: "Sales reactivation",
     spine: [],
     funnels: LANE_2_FUNNELS,
   },
@@ -157,24 +156,6 @@ export function flowChannelForFunnel(funnel: string | null): FlowChannelKey {
   return byFunnel.get((funnel ?? "").trim().toLowerCase()) ?? "other";
 }
 
-/** Who booked a call under Dom's rule, from the meeting title. */
-const SALES_BOOKED_BY = new Set(["Lane 2", "Social DMs"]);
-
-/**
- * The band a booked call counts in. Dom's rule decides it by who booked the
- * call: Lane 2 and Social DMs are the sales band whatever the source, and a
- * marketing call is never in it, even when its source is a retired sales
- * funnel ("Sales Reactivation" is a valid marketing origin).
- */
-export function callBand(call: {
-  funnel: string | null;
-  bookedBy?: string | null;
-}): FlowChannelKey {
-  if (SALES_BOOKED_BY.has(call.bookedBy ?? "")) return "reactivation";
-  const band = flowChannelForFunnel(call.funnel);
-  return band === "reactivation" ? "other" : band;
-}
-
 export type FlowBand = {
   key: FlowChannelKey;
   label: string;
@@ -191,6 +172,8 @@ export type ChannelFlow = {
   totals: [number, number, number, number, number];
   revenue: number;
   unvalued: number;
+  /** First calls the SteelTrap rule left out, shown rather than absorbed. */
+  excluded: number;
   /** Qualified with no show logged: disclosed, never turned into a show. */
   qualifiedWithoutShow: number;
 };
@@ -202,6 +185,13 @@ export function buildChannelFlow(input: {
   captured: ReadonlyArray<{ channel: string; count: number }>;
   /** Won deals dated from the window's first day to today. */
   wins: readonly FlowWin[];
+  /**
+   * Close lead ids of site leads that arrived with a Google click id. Close
+   * files ~40% of them under Lane 2 or another funnel; the click is the
+   * better evidence, so these calls (and their wins) count as Google Ads,
+   * the same population the Google Ads page counts. Moved, never copied.
+   */
+  googleClickLeads?: ReadonlySet<string>;
 }): ChannelFlow {
   const bands = new Map<FlowChannelKey, FlowBand>(
     FLOW_CHANNELS.map((c) => [
@@ -230,15 +220,23 @@ export function buildChannelFlow(input: {
     ]);
   }
 
+  let excluded = 0;
   let qualifiedWithoutShow = 0;
   const seen = new Set<string>();
   for (const call of input.calls) {
-    // Dom's rule has already excluded and held what it does not count; a
-    // repeated meeting id would be a read bug and must not count twice.
-    const key = call.meetingId ?? call.leadId;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const b = band(callBand(call));
+    if (!keptByMtdRule(call)) {
+      excluded += 1;
+      continue;
+    }
+    // The mirror is one row per lead; a duplicate would be a read bug, and
+    // must not count twice.
+    if (seen.has(call.leadId)) continue;
+    seen.add(call.leadId);
+    const b = band(
+      input.googleClickLeads?.has(call.leadId)
+        ? "google-ads"
+        : flowChannelForFunnel(call.funnel),
+    );
     const showed = isYes(call.showUp);
     const qualified = isYes(call.qualified);
     b.values[1] += 1;
@@ -274,6 +272,7 @@ export function buildChannelFlow(input: {
     totals,
     revenue: list.reduce((sum, b) => sum + b.revenue, 0),
     unvalued: list.reduce((sum, b) => sum + b.unvalued, 0),
+    excluded,
     qualifiedWithoutShow,
   };
 }

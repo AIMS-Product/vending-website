@@ -130,6 +130,18 @@ rate built on it is always null. This is a defect, not a definition.
 
 ## 3. Global exclusions and inclusion rules
 
+### The Marketing MTD rule — every booked-call surface since 2026-10-15
+
+The main dashboard (`keptCalls`), its flow card, the Q4 scorecard tab and Marketing MTD keep a
+first call by one predicate, `keptByMtdRule` (`close-mtd-funnel.ts`), so they show Jess's numbers:
+
+- marketing (every funnel but Reactivation Scrapers): not Canceled (by Lead) / Outside the US, not
+  TLG / PPA, Lead Owner on the Lane 1 roster (`MTD_BOOKING_OWNERS`); **LTF - Quiz Funnel counts**;
+- Reactivation Scrapers: same status and brand exclusions, any owner, its own band.
+
+Marketing-only wins (`countsAsWon`) also drop the five MTD closers. The SteelTrap rule below still
+governs the Close view, Channels, Goals and the other legacy tabs.
+
 ### The SteelTrap rule — Close mirror only
 
 A first call is excluded when the lead's **current** status or funnel matches
@@ -162,12 +174,11 @@ scrapers    = kept where funnel == "Reactivation Scrapers"   (trimmed, case-inse
 It is split so that ad spend is never divided by calls the ads did not buy. The marketing line is the
 figure the weekly scorecard row "Marketing Meetings Booked" counts.
 
-### Owner exclusions — we have none
+### Owner exclusions — Marketing MTD rule only
 
-This repository excludes no closer, setter or meeting owner from any count. The MTD dashboard excludes
-five closer user ids from won and revenue, and its live surface additionally drops four meeting
-owners. We cannot reproduce either: there is no owner field in our mirror. This is the largest single
-reason our Won and Booked will not equal theirs. See section 13.
+The Marketing MTD rule (above) keeps marketing first calls only when the lead's owner is on the Lane 1
+roster, and drops the five MTD closers' deals from marketing wins. The SteelTrap-rule tabs exclude no
+owner.
 
 ### Internal and test leads
 
