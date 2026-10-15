@@ -352,6 +352,8 @@ export const sameDayLastWeek = (day: string) => addDays(day, -7);
 /** What the dashboard reads per lead beside Dom's meeting decisions. */
 export type LeadFirstCall = {
   email: string | null;
+  /** The lead's current Close status label. */
+  status?: string | null;
   /** Close "First Sales Call Booked Date": the day the first call is for. */
   firstCallDay: string | null;
   showUp: string | null;
@@ -382,7 +384,7 @@ export function v2DashboardCalls(
         meetingId: d.meetingId,
         email: lead?.email ?? null,
         funnel: d.origin.source,
-        status: null,
+        status: lead?.status ?? null,
         bookedDate: d.createdDay,
         callDay: d.scheduledDay,
         showUp: first ? lead.showUp : null,
@@ -392,4 +394,15 @@ export function v2DashboardCalls(
         businessLine: null,
       };
     });
+}
+
+/**
+ * A Dom's-rule call filed for a by-source table: a Lane 2 or Social DMs
+ * booking under who booked it (the dashboard's sales band, `callBand`), a
+ * Marketing booking under its source.
+ */
+export function byBooker<T extends CloseCall>(call: T): T {
+  return call.bookedBy === "Lane 2" || call.bookedBy === "Social DMs"
+    ? { ...call, funnel: call.bookedBy }
+    : call;
 }

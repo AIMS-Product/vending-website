@@ -219,7 +219,32 @@ screen says so.
 
 ## 5. Bookings
 
-### Close mirror
+### Dom's rule (`booked_calls.v2.2`): the reporting count
+
+Since 2026-10-14 every booked-call figure on the main dashboard, Marketing MTD, Month over month
+(monthly grid, This month, Friday-Thursday weeks), the Funnel board and the EOD/EOW email counts
+Dom's rule (`src/lib/booked-calls-v2/`, read through `getV2Calls` in `booked-calls-v2-data.ts`):
+
+```
+Booked = Close meetings created in the window (Pacific day) that Dom's engine counts:
+         not canceled, not a follow-up title, no meeting for the lead in the 60 days before,
+         source resolvable for a Marketing booking
+Booked By = from the meeting title: Lane 2 (24 setters), Social DMs (Pearl's Next Steps), else Marketing
+```
+
+A by-source table files Lane 2 and Social DMs calls under who booked them and Marketing calls under
+the lead's source on Dom's map (`byBooker`). No lead-status or funnel exclusion applies on top.
+Show and qualified are Close's first-call flags, read onto a call only when it is scheduled for the
+lead's first call day, so a repeat credit reads unlogged. Wins on these views are Close
+opportunities by `date_won`, filed under Dom's label for the deal's funnel (a lead can hold more
+than one counted call, so a win is never read off the lead row). Prove a change with
+`scripts/booked-calls-v2-validate.ts` (Dom's certified pull) and `scripts/marketing-mtd-validate.ts`
+(page equals the Months V2 panel).
+
+### Close mirror (legacy first-call count)
+
+Still used by Channels, Team, the KPI export, the Today strip's "Calls booked today" and the nightly
+company-MTD and first-call audits, until each moves.
 
 ```
 Booked = count of rows whose first_sales_call_booked_date falls in the window,
@@ -732,19 +757,18 @@ week of 9/28 = 140 calls, 694 MQLs, $10,215.22, $14.72, Google Ads missing 10/1-
 
 ### Funnel board (`/admin/analytics/board`, `funnel-board.ts`)
 
-Every Close first call by the day it is scheduled, two Monday-Sunday weeks, **no §3 rule**: it is
-the sales floor's Funnel Details sheet and the Q4 plan's booked basis (cancellations included), so
-its TOTAL row is Close's total. A call whose lead filled a site form is credited by `resolveChannel`
-(latest fill on or before the call day), otherwise by its Close funnel; the crosswalk shows every
-move. It does not apply the gclid credit, so its Google row can differ from the flow card's.
+Dom's counted meetings (§5) by the Pacific day booked, two Monday-Sunday weeks, so its TOTAL row is
+the dashboard's. A Marketing call whose lead filled a site form is credited by `resolveChannel`
+(latest fill on or before the booked day), otherwise by its source on Dom's map; Lane 2 and Social
+DMs calls stay with who booked them (Sales outbound). The crosswalk shows every move. It does not
+apply the gclid credit, so its Google row can differ from the flow card's.
 
 Channels are the bands in `FLOW_CHANNELS` (`channel-flow.ts`), mapping both vocabularies, spine
 channel labels and Close funnel names, onto one list. Chatbot captures sit in Website & search, where
 Close files a chat-booked call (13 of 18 matched calls on 2026-10-02 had funnel Website).
 
-Cohort won differs from the month-over-month grid's won, which reads the lead's current status
-"Closed / Won" (`isWonCall`): a lead whose status moved on after the sale drops out there and stays
-here.
+Cohort won differs from the month-over-month grid's won, which counts deals by the month they were
+won (§5): a cohort follows the window's calls to today, the grid reads each month's wins.
 
 ---
 

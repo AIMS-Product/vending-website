@@ -7,34 +7,16 @@ import { lastClosedMonth, monthOverMonthChecks } from "./data-audit-mom-checks";
 
 const now = new Date("2026-09-22T12:30:00.000Z");
 
-const fieldDefinitions = [
-  { id: "cf_booked", name: "First Sales Call Booked Date" },
-  { id: "cf_funnel", name: "Funnel Name DEAL (Opp)" },
-];
+/** A won Close opportunity, value in cents as Close stores it. */
+const won = (cents: number) => ({ value: cents });
 
-const closeLead = (
-  id: string,
-  status: string,
-  funnel: string,
-  wonCents: number[] = [],
-) => ({
-  id,
-  status_label: status,
-  "custom.cf_funnel": funnel,
-  opportunities: [
-    ...wonCents.map((value) => ({ status_type: "won", value })),
-    { status_type: "lost", value: 999_900 },
-  ],
-});
-
-function fakeClose(leads: unknown[]) {
+function fakeClose(opportunities: Array<{ value: number }>) {
   return {
-    listCustomFields: async () => ({ data: fieldDefinitions }),
-    // Two pages, so the cursor loop is exercised.
-    searchLeads: async (body: Record<string, unknown>) =>
-      body.cursor
-        ? { data: leads.slice(1), cursor: null }
-        : { data: leads.slice(0, 1), cursor: "next" },
+    // Two pages, so the paging loop is exercised.
+    listWonOpportunities: async ({ skip }: { skip: number }) =>
+      skip === 0
+        ? { data: opportunities.slice(0, 1), has_more: true }
+        : { data: opportunities.slice(1), has_more: false },
   } as never;
 }
 
@@ -60,7 +42,7 @@ const lead = (email: string, utm_source: string, day: string) => ({
   metadata: {},
 });
 
-/** The tab as it loads: two won YouTube calls in August, $5,997 and $3,000. */
+/** The tab as it loads: two YouTube deals won in August, $5,997 and $3,000. */
 function tab(leads: Map<string, number>): () => Promise<CloseMonthlyReport> {
   const call = (leadId: string, funnel: string, status: string) => ({
     leadId,
@@ -85,10 +67,22 @@ function tab(leads: Map<string, number>): () => Promise<CloseMonthlyReport> {
       today: "2026-09-22",
       leads,
       leadsFrom: "2026-07-06",
-      dealValueByLead: new Map([
-        ["l1", 5997],
-        ["l2", 3000],
-      ]),
+      deals: [
+        {
+          leadId: "l1",
+          dateWon: "2026-08-12",
+          value: 5997,
+          funnel: "YouTube",
+          closer: null,
+        },
+        {
+          leadId: "l2",
+          dateWon: "2026-08-20",
+          value: 3000,
+          funnel: "YouTube",
+          closer: null,
+        },
+      ],
     }),
   });
 }
@@ -110,13 +104,7 @@ describe("lastClosedMonth", () => {
 });
 
 describe("month-over-month checks", () => {
-  const closeLeads = [
-    closeLead("l1", "🏆 Closed / Won", "YouTube", [599_700]),
-    closeLead("l2", "🏆 Closed / Won", "YouTube", [300_000]),
-    closeLead("l3", "💔 Lost", "YouTube"),
-    // Won, but the tab leaves the quiz funnel out; so must the check.
-    closeLead("l4", "🏆 Closed / Won", "LTF - Quiz Funnel", [100_000]),
-  ];
+  const closeLeads = [won(599_700), won(300_000)];
 
   it("passes when the tab's won, revenue and leads match their sources", async () => {
     const results = byCheck(
@@ -156,10 +144,7 @@ describe("month-over-month checks", () => {
     const results = byCheck(
       await monthOverMonthChecks(
         fakeDb([]),
-        fakeClose([
-          ...closeLeads,
-          closeLead("l5", "🏆 Closed / Won", "Website", [200_000]),
-        ]),
+        fakeClose([...closeLeads, won(200_000)]),
         now,
         tab(new Map()),
       ),

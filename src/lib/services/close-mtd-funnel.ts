@@ -123,6 +123,8 @@ export function mtdMismatches(
 
 const BOOKED_SOURCE =
   'Close "First Sales Call Booked Date", one row per lead, leaving out leads now "Canceled (by Lead)" or "Outside the US", the "LTF - Quiz Funnel" funnel and other company brands (The Land Geek, Publishing Profits Academy).';
+const DOM_BOOKED_SOURCE =
+  "Dom's booked_calls.v2.2: one per counted Close meeting (not canceled, not a follow-up, no meeting for the lead in the 60 days before), by the Pacific day it was booked. Show and qualified are read on the lead's first call only.";
 const SHOWED_SOURCE =
   'Close "First Call Show Up (Opp)" = Yes. A call nobody logged is not counted as shown.';
 const QUALIFIED_SOURCE =
@@ -138,8 +140,12 @@ function pctOf(part: number, whole: number): number | null {
   return whole > 0 ? Math.round((part / whole) * 1000) / 10 : null;
 }
 
+/** The sales floor's own bookings: the scraper funnel, or Dom's Lane 2 and Social DMs. */
+const SALES_LABELS = new Set(
+  [SCRAPER_FUNNEL, "Lane 2", "Social DMs"].map((label) => label.toLowerCase()),
+);
 function isScraper(funnel: string | null): boolean {
-  return (funnel ?? "").trim().toLowerCase() === SCRAPER_FUNNEL.toLowerCase();
+  return SALES_LABELS.has((funnel ?? "").trim().toLowerCase());
 }
 
 function split(calls: readonly CloseCall[]): CloseFunnelSplit {
@@ -150,18 +156,28 @@ function split(calls: readonly CloseCall[]): CloseFunnelSplit {
   };
 }
 
+/**
+ * `rule` says which calls `calls` holds. "first-call": one row per lead from
+ * the mirror, before the SteelTrap exclusions this applies (the nightly
+ * company-MTD audit). "dom": Dom's counted meetings through `byBooker`, Lane 2
+ * and Social DMs under who booked them, nothing excluded (the Months page).
+ */
 export function buildCloseMtdFunnel(input: {
   calls: readonly CloseCall[];
   deals: readonly CloseDeal[];
   from: string;
   to: string;
+  rule?: "first-call" | "dom";
 }): CloseMtdFunnel {
   const { from, to } = input;
+  const dom = input.rule === "dom";
   const windowed = input.calls.filter((call) =>
     inWindow(call.bookedDate, from, to),
   );
-  const excluded = windowed.filter(isExcludedCall);
-  const kept = windowed.filter((call) => !isExcludedCall(call));
+  const excluded = dom ? [] : windowed.filter(isExcludedCall);
+  const kept = dom
+    ? windowed
+    : windowed.filter((call) => !isExcludedCall(call));
 
   const totals = split(kept);
   const scraperCalls = kept.filter((call) => isScraper(call.funnel));
@@ -199,8 +215,10 @@ export function buildCloseMtdFunnel(input: {
         key: "booked",
         label: "Booked",
         count: totals.booked,
-        population: "Leads whose first sales call is scheduled in this month.",
-        source: BOOKED_SOURCE,
+        population: dom
+          ? "Close meetings booked this month that count on Dom's rule."
+          : "Leads whose first sales call is scheduled in this month.",
+        source: dom ? DOM_BOOKED_SOURCE : BOOKED_SOURCE,
         ofBookedPct: null,
       },
       {

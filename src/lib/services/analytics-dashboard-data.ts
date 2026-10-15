@@ -18,9 +18,7 @@ import {
   costPerBookedByMonth,
   isReactivation,
   monthKeys,
-  v2DashboardCalls,
   type CostRow,
-  type LeadFirstCall,
 } from "@/lib/analytics/dashboard-metrics";
 import { config } from "@/lib/config";
 import { isChatbotCapture } from "@/lib/services/admin-analytics-internal";
@@ -45,9 +43,8 @@ import {
   fetchCloseDeals,
   type CloseDeal,
 } from "@/lib/services/close-wins";
-import { getBookedCallsV2 } from "@/lib/services/booked-calls-v2-data";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import type { CloseCall } from "@/lib/services/close-week-view";
-import { pacificStartIso } from "@/lib/services/data-report";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { readAllPages } from "@/lib/services/paged-read";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -101,39 +98,9 @@ export const readCalls = cache(
 
 const readAllCalls = cache((from: string, to: string) =>
   attempt("Booked calls V2", async () => {
-    const report = await getBookedCallsV2({
-      from: pacificStartIso(from),
-      to: pacificStartIso(addDays(to, 1)),
-    });
-    if (!report.ok) throw new Error(report.error);
-    const leadIds = [
-      ...new Set(
-        report.decisions
-          .filter((d) => d.disposition === "counted")
-          .map((d) => d.leadId),
-      ),
-    ];
-    const client = createAdminClient();
-    const leads = new Map<string, LeadFirstCall>();
-    // 100 ids keep the `in.(...)` filter well under URL length limits.
-    for (let i = 0; i < leadIds.length; i += 100) {
-      const { data, error } = await client
-        .from("close_lead_funnel")
-        .select(
-          "lead_id,email,first_sales_call_booked_date,first_call_show_up,qualified",
-        )
-        .in("lead_id", leadIds.slice(i, i + 100));
-      if (error) throw new Error(error.message);
-      for (const row of data ?? []) {
-        leads.set(row.lead_id, {
-          email: row.email,
-          firstCallDay: row.first_sales_call_booked_date,
-          showUp: row.first_call_show_up,
-          qualified: row.qualified,
-        });
-      }
-    }
-    return v2DashboardCalls(report.decisions, leads) as DashboardCall[];
+    const calls = await getV2Calls(from, to);
+    if (!calls.ok) throw new Error(calls.error);
+    return calls.calls as DashboardCall[];
   }),
 );
 

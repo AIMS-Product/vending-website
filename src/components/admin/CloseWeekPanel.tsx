@@ -14,9 +14,10 @@ import { formatPacificStamp } from "@/lib/admin/format-time";
 import { formatUsd as money } from "@/lib/admin/format-number";
 
 /**
- * The week as Close (and SteelTrap) count it: every first call on the
- * closers' calendar, by the Close funnel. A different question from the site
- * funnel tabs, which follow people who filled a form on our site.
+ * The week on Dom's booked-call rule, Friday to Thursday (SteelTrap's weeks):
+ * every counted Close meeting, by source, Lane 2 and Social DMs by who booked.
+ * A different question from the site funnel tabs, which follow people who
+ * filled a form on our site.
  */
 
 const TH = "px-3 py-2.5 text-right font-semibold whitespace-nowrap";
@@ -108,15 +109,15 @@ export function CloseWeekTab({
       <section className={adminPanelClass} aria-label="Close weeks">
         <div className="px-4 pt-4">
           <h2 className={adminSectionTitleClass}>
-            Every first call in Close, by week
+            Booked calls on Dom&apos;s rule, by week
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            What each week put on the closers&apos; calendar, and what came of
-            it. Weeks run Friday to Thursday, the same weeks as the SteelTrap
-            report, and a first call counts in the week it is scheduled for.
-            This includes reactivation and webinar people who never filled a
-            form on our site, so it is larger than the site numbers on other
-            tabs. The test and internal-lead filter does not apply here.
+            What each week booked, and what came of it. Weeks run Friday to
+            Thursday, the same weeks as the SteelTrap report, and a call counts
+            in the week it was booked (Dom&apos;s rule), so the totals differ
+            from SteelTrap&apos;s first-call count. This includes Lane 2 and
+            webinar people who never filled a form on our site. The test and
+            internal-lead filter does not apply here.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -147,13 +148,14 @@ export function CloseWeekTab({
       <section className={adminPanelClass} aria-label="Close week by funnel">
         <div className="px-4 pt-4">
           <h2 className={adminSectionTitleClass}>
-            {weekLabel(week)} by Close funnel
+            {weekLabel(week)} by source
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
             Showed and Qualified count only calls a rep logged as Yes, so they
-            are a minimum. Show rate is showed out of first calls. Won and
-            Revenue are deals won this week, whenever the call happened.
-            &ldquo;No source&rdquo; means the lead has no funnel in Close.
+            are a minimum; Close keeps them for a lead&apos;s first call only.
+            Show rate is showed out of booked. Won and Revenue are deals won
+            this week, whenever the call happened, under the deal&apos;s funnel.
+            Lane 2 and Social DMs rows are what those setters booked.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -181,15 +183,6 @@ export function CloseWeekTab({
           </table>
         </div>
         <div className="text-ui-text-subtle space-y-1 px-4 py-3 text-xs">
-          {week.excluded > 0 ? (
-            <p>
-              {week.excluded} first{" "}
-              {week.excluded === 1 ? "call is" : "calls are"} left out because
-              the lead is now Canceled (by Lead) or Outside the US, or in the
-              LTF Quiz Funnel, or belongs to another company brand (The Land
-              Geek, Publishing Profits Academy).
-            </p>
-          ) : null}
           {week.unvalued > 0 ? (
             <p>
               {week.unvalued} won{" "}
@@ -200,7 +193,7 @@ export function CloseWeekTab({
           <p>Close fields used: {CLOSE_VIEW_SOURCE}</p>
           {report.mirrorSyncedAt ? (
             <p>
-              First calls last copied from Close at{" "}
+              Meetings last copied from Close at{" "}
               {formatPacificStamp(report.mirrorSyncedAt)} (every hour). Won
               deals are read from Close directly.
             </p>

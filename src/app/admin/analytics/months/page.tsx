@@ -12,7 +12,7 @@ import {
 } from "@/components/admin/dashboard/AnalyticsDrillDown";
 import { getBookedCallsV2 } from "@/lib/services/booked-calls-v2-data";
 import { getCloseMonthlyFunnel } from "@/lib/services/close-monthly-funnel-data";
-import { getCloseMtdFunnel } from "@/lib/services/close-mtd-funnel-data";
+import { getDomMtdFunnel } from "@/lib/services/close-mtd-funnel-data";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { requireReadAccess } from "@/lib/supabase/auth";
@@ -38,7 +38,7 @@ export default async function AnalyticsMonthsPage({
   const { user, role } = await requireReadAccess();
   const trust = getTrustBar("mom");
   const monthly = getCloseMonthlyFunnel();
-  const mtd = getCloseMtdFunnel();
+  const mtd = getDomMtdFunnel();
   const weeks = getCloseWeekView();
   const v2 = getBookedCallsV2();
   return (
@@ -46,23 +46,22 @@ export default async function AnalyticsMonthsPage({
       path="/admin/analytics/months"
       tab="months"
       title="Month over month"
-      description="Close first calls, shows, qualified calls and sales by funnel, month by month and week by week."
+      description="Booked calls on Dom's rule, shows, qualified calls and sales by source, month by month and week by week."
       user={{ email: user.email, role }}
       trust={trust}
     >
       <div className="space-y-5">
         {/* Dom and the sales floor compare this page against the MTD
-            dashboard; say up front that two rules are on it. */}
+            dashboard and SteelTrap; say up front which rule it counts. */}
         <p className={`${adminCardClass} text-ui-text-muted text-sm`}>
-          Two booked-call rules run side by side on this page.{" "}
+          Every panel on this page counts booked calls on Dom&apos;s rule (
           <a href="#booked-v2" className={adminLinkClass}>
             Booked calls V2
-          </a>{" "}
-          is Dom&apos;s shared rule, the one the main dashboard counts by: one
-          credit per qualifying Close meeting, dated by the day the meeting was
-          booked. Every other panel here is the older rule: one row per lead,
-          dated by its First Sales Call Booked Date (the day the call is
-          scheduled for). The two do not match, by design.
+          </a>
+          ), the same as the main dashboard: one credit per qualifying Close
+          meeting, dated by the day it was booked. The company MTD dashboard and
+          SteelTrap count first calls by the day they are scheduled, so their
+          totals differ by design.
         </p>
         <Suspense fallback={<Skeleton label="months" />}>
           <MonthlyBody
@@ -119,7 +118,7 @@ async function MtdBody({
   report,
   trust,
 }: {
-  report: ReturnType<typeof getCloseMtdFunnel>;
+  report: ReturnType<typeof getDomMtdFunnel>;
   trust: ReturnType<typeof getTrustBar>;
 }) {
   const [data, { flags }] = await Promise.all([report, trust]);

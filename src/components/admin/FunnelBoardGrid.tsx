@@ -55,13 +55,14 @@ export function FunnelBoardGrid({ board, today }: FunnelBoardGridProps) {
       <div className="px-4 pt-4">
         <h2 className={adminSectionTitleClass}>Funnel details</h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          Every first sales call in Close, on the day it is scheduled for: the
-          same calls as the sales sheet, so the totals match. The difference is
-          the credit. A call whose lead filled a form on vendingpreneurs.com
-          counts for the channel that brought them to the site; a call with no
-          site form keeps its Close funnel. <strong>Close says</strong> is what
-          Close&apos;s funnel field puts on that row. {board.moved} of{" "}
-          {board.total} calls move.
+          Every call counted on Dom&apos;s rule, on the day it was booked: the
+          same calls as the main dashboard. The difference is the credit. A
+          Marketing call whose lead filled a form on vendingpreneurs.com counts
+          for the channel that brought them to the site; one with no site form
+          keeps its source on Dom&apos;s map. Lane 2 and Social DMs calls stay
+          with who booked them. <strong>Close says</strong> is the source
+          Dom&apos;s rule gives that row. {board.moved} of {board.total} calls
+          move.
         </p>
       </div>
       <div className="mt-3 overflow-x-auto">

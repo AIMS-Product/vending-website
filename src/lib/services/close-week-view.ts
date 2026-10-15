@@ -1,32 +1,30 @@
 /**
- * The Close view: the week as the sales floor and SteelTrap count it.
+ * The Close view: booked calls by source, week by week, on Dom's rule
+ * (`booked_calls.v2.2`, since 2026-10-14).
  *
  * Not the site funnel. This answers "what did every channel put on the
- * closers' calendar this week, and what came of it", for every Close first
- * call, including people who never filled a site form (reactivation scrapers,
- * webinar registrants). Rules, all read from Close fields as reps log them:
+ * closers' calendar, and what came of it", for every counted Close meeting,
+ * including people who never filled a site form. The calls come in from
+ * `getV2Calls` (`byBooker`): one per counted meeting, dated by the Pacific day
+ * it was booked, Lane 2 and Social DMs under who booked them, Marketing under
+ * the lead's source. No lead-status rule applies on top of Dom's.
  *
- *   - First calls: leads whose "First Sales Call Booked Date" falls in the
- *     week. That field is the day the call is scheduled for. Leads whose
- *     current status is "Canceled (by Lead)" or "Outside the US", and the
- *     "LTF - Quiz Funnel" funnel, are left out, as SteelTrap leaves them out
- *     (crm_silver_to_gold_lakebase.py, DEFAULT_MEETING_BOOKED_EXCLUDED_*).
- *     They are counted in `excluded` so the gap is shown, not hidden.
- *   - Showed: of those, "First Call Show Up (Opp)" = Yes. Unlogged is not shown.
- *   - Qualified (rep): of those, "Qualified (Opp)" = Yes. A rep's call after the
- *     meeting, not the site's online questions ("Qs done").
+ *   - Showed: "First Call Show Up (Opp)" = Yes, read onto the call only when
+ *     it is the lead's first call. Unlogged is not shown.
+ *   - Qualified (rep): "Qualified (Opp)" = Yes, same first-call reading.
  *   - Won / revenue: Close opportunities won in the week, by date won.
  *
- * Every row is the lead's "Funnel Name DEAL (Opp)" as written in Close. A lead
- * with no funnel is "No source", never dropped. Weeks run Friday to Thursday.
+ * A Marketing call always has a source on Dom's map; "No source" only names
+ * a won deal whose funnel is blank. Weeks run Friday to Thursday.
  */
 
+import { resolveOrigin } from "@/lib/booked-calls-v2/sources";
 import type { CloseDeal } from "@/lib/services/close-wins";
 
 export const NO_SOURCE_LABEL = "No source";
 
 export const CLOSE_VIEW_SOURCE =
-  'Close: first calls by "First Sales Call Booked Date", leaving out leads now "Canceled (by Lead)" or "Outside the US" the "LTF - Quiz Funnel" funnel (the SteelTrap rule), and other company brands (The Land Geek, Publishing Profits Academy) as the MTD dashboard does; showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
+  "Close, on Dom's booked-call rule (booked_calls.v2.2): one per counted meeting, by the Pacific day it was booked; Lane 2 and Social DMs rows by who booked, every other row the lead's source on Dom's map; showed = \"First Call Show Up (Opp)\" Yes and qualified = \"Qualified (Opp)\" Yes on the lead's first call; won and revenue by the day the deal was won.";
 
 /** Close lead statuses SteelTrap leaves out of booked, matched without emoji. */
 const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
@@ -81,8 +79,6 @@ export type CloseWeek = {
   rows: CloseWeekRow[];
   /** Won deals with no value in Close: counted in won, not in revenue. */
   unvalued: number;
-  /** First calls left out: lead now canceled by lead, outside the US, or quiz funnel. */
-  excluded: number;
 };
 
 const DAY_MS = 86_400_000;
@@ -142,8 +138,6 @@ export type ClosePeriod = {
   rows: CloseWeekRow[];
   /** Won deals with no value in Close: counted in won, not in revenue. */
   unvalued: number;
-  /** First calls left out: lead now canceled by lead, outside the US, or quiz funnel. */
-  excluded: number;
 };
 
 export type ClosePeriodsReport = {
@@ -164,6 +158,11 @@ export type ClosePeriodsReport = {
  * can sit in a column beside show and qualified and be read down one cohort.
  * `deals` is then unused.
  */
+/** A won deal's row: its Close funnel on Dom's map, else as Close spells it. */
+const dealSource = (funnel: string | null) =>
+  resolveOrigin({ funnel, contactUtms: [], resourceTag: null }).source ??
+  funnel;
+
 export function buildClosePeriods(input: {
   calls: readonly CloseCall[];
   deals: readonly CloseDeal[];
@@ -175,7 +174,6 @@ export function buildClosePeriods(input: {
   const wanted = new Set(input.periods);
   const byPeriod = new Map<string, Map<string, CloseWeekRow>>();
   const unvalued = new Map<string, number>();
-  const excluded = new Map<string, number>();
 
   const bump = (
     period: string,
@@ -199,11 +197,6 @@ export function buildClosePeriods(input: {
 
   for (const call of input.calls) {
     const period = input.periodOf(call.bookedDate);
-    if (isExcludedCall(call)) {
-      if (wanted.has(period))
-        excluded.set(period, (excluded.get(period) ?? 0) + 1);
-      continue;
-    }
     const outcome = input.outcomeOf?.(call);
     bump(period, call.funnel, {
       booked: 1,
@@ -225,7 +218,10 @@ export function buildClosePeriods(input: {
   if (!input.outcomeOf) {
     for (const deal of input.deals) {
       const period = input.periodOf(deal.dateWon);
-      bump(period, deal.funnel, { won: 1, revenue: deal.value ?? 0 });
+      bump(period, dealSource(deal.funnel), {
+        won: 1,
+        revenue: deal.value ?? 0,
+      });
       if (deal.value === null && wanted.has(period)) {
         unvalued.set(period, (unvalued.get(period) ?? 0) + 1);
       }
@@ -254,7 +250,6 @@ export function buildClosePeriods(input: {
       totals,
       rows,
       unvalued: unvalued.get(key) ?? 0,
-      excluded: excluded.get(key) ?? 0,
     };
   });
   return { periods };

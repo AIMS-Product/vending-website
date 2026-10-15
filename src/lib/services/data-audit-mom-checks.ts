@@ -7,31 +7,23 @@ import {
   type AuditResult,
 } from "@/lib/services/data-audit";
 import type { CloseMonthlyReport } from "@/lib/services/close-monthly-funnel-data";
-import { isWonCall } from "@/lib/services/close-monthly-funnel";
 import {
   funnelForChannel,
   getMonthlyLeads,
 } from "@/lib/services/close-monthly-leads";
-import {
-  mapLead,
-  resolveFieldIds,
-} from "@/lib/services/close-lead-funnel-sync";
-import { isExcludedCall } from "@/lib/services/close-week-view";
 import type { Database } from "@/types/database";
 
 type Client = Pick<SupabaseClient<Database>, "from">;
 
 export type MomCloseClient = {
-  listCustomFields(
-    scope: "lead",
-  ): Promise<{ data?: Parameters<typeof resolveFieldIds>[0] }>;
-  searchLeads(body: Record<string, unknown>): Promise<{
-    data?: unknown[];
-    cursor?: string | null;
-  }>;
+  listWonOpportunities(input: {
+    from: string;
+    to: string;
+    skip: number;
+  }): Promise<{ data?: Array<{ value?: number | null }>; has_more?: boolean }>;
 };
 
-/** 200 leads a page; 50 pages is far above any month's first calls. */
+/** 100 opportunities a page; 50 pages is far above any month's wins. */
 const MAX_PAGES = 50;
 
 /**
@@ -66,7 +58,7 @@ export async function monthOverMonthChecks(
       ours: totals?.won ?? 0,
       source: fromClose.won,
       tolerancePct: 3,
-      note: "Leads booked that month whose Close stage is Closed / Won, after the same exclusions the tab applies.",
+      note: "Opportunities Close marks won that month, by date won: the grid's CW % numerator.",
     }),
     compare({
       ...shared,
@@ -76,7 +68,7 @@ export async function monthOverMonthChecks(
       source: fromClose.revenue,
       tolerancePct: 3,
       unit: "money",
-      note: "Won deal value on those same leads, read from Close.",
+      note: "Value of those won opportunities, read from Close.",
     }),
     await leadsByChannelCheck(client, report, month),
   ];
@@ -105,88 +97,32 @@ export function lastClosedMonth(now: Date): Month {
 }
 
 /**
- * Every lead Close says booked a first call in the month, read straight from
- * Close rather than our mirror, and judged won and excluded by the same rules
- * the tab uses.
+ * Every opportunity Close marks won in the month, read straight from Close
+ * rather than through the tab's cached read: the grid credits wins by the day
+ * they were won (Dom's rule counts meetings, so a win read off the lead row
+ * would count once per counted call).
  */
 async function closeWonForMonth(close: MomCloseClient, month: Month) {
-  const definitions = await close.listCustomFields("lead");
-  const fieldIds = resolveFieldIds(definitions.data ?? []);
+  const last = new Date(
+    Date.parse(`${month.exclusiveEnd}T00:00:00Z`) - 86_400_000,
+  )
+    .toISOString()
+    .slice(0, 10);
   let won = 0;
   let cents = 0;
-  let cursor: string | null = null;
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const result = await close.searchLeads({
-      query: {
-        type: "and",
-        queries: [
-          { type: "object_type", object_type: "lead" },
-          {
-            type: "field_condition",
-            field: {
-              type: "custom_field",
-              custom_field_id: fieldIds.bookedDate,
-            },
-            condition: {
-              type: "moment_range",
-              on_or_after: {
-                type: "fixed_local_date",
-                value: month.from,
-                which: "start",
-              },
-              before: {
-                type: "fixed_local_date",
-                value: month.exclusiveEnd,
-                which: "start",
-              },
-            },
-          },
-        ],
-      },
-      _fields: {
-        lead: [
-          "id",
-          "status_label",
-          "opportunities",
-          `custom.${fieldIds.funnel}`,
-          ...(fieldIds.businessLine ? [`custom.${fieldIds.businessLine}`] : []),
-        ],
-      },
-      _limit: 200,
-      ...(cursor ? { cursor } : {}),
+    const result = await close.listWonOpportunities({
+      from: month.from,
+      to: last,
+      skip: page * 100,
     });
-    for (const raw of result.data ?? []) {
-      const lead = raw as Record<string, unknown>;
-      const row = mapLead(lead, fieldIds, "");
-      if (!row) continue;
-      const call = {
-        leadId: row.lead_id,
-        funnel: row.funnel ?? null,
-        status: row.status_label ?? null,
-        bookedDate: month.from,
-        showUp: null,
-        qualified: null,
-        businessLine: row.business_line ?? null,
-      };
-      if (isExcludedCall(call) || !isWonCall(call)) continue;
+    for (const opportunity of result.data ?? []) {
       won += 1;
-      cents += wonValueCents(lead.opportunities);
+      cents += opportunity.value ?? 0;
     }
-    cursor = result.cursor ?? null;
-    if (!cursor) break;
+    if (!result.has_more) break;
   }
   return { won, revenue: cents / 100 };
-}
-
-function wonValueCents(opportunities: unknown): number {
-  if (!Array.isArray(opportunities)) return 0;
-  return opportunities.reduce<number>((sum, opportunity) => {
-    const { status_type, value } = (opportunity ?? {}) as {
-      status_type?: string;
-      value?: number | null;
-    };
-    return status_type === "won" ? sum + (value ?? 0) : sum;
-  }, 0);
 }
 
 /**

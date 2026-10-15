@@ -196,7 +196,6 @@ async function closeRows(to: string) {
   return {
     label: `${shortDate(week.key)} to ${shortDate(week.end)}`,
     complete: week.complete,
-    excluded: week.excluded,
     rows: week.rows.map((row) => ({
       label: row.label,
       booked: row.booked,

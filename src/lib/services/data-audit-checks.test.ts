@@ -792,6 +792,7 @@ describe("close-meetings", () => {
       close: {
         listCustomFields: async () => ({ data: [] }),
         searchLeads: async () => ({}),
+        listWonOpportunities: async () => ({ data: [], has_more: false }),
         // Close has no count for meetings: two pages, 105 meetings.
         listMeetings: async (gte: string, lt: string, skip = 0) => {
           calls.push(`${gte}|${lt}|${skip}`);

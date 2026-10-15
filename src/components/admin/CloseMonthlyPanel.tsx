@@ -15,7 +15,6 @@ import {
 } from "@/lib/analytics/data-trust-bar";
 import {
   FUNNEL_GROUPS,
-  MATURE_AFTER_DAYS,
   pctOf,
   type MonthlyCell,
   type MonthlyFunnelRow,
@@ -204,18 +203,17 @@ export function CloseMonthlyPanel({
 
   const { funnel } = report;
   const months = funnel.months.filter((month) => visible.has(month.key));
-  const immature = months.filter((month) => !month.mature);
   const marks = benchmarksOf(months);
 
   return (
     <div className="space-y-5">
       <section className={`${adminPanelClass} p-4`}>
         <h2 className={adminSectionTitleClass}>
-          Month over month, by Close funnel
+          Month over month, on Dom&apos;s rule
         </h2>
         <p className="text-ui-text-muted mt-1 max-w-[80ch] text-sm">
-          How many people each Close funnel booked each month, and what share of
-          them showed up, qualified and bought.
+          How many calls each source booked each month on Dom&apos;s booked-call
+          rule, what share showed up and qualified, and what was won.
         </p>
         <dl className="text-ui-text-subtle mt-3 grid max-w-[80ch] gap-x-4 gap-y-1 text-xs sm:grid-cols-[auto_1fr]">
           <dt className="text-ui-text font-medium">Leads</dt>
@@ -225,31 +223,32 @@ export function CloseMonthlyPanel({
           </dd>
           <dt className="text-ui-text font-medium">Booked</dt>
           <dd>
-            People whose first sales call is in that month (Close&rsquo;s
-            &ldquo;First Sales Call Booked Date&rdquo;), once each. Leads now
-            &ldquo;Canceled (by Lead)&rdquo; or &ldquo;Outside the US&rdquo; are
-            left out.
+            Dom&apos;s counted Close meetings, by the day each was booked
+            (booked_calls.v2.2): the same calls as the main dashboard. Lane 2
+            and Social DMs rows are what those setters booked; every other row
+            is a Marketing booking under the lead&apos;s source.
           </dd>
           <dt className="text-ui-text font-medium">Show %</dt>
           <dd>
-            Share of booked people a rep logged as showing up (&ldquo;First Call
-            Show Up (Opp)&rdquo; = Yes). A call nobody logged is not counted, so
-            this is a minimum. The call outcome field is not used: it mostly
-            describes a later follow-up or reschedule.
+            Share of booked calls a rep logged as showing up (&ldquo;First Call
+            Show Up (Opp)&rdquo; = Yes). Close keeps that for a lead&apos;s
+            first call only and a call nobody logged is not counted, so this is
+            a minimum. The call outcome field is not used: it mostly describes a
+            later follow-up or reschedule.
           </dd>
           <dt className="text-ui-text font-medium">Qual %</dt>
           <dd>
-            Qualified: share of booked people the rep marked qualified after the
-            call (&ldquo;Qualified (Opp)&rdquo; = Yes).
+            Qualified: share of booked calls the rep marked qualified after the
+            call (&ldquo;Qualified (Opp)&rdquo; = Yes), first calls only.
           </dd>
           <dt className="text-ui-text font-medium">CW % (closed-won)</dt>
           <dd>
-            Share of booked people whose Close status is now &ldquo;Closed /
-            Won&rdquo;. All three rates are out of Booked, not out of each
-            other, so one can be higher than the one before it.
+            Deals won that month, by the day won, over that month&apos;s booked:
+            a period ratio, not a close rate. All three rates are out of Booked,
+            not out of each other, so one can be higher than the one before it.
           </dd>
           <dt className="text-ui-text font-medium">Revenue</dt>
-          <dd>The Close deal value on those won leads.</dd>
+          <dd>The Close deal value of those won deals.</dd>
         </dl>
         <p className="text-ui-text-subtle mt-3 max-w-[80ch] text-xs">
           Each rate is coloured against the same column across the months shown:{" "}
@@ -261,11 +260,10 @@ export function CloseMonthlyPanel({
           {MIN_BOOKED_TO_COLOUR} booked calls behind the rate, too few to judge.
         </p>
         <p className="text-ui-text-subtle mt-2 max-w-[80ch] text-xs">
-          A win counts in the month of that person&rsquo;s first call, not the
-          month the deal closed. The sales floor&rsquo;s spreadsheet counts
-          meetings, not people: someone who rescheduled twice is three meetings
-          there and one person here, so its booked totals run about 1.7&times;
-          these for every funnel. Both are correct.
+          A win counts in the month the deal was won, under the deal&apos;s
+          funnel. A rescheduled meeting is not a new booking on Dom&apos;s rule,
+          and a lead booked again within 60 days counts once, so these run below
+          the sales floor&rsquo;s spreadsheet, which counts every meeting.
         </p>
         <p className="text-ui-text-subtle mt-2 text-xs">
           {report.mirrorSyncedAt ? (
@@ -322,16 +320,9 @@ export function CloseMonthlyPanel({
         </div>
       </section>
 
-      {immature.length > 0 ? (
+      {months.some((month) => !month.complete) ? (
         <p className="text-ui-text-subtle px-1 text-xs">
-          Still filling in: {immature.map((month) => month.label).join(", ")}{" "}
-          {immature.length === 1 ? "is" : "are"} less than {MATURE_AFTER_DAYS}{" "}
-          days past month end. Deals close weeks after the first call and count
-          in the month of that call, so CW % and Revenue there are still
-          climbing. Read them as a minimum, not a final result.
-          {months.some((month) => !month.complete)
-            ? " MTD means month to date: that month is still running, so its Booked is partial too."
-            : null}
+          MTD means month to date: that month is still running.
         </p>
       ) : null}
 
@@ -413,7 +404,7 @@ export function CloseMonthlyPanel({
             <tbody>
               <tr className="border-ui-line border-t-2 font-semibold">
                 <th scope="row" className={STICKY}>
-                  Every first call
+                  Every booked call
                 </th>
                 {months.map((month) => (
                   <Cells key={month.key} cell={month.totals} marks={marks} />
@@ -426,18 +417,6 @@ export function CloseMonthlyPanel({
           A dash (&mdash;) means there is nothing to count: no form behind that
           funnel, no form fills kept yet, or no booked calls to work a rate
           from. A 0 or 0% is a real zero.
-          {months.some((month) => month.excluded > 0) ? (
-            <>
-              {" "}
-              First calls left out of Booked (canceled by the lead, outside the
-              US, or the quiz funnel):{" "}
-              {months
-                .filter((month) => month.excluded > 0)
-                .map((month) => `${month.label} ${month.excluded}`)
-                .join(", ")}
-              .
-            </>
-          ) : null}
         </p>
       </section>
     </div>

@@ -1,17 +1,17 @@
 /**
- * The funnel board: the sales floor's "Funnel Details" sheet, rebuilt on our
- * attribution.
+ * The funnel board: the sales floor's "Funnel Details" sheet, rebuilt on Dom's
+ * booked-call rule and our attribution.
  *
- * Population: every Close lead whose "First Sales Call Booked Date" falls in
- * the window, counted on that call day. That is the Q4 plan's booked-call
- * basis (`channel-targets.ts`), so the board's TOTAL row is Close's total.
+ * Population: Dom's counted meetings (`getV2Calls`, the dashboard's calls),
+ * on the Pacific day each was booked, so the TOTAL row is the dashboard's.
  *
- * Credit: the sheet files each call under Close's "Funnel Name DEAL (Opp)".
- * Here, a call whose lead filled a form on vendingpreneurs.com is credited to
- * the channel that brought them to the site (`resolveChannel`, the rule every
- * other tab uses), taking the latest fill on or before the call day. A call
- * with no site fill keeps its Close funnel. The crosswalk shows every move, so
- * the two views reconcile call for call.
+ * Credit: `funnel` is the call's source on Dom's map, or "Lane 2" / "Social
+ * DMs" for those setters' bookings (`byBooker`). A Marketing call whose lead
+ * filled a form on vendingpreneurs.com is credited to the channel that brought
+ * them to the site (`resolveChannel`, the rule every other tab uses), taking
+ * the latest fill on or before the booked day; a Lane 2 or Social DMs call
+ * stays with who booked it. The crosswalk shows every move, so the two views
+ * reconcile call for call.
  *
  * Pure: no I/O. The loader is `funnel-board-data.ts`.
  */
@@ -27,8 +27,11 @@ export type BoardCall = {
   email: string | null;
   display_name: string | null;
   funnel: string | null;
+  /** The Pacific day the call was booked (Dom's date). */
   first_sales_call_booked_date: string;
   setter_name: string | null;
+  /** Dom's "booked by": Lane 2 and Social DMs calls are never re-credited. */
+  bookedBy?: string | null;
 };
 
 export type BoardFill = {
@@ -81,6 +84,8 @@ const GROUP_OF: Record<string, ChannelGroup> = {
   Email: "Webinar & email",
   "Reactivation Email": "Webinar & email",
   "Reactivation Scrapers": "Sales outbound",
+  "Lane 2": "Sales outbound",
+  "Social DMs": "Sales outbound",
   "Sales Reactivation": "Sales outbound",
 };
 
@@ -257,7 +262,9 @@ export function buildFunnelBoard(input: {
       fillsByLead.get(call.lead_id) ??
       (email ? fillsByEmail.get(email) : undefined) ??
       [];
-    const fill = creditingFill(call, fills);
+    const salesBooked =
+      call.bookedBy === "Lane 2" || call.bookedBy === "Social DMs";
+    const fill = salesBooked ? null : creditingFill(call, fills);
     const closeChannel = channelOfFunnel(call.funnel);
     const channel = fill ? channelOfFill(fill) : closeChannel;
     if (fill) withSiteFill += 1;

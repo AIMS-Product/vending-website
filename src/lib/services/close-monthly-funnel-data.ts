@@ -1,17 +1,17 @@
 import "server-only";
 
+import { byBooker } from "@/lib/analytics/dashboard-metrics";
+import { pacificToday } from "@/lib/admin/format-time";
 import { config } from "@/lib/config";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import {
   buildCloseMonthlyFunnel,
   MONTHLY_FUNNEL_START,
   type CloseMonthlyFunnel,
 } from "@/lib/services/close-monthly-funnel";
-import type { CloseCall } from "@/lib/services/close-week-view";
 import { getMonthlyLeads } from "@/lib/services/close-monthly-leads";
 import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import { createAdminClient } from "@/lib/supabase/admin";
-
-const PAGE_SIZE = 1000;
 
 export type CloseMonthlyReport =
   | {
@@ -27,8 +27,8 @@ export type CloseMonthlyReport =
   | { ok: false; error: string };
 
 /**
- * Every first call booked since `MONTHLY_FUNNEL_START`, with the deals won
- * off them, bucketed by month.
+ * Every call counted on Dom's rule since `MONTHLY_FUNNEL_START` (`getV2Calls`,
+ * the dashboard's read), and the deals won each month, bucketed by month.
  *
  * Reads its own window rather than slicing the week view's eight weeks: this
  * one answers a different question and should not go wrong when that one's
@@ -40,7 +40,7 @@ export type CloseMonthlyReport =
 export async function getCloseMonthlyFunnel(
   input: { now?: Date; start?: string } = {},
 ): Promise<CloseMonthlyReport> {
-  const today = (input.now ?? new Date()).toISOString().slice(0, 10);
+  const today = pacificToday(input.now ?? new Date());
   const start = input.start ?? MONTHLY_FUNNEL_START;
   const from = `${start}-01`;
   if (!config.CLOSE_API_KEY) {
@@ -48,53 +48,16 @@ export async function getCloseMonthlyFunnel(
   }
   const client = createAdminClient();
   try {
-    const calls: CloseCall[] = [];
-    let mirrorSyncedAt: string | null = null;
-    for (let offset = 0; ; offset += PAGE_SIZE) {
-      const { data, error } = await client
-        .from("close_lead_funnel")
-        .select(
-          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line",
-        )
-        .gte("first_sales_call_booked_date", from)
-        .lte("first_sales_call_booked_date", today)
-        .order("lead_id")
-        .range(offset, offset + PAGE_SIZE - 1);
-      if (error)
-        throw new Error(`close_lead_funnel read failed: ${error.message}`);
-      for (const row of data ?? []) {
-        if (!row.first_sales_call_booked_date) continue;
-        calls.push({
-          leadId: row.lead_id,
-          funnel: row.funnel,
-          status: row.status_label,
-          bookedDate: row.first_sales_call_booked_date,
-          showUp: row.first_call_show_up,
-          qualified: row.qualified,
-          businessLine: row.business_line,
-        });
-        if (!mirrorSyncedAt || row.synced_at > mirrorSyncedAt) {
-          mirrorSyncedAt = row.synced_at;
-        }
-      }
-      if ((data ?? []).length < PAGE_SIZE) break;
-    }
-
-    // Revenue is the deal value carried by the leads Close calls won, so the
-    // window has to cover every deal that could belong to a call in range.
+    const read = await getV2Calls(from, today);
+    if (!read.ok) throw new Error(read.error);
+    const calls = read.calls.map(byBooker);
+    const mirrorSyncedAt = read.syncedAt;
     const deals = await fetchCloseDeals({
       from,
       to: today,
       close: cachedCloseReads(),
       mirror: client,
     });
-    const dealValueByLead = new Map<string, number>();
-    for (const deal of deals) {
-      dealValueByLead.set(
-        deal.leadId,
-        (dealValueByLead.get(deal.leadId) ?? 0) + (deal.value ?? 0),
-      );
-    }
 
     // Close holds only people who booked, so form fills come from our own
     // table. A failure here must not take the grid down with it: the other
@@ -119,7 +82,7 @@ export async function getCloseMonthlyFunnel(
         start,
         leads: leads?.byFunnel,
         leadsFrom: leads?.from ?? null,
-        dealValueByLead,
+        deals,
       }),
       mirrorSyncedAt,
       leadsError,

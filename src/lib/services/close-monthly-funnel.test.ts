@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   buildCloseMonthlyFunnel,
   groupOf,
-  isWonCall,
   leadsKey,
   monthsFrom,
 } from "./close-monthly-funnel";
 import type { CloseCall } from "./close-week-view";
+import type { CloseDeal } from "./close-wins";
 
 const call = (over: Partial<CloseCall> = {}): CloseCall => ({
   leadId: "lead_1",
@@ -24,7 +24,23 @@ const build = (
     ? Partial<Omit<T & object, "calls" | "today" | "start">>
     : never = {},
   today = "2026-09-22",
-) => buildCloseMonthlyFunnel({ calls, today, start: "2026-01", ...extra });
+) =>
+  buildCloseMonthlyFunnel({
+    calls,
+    today,
+    start: "2026-01",
+    deals: [],
+    ...extra,
+  });
+
+const deal = (over: Partial<CloseDeal> = {}): CloseDeal => ({
+  leadId: "lead_1",
+  dateWon: "2026-02-10",
+  value: 12_000,
+  funnel: "Instagram",
+  closer: null,
+  ...over,
+});
 
 const monthOf = (funnel: ReturnType<typeof build>, key: string) =>
   funnel.months.find((month) => month.key === key)!;
@@ -50,22 +66,16 @@ describe("monthsFrom", () => {
 describe("groupOf", () => {
   it("splits the sales floor's own lane from marketing", () => {
     expect(groupOf("YouTube")).toBe("marketing");
+    expect(groupOf("Lane 2")).toBe("outbound");
+    expect(groupOf("Social DMs")).toBe("outbound");
     expect(groupOf("Reactivation Scrapers")).toBe("outbound");
-    expect(groupOf("Sales Reactivation")).toBe("outbound");
+    // A marketing source on Dom's map: a Marketing booking stays marketing.
+    expect(groupOf("Sales Reactivation")).toBe("marketing");
     // The plan counts this one as a marketing channel with its own target,
     // so it must not land in the lane the marketing subtotal excludes.
     expect(groupOf("Reactivation Email")).toBe("marketing");
     expect(groupOf("No source")).toBe("review");
     expect(groupOf("Unknown (Needs Review)")).toBe("review");
-  });
-});
-
-describe("isWonCall", () => {
-  it("reads the Close stage, emoji and spacing included", () => {
-    expect(isWonCall(call({ status: "🏆 Closed / Won" }))).toBe(true);
-    expect(isWonCall(call({ status: "Closed/Won" }))).toBe(true);
-    expect(isWonCall(call({ status: "💔 Lost" }))).toBe(false);
-    expect(isWonCall(call({ status: null }))).toBe(false);
   });
 });
 
@@ -94,49 +104,42 @@ describe("buildCloseMonthlyFunnel", () => {
     });
   });
 
-  it("counts a win in the month the call was booked, with its deal value", () => {
-    const funnel = build(
-      [
-        call({
-          leadId: "a",
-          bookedDate: "2026-02-10",
-          status: "🏆 Closed / Won",
-        }),
-      ],
-      { dealValueByLead: new Map([["a", 12_000]]) },
-    );
+  it("counts a win in the month it was won, under Dom's label for its funnel", () => {
+    const funnel = build([call({ leadId: "a", bookedDate: "2026-01-10" })], {
+      deals: [deal({ leadId: "a", dateWon: "2026-02-10", funnel: "linkedin" })],
+    });
+    expect(monthOf(funnel, "2026-01").totals).toMatchObject({
+      booked: 1,
+      won: 0,
+    });
     expect(monthOf(funnel, "2026-02").totals).toMatchObject({
       won: 1,
       revenue: 12_000,
     });
-    expect(monthOf(funnel, "2026-04").totals).toMatchObject({
-      won: 0,
-      revenue: 0,
-    });
+    expect(funnel.rows.map((row) => row.label)).toContain("Linkedin");
   });
 
-  it("counts a won lead carrying no deal value in won, not in revenue", () => {
-    const funnel = build([call({ leadId: "a", status: "🏆 Closed / Won" })]);
+  it("counts a won deal carrying no value in won, not in revenue", () => {
+    const funnel = build([], { deals: [deal({ value: null })] });
     const february = monthOf(funnel, "2026-02");
     expect(february.totals).toMatchObject({ won: 1, revenue: 0 });
     expect(february.unvalued).toBe(1);
   });
 
-  it("never counts a win for a lead the booked column excluded", () => {
-    const funnel = build(
-      [call({ leadId: "a", status: "🔻 Canceled (by Lead)" })],
-      { dealValueByLead: new Map([["a", 9_000]]) },
-    );
-    expect(funnel.grandTotal).toMatchObject({ booked: 0, won: 0, revenue: 0 });
-    expect(monthOf(funnel, "2026-02").excluded).toBe(1);
+  it("applies no lead-status rule on top of Dom's", () => {
+    const funnel = build([
+      call({ leadId: "a", status: "🔻 Canceled (by Lead)" }),
+    ]);
+    expect(funnel.grandTotal).toMatchObject({ booked: 1 });
   });
 
-  it("subtotals marketing and sales reactivation separately and together", () => {
+  it("subtotals marketing and what Lane 2 and Social DMs booked, separately and together", () => {
+    // `byBooker` files Lane 2 and Social DMs calls under who booked them.
     const funnel = build([
       call({ leadId: "a", funnel: "YouTube" }),
-      call({ leadId: "b", funnel: "Instagram" }),
-      call({ leadId: "c", funnel: "Reactivation Scrapers" }),
-      call({ leadId: "d", funnel: "Sales Reactivation" }),
+      call({ leadId: "b", funnel: "Sales Reactivation" }),
+      call({ leadId: "c", funnel: "Lane 2" }),
+      call({ leadId: "d", funnel: "Social DMs" }),
     ]);
     const february = monthOf(funnel, "2026-02");
     expect(february.byGroup.marketing.booked).toBe(2);
@@ -221,13 +224,8 @@ describe("buildCloseMonthlyFunnel", () => {
     expect(youtube.byMonth["2026-08"].leads).toBe(12);
   });
 
-  it("marks a month still too young for its closed-won column to be read", () => {
-    // Maturity runs from the month's LAST day, so August is still filling in
-    // on 22 September: its final calls are 22 days old, not 45.
+  it("marks the running month incomplete", () => {
     const funnel = build([call()]);
-    expect(monthOf(funnel, "2026-07").mature).toBe(true);
-    expect(monthOf(funnel, "2026-08").mature).toBe(false);
-    expect(monthOf(funnel, "2026-09").mature).toBe(false);
     expect(monthOf(funnel, "2026-07").complete).toBe(true);
     expect(monthOf(funnel, "2026-09").complete).toBe(false);
   });

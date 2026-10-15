@@ -137,7 +137,7 @@ describe("buildCloseWeeks", () => {
     expect(result!.unvalued).toBe(1);
   });
 
-  it("leaves out canceled-by-lead, outside-the-US and quiz-funnel calls, and counts them", () => {
+  it("applies no lead-status or funnel rule on top of Dom's", () => {
     const call = (status: string | null, funnel = "Instagram") => ({
       leadId: `lead_${status ?? "none"}_${funnel}`,
       funnel,
@@ -159,11 +159,10 @@ describe("buildCloseWeeks", () => {
       deals: [],
     });
     expect(result!.totals).toMatchObject({
-      booked: 2,
-      showed: 2,
-      qualified: 2,
+      booked: 5,
+      showed: 5,
+      qualified: 5,
     });
-    expect(result!.excluded).toBe(3);
   });
 
   it("returns an empty week rather than dropping it", () => {

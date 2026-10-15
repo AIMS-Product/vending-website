@@ -1,5 +1,7 @@
 import "server-only";
 
+import { byBooker } from "@/lib/analytics/dashboard-metrics";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   addDays,
@@ -16,8 +18,8 @@ const FILL_FIELDS =
   "id,created_at,email,utm_source,utm_medium,referrer,metadata,close_lead_id";
 
 /**
- * Two weeks of Close first calls from `weekStart` (a Monday), and every site
- * form fill those leads ever made (matched by Close lead id, then email).
+ * Two weeks of calls counted on Dom's rule from `weekStart` (a Monday), by the
+ * day booked, and every site form fill those leads ever made (matched by Close lead id, then email).
  * Throws on a read error: a board with a silently missing page is worse than
  * no board.
  */
@@ -25,24 +27,20 @@ export async function getFunnelBoard(weekStart: string): Promise<FunnelBoard> {
   const client = createAdminClient();
   const days = Array.from({ length: 14 }, (_, i) => addDays(weekStart, i));
 
-  const calls: BoardCall[] = [];
-  for (let from = 0; ; from += PAGE) {
-    const { data, error } = await client
-      .from("close_lead_funnel")
-      .select(
-        "lead_id,email,display_name,funnel,first_sales_call_booked_date,setter_name",
-      )
-      .gte("first_sales_call_booked_date", days[0]!)
-      .lte("first_sales_call_booked_date", days.at(-1)!)
-      .order("lead_id", { ascending: true })
-      .range(from, from + PAGE - 1);
-    if (error) {
-      console.error("[funnel-board] close_lead_funnel read failed", error);
-      throw new Error("Could not load Close first calls.");
-    }
-    calls.push(...(data as BoardCall[]));
-    if (data.length < PAGE) break;
+  const read = await getV2Calls(days[0]!, days.at(-1)!);
+  if (!read.ok) {
+    console.error("[funnel-board] Dom's-rule calls read failed", read.error);
+    throw new Error("Could not load booked calls.");
   }
+  const calls: BoardCall[] = read.calls.map(byBooker).map((call) => ({
+    lead_id: call.leadId,
+    email: call.email,
+    display_name: null,
+    funnel: call.funnel,
+    first_sales_call_booked_date: call.bookedDate,
+    setter_name: call.setter,
+    bookedBy: call.bookedBy ?? null,
+  }));
 
   const byId = new Map<string, BoardFill>();
   const collect = async (

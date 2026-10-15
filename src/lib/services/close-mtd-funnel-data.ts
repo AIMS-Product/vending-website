@@ -2,7 +2,9 @@ import "server-only";
 
 import { z } from "zod";
 import { formatPacificStampShort, pacificToday } from "@/lib/admin/format-time";
+import { byBooker } from "@/lib/analytics/dashboard-metrics";
 import { config } from "@/lib/config";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import {
   buildCloseMtdFunnel,
   type CloseMtdFunnel,
@@ -231,6 +233,54 @@ export async function getCloseMtdFunnel(
     };
   } catch (error) {
     console.error("Close MTD funnel read failed", error);
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "Close read failed.",
+    };
+  }
+}
+
+/**
+ * The month so far on Dom's rule for the Months page: his counted meetings
+ * (`getV2Calls`, the dashboard's read) through `byBooker`, and the month's
+ * won deals. Never throws.
+ */
+export async function getDomMtdFunnel(
+  input: { now?: Date } = {},
+): Promise<CloseMtdReport> {
+  const today = pacificToday(input.now ?? new Date());
+  const from = monthStart(today);
+  if (!config.CLOSE_API_KEY) {
+    return { ok: false, error: "CLOSE_API_KEY is not set." };
+  }
+  try {
+    const [read, deals] = await Promise.all([
+      getV2Calls(from, today),
+      fetchCloseDeals({
+        from,
+        to: today,
+        close: cachedCloseReads(),
+        mirror: createAdminClient(),
+      }),
+    ]);
+    if (!read.ok) throw new Error(read.error);
+    return {
+      ok: true,
+      funnel: buildCloseMtdFunnel({
+        calls: read.calls.map(byBooker),
+        deals,
+        from,
+        to: today,
+        rule: "dom",
+      }),
+      mirrorSyncedAt: read.syncedAt,
+      company: {
+        ok: false,
+        error: "the company MTD dashboard counts first calls.",
+      },
+    };
+  } catch (error) {
+    console.error("Dom's-rule MTD funnel read failed", error);
     return {
       ok: false,
       error: error instanceof Error ? error.message : "Close read failed.",

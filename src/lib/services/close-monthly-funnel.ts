@@ -1,32 +1,21 @@
 /**
  * The funnel by source, month over month, in the shape of the sheet the sales
- * floor already reads and none of its arithmetic.
+ * floor reads, on Dom's booked-call rule (`booked_calls.v2.2`, since
+ * 2026-10-14). The calls come from `getV2Calls` through `byBooker`:
  *
- * Every cell is counted from `close_lead_funnel`, our hourly copy of Close,
- * and all five read off one lead row so the columns describe one population:
+ *   - Booked   = Dom's counted meetings, by the Pacific day each was booked.
+ *     Lane 2 and Social DMs rows hold what those setters booked; every other
+ *     row is a Marketing booking under the lead's source on Dom's map.
+ *   - Show %   = "First Call Show Up (Opp)" = Yes, read onto a call only when
+ *     it is the lead's first call (never `call_disposition`, which mostly
+ *     describes a later follow-up). A repeat credit reads unlogged.
+ *   - Qual %   = "Qualified (Opp)" = Yes, same reading.
+ *   - CW %     = deals won that month (by date won) over booked that month: a
+ *     period ratio. A lead can hold more than one counted call, so a win read
+ *     off the lead's row would count once per call.
+ *   - Revenue  = those won deals' value.
  *
- *   - Booked   = the lead's FIRST sales call, by "First Sales Call Booked
- *     Date", one row per lead. The sheet counts meeting activities instead,
- *     so a lead who rescheduled twice appears in it three times and its
- *     totals run about 1.7x these across every source. `close_lead_funnel`
- *     carries no meeting-owner field, so that population cannot be
- *     reproduced here; the difference is stated on screen, not reconciled.
- *   - Show %   = "First Call Show Up (Opp)" = Yes, the outcome field for THAT
- *     meeting. Deliberately not `call_disposition`: only 3,802 of 6,663
- *     dispositions name the first call at all, the rest describe a later
- *     follow-up or reschedule, so it disagrees with the first-call flag on
- *     970 calls and would mix two populations in one column.
- *   - Qual %   = "Qualified (Opp)" = Yes, the rep's judgement after the call.
- *   - CW %     = the lead's own stage being "Closed / Won".
- *   - Revenue  = the Close deal value carried by those same won leads.
- *
- * Show %, Qual % and CW % are all over booked, never over each other. Calls
- * get logged qualified with no logged show often enough that nesting them
- * would print rates above 100% for some sources.
- *
- * Because the win is read off the lead row, it lands in the month that lead's
- * call was BOOKED, not the month the deal closed. The newest months therefore
- * understate, so each month carries whether it is mature enough to read.
+ * Show %, Qual % and CW % are all over booked, never over each other.
  *
  * Leads is the one column that does not come from Close. Close only holds
  * people who booked, so form fills come from our own `lead_submissions` and
@@ -41,7 +30,7 @@ import {
   type CloseCall,
   type CloseWeekRow,
 } from "@/lib/services/close-week-view";
-import { GOAL_CHANNELS } from "@/lib/services/channel-targets";
+import type { CloseDeal } from "@/lib/services/close-wins";
 
 /**
  * Close's show-up and qualification logging only became consistent in January
@@ -49,13 +38,6 @@ import { GOAL_CHANNELS } from "@/lib/services/channel-targets";
  * which reads as a collapse in performance rather than a gap in the records.
  */
 export const MONTHLY_FUNNEL_START = "2026-01";
-
-/**
- * Days after a first call before its month is treated as closed out. Deals are
- * signed weeks after the call, so a month younger than this reports a
- * closed-won rate that is still climbing.
- */
-export const MATURE_AFTER_DAYS = 45;
 
 /** Where a source sits on the page. Derived from the label, not a fixed list. */
 export type FunnelGroup = "marketing" | "outbound" | "review";
@@ -87,17 +69,14 @@ export const FUNNEL_GROUPS: ReadonlyArray<{
 ];
 
 /**
- * The funnels the sales floor books off its own list.
- *
- * Read from the plan's own Lane 2 rather than retyped, so the split here and
- * the split the goals page measures against target can never disagree.
- * "Reactivation Email" is deliberately NOT in here: the plan counts it as
- * Marketing Reactivation, a marketing channel with its own target.
+ * Rows the sales floor booked: Dom's Lane 2 and Social DMs buckets (`byBooker`
+ * files their calls under these labels), and the scraper funnel a won deal
+ * can still carry. "Sales Reactivation" is a marketing source on Dom's map.
  */
 const OUTBOUND_FUNNELS = new Set(
-  (
-    GOAL_CHANNELS.find((channel) => channel.key === "lane-2")?.funnels ?? []
-  ).map((name) => name.toLowerCase()),
+  ["Lane 2", "Social DMs", "Reactivation Scrapers"].map((name) =>
+    name.toLowerCase(),
+  ),
 );
 
 const REVIEW_LABELS = new Set(
@@ -111,11 +90,6 @@ export function groupOf(label: string): FunnelGroup {
   if (REVIEW_LABELS.has(bare)) return "review";
   if (OUTBOUND_FUNNELS.has(bare)) return "outbound";
   return "marketing";
-}
-
-/** A lead's stage in Close being the won one. */
-export function isWonCall(call: CloseCall): boolean {
-  return /closed\s*\/\s*won/i.test(call.status ?? "");
 }
 
 export type MonthlyCell = Omit<CloseWeekRow, "label"> & {
@@ -143,17 +117,10 @@ export type MonthlyMonth = {
   label: string;
   /** False while the month is still running. */
   complete: boolean;
-  /**
-   * False while this month's calls are younger than `MATURE_AFTER_DAYS`, so
-   * its closed-won column is still filling in.
-   */
-  mature: boolean;
   totals: MonthlyCell;
   /** Per-group subtotals, so marketing never has to be worked out by hand. */
   byGroup: Record<FunnelGroup, MonthlyCell>;
-  /** First calls the SteelTrap rule drops, so the gap is not hidden. */
-  excluded: number;
-  /** Leads Close calls won that carry no deal value: in won, absent from revenue. */
+  /** Won deals that carry no value in Close: in won, absent from revenue. */
   unvalued: number;
 };
 
@@ -267,25 +234,18 @@ export function buildCloseMonthlyFunnel(input: {
   leads?: LeadsByFunnel;
   /** First day form fills exist for; months before it show a dash. */
   leadsFrom?: string | null;
-  /** Won deal value per lead id, for the revenue carried by a won lead. */
-  dealValueByLead?: ReadonlyMap<string, number>;
+  /** Close deals won since the first month, credited by date won. */
+  deals: readonly CloseDeal[];
 }): CloseMonthlyFunnel {
   const monthKeys = monthsFrom(
     input.start ?? MONTHLY_FUNNEL_START,
     input.today,
   );
-  const values = input.dealValueByLead;
   const { periods } = buildClosePeriods({
     calls: input.calls,
-    deals: [],
+    deals: input.deals,
     periods: monthKeys,
     periodOf: monthOf,
-    // The win is the lead's own stage, so it lands in the month that lead's
-    // call was booked — the same cohort booked, showed and qualified describe.
-    outcomeOf: (call) =>
-      isWonCall(call)
-        ? { won: 1, revenue: values?.get(call.leadId) ?? 0 }
-        : { won: 0, revenue: 0 },
   });
 
   const leadsFrom = input.leadsFrom ?? null;
@@ -352,10 +312,8 @@ export function buildCloseMonthlyFunnel(input: {
       a.label.localeCompare(b.label),
   );
 
-  const todayMs = Date.parse(`${input.today}T00:00:00Z`);
   const months: MonthlyMonth[] = periods.map((period) => {
     const end = monthEnd(period.key, input.today);
-    const endMs = Date.parse(`${end}T00:00:00Z`);
     const byGroup = emptyByGroup();
     let totals = EMPTY;
     for (const row of rows) {
@@ -368,10 +326,8 @@ export function buildCloseMonthlyFunnel(input: {
       key: period.key,
       label: monthLabel(period.key, input.today),
       complete: end < input.today,
-      mature: (todayMs - endMs) / MONTH_MS >= MATURE_AFTER_DAYS,
       totals,
       byGroup,
-      excluded: period.excluded,
       unvalued: period.unvalued,
     };
   });

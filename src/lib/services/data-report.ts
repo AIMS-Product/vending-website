@@ -46,13 +46,11 @@ export type DataReportInput = {
   /** e.g. "Friday 19 September" or "Sep 12 to Sep 18". */
   windowLabel: string;
   channels: readonly ReportChannelRow[];
-  /** The same window on the Close side: every first call, including people who never touched the site, after the SteelTrap rule. */
+  /** The same window on the Close side: booked calls on Dom's rule, including people who never touched the site. */
   close: {
     label: string;
     rows: readonly ReportCloseRow[];
     complete: boolean;
-    /** First calls the SteelTrap rule left out, printed rather than absorbed. */
-    excluded?: number;
   } | null;
   /** Webinar, email, chatbot, reach: sources with no place in the channel table. */
   sources?: readonly ReportSourceBlock[];
@@ -122,11 +120,11 @@ export function buildDataReport(input: DataReportInput): DataReport {
   if (input.close) {
     sections.push({
       kind: "heading",
-      text: `First calls in Close, ${input.close.label}${input.close.complete ? "" : " (still filling)"}`,
+      text: `Booked calls on Dom's rule, ${input.close.label}${input.close.complete ? "" : " (still filling)"}`,
     });
     sections.push({
       kind: "paragraph",
-      text: `Every first call on the closers' calendar, including people who never touched the site, except leads now Canceled (by Lead) or Outside the US and the LTF quiz funnel (the SteelTrap rule${input.close.excluded ? `, ${num(input.close.excluded)} left out` : ""}).`,
+      text: "Every Close meeting that counts on Dom's rule (booked_calls.v2.2), by the day it was booked, including people who never touched the site. Lane 2 and Social DMs rows are what those setters booked; every other row is the lead's source.",
       tone: "muted",
     });
     sections.push(closeTable(input.close.rows));

@@ -6,20 +6,14 @@ import {
 import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { UnverifiedMark } from "@/components/admin/TrustMarks";
 import { flagFor, type UnverifiedFlag } from "@/lib/analytics/data-trust-bar";
-import {
-  SCRAPER_FUNNEL,
-  mtdMismatches,
-  type CloseMtdFunnel,
-} from "@/lib/services/close-mtd-funnel";
 import type { CloseMtdReport } from "@/lib/services/close-mtd-funnel-data";
 import { formatUsd as money } from "@/lib/admin/format-number";
-import { formatPacificStampShort } from "@/lib/admin/format-time";
 
 /**
- * The month so far, in the shape of the company MTD funnel and none of its
- * arithmetic. Every stage prints the population it counted and the Close
- * field it read, so a number here can be argued with on its own terms rather
- * than checked against somebody's sheet.
+ * The month so far on Dom's booked-call rule, in the shape of the company MTD
+ * funnel. Every stage prints the population it counted and the Close field it
+ * read. The company MTD dashboard counts first calls on its Lane 1 roster, a
+ * different rule; the nightly audit still compares our copy of Close with it.
  */
 
 const TH = "px-3 py-2.5 text-right font-semibold whitespace-nowrap";
@@ -67,10 +61,10 @@ export function CloseMtdFunnelPanel({
             {monthLabel(funnel.from, funnel.to)}, from our copy of Close
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            The month so far: how many first calls were booked, and how many of
-            those people showed, qualified and bought. Every number is counted
-            from our own hourly copy of Close, and each one says who it counted.
-            Nothing here is taken from another dashboard.
+            The month so far on Dom&apos;s rule: how many calls were booked, how
+            many of those showed and qualified, and what was won. Every number
+            is counted from our own hourly copy of Close, and each one says who
+            it counted. Nothing here is taken from another dashboard.
           </p>
         </div>
 
@@ -122,23 +116,8 @@ export function CloseMtdFunnelPanel({
               people not in Showed. That is why both rates are out of booked.
             </p>
           ) : null}
-          {funnel.excluded > 0 ? (
-            <p>
-              {funnel.excluded} first{" "}
-              {funnel.excluded === 1 ? "call is" : "calls are"} left out because
-              the lead is now Canceled (by Lead) or Outside the US, or in the
-              LTF Quiz Funnel, or belongs to another company brand (The Land
-              Geek, Publishing Profits Academy).
-            </p>
-          ) : null}
         </div>
       </section>
-
-      <CompanyMtdView
-        funnel={funnel}
-        company={report.company}
-        mirrorSyncedAt={report.mirrorSyncedAt}
-      />
 
       <section
         className={adminPanelClass}
@@ -146,13 +125,12 @@ export function CloseMtdFunnelPanel({
       >
         <div className="px-4 pt-4">
           <h2 className={adminSectionTitleClass}>
-            Marketing, and the sales floor&apos;s own rebooking
+            Marketing, and what Lane 2 and Social DMs booked
           </h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
-            {SCRAPER_FUNNEL} is the sales floor calling and rebooking its own
-            list. It is split out so ad spend is never divided by calls the ads
-            did not buy. The marketing line is what Kody&apos;s scorecard row
-            &ldquo;Marketing Meetings Booked&rdquo; counts.
+            On Dom&apos;s rule a call belongs to whoever booked it: Lane 2 and
+            Social DMs setters, or Marketing. It is split out so ad spend is
+            never divided by calls the ads did not buy.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -178,8 +156,8 @@ export function CloseMtdFunnelPanel({
             </thead>
             <tbody>
               {[
-                { label: "Marketing (everything else)", ...funnel.marketing },
-                { label: SCRAPER_FUNNEL, ...funnel.scrapers },
+                { label: "Marketing", ...funnel.marketing },
+                { label: "Lane 2 and Social DMs", ...funnel.scrapers },
               ].map((row) => (
                 <tr key={row.label} className="border-ui-line/60 border-t">
                   <th scope="row" className={TD_LEFT}>
@@ -195,7 +173,7 @@ export function CloseMtdFunnelPanel({
               ))}
               <tr className="border-ui-line border-t font-semibold">
                 <th scope="row" className={TD_LEFT}>
-                  Every first call
+                  Every booked call
                 </th>
                 <td className={TD}>
                   {funnel.marketing.booked + funnel.scrapers.booked}
@@ -220,7 +198,7 @@ export function CloseMtdFunnelPanel({
 
       <section className={adminPanelClass} aria-label="Month to date by funnel">
         <div className="px-4 pt-4">
-          <h2 className={adminSectionTitleClass}>By Close funnel</h2>
+          <h2 className={adminSectionTitleClass}>By source</h2>
           <p className="text-ui-text-subtle mt-1 text-xs">
             Show rate is showed out of booked. Showed and Qualified count only
             calls a rep logged as Yes, so they are a minimum.
@@ -321,97 +299,5 @@ export function CloseMtdFunnelPanel({
         </div>
       </section>
     </div>
-  );
-}
-
-const COMPANY_STAGES = [
-  { key: "booked", label: "Booked" },
-  { key: "showed", label: "Showed" },
-  { key: "qualified", label: "Qualified" },
-  { key: "won", label: "Closed-won" },
-  { key: "revenue", label: "Revenue" },
-] as const;
-
-/**
- * The same month cut to the company MTD dashboard's population, beside a
- * verdict on whether it equals that dashboard. This is the line that lets
- * anyone check our numbers against the one the sales floor reads.
- */
-function CompanyMtdView({
-  funnel,
-  company,
-  mirrorSyncedAt,
-}: {
-  funnel: CloseMtdFunnel;
-  company: Extract<CloseMtdReport, { ok: true }>["company"];
-  mirrorSyncedAt: string | null;
-}) {
-  const asOf = formatPacificStampShort(mirrorSyncedAt);
-  const view = funnel.companyView;
-  const mismatches = company.ok ? mtdMismatches(view, company.totals) : [];
-  const ourBooked = funnel.stages[0]?.count ?? 0;
-  const extra = ourBooked - view.booked;
-  const show = (key: (typeof COMPANY_STAGES)[number]["key"], value: number) =>
-    key === "revenue" ? money(value) : value.toLocaleString("en-US");
-
-  return (
-    <section
-      className={adminPanelClass}
-      aria-label="Company MTD dashboard view"
-    >
-      <div className="flex flex-wrap items-start justify-between gap-3 px-4 pt-4">
-        <div>
-          <h2 className={adminSectionTitleClass}>Company MTD dashboard view</h2>
-          <p className="text-ui-text-subtle mt-1 max-w-2xl text-xs">
-            The same month, limited to the leads the company MTD dashboard
-            counts: leads owned by the Lane 1 sales roster, other brands left
-            out, and the closers it leaves out of closed-won.
-            {asOf
-              ? ` Our copy of Close as of ${asOf}; the MTD dashboard rebuilds on its own schedule, so a call logged in between can differ by one, and when it is more than two hours behind our copy the two are not compared.`
-              : null}
-          </p>
-        </div>
-        {!company.ok ? (
-          <span className="bg-ui-warn-fill text-ui-warn-ink rounded-full px-2.5 py-1 text-xs font-semibold">
-            Not compared: {company.error}
-          </span>
-        ) : mismatches.length === 0 ? (
-          <span className="bg-ui-ok-fill text-ui-ok-ink rounded-full px-2.5 py-1 text-xs font-semibold">
-            Matches the MTD dashboard
-          </span>
-        ) : (
-          <span className="bg-ui-bad-fill text-ui-bad-ink rounded-full px-2.5 py-1 text-xs font-semibold">
-            Differs from the MTD dashboard
-          </span>
-        )}
-      </div>
-      <dl className="divide-ui-line border-ui-line mt-3 grid grid-cols-2 divide-y border-t sm:grid-cols-5 sm:divide-x sm:divide-y-0">
-        {COMPANY_STAGES.map(({ key, label }) => {
-          const off = mismatches.find((m) => m.key === key);
-          return (
-            <div key={key} className="px-4 py-3">
-              <dt className={adminEyebrowClass}>{label}</dt>
-              <dd className="text-ui-text mt-1.5 text-lg leading-none font-semibold tabular-nums">
-                {show(key, view[key])}
-              </dd>
-              {off ? (
-                <dd className="text-ui-bad-ink mt-1 text-xs">
-                  MTD dashboard: {show(key, off.theirs)}
-                </dd>
-              ) : null}
-            </div>
-          );
-        })}
-      </dl>
-      {company.ok && extra > 0 ? (
-        <p className="text-ui-text-subtle border-ui-line border-t px-4 py-3 text-xs">
-          Our Booked above is {extra.toLocaleString("en-US")} higher because it
-          also counts leads owned by Lane 2 and anyone off that roster.
-          {company.ok && mismatches.length === 0
-            ? " Nothing else differs."
-            : null}
-        </p>
-      ) : null}
-    </section>
   );
 }

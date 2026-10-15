@@ -1,32 +1,33 @@
 import "server-only";
 
+import { byBooker } from "@/lib/analytics/dashboard-metrics";
+import { pacificToday } from "@/lib/admin/format-time";
 import { config } from "@/lib/config";
+import { getV2Calls } from "@/lib/services/booked-calls-v2-data";
 import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
 import {
   buildCloseWeeks,
   recentWeeks,
   weekEndOf,
-  type CloseCall,
   type CloseWeek,
 } from "@/lib/services/close-week-view";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WEEKS = 8;
-const PAGE_SIZE = 1000;
 
 export type CloseWeekReport =
   | { ok: true; weeks: CloseWeek[]; mirrorSyncedAt: string | null }
   | { ok: false; error: string };
 
 /**
- * The last eight Friday-to-Thursday weeks from Close. First calls come from
- * the hourly `close_lead_funnel` mirror; won deals from Close directly. Never
- * throws: a failed read says so instead of printing zeros.
+ * The last eight Friday-to-Thursday weeks from Close on Dom's rule: his
+ * counted meetings (`getV2Calls`, the dashboard's read); won deals from Close
+ * directly. Never throws: a failed read says so instead of printing zeros.
  */
 export async function getCloseWeekView(
   input: { now?: Date } = {},
 ): Promise<CloseWeekReport> {
-  const today = (input.now ?? new Date()).toISOString().slice(0, 10);
+  const today = pacificToday(input.now ?? new Date());
   const weeks = recentWeeks(today, WEEKS);
   const from = weeks.at(-1)!;
   const to = weekEndOf(weeks[0]!);
@@ -35,37 +36,10 @@ export async function getCloseWeekView(
   }
   const client = createAdminClient();
   try {
-    const calls: CloseCall[] = [];
-    let mirrorSyncedAt: string | null = null;
-    for (let offset = 0; ; offset += PAGE_SIZE) {
-      const { data, error } = await client
-        .from("close_lead_funnel")
-        .select(
-          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line",
-        )
-        .gte("first_sales_call_booked_date", from)
-        .lte("first_sales_call_booked_date", to)
-        .order("lead_id")
-        .range(offset, offset + PAGE_SIZE - 1);
-      if (error)
-        throw new Error(`close_lead_funnel read failed: ${error.message}`);
-      for (const row of data ?? []) {
-        if (!row.first_sales_call_booked_date) continue;
-        calls.push({
-          leadId: row.lead_id,
-          funnel: row.funnel,
-          status: row.status_label,
-          bookedDate: row.first_sales_call_booked_date,
-          showUp: row.first_call_show_up,
-          qualified: row.qualified,
-          businessLine: row.business_line,
-        });
-        if (!mirrorSyncedAt || row.synced_at > mirrorSyncedAt) {
-          mirrorSyncedAt = row.synced_at;
-        }
-      }
-      if ((data ?? []).length < PAGE_SIZE) break;
-    }
+    const read = await getV2Calls(from, to);
+    if (!read.ok) throw new Error(read.error);
+    const calls = read.calls.map(byBooker);
+    const mirrorSyncedAt = read.syncedAt;
     const deals = await fetchCloseDeals({
       from,
       to,

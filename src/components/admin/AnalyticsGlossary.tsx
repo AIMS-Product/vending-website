@@ -1,5 +1,4 @@
 import { LEAD_DEFINITION } from "@/lib/analytics/lead-definition";
-import { MATURE_AFTER_DAYS } from "@/lib/services/close-monthly-funnel";
 import { DEFINITIONS_ID } from "@/lib/analytics/data-trust-bar";
 import { SMALL_SAMPLE } from "@/lib/analytics/channel-value";
 
@@ -97,12 +96,12 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Booked call",
     meaning:
-      "On the main dashboard (since Oct 14, 2026): Dom's rule, below (Booked calls V2). Elsewhere, until each page moves: a person who booked a first sales call, counted once by the day the call is scheduled for. The two differ: Oct 1-13 the older count had 120 marketing calls, Dom's 95, mostly calls booked in September for October and calls Lane 2 booked on marketing leads.",
+      "Dom's rule, below (Booked calls V2), on the main dashboard, Marketing MTD, Month over month and the Funnel board. Elsewhere, until each page moves: a person who booked a first sales call, counted once by the day the call is scheduled for. The two differ: Oct 1-13 the older count had 120 marketing calls, Dom's 95, mostly calls booked in September for October and calls Lane 2 booked on marketing leads.",
   },
   {
     term: "Booked calls V2",
     meaning:
-      "Dom's shared booked-call rule: the main dashboard's booked calls since Oct 14, 2026, and its own panel on the Months page. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
+      "Dom's shared booked-call rule: the main dashboard's booked calls since Oct 14, 2026, and every panel on the Months page, Marketing MTD and the Funnel board. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
   },
   {
     term: "Marketing only",
@@ -127,7 +126,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Closed-won (CW) and revenue",
     meaning:
-      "The person's Close opportunity is marked won, and revenue is that deal's value in Close. On Month over month a sale counts in the month the call was booked. On Close view and Channels it counts in the month the deal was won, which is a different group of people from that month's booked calls, not a subset of them.",
+      "The person's Close opportunity is marked won, and revenue is that deal's value in Close. On Month over month, Close view, Marketing MTD and Channels it counts in the month the deal was won, which is a different group of people from that month's booked calls, not a subset of them.",
   },
   {
     term: "First engaged",
@@ -148,10 +147,6 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
     term: "Lead % (Opt-in %, Visit→lead) and Book %",
     meaning:
       "Lead % is leads out of site visits. Executive and Funnels by month call it Opt-in %, and YouTube calls it Visit→lead: the same rate under three names. On Channels, Book % is calls booked out of leads plus registrations & contacts. On Executive and Funnels by month, it is out of site leads only.",
-  },
-  {
-    term: "Still filling in",
-    meaning: `Sales keep arriving for about ${MATURE_AFTER_DAYS} days after a month ends, so the newest months read low until then.`,
   },
   {
     term: "— (a dash)",

@@ -118,3 +118,17 @@ describe("helpers", () => {
     expect(mondayOf("2026-10-11")).toBe("2026-10-05");
   });
 });
+
+describe("buildFunnelBoard on Dom's rule", () => {
+  it("keeps a Lane 2 booking with who booked it, even when the lead filled a site form", () => {
+    const board = buildFunnelBoard({
+      days,
+      calls: [call({ lead_id: "l2", funnel: "Lane 2", bookedBy: "Lane 2" })],
+      fills: [fill({ close_lead_id: "l2", utm_source: "youtube" })],
+    });
+    expect(board.moved).toBe(0);
+    expect(board.groups.map((g) => [g.group, g.total])).toEqual([
+      ["Sales outbound", 1],
+    ]);
+  });
+});

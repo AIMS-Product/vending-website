@@ -25,7 +25,10 @@ import {
   getCloseMonthlyFunnel,
   type CloseMonthlyReport,
 } from "@/lib/services/close-monthly-funnel-data";
-import { monthOverMonthChecks } from "@/lib/services/data-audit-mom-checks";
+import {
+  monthOverMonthChecks,
+  type MomCloseClient,
+} from "@/lib/services/data-audit-mom-checks";
 import { companyMtdChecks } from "@/lib/services/data-audit-company-mtd";
 import {
   getCloseMtdFunnel,
@@ -104,7 +107,7 @@ export type CloseSearchClient = {
     lt: string,
     skip?: number,
   ): Promise<{ data?: unknown[]; has_more?: boolean }>;
-};
+} & MomCloseClient;
 
 export type DataAuditRun = {
   runAt: string;

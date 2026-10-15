@@ -17,6 +17,7 @@ import {
   sparkPoints,
   windowPlanTarget,
   v2DashboardCalls,
+  byBooker,
 } from "./dashboard-metrics";
 
 const call = (over: Partial<CloseCall> & { leadId: string }): CloseCall => ({
@@ -317,5 +318,16 @@ describe("v2DashboardCalls", () => {
       bookedBy: "Lane 2",
       email: null,
     });
+  });
+});
+
+describe("byBooker", () => {
+  it("files Lane 2 and Social DMs bookings under who booked them, Marketing under its source", () => {
+    const base = call({ leadId: "a", funnel: "YouTube" });
+    expect(byBooker({ ...base, bookedBy: "Lane 2" }).funnel).toBe("Lane 2");
+    expect(byBooker({ ...base, bookedBy: "Social DMs" }).funnel).toBe(
+      "Social DMs",
+    );
+    expect(byBooker({ ...base, bookedBy: "Marketing" }).funnel).toBe("YouTube");
   });
 });
