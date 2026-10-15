@@ -429,8 +429,9 @@ export function CloseMonthlyPanel({
           {months.some((month) => month.excluded > 0) ? (
             <>
               {" "}
-              First calls left out of Booked (canceled by the lead, outside the
-              US, or the quiz funnel):{" "}
+              First calls left out of Booked by Jess&apos;s Marketing MTD rule
+              (owner off the Lane 1 roster, canceled by the lead, outside the US
+              or another brand):{" "}
               {months
                 .filter((month) => month.excluded > 0)
                 .map((month) => `${month.label} ${month.excluded}`)

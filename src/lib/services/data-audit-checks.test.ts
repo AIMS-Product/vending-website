@@ -790,6 +790,7 @@ describe("close-meetings", () => {
       monthly: async () => ({ ok: false, error: "not under test" }) as never,
       mtd: async () => ({ ok: false, error: "not under test" }) as never,
       close: {
+        listUsers: async () => ({ data: [], has_more: false }),
         listCustomFields: async () => ({ data: [] }),
         searchLeads: async () => ({}),
         // Close has no count for meetings: two pages, 105 meetings.

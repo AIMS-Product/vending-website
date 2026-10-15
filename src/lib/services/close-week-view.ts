@@ -26,7 +26,7 @@ import type { CloseDeal } from "@/lib/services/close-wins";
 export const NO_SOURCE_LABEL = "No source";
 
 export const CLOSE_VIEW_SOURCE =
-  'Close: first calls by "First Sales Call Booked Date", leaving out leads now "Canceled (by Lead)" or "Outside the US" the "LTF - Quiz Funnel" funnel (the SteelTrap rule), and other company brands (The Land Geek, Publishing Profits Academy) as the MTD dashboard does; showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
+  'Close: first calls by "First Sales Call Booked Date" on Jess\'s Marketing MTD rule, as every booked-call surface counts them: the lead\'s "Lead Owner" is on the Lane 1 roster and it is not "Canceled (by Lead)", "Outside the US" or another company brand (The Land Geek, Publishing Profits Academy); "Reactivation Scrapers" leads count with any owner. The LTF Quiz Funnel counts. Showed = "First Call Show Up (Opp)" Yes; qualified = "Qualified (Opp)" Yes; won and revenue by the day the deal was won. Rows are "Funnel Name DEAL (Opp)".';
 
 /** Close lead statuses SteelTrap leaves out of booked, matched without emoji. */
 const EXCLUDED_STATUSES = new Set(["canceled (by lead)", "outside the us"]);
@@ -174,6 +174,8 @@ export function buildClosePeriods(input: {
   periodOf: (day: string) => string;
   /** The win carried on the lead's own row, for a cohort reading. */
   outcomeOf?: (call: CloseCall) => { won: number; revenue: number };
+  /** Which calls count; the rest are tallied as excluded. Default: not canceled / outside US / other brand. */
+  keep?: (call: CloseCall) => boolean;
 }): ClosePeriodsReport {
   const wanted = new Set(input.periods);
   const byPeriod = new Map<string, Map<string, CloseWeekRow>>();
@@ -202,7 +204,7 @@ export function buildClosePeriods(input: {
 
   for (const call of input.calls) {
     const period = input.periodOf(call.bookedDate);
-    if (isExcludedCall(call)) {
+    if (!(input.keep ?? ((c) => !isExcludedCall(c)))(call)) {
       if (wanted.has(period))
         excluded.set(period, (excluded.get(period) ?? 0) + 1);
       continue;
@@ -268,12 +270,14 @@ export function buildCloseWeeks(input: {
   deals: readonly CloseDeal[];
   weeks: readonly string[];
   today: string;
+  keep?: (call: CloseCall) => boolean;
 }): CloseWeek[] {
   const { periods } = buildClosePeriods({
     calls: input.calls,
     deals: input.deals,
     periods: input.weeks,
     periodOf: weekStartOf,
+    keep: input.keep,
   });
   return periods.map((period) => {
     const end = weekEndOf(period.key);

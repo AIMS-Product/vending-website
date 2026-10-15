@@ -6,6 +6,7 @@ import {
   recentWeeks,
   weekStartOf,
 } from "./close-week-view";
+import { keptByMtdRule } from "./close-mtd-funnel";
 
 describe("weekStartOf", () => {
   it("runs Friday to Thursday", () => {
@@ -210,5 +211,37 @@ describe("isExcludedCall", () => {
       true,
     );
     expect(isExcludedCall({ ...call, funnel: "LTF - Quiz Funnel" })).toBe(true);
+  });
+});
+
+describe("buildCloseWeeks with Jess's rule (#187)", () => {
+  it("counts only the calls `keep` keeps and tallies the rest as excluded", () => {
+    const base = {
+      status: null,
+      bookedDate: "2026-10-09",
+      showUp: null,
+      qualified: null,
+    };
+    const [week] = buildCloseWeeks({
+      calls: [
+        { ...base, leadId: "a", funnel: "YouTube", leadOwner: "Joe Dysert" },
+        { ...base, leadId: "b", funnel: "YouTube", leadOwner: "Someone Else" },
+        {
+          ...base,
+          leadId: "c",
+          funnel: "Reactivation Scrapers",
+          leadOwner: "Someone Else",
+        },
+      ],
+      deals: [],
+      weeks: ["2026-10-09"],
+      today: "2026-10-20",
+      keep: keptByMtdRule,
+    });
+    expect(week!.totals.booked).toBe(2);
+    expect(week!.excluded).toBe(1);
+    expect(week!.rows.map((r) => r.label).sort()).toEqual(
+      ["Reactivation Scrapers", "YouTube"].sort(),
+    );
   });
 });

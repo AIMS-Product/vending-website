@@ -114,9 +114,10 @@ export function CloseWeekTab({
             What each week put on the closers&apos; calendar, and what came of
             it. Weeks run Friday to Thursday, the same weeks as the SteelTrap
             report, and a first call counts in the week it is scheduled for.
-            This includes reactivation and webinar people who never filled a
-            form on our site, so it is larger than the site numbers on other
-            tabs. The test and internal-lead filter does not apply here.
+            Booked is counted as Marketing MTD and the dashboard count it. This
+            includes reactivation and webinar people who never filled a form on
+            our site, so it is larger than the site numbers on other tabs. The
+            test and internal-lead filter does not apply here.
           </p>
         </div>
         <div className="mt-3 overflow-x-auto">
@@ -184,10 +185,11 @@ export function CloseWeekTab({
           {week.excluded > 0 ? (
             <p>
               {week.excluded} first{" "}
-              {week.excluded === 1 ? "call is" : "calls are"} left out because
-              the lead is now Canceled (by Lead) or Outside the US, or in the
-              LTF Quiz Funnel, or belongs to another company brand (The Land
-              Geek, Publishing Profits Academy).
+              {week.excluded === 1 ? "call is" : "calls are"} left out by
+              Jess&apos;s Marketing MTD rule: the lead&apos;s owner is off the
+              Lane 1 roster (Reactivation Scrapers leads count with any owner),
+              or it is now Canceled (by Lead), Outside the US or another company
+              brand (The Land Geek, Publishing Profits Academy).
             </p>
           ) : null}
           {week.unvalued > 0 ? (

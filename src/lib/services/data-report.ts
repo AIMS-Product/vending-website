@@ -126,7 +126,7 @@ export function buildDataReport(input: DataReportInput): DataReport {
     });
     sections.push({
       kind: "paragraph",
-      text: `Every first call on the closers' calendar, including people who never touched the site, except leads now Canceled (by Lead) or Outside the US and the LTF quiz funnel (the SteelTrap rule${input.close.excluded ? `, ${num(input.close.excluded)} left out` : ""}).`,
+      text: `Every first call on the closers' calendar, including people who never touched the site, on Jess's Marketing MTD rule (a Lane 1 owner, not Canceled (by Lead), Outside the US or another brand; Reactivation Scrapers leads by any owner)${input.close.excluded ? ` (${num(input.close.excluded)} left out)` : ""}.`,
       tone: "muted",
     });
     sections.push(closeTable(input.close.rows));

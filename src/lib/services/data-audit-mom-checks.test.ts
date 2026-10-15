@@ -10,6 +10,7 @@ const now = new Date("2026-09-22T12:30:00.000Z");
 const fieldDefinitions = [
   { id: "cf_booked", name: "First Sales Call Booked Date" },
   { id: "cf_funnel", name: "Funnel Name DEAL (Opp)" },
+  { id: "cf_owner", name: "Lead Owner" },
 ];
 
 const closeLead = (
@@ -17,10 +18,13 @@ const closeLead = (
   status: string,
   funnel: string,
   wonCents: number[] = [],
+  owner = "user_joe",
 ) => ({
   id,
   status_label: status,
   "custom.cf_funnel": funnel,
+  // A Lane 1 owner, so Jess's rule (#187) keeps the lead.
+  "custom.cf_owner": owner,
   opportunities: [
     ...wonCents.map((value) => ({ status_type: "won", value })),
     { status_type: "lost", value: 999_900 },
@@ -30,6 +34,10 @@ const closeLead = (
 function fakeClose(leads: unknown[]) {
   return {
     listCustomFields: async () => ({ data: fieldDefinitions }),
+    listUsers: async () => ({
+      data: [{ id: "user_joe", first_name: "Joe", last_name: "Dysert" }],
+      has_more: false,
+    }),
     // Two pages, so the cursor loop is exercised.
     searchLeads: async (body: Record<string, unknown>) =>
       body.cursor
@@ -114,8 +122,9 @@ describe("month-over-month checks", () => {
     closeLead("l1", "🏆 Closed / Won", "YouTube", [599_700]),
     closeLead("l2", "🏆 Closed / Won", "YouTube", [300_000]),
     closeLead("l3", "💔 Lost", "YouTube"),
-    // Won, but the tab leaves the quiz funnel out; so must the check.
-    closeLead("l4", "🏆 Closed / Won", "LTF - Quiz Funnel", [100_000]),
+    // Won, but its owner is off the Lane 1 roster: the tab leaves it out
+    // under Jess's rule (#187), so must the check.
+    closeLead("l4", "🏆 Closed / Won", "YouTube", [100_000], "user_off"),
   ];
 
   it("passes when the tab's won, revenue and leads match their sources", async () => {

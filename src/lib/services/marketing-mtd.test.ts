@@ -4,6 +4,7 @@ import {
   buildGoalPlan,
   buildMarketingMtd,
   countChange,
+  keptWinByMtdRule,
   median,
   priorRange,
   rateChange,
@@ -301,5 +302,24 @@ describe("buildGoalPlan", () => {
       needed: 50,
     });
     expect(plan.segments).toEqual([]);
+  });
+});
+
+describe("keptWinByMtdRule", () => {
+  it("keeps marketing wins as the view counts them and scraper wins by any closer", () => {
+    expect(keptWinByMtdRule(deal({}))).toBe(true);
+    expect(
+      keptWinByMtdRule(
+        deal({ closerId: "user_5cZRqXu8kb4O1IeBVA98UMcMEhYZUhx1fnCHfSL0YMV" }),
+      ),
+    ).toBe(false);
+    expect(
+      keptWinByMtdRule(
+        deal({
+          funnel: "Reactivation Scrapers",
+          closerId: "user_5cZRqXu8kb4O1IeBVA98UMcMEhYZUhx1fnCHfSL0YMV",
+        }),
+      ),
+    ).toBe(true);
   });
 });

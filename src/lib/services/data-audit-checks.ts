@@ -1,4 +1,5 @@
 import "server-only";
+import type { MomCloseClient } from "@/lib/services/data-audit-mom-checks";
 
 import { config } from "@/lib/config";
 import { createGa4Client, type Ga4Client } from "@/lib/ga4/client";
@@ -91,6 +92,7 @@ export type DataAuditDeps = {
 };
 
 export type CloseSearchClient = {
+  listUsers: MomCloseClient["listUsers"];
   listCustomFields(
     scope: "lead",
   ): Promise<{ data?: Parameters<typeof resolveFieldIds>[0] }>;
