@@ -1,4 +1,5 @@
 import { INSTAGRAM_DM_CHANNEL } from "@/lib/analytics/channel";
+import type { ChannelFlow } from "@/lib/analytics/channel-flow";
 import { setsCalls } from "@/lib/services/call-credit";
 import type { Tables } from "@/types/database";
 import {
@@ -97,6 +98,8 @@ export type KpiInput = {
   setterBookings: SetterBookingRow[];
   /** Connector name to its last finished run (ISO), null when it never ran. */
   lastRun: Record<string, string | null>;
+  /** First calls by channel band, the dashboard flow card's computation; null when they could not be read. */
+  ruleFlow?: ChannelFlow | null;
 };
 
 /** Owners and cadence from the framework sheet. Unlisted channels show none. */
@@ -140,7 +143,7 @@ const FUNNEL_COLUMNS: KpiColumn[] = [
   { key: "optIn", label: "Opt-in", format: "percent" },
   { key: "leads", label: "Leads", format: "number" },
   { key: "leadToBook", label: "Lead → book", format: "percent" },
-  { key: "booked", label: "Booked", format: "number" },
+  { key: "booked", label: "Site bookings", format: "number" },
   { key: "showRate", label: "Show rate", format: "percent" },
   { key: "showed", label: "Shown", format: "number" },
   { key: "closeRate", label: "Close rate", format: "percent" },
@@ -216,11 +219,72 @@ const SOURCE_CONNECTOR: Record<string, string> = {
 export function buildKpiReport(input: KpiInput): KpiReport {
   return {
     sections: [
+      ...(input.ruleFlow
+        ? [buildRuleSection(input.ruleFlow, input.lastRun)]
+        : []),
       buildFunnelSection(input),
       buildWebinarSection(input),
       buildReEngagementSection(input),
       buildLane2Section(input),
     ],
+  };
+}
+
+const DOM_RULE_COLUMNS: KpiColumn[] = [
+  { key: "booked", label: "Booked", format: "number" },
+  { key: "showRate", label: "Show rate", format: "percent" },
+  { key: "showed", label: "Shown", format: "number" },
+  { key: "qualified", label: "Qualified", format: "number" },
+  { key: "won", label: "Won", format: "number" },
+  { key: "revenue", label: "Revenue", format: "money" },
+];
+
+/**
+ * Channel-level first calls on the Marketing MTD rule, the same bands and
+ * counts as the dashboard flow card and the Channels page. Rows below this are
+ * link-level and keep site bookings: the rule has no campaign credit.
+ */
+export function buildRuleSection(
+  flow: ChannelFlow,
+  lastRun: Record<string, string | null>,
+): KpiSection {
+  const row = (
+    key: string,
+    label: string,
+    v: readonly number[],
+    revenue: number,
+  ): KpiRow => ({
+    key: `by-channel|${key}`,
+    label,
+    detail: null,
+    values: {
+      booked: v[1]!,
+      showRate: pct(v[2]!, v[1]!),
+      showed: v[2]!,
+      qualified: v[3]!,
+      won: v[4]!,
+      revenue,
+    },
+    sourceOfTruth: "Close mirror (Marketing MTD rule); Close won deals",
+    owner: null,
+    cadence: "Weekly",
+    lastVerified: lastRun["close-lead-funnel"] ?? null,
+  });
+  const bands = flow.bands.filter((b) => b.values[1] > 0);
+  return {
+    key: "by-channel",
+    title: "Booked by channel",
+    basis:
+      "First calls booked in the range, counted as Marketing MTD and the dashboard count them (Jess's rule: a Lane 1 owner, not canceled, outside the US or another brand, plus Reactivation Scrapers leads by any owner); a lead that came in on a Google ad click counts as Google Ads. Same bands and counts as the dashboard flow card and the Channels page. Shown and qualified are what the rep logged; won is a deal won on or after the range's first day. The sections below are link-level and count site bookings (Calendly), because the rule has no campaign credit.",
+    columns: DOM_RULE_COLUMNS,
+    rows: [
+      ...(bands.length > 1
+        ? [row("all", "All channels", flow.totals, flow.revenue)]
+        : []),
+      ...bands.map((b) => row(b.key, b.label, b.values, b.revenue)),
+    ],
+    hidden: 0,
+    hiddenNote: "",
   };
 }
 
@@ -284,7 +348,7 @@ function buildFunnelSection(input: KpiInput): KpiSection {
     key: "funnels",
     title: "Content and website funnels",
     basis:
-      "Booked, shown and won count on the day the person became a lead, so each rate follows the same group of people. A row splits by the button or link they clicked once its links are tagged with one; a row with no split is a channel whose links are not tagged yet. Thank-you visits count visits to one of our own confirmation pages, so a channel that signs people up on a GHL form or straight into Calendly shows none. A call counts as shown only when a rep logged it as a show in Close (First Call Show Up = yes); a call nobody logged is not counted, so show rate is a minimum while logging is incomplete. Lane 2 below shows what share of due calls have a show answer in Close. Webinar, Instagram DM and email/SMS links have their own sections, so All channels here leaves out their visits.",
+      "Site bookings are calls booked on our Calendly links, matched to the link, so a button or campaign can carry them; they are not the booked-call count, which is the first section. Site bookings, shown and won count on the day the person became a lead, so each rate follows the same group of people. A row splits by the button or link they clicked once its links are tagged with one; a row with no split is a channel whose links are not tagged yet. Thank-you visits count visits to one of our own confirmation pages, so a channel that signs people up on a GHL form or straight into Calendly shows none. A call counts as shown only when a rep logged it as a show in Close (First Call Show Up = yes); a call nobody logged is not counted, so show rate is a minimum while logging is incomplete. Lane 2 below shows what share of due calls have a show answer in Close. Webinar, Instagram DM and email/SMS links have their own sections, so All channels here leaves out their visits.",
     columns: FUNNEL_COLUMNS,
     rows,
     hidden,

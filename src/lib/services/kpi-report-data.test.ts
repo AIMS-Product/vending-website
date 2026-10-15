@@ -45,6 +45,7 @@ describe("getKpiTab, internal-traffic toggle", () => {
     await getKpiTab({
       client: buildEmptyClient(),
       includeInternal: true,
+      loadRuleFlow: async () => null,
     });
 
     expect(normaliseFacts).toHaveBeenCalledWith(expect.any(Array), {
@@ -53,7 +54,10 @@ describe("getKpiTab, internal-traffic toggle", () => {
   });
 
   it("defaults to excluding internal traffic, same as Channels", async () => {
-    await getKpiTab({ client: buildEmptyClient() });
+    await getKpiTab({
+      client: buildEmptyClient(),
+      loadRuleFlow: async () => null,
+    });
 
     expect(normaliseFacts).toHaveBeenCalledWith(expect.any(Array), {
       includeInternal: false,

@@ -133,7 +133,9 @@ rate built on it is always null. This is a defect, not a definition.
 ### The Marketing MTD rule — every booked-call surface since 2026-10-15
 
 The main dashboard (`keptCalls`), its flow card, the Q4 scorecard tab, Marketing MTD, Months (grid,
-This month, Fri-Thu weeks) and the EOD/EOW email Close section keep a first call by one predicate, `keptByMtdRule` (`close-mtd-funnel.ts`), so they show Jess's numbers:
+This month, Fri-Thu weeks), the EOD/EOW email Close section, Channels' "Booked by channel" table and
+the KPI export's first section (`readRuleFlow`, the flow card's computation for any range) keep a
+first call by one predicate, `keptByMtdRule` (`close-mtd-funnel.ts`), so they show Jess's numbers:
 
 - marketing (every funnel but Reactivation Scrapers): not Canceled (by Lead) / Outside the US, not
   TLG / PPA, Lead Owner on the Lane 1 roster (`MTD_BOOKING_OWNERS`); **LTF - Quiz Funnel counts**;
@@ -141,8 +143,10 @@ This month, Fri-Thu weeks) and the EOD/EOW email Close section keep a first call
 
 Marketing-only wins (`countsAsWon`) also drop the five MTD closers; Months' week wins are
 `keptWinByMtdRule` (that, plus Reactivation Scrapers wins by any closer). The SteelTrap rule below
-still governs the Funnel board, Team setters, Channels, Goals and the nightly company-MTD audit,
-until each moves.
+still governs the Funnel board, Team setters (Adam, 2026-10-15: both stay, they are the sales
+floor's tools), Goals (its targets wait on a reset agreed with Jess and Dom; the page says so) and the
+nightly company-MTD audit. Channels' link, campaign and creative rows keep the spine's `booked`,
+labelled "Site bookings" (Calendly, matched to the link): the rule has no campaign credit.
 
 ### The SteelTrap rule — Close mirror only
 

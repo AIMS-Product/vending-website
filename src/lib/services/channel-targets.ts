@@ -27,7 +27,7 @@
  */
 
 export const TARGET_BASIS =
-  "Close first sales call booked, by funnel. First call per lead, cancellations included, follow-ups excluded. The same count the Q4 plan's June to August baseline used.";
+  "Close first sales call booked, by funnel. First call per lead, cancellations included, follow-ups excluded. The same count the Q4 plan's June to August baseline used. Every other booked-call page has counted on Jess's Marketing MTD rule since Oct 15, 2026 (Lane 1 owners, cancellations out), which runs lower (September 2026: 642); these targets have not been reset to it yet.";
 
 /** The plan applies from this month onward; earlier months show actuals only. */
 export const TARGETS_FROM = "2026-09";

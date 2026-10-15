@@ -110,6 +110,11 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
       "The switch beside the dates. It leaves Reactivation Scrapers booked calls, and won deals Marketing MTD leaves out (scrapers, other brands, the five MTD closers), out of every card on the page, so its booked and won match the Marketing MTD page. Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",
   },
   {
+    term: "Site bookings",
+    meaning:
+      "On Channels and the KPI export's link-level rows: calls booked on our Calendly links, matched to the link, so a campaign, creative or button can carry them. Not the booked-call count the other pages use; that is the Booked by channel table. Site shows and Site won are the site bookings traced to a site lead or webinar registration, so they are a floor.",
+  },
+  {
     term: "Skipped form (direct booking)",
     meaning:
       "Booked straight from a calendar link (Instagram bio, a DM, an email) without filling in a form on the site first. Counted as booked, never as a lead, and shown beside the count rather than folded into Book %. Calls booked from the webinar room's own button are not skipped-form: those people already registered, so they count in Book %.",

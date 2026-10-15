@@ -1,5 +1,7 @@
 import "server-only";
 
+import type { ChannelFlow } from "@/lib/analytics/channel-flow";
+import { readRuleFlow } from "@/lib/services/analytics-dashboard-data";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { readAllPages } from "@/lib/services/paged-read";
 import { logReadFailure } from "@/lib/services/read-failure";
@@ -52,6 +54,7 @@ export async function getKpiTab(
     includeInternal?: boolean;
     client?: ReportClient;
     now?: Date;
+    loadRuleFlow?: typeof readRuleFlowOrNull;
   } = {},
 ): Promise<KpiTabData> {
   const client = input.client ?? createAdminClient();
@@ -62,7 +65,7 @@ export async function getKpiTab(
   const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
   const endExclusive = `${dayKey(new Date(endsAt.getTime() + DAY_MS))}T00:00:00.000Z`;
 
-  const [facts, runs, webinars, emailSnapshots, setterBookings] =
+  const [facts, runs, webinars, emailSnapshots, setterBookings, ruleFlow] =
     await Promise.all([
       fetchFacts(client, startDay, endDay, {
         includeInternal: input.includeInternal,
@@ -71,6 +74,7 @@ export async function getKpiTab(
       fetchWebinars(client, startDay, endDay),
       fetchEmailSnapshots(client, startDay, endDay),
       fetchSetterBookings(client, `${startDay}T00:00:00.000Z`, endExclusive),
+      (input.loadRuleFlow ?? readRuleFlowOrNull)(startDay, endDay),
     ]);
 
   const lastRun: Record<string, string | null> = {};
@@ -91,6 +95,7 @@ export async function getKpiTab(
       emailSnapshots,
       setterBookings,
       lastRun,
+      ruleFlow,
     }),
     connected: facts !== null,
   };
@@ -275,4 +280,17 @@ async function fetchLeadOutcomes(
     return outcomes;
   }
   return outcomes;
+}
+
+/** The dashboard flow for the range; null (section left out) when a read fails. */
+async function readRuleFlowOrNull(
+  startDay: string,
+  endDay: string,
+): Promise<ChannelFlow | null> {
+  const flow = await readRuleFlow(startDay, endDay);
+  if (!flow.ok) {
+    console.error("kpi by-channel section not built", { error: flow.error });
+    return null;
+  }
+  return flow.data;
 }
