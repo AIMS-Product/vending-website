@@ -221,9 +221,10 @@ screen says so.
 
 ### Dom's rule (`booked_calls.v2.2`): the reporting count
 
-Since 2026-10-14 every booked-call figure on the main dashboard, Marketing MTD, Month over month
-(monthly grid, This month, Friday-Thursday weeks), the Funnel board and the EOD/EOW email counts
-Dom's rule (`src/lib/booked-calls-v2/`, read through `getV2Calls` in `booked-calls-v2-data.ts`):
+Since 2026-10-14 every booked-call figure on the main dashboard, Month over month
+(monthly grid, This month, Friday-Thursday weeks), the Funnel board, the EOD/EOW email and the
+Marketing MTD scorecard tab counts Dom's rule (Marketing MTD's main table counts Jess's field rule
+since 2026-10-15; see its own section) (`src/lib/booked-calls-v2/`, read through `getV2Calls` in `booked-calls-v2-data.ts`):
 
 ```
 Booked = Close meetings created in the window (Pacific day) that Dom's engine counts:
@@ -754,6 +755,21 @@ definitions sit under "All weeks". Mon-Sun because Kody's Q3 marketing row repro
 A network that recorded spend anywhere in the eight weeks but has a settled day (before today) with
 no spend row marks that week's spend and cost **Incomplete**. Verified 2026-10-08 against production:
 week of 9/28 = 140 calls, 694 MQLs, $10,215.22, $14.72, Google Ads missing 10/1-10/4.
+
+### Marketing MTD (`/admin/analytics/marketing`, `marketing-mtd.ts`, `marketing-scorecard.ts`)
+
+The 1st to today against the same dates last month, on Jess's field-based rule (her
+`marketing-mtd-dashboard.html`, 2026-10-15). `scripts/marketing-mtd-validate.ts` proves it per channel against
+her snapshot.
+
+| Column / row            | Definition                                                                                                                                                                                                                               |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Booked                  | Close leads with First Sales Call Booked Date in the dates, one per lead, in the row of the current Funnel Name (blank = Unknown (Needs Review)); Lane 1 owner roster; no Reactivation Scrapers, Canceled, Outside US, TLG, PPA          |
+| Open calls / show rate  | Open = booked lead not shown with an upcoming Close meeting that is not canceled or a follow-up, and no completed meeting since booking. Show rate = First Call Show Up yes over all booked. Qualified = shown and qualified, over shown |
+| Won, value, sales cycle | Close opportunities by `date_won`, minus TLG/PPA, Reactivation Scrapers and the five MTD closers, by the deal's Funnel Name; cycle = median Pacific days lead created to won                                                             |
+| Spend, cost per booked  | Spine spend on the one source its band maps to (Webinar to Internal Webinar, Google Ads, Meta Ads); cost per booked = spend / Booked                                                                                                     |
+| Scorecard tab           | Monday-Friday weeks from 2026-09-28, by booked day: total, Marketing by source, Lane 2, the "webinar leads booked by Lane 2" track row, Social DMs, weekend bookings, spend over the same days, cost per marketing booked                |
+| Webinars                | `webinar_events` rooms in the dates; "booked from the room link" is the board's count, the Internal Webinar row line is the table's                                                                                                      |
 
 ### Funnel board (`/admin/analytics/board`, `funnel-board.ts`)
 

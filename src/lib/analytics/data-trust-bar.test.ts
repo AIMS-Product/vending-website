@@ -121,6 +121,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     close_meeting_leads: "close-meetings",
     bitly_link_clicks: "bitly",
     youtube_videos: "youtube",
+    youtube_video_daily: "youtube",
     youtube_video_playback_daily: "youtube-playback",
     youtube_video_embed_pages: "youtube-playback",
     webinar_events: "webinar",
@@ -193,6 +194,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
     "google-ads": ["google-ads-dashboard"],
+    marketing: ["marketing-mtd-data", "booked-calls-v2-data", "close-wins"],
     dashboard: [
       "analytics-dashboard-data",
       "channel-report",

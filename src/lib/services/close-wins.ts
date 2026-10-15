@@ -51,6 +51,10 @@ export type CloseDeal = {
   status?: string | null;
   /** The lead's "BTC Business Line". */
   businessLine?: string | null;
+  /** The Close opportunity id: one lead can win more than one deal. */
+  id?: string;
+  /** When the lead was created in Close (ISO), for lead-to-win days. */
+  leadCreatedAt?: string | null;
 };
 
 export type CloseWinRow = { label: string; won: number; revenue: number };
@@ -218,7 +222,7 @@ export async function fetchCloseDeals(input: {
   for (let from = 0; from < leadIds.length; from += 100) {
     const { data, error } = await input.mirror
       .from("close_lead_funnel")
-      .select("lead_id,funnel,status_label,business_line")
+      .select("lead_id,funnel,status_label,business_line,lead_created_at")
       .in("lead_id", leadIds.slice(from, from + 100));
     if (error)
       throw new Error(`close_lead_funnel read failed: ${error.message}`);
@@ -227,6 +231,7 @@ export async function fetchCloseDeals(input: {
         funnel: row.funnel,
         status: row.status_label,
         businessLine: row.business_line,
+        createdAt: row.lead_created_at,
       });
     }
   }
@@ -247,6 +252,7 @@ export async function fetchCloseDeals(input: {
           funnel: customText(lead?.custom?.[FIELD_LABELS.funnel]),
           status: lead?.status_label ?? null,
           businessLine: customText(lead?.custom?.[FIELD_LABELS.businessLine]),
+          createdAt: lead?.date_created ?? null,
         });
       }
     },
@@ -262,6 +268,8 @@ export async function fetchCloseDeals(input: {
     closerId: opportunity.user_id ?? null,
     status: leadById.get(opportunity.lead_id)?.status ?? null,
     businessLine: leadById.get(opportunity.lead_id)?.businessLine ?? null,
+    id: opportunity.id,
+    leadCreatedAt: leadById.get(opportunity.lead_id)?.createdAt ?? null,
   }));
 }
 
@@ -269,6 +277,7 @@ type LeadFacts = {
   funnel: string | null;
   status: string | null;
   businessLine: string | null;
+  createdAt: string | null;
 };
 
 function customText(value: unknown): string | null {
