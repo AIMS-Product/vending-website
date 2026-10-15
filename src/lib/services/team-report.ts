@@ -289,13 +289,32 @@ export function buildSetters(input: {
   const total = emptyPerson("All setters");
   const leadEmails = new Set<string>();
 
+  // Under Dom's rule a lead can hold two counted calls in a period (the 60-day
+  // repeat). Closed and won are the lead's current status, so they are
+  // credited once, to its latest call: the booking that led to the sale.
+  const outcomeRow = new Map<string, FunnelLeadRow>();
+  for (const lead of input.leads) {
+    if (!within(lead.first_sales_call_booked_date, input.period)) continue;
+    const prev = outcomeRow.get(lead.lead_id);
+    if (
+      !prev ||
+      (lead.first_sales_call_booked_date ?? "") >
+        (prev.first_sales_call_booked_date ?? "")
+    )
+      outcomeRow.set(lead.lead_id, lead);
+  }
+
   for (const lead of input.leads) {
     if (!within(lead.first_sales_call_booked_date, input.period)) continue;
     const key = emailKey(lead.email);
     if (key) leadEmails.add(key);
     const booking = bestBooking(key ? byEmail.get(key) : undefined);
     const credit = creditForLead(lead, booking);
-    const outcome = outcomeOf(lead);
+    const own = outcomeOf(lead);
+    const outcome =
+      outcomeRow.get(lead.lead_id) === lead
+        ? own
+        : { ...own, closed: false, won: false };
     const row = credit.kind === "rep" ? person(credit.who) : selfBooked;
     addBasis(row, credit);
     addOutcome(row, outcome);
