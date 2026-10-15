@@ -405,3 +405,32 @@ alter table public.youtube_playback_sync_state enable row level security;
 comment on table public.youtube_playback_sync_state is
   'Last day synced into youtube_video_playback_daily per video. Service-role only.';
 ```
+
+## 14. Booked calls V2 decisions (20261015120000)
+
+Apply BEFORE merging feat/v2-decisions-table: after merge the hourly
+close-meetings sync writes this table and fails (500) until it exists. Read by
+vp-webinars room cards through its service-role pull.
+
+```sql
+create table if not exists public.close_meeting_decisions (
+  meeting_id text primary key,
+  lead_id text not null,
+  -- Close `date_created`, Pacific calendar day: the day the call was booked.
+  created_day date not null,
+  disposition text not null check (disposition in ('counted', 'excluded', 'held')),
+  reason text not null,
+  -- Marketing / Lane 2 / Social DMs; null on rows the rule never assigned.
+  booked_by text,
+  rule_version text not null,
+  computed_at timestamptz not null
+);
+
+create index if not exists close_meeting_decisions_lead_idx
+  on public.close_meeting_decisions (lead_id);
+
+alter table public.close_meeting_decisions enable row level security;
+
+comment on table public.close_meeting_decisions is
+  'Booked calls V2 (booked_calls.v2.2) decision per Close meeting created in the last 70 days. Rewritten hourly by /api/admin/close-meetings-sync/run. Service role only.';
+```

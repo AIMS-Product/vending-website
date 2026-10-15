@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
+import { snapshotV2Decisions } from "@/lib/services/close-meeting-decisions";
 import { syncCloseMeetings } from "@/lib/services/close-meetings-sync";
 
 export const dynamic = "force-dynamic";
@@ -38,10 +39,15 @@ export async function GET(request: Request) {
   try {
     const run = await syncCloseMeetings();
     const failed = Boolean(run.error && !run.error.startsWith("skipped:"));
-    return NextResponse.json(
-      { ok: !failed, run },
-      { status: failed ? 500 : 200 },
-    );
+    if (failed || run.error) {
+      return NextResponse.json(
+        { ok: !failed, run },
+        { status: failed ? 500 : 200 },
+      );
+    }
+    // After a clean mirror only: decisions over a half-written mirror would be wrong.
+    const decisions = await snapshotV2Decisions();
+    return NextResponse.json({ ok: true, run, decisions });
   } catch (error) {
     console.error("close meetings sync failed", {
       name: error instanceof Error ? error.name : "UnknownError",
