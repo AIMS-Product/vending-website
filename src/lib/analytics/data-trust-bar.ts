@@ -285,8 +285,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   funnels: ["site-leads", "ga4-pages", "close"],
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
   "google-ads": ["google-ads", "site-leads"],
-  // marketing-mtd-data.ts: Dom's counted meetings (Close meetings + mirror),
-  // Close wins, ad spend on the spine, webinar_events
+  // marketing-mtd-data.ts: Close mirror first calls + meetings (open calls),
+  // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events
   marketing: ["close", "close-meetings", "metricool-ads", "webinar"],
   // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
