@@ -32,9 +32,9 @@ import {
 import { toCsv } from "@/lib/services/marketing-scorecard";
 
 /**
- * The marketing month so far on Dom's booked-call rule, by lead source,
- * against the same dates last month, and the 125-a-week booking goal. Rules:
- * `marketing-mtd.ts`.
+ * The marketing month so far on Jess's field-based rule, by Close Funnel
+ * Name, against the same dates last month, and the 125-a-week booking goal.
+ * Rules: `marketing-mtd.ts`.
  */
 
 const STICKY_BASE = "sticky left-0 z-10 px-4 text-left whitespace-nowrap";
@@ -72,7 +72,7 @@ type Metric = {
   detail?: (f: MarketingFigures) => string;
 };
 
-const showRate = (f: MarketingFigures) => rate(f.shown, f.booked - f.open);
+const showRate = (f: MarketingFigures) => rate(f.shown, f.booked);
 const qualifiedRate = (f: MarketingFigures) => rate(f.qualified, f.shown);
 const wonPerBooked = (f: MarketingFigures) => rate(f.won, f.booked);
 const cycle = (f: MarketingFigures) => median(f.cycleDays);
@@ -91,7 +91,7 @@ const KPIS: Metric[] = [
     label: "Show rate",
     value: showRate,
     format: (v) => pct(v),
-    detail: (f) => `${f.shown}/${f.booked - f.open}`,
+    detail: (f) => `${f.shown}/${f.booked}`,
     kind: "rate",
   },
   {
@@ -198,7 +198,6 @@ export const COLUMNS: Metric[] = [
     kind: "count",
     lowerIsBetter: true,
   },
-  count("Lane 2 on marketing leads", (f) => f.lane2),
 ];
 
 /** The channel table as CSV: this month, last month, per column. */
@@ -259,17 +258,17 @@ export function MarketingMtdPanel({
   const conflicts = mtd.rows.flatMap((row) =>
     row.current.conflicts.map((lead) => ({ ...lead, channel: row.label })),
   );
-  const domTotal = now.booked + now.lane2 + mtd.socialDms.current;
 
   return (
     <div className="space-y-5">
       <p className="text-ui-text-muted text-sm">
-        {rangeLabel(mtd.current)} against {rangeLabel(mtd.prior)}, Pacific days,
-        on Dom&apos;s booked-call rule. Read from Close and our copy of it at{" "}
-        {formatPacificStampShort(report.readAt)}. Dom&apos;s total this month is{" "}
-        {domTotal}: {now.booked} booked by Marketing, {now.lane2} by Lane 2 and{" "}
-        {mtd.socialDms.current} by Social DMs, the Months V2 panel&apos;s
-        figures.
+        {rangeLabel(mtd.current)} against {rangeLabel(mtd.prior)}. Every channel
+        except Reactivation Scrapers, one row per Close Funnel Name. Bookings
+        and call flags from our hourly copy of Close
+        {report.bookingsAsOf
+          ? ` (${formatPacificStampShort(report.bookingsAsOf)})`
+          : ""}
+        , wins read at {formatPacificStampShort(report.readAt)}.
       </p>
 
       <AdminMetricStrip columns={6}>
@@ -297,8 +296,8 @@ export function MarketingMtdPanel({
             <h2 className={adminSectionTitleClass}>By channel</h2>
             <p className="text-ui-text-subtle mt-1 text-xs">
               This month on top; {rangeLabel(mtd.prior)} and the change beneath.
-              One row per lead source on Dom&apos;s map, including any that
-              booked only last month.
+              One row per Close Funnel Name, including any that booked only last
+              month. Open a channel below to see its people.
             </p>
           </div>
           <a
@@ -347,6 +346,7 @@ export function MarketingMtdPanel({
             </tbody>
           </table>
         </div>
+        <ChannelPeople mtd={mtd} />
       </section>
 
       <section
@@ -365,9 +365,9 @@ export function MarketingMtdPanel({
             not what a report showed on that day; today is still booking.
           </li>
           <li>
-            The 125-a-week goal was set on the old first-call count. Jess and
-            Dom are resetting the Q4 targets on Dom&apos;s rule; until then read
-            the goal panel as a guide.
+            {now.open} booked {now.open === 1 ? "lead has" : "leads have"} a
+            verified upcoming first call and no show logged yet; they stay in
+            the show-rate denominator, as on Jess&apos;s sheet.
           </li>
           <li>
             Qualified rate counts calls logged both shown and qualified.{" "}
@@ -401,23 +401,12 @@ export function MarketingMtdPanel({
             <div>
               <dt className="text-ui-text font-medium">Booked calls</dt>
               <dd>
-                Dom&apos;s booked_calls.v2.2: one per Close meeting that counts
-                (not canceled, not a follow-up, no other meeting for the lead in
-                the 60 days before), dated by the day it was booked, booked by
-                Marketing (not a Lane 2 or Social DMs title). The row is the
-                lead&apos;s original source on Dom&apos;s map. The same calls as
-                the dashboard and the Months V2 panel.
-              </dd>
-            </div>
-            <div>
-              <dt className="text-ui-text font-medium">
-                Lane 2 on marketing leads
-              </dt>
-              <dd>
-                Counted meetings a Lane 2 setter booked, in the row of the
-                lead&apos;s source. Never added to Booked. {UNKNOWN_CHANNEL}{" "}
-                holds Lane 2 calls and wins whose lead has no source on
-                Dom&apos;s map.
+                Close leads whose First Sales Call Booked Date is in the dates,
+                one per lead, in the row of the lead&apos;s current Funnel Name
+                (blank is {UNKNOWN_CHANNEL}). Leaves out Reactivation Scrapers,
+                leads now Canceled (by Lead) or Outside the US, other brands
+                (TLG, PPA) and leads owned by someone off the Lane 1 roster. Who
+                booked the call does not matter: this is source credit.
               </dd>
             </div>
             <div>
@@ -425,10 +414,10 @@ export function MarketingMtdPanel({
                 Open calls and show rate
               </dt>
               <dd>
-                Open calls are booked calls scheduled after today. Show rate is
-                First Call Show Up = yes over the calls already due. Close keeps
-                that flag for a lead&apos;s first call only, so a repeat booking
-                reads unlogged, never a no-show.
+                Open calls are booked leads not marked shown with an upcoming
+                Close meeting that is not canceled or a follow-up, and no
+                completed meeting since booking. Show rate is First Call Show Up
+                = yes over every booked lead, future bookings included.
               </dd>
             </div>
             <div>
@@ -436,9 +425,9 @@ export function MarketingMtdPanel({
               <dd>
                 Close opportunities won in the dates, leaving out other brands,
                 Reactivation Scrapers and deals owned by Ahmad B., Stephen O.,
-                Spencer R., Mallory K. and Adam W., filed under the source
-                Dom&apos;s map gives the deal&apos;s funnel. Value is the deal
-                value in Close, not cash collected.
+                Spencer R., Mallory K. and Adam W., filed under the deal&apos;s
+                Funnel Name. Value is the deal value in Close, not cash
+                collected.
                 {now.unvalued > 0 &&
                   ` ${now.unvalued} won this month carry no value.`}
               </dd>
@@ -463,6 +452,68 @@ export function MarketingMtdPanel({
           </dl>
         </details>
       </section>
+    </div>
+  );
+}
+
+/** Per channel: the booked leads and won deals behind the row, with Close links. */
+function ChannelPeople({ mtd }: { mtd: MarketingMtd }) {
+  const labels = mtd.rows
+    .map((row) => row.label)
+    .filter(
+      (label) =>
+        mtd.leads.some((l) => l.channel === label) ||
+        mtd.wins.some((w) => w.channel === label),
+    );
+  if (labels.length === 0) return null;
+  return (
+    <div className="border-ui-line/60 space-y-1 border-t px-4 py-3 text-sm print:hidden">
+      {labels.map((label) => {
+        const leads = mtd.leads.filter((l) => l.channel === label);
+        const wins = mtd.wins.filter((w) => w.channel === label);
+        return (
+          <details key={label}>
+            <summary className="text-ui-text cursor-pointer py-1 font-medium">
+              {label}{" "}
+              <span className="text-ui-text-subtle font-normal">
+                · {leads.length} booked · {wins.length} won
+              </span>
+            </summary>
+            <ul className="text-ui-text-muted space-y-1 py-2 pl-5 text-xs">
+              {leads.map((lead) => (
+                <li key={lead.leadId}>
+                  <a
+                    href={`https://app.close.com/lead/${lead.leadId}/`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={adminLinkClass}
+                  >
+                    {lead.name ?? "Unnamed lead"}
+                  </a>{" "}
+                  booked {lead.bookedDate} · shown {lead.shown ? "yes" : "no"}
+                  {lead.shown &&
+                    ` · qualified ${lead.qualified ? "yes" : "no"}`}
+                  {lead.open && " · upcoming call"}
+                </li>
+              ))}
+              {wins.map((win) => (
+                <li key={`${win.leadId}-${win.dateWon}-${win.value}`}>
+                  <a
+                    href={`https://app.close.com/lead/${win.leadId}/`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className={adminLinkClass}
+                  >
+                    Won {win.dateWon.slice(0, 10)}
+                  </a>{" "}
+                  {win.value === null ? "no value" : money(win.value)}
+                  {win.closer && ` · ${win.closer}`}
+                </li>
+              ))}
+            </ul>
+          </details>
+        );
+      })}
     </div>
   );
 }
