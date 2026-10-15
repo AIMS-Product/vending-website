@@ -148,6 +148,16 @@ export function countsAsWon(deal: CloseDeal): boolean {
   );
 }
 
+/**
+ * A won deal any booked-call surface keeps: marketing wins as this view counts
+ * them, plus Reactivation Scrapers wins by any closer (their own band).
+ */
+export function keptWinByMtdRule(deal: CloseDeal): boolean {
+  return isScraperFunnel(deal.funnel)
+    ? !isExcludedLead(deal)
+    : countsAsWon(deal);
+}
+
 /** Pacific day won minus Pacific day created, or null when unknown or negative. */
 export function leadToWinDays(deal: CloseDeal): number | null {
   if (!deal.leadCreatedAt) return null;

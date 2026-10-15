@@ -9,6 +9,8 @@ import {
   type CloseCall,
   type CloseWeek,
 } from "@/lib/services/close-week-view";
+import { keptByMtdRule } from "@/lib/services/close-mtd-funnel";
+import { keptWinByMtdRule } from "@/lib/services/marketing-mtd";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const WEEKS = 8;
@@ -41,7 +43,7 @@ export async function getCloseWeekView(
       const { data, error } = await client
         .from("close_lead_funnel")
         .select(
-          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line",
+          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line,lead_owner",
         )
         .gte("first_sales_call_booked_date", from)
         .lte("first_sales_call_booked_date", to)
@@ -59,6 +61,7 @@ export async function getCloseWeekView(
           showUp: row.first_call_show_up,
           qualified: row.qualified,
           businessLine: row.business_line,
+          leadOwner: row.lead_owner,
         });
         if (!mirrorSyncedAt || row.synced_at > mirrorSyncedAt) {
           mirrorSyncedAt = row.synced_at;
@@ -74,7 +77,14 @@ export async function getCloseWeekView(
     });
     return {
       ok: true,
-      weeks: buildCloseWeeks({ calls, deals, weeks, today }),
+      // Jess's field rule, as every booked-call surface counts (#187).
+      weeks: buildCloseWeeks({
+        calls,
+        deals: deals.filter(keptWinByMtdRule),
+        weeks,
+        today,
+        keep: keptByMtdRule,
+      }),
       mirrorSyncedAt,
     };
   } catch (error) {

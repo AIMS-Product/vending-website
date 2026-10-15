@@ -9,6 +9,7 @@ import {
 import type { CloseCall } from "@/lib/services/close-week-view";
 import { getMonthlyLeads } from "@/lib/services/close-monthly-leads";
 import { cachedCloseReads, fetchCloseDeals } from "@/lib/services/close-wins";
+import { keptByMtdRule } from "@/lib/services/close-mtd-funnel";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const PAGE_SIZE = 1000;
@@ -54,7 +55,7 @@ export async function getCloseMonthlyFunnel(
       const { data, error } = await client
         .from("close_lead_funnel")
         .select(
-          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line",
+          "lead_id,funnel,status_label,first_sales_call_booked_date,first_call_show_up,qualified,synced_at,business_line,lead_owner",
         )
         .gte("first_sales_call_booked_date", from)
         .lte("first_sales_call_booked_date", today)
@@ -72,6 +73,7 @@ export async function getCloseMonthlyFunnel(
           showUp: row.first_call_show_up,
           qualified: row.qualified,
           businessLine: row.business_line,
+          leadOwner: row.lead_owner,
         });
         if (!mirrorSyncedAt || row.synced_at > mirrorSyncedAt) {
           mirrorSyncedAt = row.synced_at;
@@ -120,6 +122,8 @@ export async function getCloseMonthlyFunnel(
         leads: leads?.byFunnel,
         leadsFrom: leads?.from ?? null,
         dealValueByLead,
+        // Jess's field rule, as every booked-call surface counts (#187).
+        keep: keptByMtdRule,
       }),
       mirrorSyncedAt,
       leadsError,

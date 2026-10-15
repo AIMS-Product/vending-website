@@ -151,7 +151,7 @@ export type MonthlyMonth = {
   totals: MonthlyCell;
   /** Per-group subtotals, so marketing never has to be worked out by hand. */
   byGroup: Record<FunnelGroup, MonthlyCell>;
-  /** First calls the SteelTrap rule drops, so the gap is not hidden. */
+  /** First calls the Marketing MTD rule (`keptByMtdRule`) drops, so the gap is not hidden. */
   excluded: number;
   /** Leads Close calls won that carry no deal value: in won, absent from revenue. */
   unvalued: number;
@@ -269,6 +269,7 @@ export function buildCloseMonthlyFunnel(input: {
   leadsFrom?: string | null;
   /** Won deal value per lead id, for the revenue carried by a won lead. */
   dealValueByLead?: ReadonlyMap<string, number>;
+  keep?: (call: CloseCall) => boolean;
 }): CloseMonthlyFunnel {
   const monthKeys = monthsFrom(
     input.start ?? MONTHLY_FUNNEL_START,
@@ -280,6 +281,7 @@ export function buildCloseMonthlyFunnel(input: {
     deals: [],
     periods: monthKeys,
     periodOf: monthOf,
+    keep: input.keep,
     // The win is the lead's own stage, so it lands in the month that lead's
     // call was booked — the same cohort booked, showed and qualified describe.
     outcomeOf: (call) =>

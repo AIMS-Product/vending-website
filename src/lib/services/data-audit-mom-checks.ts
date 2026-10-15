@@ -13,10 +13,11 @@ import {
   getMonthlyLeads,
 } from "@/lib/services/close-monthly-leads";
 import {
+  closeUserNames,
   mapLead,
   resolveFieldIds,
 } from "@/lib/services/close-lead-funnel-sync";
-import { isExcludedCall } from "@/lib/services/close-week-view";
+import { keptByMtdRule } from "@/lib/services/close-mtd-funnel";
 import type { Database } from "@/types/database";
 
 type Client = Pick<SupabaseClient<Database>, "from">;
@@ -29,6 +30,7 @@ export type MomCloseClient = {
     data?: unknown[];
     cursor?: string | null;
   }>;
+  listUsers: Parameters<typeof closeUserNames>[0]["listUsers"];
 };
 
 /** 200 leads a page; 50 pages is far above any month's first calls. */
@@ -66,7 +68,7 @@ export async function monthOverMonthChecks(
       ours: totals?.won ?? 0,
       source: fromClose.won,
       tolerancePct: 3,
-      note: "Leads booked that month whose Close stage is Closed / Won, after the same exclusions the tab applies.",
+      note: "Leads booked that month whose Close stage is Closed / Won, on the same rule the tab applies (Jess's: Lane 1 owners, plus Reactivation Scrapers by any owner).",
     }),
     compare({
       ...shared,
@@ -112,6 +114,8 @@ export function lastClosedMonth(now: Date): Month {
 async function closeWonForMonth(close: MomCloseClient, month: Month) {
   const definitions = await close.listCustomFields("lead");
   const fieldIds = resolveFieldIds(definitions.data ?? []);
+  // Lead Owner decides the Lane 1 roster under Jess's rule (#187).
+  const userNames = await closeUserNames(close);
   let won = 0;
   let cents = 0;
   let cursor: string | null = null;
@@ -150,6 +154,7 @@ async function closeWonForMonth(close: MomCloseClient, month: Month) {
           "opportunities",
           `custom.${fieldIds.funnel}`,
           ...(fieldIds.businessLine ? [`custom.${fieldIds.businessLine}`] : []),
+          ...(fieldIds.leadOwner ? [`custom.${fieldIds.leadOwner}`] : []),
         ],
       },
       _limit: 200,
@@ -157,7 +162,7 @@ async function closeWonForMonth(close: MomCloseClient, month: Month) {
     });
     for (const raw of result.data ?? []) {
       const lead = raw as Record<string, unknown>;
-      const row = mapLead(lead, fieldIds, "");
+      const row = mapLead(lead, fieldIds, "", userNames);
       if (!row) continue;
       const call = {
         leadId: row.lead_id,
@@ -167,8 +172,9 @@ async function closeWonForMonth(close: MomCloseClient, month: Month) {
         showUp: null,
         qualified: null,
         businessLine: row.business_line ?? null,
+        leadOwner: row.lead_owner ?? null,
       };
-      if (isExcludedCall(call) || !isWonCall(call)) continue;
+      if (!keptByMtdRule(call) || !isWonCall(call)) continue;
       won += 1;
       cents += wonValueCents(lead.opportunities);
     }
