@@ -29,7 +29,7 @@ const VIEWS = [
   { key: "scorecard", label: "Q4 scorecard" },
 ] as const;
 
-/** The marketing month so far on Dom's rule: a fixed window, so no date range. */
+/** The marketing month so far on Jess's field rule: a fixed window, so no date range. */
 export default async function AnalyticsMarketingPage({
   searchParams,
 }: {
@@ -46,7 +46,7 @@ export default async function AnalyticsMarketingPage({
       path="/admin/analytics/marketing"
       tab="marketing"
       title="Marketing MTD"
-      description="Booked calls on Dom's rule by lead source, with shows, qualified, wins, spend and Lane 2 on marketing leads, against the same dates last month; plus the Q4 scorecard rows."
+      description="Booked leads by Close Funnel Name on Jess's field rule, with open calls, shows, qualified, wins and spend, against the same dates last month; plus the Q4 scorecard rows."
       user={{ email: user.email, role }}
       trust={getTrustBar("marketing")}
     >

@@ -107,9 +107,8 @@ export function MarketingWebinars({
 }) {
   const now = webinarTotals(events, mtd.current);
   const then = webinarTotals(events, mtd.prior);
-  const dom = mtd.rows.find((r) => r.label === WEBINAR_SOURCE);
-  const domBooked = (f: { booked: number; lane2: number } | undefined) =>
-    f ? f.booked + f.lane2 : 0;
+  const webinarRow = mtd.rows.find((r) => r.label === WEBINAR_SOURCE);
+  const booked = (f: { booked: number } | undefined) => (f ? f.booked : 0);
   const lines: Array<[string, string, string]> = [
     ["Webinars", String(now.events), String(then.events)],
     ["Registrations", String(now.registrations), String(then.registrations)],
@@ -120,9 +119,9 @@ export function MarketingWebinars({
       pct(then.registrations ? then.attendees / then.registrations : null),
     ],
     [
-      "Booked, Dom's rule (Marketing + Lane 2)",
-      String(domBooked(dom?.current)),
-      String(domBooked(dom?.prior)),
+      "Booked, Internal Webinar row",
+      String(booked(webinarRow?.current)),
+      String(booked(webinarRow?.prior)),
     ],
     [
       "Booked from the room link",
@@ -148,8 +147,8 @@ export function MarketingWebinars({
         <h2 className={adminSectionTitleClass}>Webinars</h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           From the webinar board (webinar_events). Booked from the room link is
-          the board&apos;s own count and is not Dom&apos;s rule; the Dom&apos;s
-          rule line is the Internal Webinar row above.
+          the board&apos;s own count; the Internal Webinar row line is the
+          month-to-date table above.
         </p>
       </div>
       <div className="mt-3 grid gap-4 px-4 pb-4 lg:grid-cols-2">

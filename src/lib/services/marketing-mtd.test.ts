@@ -9,6 +9,7 @@ import {
   rateChange,
   spendChannel,
   UNKNOWN_CHANNEL,
+  type MtdBooking,
   type MtdCall,
   type SpendFact,
 } from "@/lib/services/marketing-mtd";
@@ -31,6 +32,17 @@ const call = (over: Partial<MtdCall>): MtdCall => ({
   bookedBy: "Marketing",
   ...over,
 });
+/** A lead's first call from the Close mirror, owned by a Lane 1 rep. */
+const booking = (over: Partial<MtdBooking>): MtdBooking => ({
+  leadId: `lead_${Math.random()}`,
+  funnel: "YouTube",
+  status: null,
+  bookedDate: "2026-10-05",
+  showUp: null,
+  qualified: null,
+  leadOwner: "Oscar Pugh",
+  ...over,
+});
 const deal = (over: Partial<CloseDeal>): CloseDeal => ({
   id: `oppo_${Math.random()}`,
   leadId: `lead_${Math.random()}`,
@@ -44,7 +56,7 @@ const deal = (over: Partial<CloseDeal>): CloseDeal => ({
 });
 const OCT = { from: "2026-10-01", to: "2026-10-14" };
 const build = (input: {
-  calls?: MtdCall[];
+  calls?: MtdBooking[];
   deals?: CloseDeal[];
   spend?: SpendFact[];
 }) =>
@@ -55,35 +67,40 @@ const build = (input: {
     spend: input.spend ?? [],
   });
 
-describe("buildMarketingMtd on Dom's rule", () => {
-  it("counts Marketing calls as booked and Lane 2 on the same source beside them", () => {
+describe("buildMarketingMtd on Jess's field rule", () => {
+  it("counts one per lead by Funnel Name, Lane 1 owners only, scrapers and cancels out", () => {
     const mtd = build({
       calls: [
-        call({}),
-        call({ funnel: "Internal Webinar" }),
-        call({ funnel: "Internal Webinar", bookedBy: "Lane 2" }),
-        call({ funnel: null, bookedBy: "Lane 2" }),
-        call({ funnel: "YouTube", bookedBy: "Social DMs" }),
+        booking({ leadId: "lead_a" }),
+        booking({ leadId: "lead_a" }),
+        booking({ funnel: "Internal Webinar", bookedBy: "Lane 2" }),
+        booking({ funnel: null }),
+        booking({ funnel: "linkedin" }),
+        booking({ funnel: "LTF - Quiz Funnel" }),
+        booking({ leadOwner: "Someone Else" }),
+        booking({ funnel: "Reactivation Scrapers" }),
+        booking({ status: "🔻 Canceled (by Lead)" }),
+        booking({ businessLine: "The Land Geek (TLG)" }),
       ],
     });
-    expect(mtd.total.current).toMatchObject({ booked: 2, lane2: 2 });
-    expect(mtd.socialDms.current).toBe(1);
-    expect(
-      mtd.rows.map((row) => [row.label, row.current.booked, row.current.lane2]),
-    ).toEqual([
-      ["Internal Webinar", 1, 1],
-      ["YouTube", 1, 0],
-      [UNKNOWN_CHANNEL, 0, 1],
+    expect(mtd.total.current.booked).toBe(5);
+    expect(mtd.rows.map((row) => [row.label, row.current.booked])).toEqual([
+      ["Internal Webinar", 1],
+      ["LinkedIn", 1],
+      ["LTF - Quiz Funnel", 1],
+      ["YouTube", 1],
+      [UNKNOWN_CHANNEL, 1],
     ]);
+    expect(mtd.leads.map((l) => l.leadId)).toContain("lead_a");
   });
 
   it("nests qualified inside shown, lists conflicts, and counts open calls", () => {
     const mtd = build({
       calls: [
-        call({ showUp: "Yes", qualified: "Yes" }),
-        call({ showUp: "true", qualified: "no" }),
-        call({ leadId: "lead_conflict", name: "a@b.co", qualified: "1" }),
-        call({ callDay: "2026-10-20" }),
+        booking({ showUp: "Yes", qualified: "Yes" }),
+        booking({ showUp: "true", qualified: "no", open: true }),
+        booking({ leadId: "lead_conflict", name: "a@b.co", qualified: "1" }),
+        booking({ open: true }),
       ],
     });
     expect(mtd.total.current).toMatchObject({
@@ -97,7 +114,7 @@ describe("buildMarketingMtd on Dom's rule", () => {
     ]);
   });
 
-  it("counts wins on their own, minus excluded closers, by Dom's source label", () => {
+  it("counts wins on their own, minus excluded closers, by Funnel Name", () => {
     const mtd = build({
       deals: [
         deal({ value: 5997 }),
@@ -114,7 +131,7 @@ describe("buildMarketingMtd on Dom's rule", () => {
       unvalued: 1,
     });
     expect(mtd.rows.map((row) => row.label)).toEqual([
-      "Linkedin",
+      "LinkedIn",
       "YouTube",
       UNKNOWN_CHANNEL,
     ]);
@@ -154,7 +171,7 @@ describe("buildMarketingMtd on Dom's rule", () => {
 
   it("keeps a channel that only booked last month", () => {
     const mtd = build({
-      calls: [call({ funnel: "Meta Ads", bookedDate: "2026-09-03" })],
+      calls: [booking({ funnel: "Meta Ads", bookedDate: "2026-09-03" })],
     });
     expect(mtd.rows).toHaveLength(1);
     expect(mtd.rows[0]).toMatchObject({
