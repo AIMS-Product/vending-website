@@ -16,6 +16,8 @@ import type {
  * The two are never added: a site play and a YouTube embedded view are the
  * same event seen from two sides, so a gap between them is a tracking gap
  * (blocked scripts, muted autoplay YouTube counts), not extra viewing.
+ * Until the playback split is connected, Metricool's all-places total stands
+ * in, with "on YouTube" estimated as that total minus our plays.
  */
 export function SiteVideosPanel({ report }: { report: SiteVideoReport }) {
   const totals = report.videos.reduce(
@@ -25,10 +27,25 @@ export function SiteVideosPanel({ report }: { report: SiteVideoReport }) {
       finished: sum.finished + video.site.finished,
       ytEngaged: sum.ytEngaged + (video.youtube?.embeddedEngaged ?? 0),
       ytMinutes: sum.ytMinutes + (video.youtube?.embeddedMinutes ?? 0),
+      ytTotal: sum.ytTotal + (video.youtubeTotal ?? 0),
+      ytEstimate: sum.ytEstimate + (video.onYouTubeEstimate ?? 0),
     }),
-    { played: 0, reached25: 0, finished: 0, ytEngaged: 0, ytMinutes: 0 },
+    {
+      played: 0,
+      reached25: 0,
+      finished: 0,
+      ytEngaged: 0,
+      ytMinutes: 0,
+      ytTotal: 0,
+      ytEstimate: 0,
+    },
   );
   const since = formatPacificDay(report.since) ?? "—";
+  const through = report.youtubeTotalsThrough
+    ? (formatPacificDay(`${report.youtubeTotalsThrough}T12:00:00Z`) ??
+      report.youtubeTotalsThrough)
+    : null;
+  const split = report.youtubeConnected;
 
   return (
     <section className="mb-8">
@@ -47,39 +64,56 @@ export function SiteVideosPanel({ report }: { report: SiteVideoReport }) {
           value={totals.reached25}
           caption={`${totals.finished.toLocaleString("en-US")} watched to the end`}
         />
-        <AdminMetricPanel
-          label="YouTube: real views in embeds"
-          value={report.youtubeConnected ? totals.ytEngaged : "—"}
-          caption={
-            report.youtubeConnected
-              ? "YouTube's engaged views inside embedded players: ours, plus any other site embedding our videos. Two to three days behind."
-              : "Waiting on the one-time YouTube table setup."
-          }
-        />
-        <AdminMetricPanel
-          label="YouTube: watch time in embeds"
-          value={
-            report.youtubeConnected ? formatMinutes(totals.ytMinutes) : "—"
-          }
-          caption="Minutes watched inside embedded players, from YouTube"
-        />
+        {split ? (
+          <>
+            <AdminMetricPanel
+              label="YouTube: real views in embeds"
+              value={totals.ytEngaged}
+              caption="YouTube's engaged views inside embedded players: ours, plus any other site embedding our videos. Two to three days behind."
+            />
+            <AdminMetricPanel
+              label="YouTube: watch time in embeds"
+              value={formatMinutes(totals.ytMinutes)}
+              caption="Minutes watched inside embedded players, from YouTube"
+            />
+          </>
+        ) : (
+          <>
+            <AdminMetricPanel
+              label="YouTube: all views of these videos"
+              value={through ? totals.ytTotal : "—"}
+              caption={
+                through
+                  ? `Every view anywhere, from Metricool, through ${through}.`
+                  : "Metricool has no views for these videos in this range."
+              }
+            />
+            <AdminMetricPanel
+              label="On YouTube (est.)"
+              value={through ? totals.ytEstimate : "—"}
+              caption="All views minus our site plays. Approximate: YouTube counts muted autoplay we leave out."
+            />
+          </>
+        )}
       </AdminMetricStrip>
-
-      {report.youtubeConnected ? null : (
-        <p className={`${adminPanelClass} mt-2 p-3 text-xs`}>
-          YouTube&rsquo;s own numbers (on our site vs on YouTube, watch time)
-          appear here once the YouTube playback tables are set up. Until then
-          this shows our site&rsquo;s plays only.
-        </p>
-      )}
 
       <div className={`${adminPanelClass} mt-3 p-4`}>
         <p className="text-ui-text-muted mb-3 text-xs">
           Played, 25%, Finished: our count, one per browser, sound on.
-          &ldquo;Embedded&rdquo; and &ldquo;On YouTube&rdquo;: YouTube&rsquo;s
-          engaged views (its stricter count that leaves out instant autoplay),
-          with watch time. Embedded is mostly our site; other sites embedding
-          our videos count there too. Vidalytics videos have no YouTube numbers.
+          {split ? (
+            <>
+              &ldquo;Embedded&rdquo; and &ldquo;On YouTube&rdquo;:
+              YouTube&rsquo;s engaged views (its stricter count that leaves out
+              instant autoplay), with watch time. Embedded is mostly our site;
+              other sites embedding our videos count there too.
+            </>
+          ) : (
+            <>
+              &ldquo;All views&rdquo;: every YouTube view, from Metricool.
+              &ldquo;On YouTube (est.)&rdquo;: all views minus our plays.
+            </>
+          )}{" "}
+          Vidalytics videos have no YouTube numbers.
         </p>
         {report.videos.length === 0 ? (
           <p className="text-ui-text-muted text-sm">
@@ -94,13 +128,21 @@ export function SiteVideosPanel({ report }: { report: SiteVideoReport }) {
                   <th className="py-1.5 font-medium">Played</th>
                   <th className="py-1.5 font-medium">25%</th>
                   <th className="py-1.5 font-medium">Finished</th>
-                  <th className="py-1.5 font-medium">Embedded (YouTube)</th>
-                  <th className="py-1.5 font-medium">On YouTube</th>
+                  <th className="py-1.5 font-medium">
+                    {split ? "Embedded (YouTube)" : "All views (YouTube)"}
+                  </th>
+                  <th className="py-1.5 font-medium">
+                    {split ? "On YouTube" : "On YouTube (est.)"}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-ui-line divide-y">
                 {report.videos.map((video) => (
-                  <SiteVideoTableRow key={video.videoId} video={video} />
+                  <SiteVideoTableRow
+                    key={video.videoId}
+                    video={video}
+                    split={split}
+                  />
                 ))}
               </tbody>
             </table>
@@ -111,7 +153,13 @@ export function SiteVideosPanel({ report }: { report: SiteVideoReport }) {
   );
 }
 
-function SiteVideoTableRow({ video }: { video: SiteVideoRow }) {
+function SiteVideoTableRow({
+  video,
+  split,
+}: {
+  video: SiteVideoRow;
+  split: boolean;
+}) {
   const pages = video.pages.slice(0, 4);
   return (
     <tr className="align-top">
@@ -128,21 +176,25 @@ function SiteVideoTableRow({ video }: { video: SiteVideoRow }) {
       <td className="text-ui-text-muted py-2">{video.site.reached25}</td>
       <td className="text-ui-text-muted py-2">{video.site.finished}</td>
       <td className="text-ui-text-muted py-2 whitespace-nowrap">
-        {video.youtube
-          ? `${formatCount(video.youtube.embeddedEngaged)} · ${formatMinutes(video.youtube.embeddedMinutes)}`
-          : "—"}
+        {!split
+          ? formatCount(video.youtubeTotal, "—")
+          : video.youtube
+            ? `${formatCount(video.youtube.embeddedEngaged)} · ${formatMinutes(video.youtube.embeddedMinutes)}`
+            : "—"}
       </td>
       <td className="text-ui-text-muted py-2 whitespace-nowrap">
-        {video.youtube
-          ? `${formatCount(video.youtube.onYouTubeEngaged)} · ${formatMinutes(video.youtube.onYouTubeMinutes)}`
-          : "—"}
+        {!split
+          ? formatCount(video.onYouTubeEstimate, "—")
+          : video.youtube
+            ? `${formatCount(video.youtube.onYouTubeEngaged)} · ${formatMinutes(video.youtube.onYouTubeMinutes)}`
+            : "—"}
       </td>
     </tr>
   );
 }
 
-function formatCount(value: number | null): string {
-  return value === null ? "n/a" : value.toLocaleString("en-US");
+function formatCount(value: number | null, empty = "n/a"): string {
+  return value === null ? empty : value.toLocaleString("en-US");
 }
 
 /** "45m", "3h 20m": nobody reads 200 minutes as a length of time. */
