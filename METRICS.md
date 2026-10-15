@@ -241,9 +241,16 @@ than one counted call, so a win is never read off the lead row). Prove a change 
 `scripts/booked-calls-v2-validate.ts` (Dom's certified pull) and `scripts/marketing-mtd-validate.ts`
 (page equals the Months V2 panel).
 
+Channels (`/admin/analytics/channels`, channel level) and the KPI export's first section count it too,
+by band: the dashboard flow card's computation (`buildChannelFlow` over `readCalls`) for the page's
+range, Lane 2 & Social DMs in their own band. Campaign, creative and per-link rows cannot: the rule
+has no campaign credit, so they keep the spine's `booked`, labelled "Site bookings" (Calendly,
+matched to the link). Prove with `scripts/channels-dom-rule-validate.ts [from] [to]` (band total and
+the Lane 2 & Social DMs band equal the Months V2 panel; Oct 1-15 = 238 / 133, Sep = 569 / 279).
+
 ### Close mirror (legacy first-call count)
 
-Still used by Channels, the KPI export, Team's Closers tab (calendar-hosted calls, a different measure)
+Still used by Team's Closers tab (calendar-hosted calls, a different measure)
 and the nightly company-MTD and first-call audits, until each moves.
 
 ```
@@ -762,6 +769,9 @@ the dashboard's. A Marketing call whose lead filled a site form is credited by `
 (latest fill on or before the booked day), otherwise by its source on Dom's map; Lane 2 and Social
 DMs calls stay with who booked them (Sales outbound). The crosswalk shows every move. It does not
 apply the gclid credit, so its Google row can differ from the flow card's.
+
+The Channels page's "Booked by channel, Dom's rule" table and the KPI export's first section are
+this card's bands for the page's range (booked, showed, qualified, won, revenue), so all three agree.
 
 Channels are the bands in `FLOW_CHANNELS` (`channel-flow.ts`), mapping both vocabularies, spine
 channel labels and Close funnel names, onto one list. Chatbot captures sit in Website & search, where

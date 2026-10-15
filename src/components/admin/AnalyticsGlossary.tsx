@@ -101,12 +101,17 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Booked calls V2",
     meaning:
-      "Dom's shared booked-call rule: the main dashboard's booked calls since Oct 14, 2026, and every panel on the Months page, Marketing MTD and the Funnel board. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
+      "Dom's shared booked-call rule: the main dashboard's booked calls since Oct 14, 2026, every panel on the Months page, Marketing MTD, the Funnel board, the Channels page's Booked by channel table and the KPI export's first section. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
   },
   {
     term: "Marketing only",
     meaning:
       "The switch beside the dates. It keeps only calls the marketing team booked (Dom's rule: Lane 2 and Social DMs calls left out) and leaves won deals on Lane 2 funnels out of every card on the page. Leads and ad spend have no reactivation in them; CAC is the typed monthly model and does not change.",
+  },
+  {
+    term: "Site bookings",
+    meaning:
+      "On Channels and the KPI export's link-level rows: calls booked on our Calendly links, matched to the link, so a campaign, creative or button can carry them. Not Dom's rule, which has no campaign credit; his count is the Booked by channel table. Site shows and Site won are the site bookings traced to a site lead or webinar registration, so they are a floor.",
   },
   {
     term: "Skipped form (direct booking)",

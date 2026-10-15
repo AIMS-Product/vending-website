@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import type { ChannelFact } from "./channel-report-rollup";
-import { buildKpiReport, kpiReportToCsv, type KpiInput } from "./kpi-report";
+import { buildChannelFlow } from "@/lib/analytics/channel-flow";
+import {
+  buildDomRuleSection,
+  buildKpiReport,
+  kpiReportToCsv,
+  type KpiInput,
+} from "./kpi-report";
 
 function fact(over: Partial<ChannelFact>): ChannelFact {
   return {
@@ -437,5 +443,75 @@ describe("kpiReportToCsv", () => {
       .find((line) => line.startsWith("Content and website funnels,YouTube"))!;
     expect(yt).toContain(",1500,120,8,13.3,200,40,80,50,");
     expect(yt).toContain(",,,,ga4-visits + leads,Ayman,Weekly,");
+  });
+});
+
+describe("buildDomRuleSection", () => {
+  const flow = buildChannelFlow({
+    calls: [
+      {
+        meetingId: "m1",
+        leadId: "a",
+        funnel: "YouTube",
+        bookedBy: "Marketing",
+        showUp: "Yes",
+        qualified: "Yes",
+      },
+      {
+        meetingId: "m2",
+        leadId: "b",
+        funnel: "YouTube",
+        bookedBy: "Marketing",
+        showUp: null,
+        qualified: null,
+      },
+      {
+        meetingId: "m3",
+        leadId: "c",
+        funnel: "Instagram",
+        bookedBy: "Lane 2",
+        showUp: "Yes",
+        qualified: null,
+      },
+    ] as unknown as Parameters<typeof buildChannelFlow>[0]["calls"],
+    captured: [],
+    wins: [{ leadId: "a", value: 6000 }],
+  });
+
+  it("puts Lane 2 in its own band and totals every counted call", () => {
+    const section = buildDomRuleSection(flow, {
+      "close-meetings": "2026-10-15T15:00:00Z",
+    });
+    const by = Object.fromEntries(section.rows.map((r) => [r.key, r.values]));
+    expect(by["dom-rule|all"]).toMatchObject({
+      booked: 3,
+      showed: 2,
+      won: 1,
+      revenue: 6000,
+    });
+    expect(by["dom-rule|youtube"]).toMatchObject({
+      booked: 2,
+      showRate: 50,
+      won: 1,
+    });
+    expect(by["dom-rule|reactivation"]).toMatchObject({ booked: 1 });
+    expect(by["dom-rule|instagram"]).toBeUndefined();
+    expect(section.rows[0]!.lastVerified).toBe("2026-10-15T15:00:00Z");
+  });
+
+  it("is the first section when Dom's calls were read, absent when they were not", () => {
+    const base = {
+      facts: [],
+      webinars: [],
+      emailSnapshots: [],
+      setterBookings: [],
+      lastRun: {},
+    };
+    expect(buildKpiReport({ ...base, domRule: flow }).sections[0]!.key).toBe(
+      "dom-rule",
+    );
+    expect(
+      buildKpiReport({ ...base, domRule: null }).sections.map((s) => s.key),
+    ).not.toContain("dom-rule");
   });
 });

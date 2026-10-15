@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { adminCardClass } from "@/components/admin/AdminUi";
+import { ChannelsDomRule } from "@/components/admin/ChannelsDomRule";
 import { ChannelsTab } from "@/components/admin/ChannelsPanels";
 import {
   AnalyticsDrillDown,
@@ -74,5 +75,19 @@ async function ChannelsBody({
   includeInternal: boolean;
   canEdit: boolean;
 }) {
-  return <ChannelsTab data={await data} {...props} />;
+  const tab = await data;
+  return (
+    <>
+      {/* Channel level only: Dom's rule has no campaign or creative credit. */}
+      {tab.channel ? null : (
+        <div className="mb-5">
+          <ChannelsDomRule
+            startDay={tab.range.startDay}
+            endDay={tab.range.endDay}
+          />
+        </div>
+      )}
+      <ChannelsTab data={tab} {...props} />
+    </>
+  );
 }

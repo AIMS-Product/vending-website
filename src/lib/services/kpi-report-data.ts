@@ -1,5 +1,12 @@
 import "server-only";
 
+import { pacificToday } from "@/lib/admin/format-time";
+import {
+  buildChannelFlow,
+  type ChannelFlow,
+} from "@/lib/analytics/channel-flow";
+import { inRange } from "@/lib/analytics/dashboard-metrics";
+import { readCalls, readDeals } from "@/lib/services/analytics-dashboard-data";
 import { buildCallCreditReport } from "@/lib/services/call-credit-data";
 import { readAllPages } from "@/lib/services/paged-read";
 import { logReadFailure } from "@/lib/services/read-failure";
@@ -52,6 +59,7 @@ export async function getKpiTab(
     includeInternal?: boolean;
     client?: ReportClient;
     now?: Date;
+    loadDomRule?: typeof readDomRuleFlow;
   } = {},
 ): Promise<KpiTabData> {
   const client = input.client ?? createAdminClient();
@@ -62,7 +70,7 @@ export async function getKpiTab(
   const startDay = dayKey(new Date(endsAt.getTime() - (days - 1) * DAY_MS));
   const endExclusive = `${dayKey(new Date(endsAt.getTime() + DAY_MS))}T00:00:00.000Z`;
 
-  const [facts, runs, webinars, emailSnapshots, setterBookings] =
+  const [facts, runs, webinars, emailSnapshots, setterBookings, domRule] =
     await Promise.all([
       fetchFacts(client, startDay, endDay, {
         includeInternal: input.includeInternal,
@@ -71,6 +79,11 @@ export async function getKpiTab(
       fetchWebinars(client, startDay, endDay),
       fetchEmailSnapshots(client, startDay, endDay),
       fetchSetterBookings(client, `${startDay}T00:00:00.000Z`, endExclusive),
+      (input.loadDomRule ?? readDomRuleFlow)(
+        startDay,
+        endDay,
+        pacificToday(now),
+      ),
     ]);
 
   const lastRun: Record<string, string | null> = {};
@@ -91,6 +104,7 @@ export async function getKpiTab(
       emailSnapshots,
       setterBookings,
       lastRun,
+      domRule,
     }),
     connected: facts !== null,
   };
@@ -275,4 +289,30 @@ async function fetchLeadOutcomes(
     return outcomes;
   }
   return outcomes;
+}
+
+/** The dashboard flow for the range on Dom's rule; null (section left out) when a read fails. */
+async function readDomRuleFlow(
+  startDay: string,
+  endDay: string,
+  today: string,
+): Promise<ChannelFlow | null> {
+  const [calls, deals] = await Promise.all([
+    readCalls(startDay, endDay),
+    readDeals(startDay, today),
+  ]);
+  if (!calls.ok || !deals.ok) {
+    console.error("kpi dom-rule section not built", {
+      calls: calls.ok ? null : calls.error,
+      deals: deals.ok ? null : deals.error,
+    });
+    return null;
+  }
+  return buildChannelFlow({
+    calls: calls.data.filter((c) =>
+      inRange(c.bookedDate, { startDay, endDay }),
+    ),
+    captured: [],
+    wins: deals.data,
+  });
 }

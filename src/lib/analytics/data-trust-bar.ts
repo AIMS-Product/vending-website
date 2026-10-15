@@ -242,8 +242,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   ],
   // funnel-map.ts: spine visits + leads, Close, GHL email stats
   map: ["ga4-visits", "spine-leads", "close", "ghl-email"],
-  // channel-report.ts: the whole spine, Close wins, Calendly, lead forms
-  channels: [...SPINE, "close", "calendly", "site-leads"],
+  // channel-report.ts: the whole spine, Close wins, Calendly, lead forms; Dom's-rule table: close_meetings
+  channels: [...SPINE, "close", "calendly", "site-leads", "close-meetings"],
   // youtube-attribution.ts: leads, Bitly clicks, YouTube videos, Close shows
   youtube: ["site-leads", "ga4-pages", "bitly", "youtube", "close"],
   // video-engagement-report.ts: video views, leads, Calendly, Close;
