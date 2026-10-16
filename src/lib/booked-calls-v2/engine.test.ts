@@ -157,6 +157,14 @@ describe("Pearl's Social DMs", () => {
     }
   });
 
+  it("her Close user id in the setter user field gates the same way", () => {
+    const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
+      ...youtube,
+      setterUserId: "user_0SuNg0OWd2reYMeyuDVqiVvjiGcRiFheKKOXXZpyaPZ",
+    });
+    expect(d.bookedBy).toBe("Social DMs");
+  });
+
   it("the same titles stay Marketing for anyone else's lead", () => {
     const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })]);
     expect(d).toMatchObject({ disposition: "counted", bookedBy: "Marketing" });
@@ -232,6 +240,13 @@ describe("status", () => {
     expect(d).toMatchObject({ disposition: "excluded", bookedBy: "Lane 2" });
   });
 
+  it("calls an internal meeting not a sales call even when canceled", () => {
+    const [d] = decide([
+      meeting({ title: "Webinar Actions Review", status: "canceled" }),
+    ]);
+    expect(d.reason).toBe("not_sales_call");
+  });
+
   it("excludes setter-only and non-booking titles as not sales calls", () => {
     for (const title of [
       "Vending Quick Discovery",
@@ -250,16 +265,19 @@ describe("30 x 24 hour episodes", () => {
   const at = (iso: string, hours: number) =>
     new Date(Date.parse(iso) + hours * H).toISOString();
   const START = "2026-09-20T18:00:00Z";
+  // Only Lane 2 and Social DM credits run on episodes.
+  const lane2 = (over: Partial<Meeting> = {}) =>
+    meeting({ title: "Vendingpreneur Next Steps", ...over });
 
   it("one hour short of 720 is the same episode; 720 hours is a new one", () => {
-    const credit = meeting({
+    const credit = lane2({
       startsAt: START,
       dateCreated: "2026-09-10T18:00:00Z",
     });
-    const inside = meeting({ startsAt: at(START, 719) });
+    const inside = lane2({ startsAt: at(START, 719) });
     const lead_b = { leadId: "lead_b" };
     const creditB = { ...credit, id: "acti_credit_b", ...lead_b };
-    const outside = meeting({ startsAt: at(START, 720), ...lead_b });
+    const outside = lane2({ startsAt: at(START, 720), ...lead_b });
     const out = evaluate({
       meetings: [credit, inside, creditB, outside],
       leads: new Map([
@@ -302,13 +320,13 @@ describe("30 x 24 hour episodes", () => {
   });
 
   it("a no-show keeps its credit; its reschedule earns none", () => {
-    const noShow = meeting({
+    const noShow = lane2({
       status: "completed",
       outcome: "No Show",
       startsAt: "2026-10-03T18:00:00Z",
       dateCreated: "2026-10-01T18:00:00Z",
     });
-    const moved = meeting({ startsAt: "2026-10-09T18:00:00Z" });
+    const moved = lane2({ startsAt: "2026-10-09T18:00:00Z" });
     const out = decide([noShow, moved]);
     expect(out.map((d) => [d.meetingId, d.reason])).toEqual([
       [noShow.id, "counted"],
@@ -328,13 +346,25 @@ describe("30 x 24 hour episodes", () => {
   });
 
   it("simultaneous meetings: earliest created, then lowest id, takes the credit", () => {
-    const later = meeting({ dateCreated: "2026-10-05T19:00:00Z" });
-    const earlier = meeting({ dateCreated: "2026-10-05T18:00:00Z" });
+    const later = lane2({ dateCreated: "2026-10-05T19:00:00Z" });
+    const earlier = lane2({ dateCreated: "2026-10-05T18:00:00Z" });
     const out = decide([later, earlier]);
     expect(out.find((d) => d.meetingId === earlier.id)?.reason).toBe("counted");
     expect(out.find((d) => d.meetingId === later.id)?.reason).toBe(
       "within_episode",
     );
+  });
+
+  it("Marketing credits neither repeat-limit nor anchor an episode", () => {
+    const first = meeting({ startsAt: "2026-10-03T18:00:00Z" });
+    const again = meeting({ startsAt: "2026-10-06T18:00:00Z" });
+    const setter = lane2({ startsAt: "2026-10-09T18:00:00Z" });
+    const out = decide([first, again, setter]);
+    expect(out.map((d) => [d.bookedBy, d.reason])).toEqual([
+      ["Marketing", "counted"],
+      ["Marketing", "counted"],
+      ["Lane 2", "counted"],
+    ]);
   });
 
   it("dates MTD by creation, not the scheduled day", () => {

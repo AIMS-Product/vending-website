@@ -13,6 +13,7 @@ import {
   RULE_VERSION,
   SETTER_ONLY_CALLERS,
   SOCIAL_DM_SETTER,
+  SOCIAL_DM_SETTER_ID,
   TIME_ZONE,
   TITLE_MAP,
   type BookedBy,
@@ -29,11 +30,14 @@ import {
  * every retained meeting for each candidate lead, because a credit before the
  * window can still open the episode a candidate falls in.
  *
- * One credit per lead episode: the first eligible meeting by scheduled start
- * (ties: earliest created, then id) is credited, and no other meeting
- * scheduled within 30 x 24 hours of that start earns a second. Canceled,
- * declined and held meetings never start or reset the timer. A No Show keeps
- * its credit; its reschedule falls inside the episode. Notes are never read.
+ * Lane 2 and Social DMs: one credit per lead episode. The first eligible
+ * meeting by scheduled start (ties: earliest created, then id) is credited,
+ * and no other Lane 2 / Social DM meeting scheduled within 30 x 24 hours of
+ * that start earns a second. Canceled, declined and held meetings never start
+ * or reset the timer. A No Show keeps its credit; its reschedule falls inside
+ * the episode. Marketing keeps its own V2 eligibility: no episode, and its
+ * credits never anchor one (the only reading that reproduces Dom's Oct 1-16
+ * Lane 2 203 and per-channel Marketing). Notes are never read.
  */
 
 export type Meeting = {
@@ -50,6 +54,8 @@ export type Meeting = {
 
 export type LeadFacts = LeadOriginFacts & {
   setterName: string | null;
+  /** Close user id in the lead's setter user field. */
+  setterUserId?: string | null;
   businessLine: string | null;
 };
 
@@ -127,7 +133,8 @@ function classifyTitle(m: Meeting, lead: LeadFacts | undefined): TitleVerdict {
     };
   }
   if (
-    same(lead?.setterName, SOCIAL_DM_SETTER) &&
+    (same(lead?.setterName, SOCIAL_DM_SETTER) ||
+      lead?.setterUserId === SOCIAL_DM_SETTER_ID) &&
     PEARL_SOURCE_TITLES.some((re) => re.test(title))
   ) {
     return {
@@ -237,20 +244,23 @@ function decideLead(
       out.push({ ...base, disposition, reason });
 
     if (Number.isNaN(startMs)) push("held", "missing_timestamp");
-    else if (m.userId && EXCLUDED_CALLERS.has(m.userId))
+    else if (
+      (m.userId && EXCLUDED_CALLERS.has(m.userId)) ||
+      verdict.kind === "not_sales_call"
+    )
       push("excluded", "not_sales_call");
     else if (isCanceled(m)) push("excluded", "canceled");
     else if (!ACTIVE_STATUSES.has((m.status ?? "").toLowerCase()))
       push("held", "unknown_status");
     else if (verdict.kind === "follow_up") push("excluded", "follow_up_title");
-    else if (verdict.kind === "not_sales_call")
-      push("excluded", "not_sales_call");
     else if (verdict.kind === "unapproved")
       push("excluded", "unapproved_title");
-    else if (anchor && startMs < Date.parse(anchor.startsAt!) + EPISODE_MS)
+    else if (verdict.kind === "family") {
+      // Marketing keeps its own eligibility: no episode, never an anchor.
+      if (origin.source) push("counted", "counted");
+      else push("held", "source_unavailable");
+    } else if (anchor && startMs < Date.parse(anchor.startsAt!) + EPISODE_MS)
       push("excluded", "within_episode");
-    else if (verdict.kind === "family" && !origin.source)
-      push("held", "source_unavailable");
     else {
       push("counted", "counted");
       anchor = m;

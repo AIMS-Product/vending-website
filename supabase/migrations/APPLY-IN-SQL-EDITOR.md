@@ -405,3 +405,14 @@ alter table public.youtube_playback_sync_state enable row level security;
 comment on table public.youtube_playback_sync_state is
   'Last day synced into youtube_video_playback_daily per video. Service-role only.';
 ```
+
+## 14. Booked calls V2 setter user (20261016120000)
+
+**Apply before merging the v2.6 PR.** Without it the hourly `close-meetings-sync`
+fails writing `close_meeting_leads` and the Months V2 panel cannot read. Safe to
+run twice; paste `supabase/migrations/20261016120000_close_meeting_leads_setter_user.sql`:
+
+```sql
+alter table public.close_meeting_leads
+  add column if not exists setter_user_id text;
+```

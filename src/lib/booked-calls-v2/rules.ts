@@ -23,6 +23,9 @@ export const HISTORICAL_CUTOFF = domRules.historical_cutoff_exclusive;
 export type BookedBy = "Marketing" | "Lane 2" | "Social DMs";
 
 export const SOCIAL_DM_SETTER = domRules.candidate_policy.social_dm_setter;
+export const SOCIAL_DM_SETTER_ID = domRules.title_rules.find(
+  (rule) => rule.setter_name === SOCIAL_DM_SETTER,
+)?.setter_user_id;
 
 export type TitleRule = {
   key: string;
@@ -48,9 +51,10 @@ export const TITLE_MAP: readonly TitleRule[] = domRules.title_rules.map(
 
 /**
  * Pearl's Social DM leads booked onto a standard closer calendar. Applied
- * only when the lead's current setter is Pearl: the handoff names these
- * "Pearl social-source/title patterns" but not the gate, and the titles are
- * also ordinary Marketing first calls.
+ * only when Pearl is the lead's setter (name field, or the setter user field
+ * by her Close id): the handoff names these "Pearl social-source/title
+ * patterns" but not the gate, and the titles are also ordinary Marketing
+ * first calls (every webinar consultation matches them).
  */
 export const PEARL_SOURCE_TITLES: readonly RegExp[] =
   domRules.pearl_source_title_patterns.map((p) => new RegExp(p, "i"));
@@ -85,9 +89,13 @@ export const CANCELED_TITLE = /^cancel(?:l)?ed[\s:]?/i;
 /** Handoff "Sales-call eligibility": follow-up / reschedule titles. */
 export const FOLLOW_UP_TITLE =
   /follow[-\s]?up|fallow\s+up|f\/u\b|next\s+steps|reschedul/i;
-/** Handoff: non-booking and setter-only discovery titles. */
+/**
+ * Handoff: non-booking and setter-only discovery titles, plus the internal
+ * meetings Dom's engine calls not a sales call (not in `rules.json`; the
+ * Oct 1-16 pull has 11 Webinar Actions Reviews among his 12).
+ */
 export const NOT_SALES_TITLE =
-  /enrollment|silver\s+start\s*up|q\s*&\s*a|walk\s*-?through|vending\s+quick\s+discovery|route\s+planning\s+call/i;
+  /enrollment|silver\s+start\s*up|q\s*&\s*a|walk\s*-?through|vending\s+quick\s+discovery|route\s+planning\s+call|webinar\s+actions\s+review|setter\s+interview/i;
 /** Any title that is not a new first call (Marketing MTD open-call filter). */
 export const NON_NEW_CALL_TITLE = new RegExp(
   `${FOLLOW_UP_TITLE.source}|${NOT_SALES_TITLE.source}`,

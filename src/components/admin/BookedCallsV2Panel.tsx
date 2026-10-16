@@ -22,7 +22,7 @@ const REASON_LABEL: Record<Reason, string> = {
   canceled: "Canceled or declined",
   follow_up_title: "Follow-up or reschedule title",
   unapproved_title: "Title not an approved first call",
-  within_episode: "Scheduled within 30 days of the lead's last credit",
+  within_episode: "Scheduled within 30 days of the lead's last setter credit",
   not_sales_call: "Not a sales call (setter-only or excluded caller)",
   source_unavailable: "Held: no supported lead source",
   unknown_status: "Held: unknown Close status",
@@ -74,11 +74,11 @@ export function BookedCallsV2Panel({
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           One credit per qualifying Close meeting, dated by the day it was
-          created (Pacific). One credit per lead every 30 days, timed from the
-          credited meeting&apos;s scheduled start; a no-show keeps its credit
-          and its reschedule earns none. Booked By comes from the meeting title;
-          the lead source is shown separately and never adds calls. Rule{" "}
-          {report.ruleVersion}, meetings created up to{" "}
+          created (Pacific). Lane 2 and Social DMs earn one credit per lead
+          every 30 days, timed from the credited meeting&apos;s scheduled start;
+          a no-show keeps its credit and its reschedule earns none. Booked By
+          comes from the meeting title; the lead source is shown separately and
+          never adds calls. Rule {report.ruleVersion}, meetings created up to{" "}
           {formatPacificStampShort(report.to)}.
         </p>
       </div>

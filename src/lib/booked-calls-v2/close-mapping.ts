@@ -1,3 +1,4 @@
+import domRules from "@/lib/booked-calls-v2/rules.v2.6.json";
 import type { Json, TablesInsert } from "@/types/database";
 
 /**
@@ -25,8 +26,11 @@ export const LEAD_LABELS = {
   resourceTag: "resource tag",
 } as const;
 
+/** Close user field "setter" by Dom's id; it has no stable label to look up. */
+export const SETTER_USER_FIELD = domRules.lead_fields.setter_user;
+
 export type LeadFieldIds = {
-  lead: Partial<Record<keyof typeof LEAD_LABELS, string>>;
+  lead: Partial<Record<keyof typeof LEAD_LABELS | "setterUser", string>>;
   utmSource?: string;
   utmMedium?: string;
 };
@@ -117,6 +121,7 @@ export function mapLeadFacts(
     contact_utms: utms as unknown as Json,
     resource_tag: customValue(lead, ids.lead.resourceTag),
     setter_name: customValue(lead, ids.lead.setter),
+    setter_user_id: customValue(lead, ids.lead.setterUser),
     business_line: customValue(lead, ids.lead.businessLine),
     synced_at: syncedAt,
   };
