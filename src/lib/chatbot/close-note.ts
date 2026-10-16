@@ -88,21 +88,43 @@ export async function writeLeadNoteOnce(
     // newer notes could take a second copy. Acceptable: these notes are
     // written within minutes of the event, and the sweeps are idempotent on
     // the same day. Same upgrade path.
-    if (await hasExistingNote(closeClient, leadId, input.marker)) {
-      return "duplicate";
-    }
-
-    await closeClient.createNote({
-      lead_id: leadId,
-      note_html: input.buildHtml(input.marker),
+    return await postLeadNoteOnce(closeClient, {
+      leadId,
+      marker: input.marker,
+      buildHtml: input.buildHtml,
     });
-    return "written";
   } catch (error) {
     console.warn("chatbot: could not write Close lead note", {
       name: error instanceof Error ? error.name : "UnknownError",
     });
     return "failed";
   }
+}
+
+/**
+ * The dedupe core: post a note unless one carrying `marker` is already on the
+ * lead. Throws on any Close error -- writeLeadNoteOnce wraps it fail-soft for
+ * the chatbot; the close_sync_events drain (sync.ts) lets it throw so the event
+ * retries. Same check-then-act ceilings as described in writeLeadNoteOnce.
+ */
+export async function postLeadNoteOnce(
+  closeClient: CloseClient,
+  input: {
+    leadId: string;
+    contactId?: string | null;
+    marker: string;
+    buildHtml: (marker: string) => string;
+  },
+): Promise<"written" | "duplicate"> {
+  if (await hasExistingNote(closeClient, input.leadId, input.marker)) {
+    return "duplicate";
+  }
+  await closeClient.createNote({
+    lead_id: input.leadId,
+    ...(input.contactId ? { contact_id: input.contactId } : {}),
+    note_html: input.buildHtml(input.marker),
+  });
+  return "written";
 }
 
 /** conversation -> lead_submission -> close_lead_id. Null at any missing hop. */

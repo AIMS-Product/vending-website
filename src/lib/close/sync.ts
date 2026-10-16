@@ -3,6 +3,7 @@ import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { writeChatbotEngagementNote } from "@/lib/chatbot/close-engagement-note";
 import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
+import { postLeadNoteOnce } from "@/lib/chatbot/close-note";
 import { config } from "@/lib/config";
 import { LEAD_MAGNET_FORM_ID } from "@/lib/content/lead-magnets";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
@@ -1004,11 +1005,6 @@ async function syncQualificationEnrichment(
     throw new Error(await missingCloseLeadMessage(client, event));
   }
   const contactId = existingCloseIds(event, lead).contactId;
-  await close.createNote({
-    lead_id: leadId,
-    contact_id: contactId,
-    note_html: qualificationNoteHtml(event.payload, isNewsletter),
-  });
 
   // Custom fields are scope-locked in Close: lead-scoped IDs must go on the lead,
   // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
@@ -1026,13 +1022,31 @@ async function syncQualificationEnrichment(
     event.payload,
     closeConfig,
   );
-  if (Object.keys(contactFields).length) {
-    if (!contactId) {
-      throw new CloseNeedsReviewError(
-        "Qualification enrichment has contact-scoped custom fields but no Close contact ID.",
-      );
-    }
+  const hasContactFields = Object.keys(contactFields).length > 0;
+  if (hasContactFields && contactId) {
     await close.updateContact(contactId, contactFields);
+  }
+
+  // The note goes LAST, and once per event. Close's note endpoint has no
+  // idempotency key, so the note carries this event's id and is skipped when a
+  // retry finds it already on the lead -- a timed-out POST that Close saved,
+  // or a needs-review event retried by hand (same row, same id). The field
+  // writes are idempotent PUTs, so retrying them is harmless. Errors throw so
+  // the event retries.
+  await postLeadNoteOnce(close, {
+    leadId,
+    contactId,
+    marker: `close-sync-event:${event.id}`,
+    buildHtml: (marker) =>
+      qualificationNoteHtml(event.payload, isNewsletter, marker),
+  });
+
+  // Parked after the note, as before: a rep still sees the qualification on
+  // the record while the missing contact is sorted out by hand.
+  if (hasContactFields && !contactId) {
+    throw new CloseNeedsReviewError(
+      "Qualification enrichment has contact-scoped custom fields but no Close contact ID.",
+    );
   }
   return { leadId, contactId };
 }
@@ -1314,7 +1328,11 @@ function sourceAttributionValues(
   return values;
 }
 
-function qualificationNoteHtml(payload: Json, isNewsletter: boolean) {
+function qualificationNoteHtml(
+  payload: Json,
+  isNewsletter: boolean,
+  marker: string,
+) {
   const qualification = objectAt(payload, "qualification");
   const answers = arrayAt(payload, "answers");
   const rows = answers
@@ -1338,6 +1356,7 @@ function qualificationNoteHtml(payload: Json, isNewsletter: boolean) {
       ? ""
       : `<p>Status: ${escapeHtml(stringAt(qualification, "status") ?? "qualified")}</p>`,
     rows ? `<ul>${rows}</ul>` : "",
+    `<p>Reference: ${escapeHtml(marker)}</p>`,
     "</body>",
   ].join("");
 }
