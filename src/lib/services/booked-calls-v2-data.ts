@@ -109,9 +109,7 @@ export async function getBookedCallsV2(
       ),
       db
         .from("close_meeting_leads")
-        .select(
-          "lead_id,funnel,contact_utms,setter_name,setter_user_id,business_line",
-        )
+        .select("lead_id,funnel,contact_utms,setter_name,business_line")
         .in("lead_id", ids),
     ]);
     if (meetings.error || facts.error) {
@@ -129,7 +127,6 @@ export async function getBookedCallsV2(
           ? (f.contact_utms as Array<{ source?: string | null }>)
           : [],
         setterName: f.setter_name,
-        setterUserId: f.setter_user_id,
         businessLine: f.business_line,
       });
     }

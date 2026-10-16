@@ -13,13 +13,14 @@ import {
   RULE_VERSION,
   SETTER_ONLY_CALLERS,
   SOCIAL_DM_SETTER,
-  SOCIAL_DM_SETTER_ID,
+  PEARL_SOCIAL_UTM_SOURCES,
   TIME_ZONE,
   TITLE_MAP,
   type BookedBy,
 } from "@/lib/booked-calls-v2/rules";
 import {
   resolveOrigin,
+  utmSourceKey,
   type LeadOriginFacts,
   type Origin,
 } from "@/lib/booked-calls-v2/sources";
@@ -54,8 +55,6 @@ export type Meeting = {
 
 export type LeadFacts = LeadOriginFacts & {
   setterName: string | null;
-  /** Close user id in the lead's setter user field. */
-  setterUserId?: string | null;
   businessLine: string | null;
 };
 
@@ -134,7 +133,9 @@ function classifyTitle(m: Meeting, lead: LeadFacts | undefined): TitleVerdict {
   }
   if (
     (same(lead?.setterName, SOCIAL_DM_SETTER) ||
-      lead?.setterUserId === SOCIAL_DM_SETTER_ID) &&
+      lead?.contactUtms.some((c) =>
+        PEARL_SOCIAL_UTM_SOURCES.has(utmSourceKey(c.source) ?? ""),
+      )) &&
     PEARL_SOURCE_TITLES.some((re) => re.test(title))
   ) {
     return {

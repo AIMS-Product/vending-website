@@ -13,7 +13,6 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import {
   HISTORY_START,
   LEAD_LABELS,
-  SETTER_USER_FIELD,
   mapLeadFacts,
   mapMeeting,
   monthWindows,
@@ -150,11 +149,10 @@ async function load(): Promise<{
   const ids: LeadFieldIds = {
     lead: Object.fromEntries(
       Object.entries(LEAD_LABELS).map(([k, l]) => [k, leadDefs.get(l)]),
-    ) as LeadFieldIds["lead"],
+    ),
     utmSource: contactDefs.get("utm_source") ?? contactDefs.get("utm source"),
     utmMedium: contactDefs.get("utm_medium") ?? contactDefs.get("utm medium"),
   };
-  ids.lead.setterUser = SETTER_USER_FIELD;
   console.log(
     "field ids resolved:",
     JSON.stringify({
@@ -190,7 +188,6 @@ async function load(): Promise<{
           (row.contact_utms as Array<{ source?: string; medium?: string }>) ??
           [],
         setterName: row.setter_name ?? null,
-        setterUserId: row.setter_user_id ?? null,
         businessLine: row.business_line ?? null,
       });
     }

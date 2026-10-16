@@ -1055,7 +1055,6 @@ export type Database = {
           lead_id: string;
           resource_tag: string | null;
           setter_name: string | null;
-          setter_user_id: string | null;
           synced_at: string;
         };
         Insert: {
@@ -1065,7 +1064,6 @@ export type Database = {
           lead_id: string;
           resource_tag?: string | null;
           setter_name?: string | null;
-          setter_user_id?: string | null;
           synced_at?: string;
         };
         Update: {
@@ -1075,7 +1073,6 @@ export type Database = {
           lead_id?: string;
           resource_tag?: string | null;
           setter_name?: string | null;
-          setter_user_id?: string | null;
           synced_at?: string;
         };
         Relationships: [];

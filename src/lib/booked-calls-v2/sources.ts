@@ -29,6 +29,12 @@ const UTM_SOURCE_MAP: Readonly<Record<string, string>> =
 const clean = (value: string | null | undefined): string | null =>
   value?.trim() || null;
 
+/** A contact `utm_source` as sources.py keys it: lower case, query cut off. */
+export function utmSourceKey(value: string | null | undefined): string | null {
+  const raw = clean(value);
+  return raw ? raw.toLowerCase().split("&", 1)[0]!.split("?", 1)[0]! : null;
+}
+
 export function resolveOrigin(facts: LeadOriginFacts | undefined): Origin {
   if (!facts) return { source: null, basis: "unknown" };
   const current = clean(facts.funnel);
@@ -38,9 +44,8 @@ export function resolveOrigin(facts: LeadOriginFacts | undefined): Origin {
   const candidates = new Set<string>();
   let unknownUtm = false;
   for (const contact of facts.contactUtms) {
-    const raw = clean(contact.source);
-    if (!raw) continue;
-    const source = raw.toLowerCase().split("&", 1)[0]!.split("?", 1)[0]!;
+    const source = utmSourceKey(contact.source);
+    if (!source) continue;
     const target = UTM_SOURCE_MAP[source];
     if (target) candidates.add(target);
     else unknownUtm = true;

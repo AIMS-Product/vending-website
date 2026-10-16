@@ -157,12 +157,18 @@ describe("Pearl's Social DMs", () => {
     }
   });
 
-  it("her Close user id in the setter user field gates the same way", () => {
-    const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
-      ...youtube,
-      setterUserId: "user_0SuNg0OWd2reYMeyuDVqiVvjiGcRiFheKKOXXZpyaPZ",
-    });
-    expect(d.bookedBy).toBe("Social DMs");
+  it("a contact from her GoHighLevel link or Mike's IG DMs gates the same way", () => {
+    for (const source of ["ghl", "Mike-IG?fbclid=x"]) {
+      const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
+        ...youtube,
+        funnel: "Internal Webinar",
+        contactUtms: [{ source }],
+      });
+      expect(d).toMatchObject({
+        bookedBy: "Social DMs",
+        origin: { source: "Internal Webinar" },
+      });
+    }
   });
 
   it("the same titles stay Marketing for anyone else's lead", () => {

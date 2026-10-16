@@ -9,7 +9,6 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   LEAD_LABELS,
-  SETTER_USER_FIELD,
   mapLeadFacts,
   mapMeeting,
   monthWindows,
@@ -87,11 +86,10 @@ async function refreshLeadFacts(
         key,
         leadIds_.get(label),
       ]),
-    ) as LeadFieldIds["lead"],
+    ) as Partial<Record<keyof typeof LEAD_LABELS, string>>,
     utmSource: contactIds.get("utm_source") ?? contactIds.get("utm source"),
     utmMedium: contactIds.get("utm_medium") ?? contactIds.get("utm medium"),
   };
-  ids.lead.setterUser = SETTER_USER_FIELD;
   if (!ids.lead.funnel) {
     throw new Error(
       `Close lead custom field not found: "Funnel Name DEAL (Opp)".`,

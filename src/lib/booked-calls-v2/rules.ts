@@ -23,9 +23,6 @@ export const HISTORICAL_CUTOFF = domRules.historical_cutoff_exclusive;
 export type BookedBy = "Marketing" | "Lane 2" | "Social DMs";
 
 export const SOCIAL_DM_SETTER = domRules.candidate_policy.social_dm_setter;
-export const SOCIAL_DM_SETTER_ID = domRules.title_rules.find(
-  (rule) => rule.setter_name === SOCIAL_DM_SETTER,
-)?.setter_user_id;
 
 export type TitleRule = {
   key: string;
@@ -51,13 +48,25 @@ export const TITLE_MAP: readonly TitleRule[] = domRules.title_rules.map(
 
 /**
  * Pearl's Social DM leads booked onto a standard closer calendar. Applied
- * only when Pearl is the lead's setter (name field, or the setter user field
- * by her Close id): the handoff names these "Pearl social-source/title
- * patterns" but not the gate, and the titles are also ordinary Marketing
- * first calls (every webinar consultation matches them).
+ * only with one of her social sources: she is the lead's setter, or a
+ * contact's raw `utm_source` is one of `PEARL_SOCIAL_UTM_SOURCES`. The
+ * handoff names "Pearl social-source/title patterns" but not the gate, and
+ * the titles are also ordinary Marketing first calls (every webinar
+ * consultation matches them).
  */
 export const PEARL_SOURCE_TITLES: readonly RegExp[] =
   domRules.pearl_source_title_patterns.map((p) => new RegExp(p, "i"));
+
+/**
+ * Pearl's booking channels: her GoHighLevel link and Mike's Instagram DMs.
+ * Not in `rules.json`; inferred from Dom's Oct 1-16 pull, where exactly these
+ * moved 5 webinar and 1 Instagram consultation from Marketing to Social DMs
+ * (and the setter user field moved none).
+ */
+export const PEARL_SOCIAL_UTM_SOURCES: ReadonlySet<string> = new Set([
+  "ghl",
+  "mike-ig",
+]);
 
 /** The 12 approved new-call families an unmapped title can earn Marketing with. */
 export const FIRST_CALL_FAMILIES: readonly RegExp[] =
