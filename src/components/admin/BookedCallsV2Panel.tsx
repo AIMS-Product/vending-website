@@ -19,14 +19,13 @@ const BUCKETS: readonly BookedBy[] = ["Marketing", "Lane 2", "Social DMs"];
 
 const REASON_LABEL: Record<Reason, string> = {
   counted: "Counted",
-  canceled: "Canceled, declined or rescheduled",
+  canceled: "Canceled or declined",
   follow_up_title: "Follow-up or reschedule title",
   unapproved_title: "Title not an approved first call",
-  repeat_within_60_days: "Within 60 days of the previous meeting",
+  within_episode: "Scheduled within 30 days of the lead's last credit",
   not_sales_call: "Not a sales call (setter-only or excluded caller)",
   source_unavailable: "Held: no supported lead source",
-  unlinked_reschedule: "Held: reschedule with no link to the original",
-  ambiguous_simultaneous: "Held: two meetings at the same time",
+  unknown_status: "Held: unknown Close status",
   missing_timestamp: "Held: missing scheduled time",
 };
 
@@ -75,8 +74,9 @@ export function BookedCallsV2Panel({
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           One credit per qualifying Close meeting, dated by the day it was
-          created (Pacific). A lead can earn another credit 60 days after its
-          previous scheduled meeting. Booked By comes from the meeting title;
+          created (Pacific). One credit per lead every 30 days, timed from the
+          credited meeting&apos;s scheduled start; a no-show keeps its credit
+          and its reschedule earns none. Booked By comes from the meeting title;
           the lead source is shown separately and never adds calls. Rule{" "}
           {report.ruleVersion}, meetings created up to{" "}
           {formatPacificStampShort(report.to)}.

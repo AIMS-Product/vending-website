@@ -40,12 +40,11 @@ type MeetingRecord = {
   outcome: string | null;
   starts_at: string | null;
   date_created: string;
-  reschedule_note: boolean;
   synced_at: string;
 };
 
 const MEETING_COLUMNS =
-  "id,lead_id,user_id,user_name,title,status,outcome,starts_at,date_created,reschedule_note,synced_at";
+  "id,lead_id,user_id,user_name,title,status,outcome,starts_at,date_created,synced_at";
 
 function toMeeting(r: MeetingRecord): Meeting {
   return {
@@ -58,7 +57,6 @@ function toMeeting(r: MeetingRecord): Meeting {
     outcome: r.outcome,
     startsAt: r.starts_at,
     dateCreated: r.date_created,
-    rescheduleNote: r.reschedule_note,
   };
 }
 
@@ -93,8 +91,8 @@ export async function getBookedCallsV2(
     return { ok: false, error: "Could not read Close meetings." };
   }
 
-  // Full retained history for each candidate lead: the 60-day rule looks
-  // before the window.
+  // Full retained history for each candidate lead: a credit before the
+  // window can open the episode a candidate falls in.
   const leadIds = [...new Set(candidates.rows.map((m) => m.lead_id))];
   const history: MeetingRecord[] = [];
   const leads = new Map<string, LeadFacts>();
@@ -111,9 +109,7 @@ export async function getBookedCallsV2(
       ),
       db
         .from("close_meeting_leads")
-        .select(
-          "lead_id,funnel,contact_utms,resource_tag,setter_name,business_line",
-        )
+        .select("lead_id,funnel,contact_utms,setter_name,business_line")
         .in("lead_id", ids),
     ]);
     if (meetings.error || facts.error) {
@@ -128,12 +124,8 @@ export async function getBookedCallsV2(
       leads.set(f.lead_id, {
         funnel: f.funnel,
         contactUtms: Array.isArray(f.contact_utms)
-          ? (f.contact_utms as Array<{
-              source?: string | null;
-              medium?: string | null;
-            }>)
+          ? (f.contact_utms as Array<{ source?: string | null }>)
           : [],
-        resourceTag: f.resource_tag,
         setterName: f.setter_name,
         businessLine: f.business_line,
       });

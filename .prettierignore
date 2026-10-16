@@ -12,3 +12,6 @@ package-lock.json
 # Local audit/browser evidence generated during verification.
 /tmp-*
 /scripts/tmp-*.mjs
+
+# Dom's vendored rules: byte-exact, SHA-pinned in sources.test.ts.
+src/lib/booked-calls-v2/rules.v*.json
