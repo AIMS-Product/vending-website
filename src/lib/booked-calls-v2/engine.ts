@@ -1,31 +1,44 @@
 import {
   ACTIVE_STATUSES,
-  CANCELED_OUTCOME,
+  CANCEL_OUTCOMES,
+  CANCEL_STATUSES,
   CANCELED_TITLE,
+  EPISODE_MS,
   EXCLUDED_CALLERS,
   FIRST_CALL_FAMILIES,
+  FOLLOW_UP_TITLE,
   HISTORICAL_CUTOFF,
-  HISTORICAL_EXCEPTIONS,
-  NON_NEW_CALL_TITLE,
-  REPEAT_DAYS,
-  RESCHEDULE_SIGNAL,
+  NOT_SALES_TITLE,
+  PEARL_SOURCE_TITLES,
   RULE_VERSION,
   SETTER_ONLY_CALLERS,
+  SOCIAL_DM_SETTER,
+  PEARL_SOCIAL_UTM_SOURCES,
   TIME_ZONE,
   TITLE_MAP,
   type BookedBy,
 } from "@/lib/booked-calls-v2/rules";
 import {
   resolveOrigin,
+  utmSourceKey,
   type LeadOriginFacts,
   type Origin,
 } from "@/lib/booked-calls-v2/sources";
 
 /**
- * Booked calls V2 (`booked_calls.v2.2`): one decision per Close meeting created
- * in the period. Pure. The caller passes every retained meeting for each
- * candidate lead, because the 60-day rule looks at the whole history before
- * any period filter (memo §3).
+ * Booked calls V2 (`booked_calls.v2.6-scheduled-anchor-candidate`): one
+ * decision per Close meeting created in the period. Pure. The caller passes
+ * every retained meeting for each candidate lead, because a credit before the
+ * window can still open the episode a candidate falls in.
+ *
+ * Lane 2 and Social DMs: one credit per lead episode. The first eligible
+ * meeting by scheduled start (ties: earliest created, then id) is credited,
+ * and no other Lane 2 / Social DM meeting scheduled within 30 x 24 hours of
+ * that start earns a second. Canceled, declined and held meetings never start
+ * or reset the timer. A No Show keeps its credit; its reschedule falls inside
+ * the episode. Marketing keeps its own V2 eligibility: no episode, and its
+ * credits never anchor one (the only reading that reproduces Dom's Oct 1-16
+ * Lane 2 203 and per-channel Marketing). Notes are never read.
  */
 
 export type Meeting = {
@@ -38,7 +51,6 @@ export type Meeting = {
   outcome: string | null;
   startsAt: string | null;
   dateCreated: string;
-  rescheduleNote: boolean;
 };
 
 export type LeadFacts = LeadOriginFacts & {
@@ -53,11 +65,10 @@ export type Reason =
   | "canceled"
   | "follow_up_title"
   | "unapproved_title"
-  | "repeat_within_60_days"
+  | "within_episode"
   | "not_sales_call"
   | "source_unavailable"
-  | "unlinked_reschedule"
-  | "ambiguous_simultaneous"
+  | "unknown_status"
   | "missing_timestamp";
 
 export type Decision = {
@@ -76,21 +87,15 @@ export type Decision = {
   origin: Origin;
   offer: string | null;
   historicalException: string | null;
+  /** The credited meeting whose episode this one falls in. */
   precedingMeetingId: string | null;
+  /** Whole days from that credit's scheduled start to this one's. */
   intervalDays: number | null;
   ruleVersion: typeof RULE_VERSION;
 };
 
 export function pacificDay(iso: string): string {
   return new Date(iso).toLocaleDateString("en-CA", { timeZone: TIME_ZONE });
-}
-
-/** Whole Pacific calendar days between two instants (DST-safe). */
-export function pacificDayGap(fromIso: string, toIso: string): number {
-  const ms = (day: string) => Date.parse(`${day}T00:00:00Z`);
-  return Math.round(
-    (ms(pacificDay(toIso)) - ms(pacificDay(fromIso))) / 86_400_000,
-  );
 }
 
 type TitleVerdict =
@@ -105,53 +110,65 @@ type TitleVerdict =
   | { kind: "not_sales_call" }
   | { kind: "unapproved" };
 
-const FOLLOW_UP_ONLY = new RegExp(
-  NON_NEW_CALL_TITLE.source.replace("|reschedul", ""),
-  "i",
-);
+const same = (a: string | null | undefined, b: string) =>
+  (a ?? "").trim().toLowerCase() === b.toLowerCase();
 
 function classifyTitle(m: Meeting, lead: LeadFacts | undefined): TitleVerdict {
   const title = (m.title ?? "").trim();
-  const mapped = TITLE_MAP.find((rule) => rule.pattern.test(title));
+  const beforeCutoff =
+    Date.parse(m.dateCreated) < Date.parse(HISTORICAL_CUTOFF);
+  const mapped = TITLE_MAP.find(
+    (rule) =>
+      rule.pattern.test(title) &&
+      (!rule.historical || beforeCutoff) &&
+      (!rule.requiredSetter || same(lead?.setterName, rule.requiredSetter)),
+  );
   if (mapped) {
     return {
       kind: "mapped",
       bookedBy: mapped.bookedBy,
       setter: mapped.setter,
+      exception: mapped.historical ? mapped.key : null,
+    };
+  }
+  if (
+    (same(lead?.setterName, SOCIAL_DM_SETTER) ||
+      lead?.contactUtms.some((c) =>
+        PEARL_SOCIAL_UTM_SOURCES.has(utmSourceKey(c.source) ?? ""),
+      )) &&
+    PEARL_SOURCE_TITLES.some((re) => re.test(title))
+  ) {
+    return {
+      kind: "mapped",
+      bookedBy: "Social DMs",
+      setter: SOCIAL_DM_SETTER,
       exception: null,
     };
   }
-  if (Date.parse(m.dateCreated) < Date.parse(HISTORICAL_CUTOFF)) {
-    const hit = HISTORICAL_EXCEPTIONS.find((e) =>
-      e.matches(title, lead?.setterName ?? null),
-    );
-    if (hit) {
-      const setter = hit.key.startsWith("ariella")
-        ? "Ariella Irvine"
-        : "William Nowak";
-      return { kind: "mapped", bookedBy: "Lane 2", setter, exception: hit.key };
-    }
-  }
   if (m.userId && SETTER_ONLY_CALLERS.has(m.userId))
     return { kind: "not_sales_call" };
-  const family = FIRST_CALL_FAMILIES.some((re) => re.test(title));
-  if (FOLLOW_UP_ONLY.test(title)) return { kind: "follow_up" };
-  if (family) return { kind: "family" };
-  if (RESCHEDULE_SIGNAL.test(title)) return { kind: "follow_up" };
+  if (NOT_SALES_TITLE.test(title)) return { kind: "not_sales_call" };
+  if (FOLLOW_UP_TITLE.test(title)) return { kind: "follow_up" };
+  if (FIRST_CALL_FAMILIES.some((re) => re.test(title)))
+    return { kind: "family" };
   return { kind: "unapproved" };
 }
 
 function isCanceled(m: Meeting): boolean {
   return (
-    !ACTIVE_STATUSES.has((m.status ?? "").toLowerCase()) ||
-    CANCELED_OUTCOME.test(m.outcome ?? "") ||
+    CANCEL_STATUSES.has((m.status ?? "").toLowerCase()) ||
+    CANCEL_OUTCOMES.has((m.outcome ?? "").trim().toLowerCase()) ||
     CANCELED_TITLE.test((m.title ?? "").trim())
   );
 }
 
+/** Scheduled start, then earliest created, then activity id. */
 function byScheduled(a: Meeting, b: Meeting): number {
-  const diff = Date.parse(a.startsAt ?? "") - Date.parse(b.startsAt ?? "");
-  return diff !== 0 ? diff : a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  return (
+    Date.parse(a.startsAt!) - Date.parse(b.startsAt!) ||
+    Date.parse(a.dateCreated) - Date.parse(b.dateCreated) ||
+    (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+  );
 }
 
 export function evaluate(input: {
@@ -164,94 +181,93 @@ export function evaluate(input: {
 }): Decision[] {
   const fromMs = Date.parse(input.from);
   const toMs = Date.parse(input.to);
-  const history = new Map<string, Meeting[]>();
+  const candidates = new Set<string>();
+  const byLead = new Map<string, Meeting[]>();
   for (const m of input.meetings) {
-    if (!m.startsAt || Number.isNaN(Date.parse(m.startsAt))) continue;
+    const created = Date.parse(m.dateCreated);
     // A snapshot sees only meetings that existed at its fence: one created
-    // later must not become an earlier candidate's preceding meeting.
-    if (Date.parse(m.dateCreated) >= toMs) continue;
-    const list = history.get(m.leadId) ?? [];
+    // later must not take an earlier candidate's credit.
+    if (created >= toMs) continue;
+    if (created >= fromMs) candidates.add(m.id);
+    const list = byLead.get(m.leadId) ?? [];
     list.push(m);
-    history.set(m.leadId, list);
+    byLead.set(m.leadId, list);
   }
-  for (const list of history.values()) list.sort(byScheduled);
-
-  return input.meetings
-    .filter((m) => {
-      const created = Date.parse(m.dateCreated);
-      return created >= fromMs && created < toMs;
-    })
-    .map((m) =>
-      decide(m, history.get(m.leadId) ?? [], input.leads.get(m.leadId)),
+  return [...byLead]
+    .flatMap(([leadId, meetings]) =>
+      decideLead(meetings, input.leads.get(leadId)),
     )
+    .filter((d) => candidates.has(d.meetingId))
     .sort((a, b) => (a.meetingId < b.meetingId ? -1 : 1));
 }
 
-function decide(
-  m: Meeting,
-  history: readonly Meeting[],
+function decideLead(
+  meetings: readonly Meeting[],
   lead: LeadFacts | undefined,
-): Decision {
-  const verdict = classifyTitle(m, lead);
+): Decision[] {
   const origin = resolveOrigin(lead);
-  const index = history.findIndex((h) => h.id === m.id);
-  const preceding = index > 0 ? history[index - 1] : null;
-  const base: Decision = {
-    meetingId: m.id,
-    leadId: m.leadId,
-    createdDay: pacificDay(m.dateCreated),
-    scheduledDay: m.startsAt ? pacificDay(m.startsAt) : null,
-    disposition: "excluded",
-    reason: "counted",
-    bookedBy:
-      verdict.kind === "mapped"
-        ? verdict.bookedBy
-        : verdict.kind === "family" && origin.source
-          ? "Marketing"
-          : null,
-    mappedSetter: verdict.kind === "mapped" ? verdict.setter : null,
-    currentSetter: lead?.setterName ?? null,
-    caller: m.userName,
-    origin,
-    offer: lead?.businessLine ?? null,
-    historicalException: verdict.kind === "mapped" ? verdict.exception : null,
-    precedingMeetingId: preceding?.id ?? null,
-    intervalDays:
-      preceding?.startsAt && m.startsAt
-        ? pacificDayGap(preceding.startsAt, m.startsAt)
+  const out: Decision[] = [];
+  const hasStart = (m: Meeting) => !Number.isNaN(Date.parse(m.startsAt ?? ""));
+  // Untimed meetings are only ever held; the rest walk in scheduled order.
+  const ordered = [
+    ...meetings.filter((m) => !hasStart(m)),
+    ...meetings.filter(hasStart).sort(byScheduled),
+  ];
+  let anchor: Meeting | null = null;
+
+  for (const m of ordered) {
+    const verdict = classifyTitle(m, lead);
+    const startMs = m.startsAt ? Date.parse(m.startsAt) : NaN;
+    const base = {
+      meetingId: m.id,
+      leadId: m.leadId,
+      createdDay: pacificDay(m.dateCreated),
+      scheduledDay: Number.isNaN(startMs) ? null : pacificDay(m.startsAt!),
+      bookedBy:
+        verdict.kind === "mapped"
+          ? verdict.bookedBy
+          : verdict.kind === "family" && origin.source
+            ? ("Marketing" as const)
+            : null,
+      mappedSetter: verdict.kind === "mapped" ? verdict.setter : null,
+      currentSetter: lead?.setterName ?? null,
+      caller: m.userName,
+      origin,
+      offer: lead?.businessLine ?? null,
+      historicalException: verdict.kind === "mapped" ? verdict.exception : null,
+      precedingMeetingId: anchor?.id ?? null,
+      intervalDays: anchor
+        ? Math.floor((startMs - Date.parse(anchor.startsAt!)) / 86_400_000)
         : null,
-    ruleVersion: RULE_VERSION,
-  };
-  const out = (disposition: Disposition, reason: Reason): Decision => ({
-    ...base,
-    disposition,
-    reason,
-  });
+      ruleVersion: RULE_VERSION,
+    };
+    const push = (disposition: Disposition, reason: Reason) =>
+      out.push({ ...base, disposition, reason });
 
-  if (!m.startsAt || index < 0) return out("held", "missing_timestamp");
-  if (m.userId && EXCLUDED_CALLERS.has(m.userId))
-    return out("excluded", "not_sales_call");
-  if (isCanceled(m)) return out("excluded", "canceled");
-  if (verdict.kind === "follow_up") return out("excluded", "follow_up_title");
-  if (verdict.kind === "not_sales_call")
-    return out("excluded", "not_sales_call");
-  if (verdict.kind === "unapproved") return out("excluded", "unapproved_title");
-
-  // Same lead, same start, another live meeting: duplicate, alternative or two
-  // episodes cannot be told apart from Close, so neither is credited.
-  const twin = history.some(
-    (h) => h.id !== m.id && h.startsAt === m.startsAt && !isCanceled(h),
-  );
-  if (twin) return out("held", "ambiguous_simultaneous");
-  if (RESCHEDULE_SIGNAL.test(m.title ?? "") || m.rescheduleNote) {
-    return out("held", "unlinked_reschedule");
+    if (Number.isNaN(startMs)) push("held", "missing_timestamp");
+    else if (
+      (m.userId && EXCLUDED_CALLERS.has(m.userId)) ||
+      verdict.kind === "not_sales_call"
+    )
+      push("excluded", "not_sales_call");
+    else if (isCanceled(m)) push("excluded", "canceled");
+    else if (!ACTIVE_STATUSES.has((m.status ?? "").toLowerCase()))
+      push("held", "unknown_status");
+    else if (verdict.kind === "follow_up") push("excluded", "follow_up_title");
+    else if (verdict.kind === "unapproved")
+      push("excluded", "unapproved_title");
+    else if (verdict.kind === "family") {
+      // Marketing keeps its own eligibility: no episode, never an anchor.
+      if (origin.source) push("counted", "counted");
+      else push("held", "source_unavailable");
+    } else if (anchor && startMs < Date.parse(anchor.startsAt!) + EPISODE_MS)
+      push("excluded", "within_episode");
+    else {
+      push("counted", "counted");
+      anchor = m;
+    }
   }
-  if (base.intervalDays !== null && base.intervalDays < REPEAT_DAYS) {
-    return out("excluded", "repeat_within_60_days");
-  }
-  if (verdict.kind === "family" && !origin.source)
-    return out("held", "source_unavailable");
-  return out("counted", "counted");
+  return out;
 }
 
 export type V2Summary = {

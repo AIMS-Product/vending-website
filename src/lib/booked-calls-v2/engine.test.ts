@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   evaluate,
-  pacificDayGap,
   summarize,
   type LeadFacts,
   type Meeting,
@@ -25,7 +24,6 @@ function meeting(over: Partial<Meeting> = {}): Meeting {
     outcome: null,
     startsAt: "2026-10-08T18:00:00Z",
     dateCreated: "2026-10-05T18:00:00Z",
-    rescheduleNote: false,
     ...over,
   };
 }
@@ -33,7 +31,6 @@ function meeting(over: Partial<Meeting> = {}): Meeting {
 const youtube: LeadFacts = {
   funnel: "YouTube",
   contactUtms: [],
-  resourceTag: null,
   setterName: null,
   businessLine: "Vendingpreneurs (VP)",
 };
@@ -46,39 +43,63 @@ function decide(meetings: Meeting[], lead: LeadFacts | null = youtube) {
 
 describe("title map", () => {
   const cases: Array<[string, string, string]> = [
-    ["PPA Growth - Next Steps", "Tony Parton", "Lane 2"],
-    ["Vendingpreneurs Enterprise - Next Steps", "Ashley Atencio", "Lane 2"],
-    ["Vendingpreneurs Velocity - Next Steps", "Ibraheem Khan", "Lane 2"],
-    ["Vendingpreneurs Pinnacle - Next Steps", "Monde", "Lane 2"],
-    ["Vendingpreneurs Executive - Next Steps", "Finley Eastlake", "Lane 2"],
     ["Vendingpreneurs - Next Steps Call", "Charlie Ingram", "Lane 2"],
     ["Vendingpreneurs Next Steps Call", "Vince Bartolini", "Lane 2"],
-    ["Vendingpreneur Next Steps", "William Nowak", "Lane 2"],
     ["Vendingpreneurs Next Steps Session", "Pearl Sathekge", "Social DMs"],
+    ["Vendingpreneurs Discovery - Next Steps", "Kelly Schrader", "Lane 2"],
+    ["Vendingpreneur Next Steps", "William Nowak", "Lane 2"],
     ["Vending Discovery Call - Next Steps", "August Young", "Lane 2"],
+    ["Vending Discovery - Next Steps", "Spencer Reynolds", "Lane 2"],
+    ["Vendingpreneurs Rescheduled Call - Ariella", "Ariella Irvine", "Lane 2"],
+    [
+      "New Vendingpreneurs Strategy Call with Ariella",
+      "Ariella Irvine",
+      "Lane 2",
+    ],
+    ["Vendingpreneurs Follow-Up with Ariella", "Ariella Irvine", "Lane 2"],
+    ["Vendingpreneurs Strategy - Next Steps", "Amy Mulch", "Lane 2"],
     ["Vending Opportunity - Next Steps", "Cassie Caraballo", "Lane 2"],
     ["Vendingpreneurs Connect - Next Steps", "Jessica Zatkin", "Lane 2"],
     ["Vendingpreneurs Momentum - Next Steps", "Connor George", "Lane 2"],
     ["Vendingpreneurs Pathway - Next Steps", "Naria Torres", "Lane 2"],
     ["Vendingpreneurs Blueprint - Next Steps", "Melia King", "Lane 2"],
-    ["TLG Pinnacle - Next Steps", "Kaylane Nunes", "Lane 2"],
+    ["Vending Consult Call", "William Nowak", "Lane 2"],
+    [
+      "Vendingpreneurs Quick Discovery - William Nowak",
+      "William Nowak",
+      "Lane 2",
+    ],
     ["TLG Compass - Next Steps", "Josh Stoffel", "Lane 2"],
-    ["TLG Elevate - Next Steps", "Catalina", "Lane 2"],
-    ["TLG Vanguard - Next Steps", "Connor Mason", "Lane 2"],
-    ["TLG Northstar - Next Steps", "Jonathan Quinn", "Lane 2"],
+    [
+      "Vendingpreneurs Horizon - Next Steps",
+      "Beatrice Braescu Cojocaru",
+      "Lane 2",
+    ],
+    ["TLG Elevate - Next Steps", "Catalina Villalba-Gallego", "Lane 2"],
+    ["TLG Clarity - Next Steps", "Luna Mattey", "Lane 2"],
     ["Vendingpreneurs Ascent - Next Steps", "Owen Hart", "Lane 2"],
     ["Vendingpreneurs Keystone - Next Steps", "Brad Savage", "Lane 2"],
+    ["PPA Pinnacle - Next Steps", "Jessica Hernandez", "Lane 2"],
     ["Vendingpreneurs Summit - Next Steps", "Rob Maxfield", "Lane 2"],
     ["Vendingpreneurs Growth - Next Steps", "Igor Trojanowski", "Lane 2"],
-    ["Vendingpreneurs Horizon - Next Steps", "Ariella Irvine", "Lane 2"],
+    ["TLG Northstar - Next Steps", "Jonathan Quinn", "Lane 2"],
+    ["TLG Pinnacle - Next Steps", "Kaylane Nunes", "Lane 2"],
+    ["PPA Growth - Next Steps", "Tony Parton", "Lane 2"],
+    ["Vendingpreneurs Enterprise - Next Steps", "Ashley Atencio", "Lane 2"],
+    ["Vendingpreneurs Velocity - Next Steps", "Ibraheem Khan", "Lane 2"],
+    ["Vendingpreneurs Executive Next Steps", "Finley Eastlake", "Lane 2"],
+    ["Vendingpreneurs Pinnacle Next Steps", "Monde Janzen", "Lane 2"],
   ];
 
-  it("has exactly the 25 approved entries", () => {
-    expect(TITLE_MAP).toHaveLength(25);
+  it("has exactly Dom's 35 v2.6 title rules", () => {
+    expect(TITLE_MAP).toHaveLength(35);
   });
 
   it.each(cases)("%s -> %s (%s)", (title, setter, bucket) => {
-    const [d] = decide([meeting({ title })]);
+    const lead = title.includes("Quick Discovery")
+      ? youtube
+      : { ...youtube, setterName: "Someone Else" };
+    const [d] = decide([meeting({ title })], lead);
     expect(d).toMatchObject({
       disposition: "counted",
       mappedSetter: setter,
@@ -93,18 +114,66 @@ describe("title map", () => {
     expect(d.mappedSetter).toBe("Jessica Zatkin");
   });
 
-  it("does not credit the retired TLG Clarity title", () => {
-    const [d] = decide([meeting({ title: "TLG Clarity - Next Steps" })]);
+  it("no longer credits the retired TLG Vanguard title", () => {
+    const [d] = decide([meeting({ title: "TLG Vanguard - Next Steps" })]);
     expect(d).toMatchObject({
       disposition: "excluded",
       reason: "follow_up_title",
     });
   });
 
+  it("bare Quick Discovery is William's only when he is the lead's setter", () => {
+    const title = "Vendingpreneurs Quick Discovery";
+    const [his] = decide([meeting({ title })], {
+      ...youtube,
+      setterName: "William Nowak",
+    });
+    expect(his).toMatchObject({ disposition: "counted", bookedBy: "Lane 2" });
+    const [other] = decide([meeting({ title })]);
+    expect(other.disposition).not.toBe("counted");
+  });
+
   it("counts a mapped title with no origin as Lane 2, source unknown", () => {
     const [d] = decide([meeting({ title: "Vendingpreneur Next Steps" })], null);
     expect(d).toMatchObject({ disposition: "counted", bookedBy: "Lane 2" });
     expect(d.origin.source).toBeNull();
+  });
+});
+
+describe("Pearl's Social DMs", () => {
+  const pearl = { ...youtube, setterName: "Pearl Sathekge" };
+
+  it("her source titles are Social DMs when she is the lead's setter", () => {
+    for (const title of [
+      "Vendingpreneurs Consultation",
+      "New Vendingpreneur Strategy Call with Oscar Pugh",
+    ]) {
+      const [d] = decide([meeting({ title })], pearl);
+      expect(d).toMatchObject({
+        disposition: "counted",
+        bookedBy: "Social DMs",
+        mappedSetter: "Pearl Sathekge",
+      });
+    }
+  });
+
+  it("a contact from her GoHighLevel link or Mike's IG DMs gates the same way", () => {
+    for (const source of ["ghl", "Mike-IG?fbclid=x"]) {
+      const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
+        ...youtube,
+        funnel: "Internal Webinar",
+        contactUtms: [{ source }],
+      });
+      expect(d).toMatchObject({
+        bookedBy: "Social DMs",
+        origin: { source: "Internal Webinar" },
+      });
+    }
+  });
+
+  it("the same titles stay Marketing for anyone else's lead", () => {
+    const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })]);
+    expect(d).toMatchObject({ disposition: "counted", bookedBy: "Marketing" });
   });
 });
 
@@ -144,12 +213,13 @@ describe("marketing credit", () => {
 });
 
 describe("status", () => {
-  it("excludes canceled, declined and native Rescheduled outcomes", () => {
+  it("excludes canceled and declined meetings", () => {
     for (const over of [
       { status: "canceled" },
+      { status: "cancelled" },
       { status: "declined-by-lead" },
       { status: "declined-by-org" },
-      { outcome: "Rescheduled" },
+      { status: "completed", outcome: "Cancelled" },
       { title: "Canceled: Vending Strategy Call" },
     ]) {
       const [d] = decide([meeting(over)]);
@@ -157,9 +227,16 @@ describe("status", () => {
     }
   });
 
-  it("still counts a No Show", () => {
-    const [d] = decide([meeting({ status: "completed", outcome: "No Show" })]);
-    expect(d.disposition).toBe("counted");
+  it("holds an unknown status for review", () => {
+    const [d] = decide([meeting({ status: "draft" })]);
+    expect(d).toMatchObject({ disposition: "held", reason: "unknown_status" });
+  });
+
+  it("still counts a No Show and a native Rescheduled outcome", () => {
+    for (const outcome of ["No Show", "Rescheduled"]) {
+      const [d] = decide([meeting({ status: "completed", outcome })]);
+      expect(d.disposition).toBe("counted");
+    }
   });
 
   it("a canceled mapped title does not count", () => {
@@ -168,65 +245,132 @@ describe("status", () => {
     ]);
     expect(d).toMatchObject({ disposition: "excluded", bookedBy: "Lane 2" });
   });
+
+  it("calls an internal meeting not a sales call even when canceled", () => {
+    const [d] = decide([
+      meeting({ title: "Webinar Actions Review", status: "canceled" }),
+    ]);
+    expect(d.reason).toBe("not_sales_call");
+  });
+
+  it("excludes setter-only and non-booking titles as not sales calls", () => {
+    for (const title of [
+      "Vending Quick Discovery",
+      "Route Planning Call",
+      "Bronze Enrollment",
+      "Silver Start Up Walkthrough",
+    ]) {
+      const [d] = decide([meeting({ title })]);
+      expect(d.reason).toBe("not_sales_call");
+    }
+  });
 });
 
-describe("60-day rule", () => {
-  it("day 59 is suppressed, day 60 counts", () => {
-    const prior = meeting({
-      startsAt: "2026-08-10T18:00:00Z",
-      dateCreated: "2026-08-01T18:00:00Z",
+describe("30 x 24 hour episodes", () => {
+  const H = 3_600_000;
+  const at = (iso: string, hours: number) =>
+    new Date(Date.parse(iso) + hours * H).toISOString();
+  const START = "2026-09-20T18:00:00Z";
+  // Only Lane 2 and Social DM credits run on episodes.
+  const lane2 = (over: Partial<Meeting> = {}) =>
+    meeting({ title: "Vendingpreneur Next Steps", ...over });
+
+  it("one hour short of 720 is the same episode; 720 hours is a new one", () => {
+    const credit = lane2({
+      startsAt: START,
+      dateCreated: "2026-09-10T18:00:00Z",
     });
-    const day59 = meeting({ startsAt: "2026-10-08T18:00:00Z" });
-    const day60 = meeting({
-      startsAt: "2026-10-09T18:00:00Z",
-      leadId: "lead_b",
-    });
-    const prior60 = { ...prior, id: "acti_prior_b", leadId: "lead_b" };
-    const leads = new Map([
-      ["lead_a", youtube],
-      ["lead_b", youtube],
-    ]);
+    const inside = lane2({ startsAt: at(START, 719) });
+    const lead_b = { leadId: "lead_b" };
+    const creditB = { ...credit, id: "acti_credit_b", ...lead_b };
+    const outside = lane2({ startsAt: at(START, 720), ...lead_b });
     const out = evaluate({
-      meetings: [prior, day59, prior60, day60],
-      leads,
+      meetings: [credit, inside, creditB, outside],
+      leads: new Map([
+        ["lead_a", youtube],
+        ["lead_b", youtube],
+      ]),
       from: FROM,
       to: TO,
     });
-    expect(out.find((d) => d.meetingId === day59.id)).toMatchObject({
-      reason: "repeat_within_60_days",
-      intervalDays: 59,
+    expect(out.find((d) => d.meetingId === inside.id)).toMatchObject({
+      reason: "within_episode",
+      precedingMeetingId: credit.id,
+      intervalDays: 29,
     });
-    expect(out.find((d) => d.meetingId === day60.id)).toMatchObject({
+    expect(out.find((d) => d.meetingId === outside.id)).toMatchObject({
       disposition: "counted",
-      intervalDays: 60,
+      intervalDays: 30,
     });
   });
 
-  it("uses the immediately preceding scheduled meeting, even a canceled internal one", () => {
-    const credited = meeting({
-      startsAt: "2026-06-01T18:00:00Z",
-      dateCreated: "2026-05-20T18:00:00Z",
-    });
-    const followUp = meeting({
-      title: "Team sync",
+  it("canceled and unapproved meetings never start the timer", () => {
+    const canceled = meeting({
       status: "canceled",
       startsAt: "2026-09-25T18:00:00Z",
       dateCreated: "2026-09-20T18:00:00Z",
     });
-    const candidate = meeting({ startsAt: "2026-10-20T18:00:00Z" });
-    const [d] = decide([credited, followUp, candidate]);
-    expect(d).toMatchObject({
-      reason: "repeat_within_60_days",
-      intervalDays: 25,
+    const internal = meeting({
+      title: "Team sync",
+      startsAt: "2026-09-28T18:00:00Z",
+      dateCreated: "2026-09-20T18:00:00Z",
     });
-    expect(d.precedingMeetingId).toBe(followUp.id);
+    const rebooked = meeting({ startsAt: "2026-10-08T18:00:00Z" });
+    const out = decide([canceled, internal, rebooked]);
+    expect(out).toHaveLength(1);
+    expect(out[0]).toMatchObject({
+      meetingId: rebooked.id,
+      disposition: "counted",
+      precedingMeetingId: null,
+    });
   });
 
-  it("counts Pacific calendar days across a DST change", () => {
-    // Jan 10 00:30 PST to Mar 11 00:00 PDT: 60 calendar days, under 60x24h.
-    expect(pacificDayGap("2026-01-10T08:30:00Z", "2026-03-11T07:00:00Z")).toBe(
-      60,
+  it("a no-show keeps its credit; its reschedule earns none", () => {
+    const noShow = lane2({
+      status: "completed",
+      outcome: "No Show",
+      startsAt: "2026-10-03T18:00:00Z",
+      dateCreated: "2026-10-01T18:00:00Z",
+    });
+    const moved = lane2({ startsAt: "2026-10-09T18:00:00Z" });
+    const out = decide([noShow, moved]);
+    expect(out.map((d) => [d.meetingId, d.reason])).toEqual([
+      [noShow.id, "counted"],
+      [moved.id, "within_episode"],
+    ]);
+  });
+
+  it("a held Marketing meeting does not anchor the episode", () => {
+    const scrapers = { ...youtube, funnel: "Reactivation Scrapers" };
+    const held = meeting({ startsAt: "2026-10-03T18:00:00Z" });
+    const mapped = meeting({
+      title: "Vendingpreneur Next Steps",
+      startsAt: "2026-10-09T18:00:00Z",
+    });
+    const out = decide([held, mapped], scrapers);
+    expect(out.map((d) => d.reason)).toEqual(["source_unavailable", "counted"]);
+  });
+
+  it("simultaneous meetings: earliest created, then lowest id, takes the credit", () => {
+    const later = lane2({ dateCreated: "2026-10-05T19:00:00Z" });
+    const earlier = lane2({ dateCreated: "2026-10-05T18:00:00Z" });
+    const out = decide([later, earlier]);
+    expect(out.find((d) => d.meetingId === earlier.id)?.reason).toBe("counted");
+    expect(out.find((d) => d.meetingId === later.id)?.reason).toBe(
+      "within_episode",
     );
+  });
+
+  it("Marketing credits neither repeat-limit nor anchor an episode", () => {
+    const first = meeting({ startsAt: "2026-10-03T18:00:00Z" });
+    const again = meeting({ startsAt: "2026-10-06T18:00:00Z" });
+    const setter = lane2({ startsAt: "2026-10-09T18:00:00Z" });
+    const out = decide([first, again, setter]);
+    expect(out.map((d) => [d.bookedBy, d.reason])).toEqual([
+      ["Marketing", "counted"],
+      ["Marketing", "counted"],
+      ["Lane 2", "counted"],
+    ]);
   });
 
   it("dates MTD by creation, not the scheduled day", () => {
@@ -246,48 +390,8 @@ describe("60-day rule", () => {
       disposition: "counted",
     });
   });
-});
 
-describe("episodes", () => {
-  it("holds a visible reschedule without a parent link", () => {
-    const [t] = decide([
-      meeting({ title: "Rescheduled: Vending Strategy Call" }),
-    ]);
-    expect(t).toMatchObject({
-      disposition: "held",
-      reason: "unlinked_reschedule",
-    });
-    const [n] = decide([meeting({ rescheduleNote: true })]);
-    expect(n.reason).toBe("unlinked_reschedule");
-  });
-
-  it("holds two live meetings at the same start rather than picking one", () => {
-    const out = decide([meeting(), meeting()]);
-    expect(out.map((d) => d.reason)).toEqual([
-      "ambiguous_simultaneous",
-      "ambiguous_simultaneous",
-    ]);
-  });
-});
-
-describe("validation fixes (Oct 1-13 rerun against Dom's pull)", () => {
-  it("holds a reschedule before applying the 60-day rule to it", () => {
-    const original = meeting({
-      startsAt: "2026-10-06T18:00:00Z",
-      dateCreated: "2026-09-28T18:00:00Z",
-    });
-    const moved = meeting({
-      title: "Rescheduled: Vending Strategy Call",
-      startsAt: "2026-10-09T18:00:00Z",
-    });
-    const [d] = decide([original, moved]);
-    expect(d).toMatchObject({
-      meetingId: moved.id,
-      reason: "unlinked_reschedule",
-    });
-  });
-
-  it("ignores meetings created after the snapshot fence as preceding meetings", () => {
+  it("ignores meetings created after the snapshot fence", () => {
     const candidate = meeting({
       startsAt: "2026-10-20T18:00:00Z",
       dateCreated: "2026-10-05T18:00:00Z",
@@ -308,63 +412,13 @@ describe("validation fixes (Oct 1-13 rerun against Dom's pull)", () => {
       precedingMeetingId: null,
     });
   });
-});
 
-describe("historical exceptions", () => {
-  // Patterns are Dom's rules.json, not the memo's wording (2026-10-14).
-  it("Ariella Strategy counts as Lane 2 only before the cutoff", () => {
-    const title = "New Vendingpreneurs Strategy Call with Ariella";
-    const [before] = decide([
-      meeting({ title, dateCreated: "2026-10-13T23:59:00-07:00" }),
-    ]);
-    expect(before).toMatchObject({
-      bookedBy: "Lane 2",
-      historicalException: "ariella_strategy",
-      disposition: "counted",
-    });
-    const after = evaluate({
-      meetings: [
-        meeting({
-          title,
-          dateCreated: "2026-10-14T07:00:00Z",
-          startsAt: "2026-10-20T18:00:00Z",
-        }),
-      ],
-      leads: new Map([["lead_a", youtube]]),
-      from: FROM,
-      to: "2026-10-15T07:00:00Z",
-    });
-    expect(after[0]).toMatchObject({
-      bookedBy: "Marketing",
-      historicalException: null,
-    });
-    // The memo's looser reading credited this; Dom's pattern does not.
-    const [loose] = decide([
-      meeting({
-        title: "Vending Strategy Call with Ariella",
-        dateCreated: "2026-10-13T23:59:00-07:00",
-      }),
-    ]);
-    expect(loose.historicalException).toBeNull();
-  });
-
-  it("William setter-gated Quick Discovery", () => {
-    const lead = { ...youtube, setterName: "William Nowak" };
-    const title = "Vendingpreneurs Quick Discovery";
-    const [d] = decide([meeting({ title })], lead);
+  it("holds a meeting with no scheduled time", () => {
+    const [d] = decide([meeting({ startsAt: null })]);
     expect(d).toMatchObject({
-      bookedBy: "Lane 2",
-      historicalException: "william_quick_discovery_setter",
+      disposition: "held",
+      reason: "missing_timestamp",
     });
-    const [other] = decide([meeting({ title })]);
-    expect(other.historicalException).toBeNull();
-    expect(other.disposition).not.toBe("counted");
-    // Dom anchors the title at its start: a looser title is not his rule.
-    const [loose] = decide(
-      [meeting({ title: "Vending Quick Discovery" })],
-      lead,
-    );
-    expect(loose.historicalException).toBeNull();
   });
 });
 
@@ -374,60 +428,14 @@ describe("sources", () => {
       resolveOrigin({
         funnel: "Website",
         contactUtms: [{ source: "youtube" }],
-        resourceTag: null,
       }),
     ).toEqual({ source: "Website", basis: "funnel" });
     expect(
       resolveOrigin({
         funnel: "Reactivation Scrapers",
         contactUtms: [{ source: "youtube" }],
-        resourceTag: null,
       }),
     ).toEqual({ source: "YouTube", basis: "contact_utm" });
-  });
-
-  // Dom's rules.json (v2.2) maps only website-application and newsletter
-  // tags; his certified pull held an internal-webinar-tagged lead
-  // (redacted_48bdbdc1b297) as origin unavailable.
-  it("uses Resource Tag only with no UTM evidence, and only Dom's mapped tags", () => {
-    expect(
-      resolveOrigin({
-        funnel: null,
-        contactUtms: [],
-        resourceTag: "website-application",
-      }),
-    ).toEqual({ source: "Website", basis: "resource_tag" });
-    expect(
-      resolveOrigin({
-        funnel: null,
-        contactUtms: [],
-        resourceTag: "internal-webinar",
-      }),
-    ).toEqual({ source: null, basis: "unknown" });
-    expect(
-      resolveOrigin({
-        funnel: null,
-        contactUtms: [{ source: "_____" }],
-        resourceTag: "internal-webinar",
-      }),
-    ).toEqual({ source: null, basis: "unknown" });
-    expect(
-      resolveOrigin({
-        funnel: null,
-        contactUtms: [],
-        resourceTag: "typeform-application",
-      }),
-    ).toEqual({ source: null, basis: "unknown" });
-  });
-
-  it("competing contact UTMs stay unknown", () => {
-    expect(
-      resolveOrigin({
-        funnel: null,
-        contactUtms: [{ source: "youtube" }, { source: "instagram" }],
-        resourceTag: "webinar",
-      }),
-    ).toEqual({ source: null, basis: "unknown" });
   });
 });
 

@@ -1,180 +1,115 @@
 /**
- * Dom's booked-call rules, `booked_calls.v2.2` (memo 2026-10-13), as data.
- *
- * Title regexes are copied from `AIMS-Product/close-first-sales-meeting`
- * `update_field.py` (SCRAPER_TITLE_MAP, CLOSER_PATTERNS, EXCLUDED_OWNERS,
- * SETTER_OWNERS) in their approved order. The four V2 titles that file does
- * not carry (PPA Growth, Enterprise, Velocity, Horizon) follow its style.
- * "TLG Clarity" is deployed there but deliberately not in V2.
- *
- * ponytail: transcribed from the memo; when Dom shares `rules.json`, vendor it
- * and check this file against its config SHA instead of the memo.
+ * Dom's booked-call rules, `booked_calls.v2.6-scheduled-anchor-candidate`
+ * (handoff 2026-10-16), as data. Every title, caller, pattern and source
+ * comes from his `rules.json` vendored verbatim beside this file (SHA-256
+ * 2a3343fd…942f, pinned in sources.test.ts). Do not edit the JSON: a new rule
+ * version is a new file. The few constants below are the handoff's prose
+ * rules that his engine applies but `rules.json` does not carry.
  */
 
-import domRules from "@/lib/booked-calls-v2/rules.v2.2.json";
+import domRules from "@/lib/booked-calls-v2/rules.v2.6.json";
 
-export const RULE_VERSION = "booked_calls.v2.2";
-/** Dom's config SHA-256 for v2.2; recorded so a screen can name what it ran. */
+export const RULE_VERSION = domRules.version;
+/** Dom's config SHA-256 for v2.6; recorded so a screen can name what it ran. */
 export const RULE_CONFIG_SHA =
-  "6949a5ee62fb387c569f1536fe63e65c64dc0d347c93560e422202aa894b581a";
+  "2a3343fd339133c62b7accba767893c0b297d4b0be2527c95ca111c84895942f";
 
-export const TIME_ZONE = "America/Los_Angeles";
-export const REPEAT_DAYS = 60;
-/** Historical title exceptions apply only to meetings created before this. */
-export const HISTORICAL_CUTOFF = "2026-10-14T07:00:00Z";
+export const TIME_ZONE = domRules.timezone;
+/** Exactly 30 x 24 hours from the prior credited meeting's scheduled start. */
+export const EPISODE_MS = domRules.candidate_policy.episode_days * 86_400_000;
+/** Title rules flagged `historical` apply only to meetings created before this. */
+export const HISTORICAL_CUTOFF = domRules.historical_cutoff_exclusive;
 
 export type BookedBy = "Marketing" | "Lane 2" | "Social DMs";
 
-type TitleRule = { pattern: RegExp; setter: string; bookedBy: BookedBy };
+export const SOCIAL_DM_SETTER = domRules.candidate_policy.social_dm_setter;
 
-const VP = String.raw`vendingpren[eu]+rs?`;
-const lane2 = (source: string, setter: string): TitleRule => ({
-  pattern: new RegExp(source, "i"),
-  setter,
-  bookedBy: "Lane 2",
-});
-
-/** Order matters: most specific first, as in update_field.py. */
-export const TITLE_MAP: readonly TitleRule[] = [
-  lane2(String.raw`ppa\s+growth\s*-?\s*next\s+steps`, "Tony Parton"),
-  lane2(String.raw`${VP}\s+enterprise\s*-?\s*next\s+steps`, "Ashley Atencio"),
-  lane2(String.raw`${VP}\s+velocity\s*-?\s*next\s+steps`, "Ibraheem Khan"),
-  lane2(String.raw`${VP}\s+pinnacle\s*-\s*next\s+steps`, "Monde"),
-  lane2(String.raw`${VP}\s+executive\s*-\s*next\s+steps`, "Finley Eastlake"),
-  lane2(String.raw`${VP}\s+-\s+next\s+steps\s+call`, "Charlie Ingram"),
-  lane2(String.raw`${VP}\s+next\s+steps\s+call`, "Vince Bartolini"),
-  lane2(String.raw`vendingpren[eu]+r\s+next\s+steps`, "William Nowak"),
-  {
-    pattern: new RegExp(String.raw`${VP}\s+next\s+steps\s+session`, "i"),
-    setter: "Pearl Sathekge",
-    bookedBy: "Social DMs",
-  },
-  lane2(
-    String.raw`vending\s+discovery\s+call\s+-\s+next\s+steps`,
-    "August Young",
-  ),
-  lane2(
-    String.raw`vending\s+opportunity\s*-?\s*next\s+steps`,
-    "Cassie Caraballo",
-  ),
-  lane2(String.raw`${VP}\s+connect\s*-?\s*next\s+steps`, "Jessica Zatkin"),
-  lane2(String.raw`${VP}\s+momentum\s*-?\s*next\s+steps`, "Connor George"),
-  lane2(String.raw`${VP}\s+pathway\s*-?\s*next\s+steps`, "Naria Torres"),
-  lane2(String.raw`${VP}\s+blueprint\s*-?\s*next\s+steps`, "Melia King"),
-  lane2(String.raw`tlg\s+pinnacle\s*-?\s*next\s+steps`, "Kaylane Nunes"),
-  lane2(String.raw`tlg\s+compass\s*-?\s*next\s+steps`, "Josh Stoffel"),
-  lane2(String.raw`tlg\s+elevate\s*-?\s*next\s+steps`, "Catalina"),
-  lane2(String.raw`tlg\s+vanguard\s*-?\s*next\s+steps`, "Connor Mason"),
-  lane2(String.raw`tlg\s+northstar\s*-?\s*next\s+steps`, "Jonathan Quinn"),
-  lane2(String.raw`${VP}\s+ascent\s*-?\s*next\s+steps`, "Owen Hart"),
-  lane2(String.raw`${VP}\s+keystone\s*-?\s*next\s+steps`, "Brad Savage"),
-  lane2(String.raw`${VP}\s+summit\s*-?\s*next\s+steps`, "Rob Maxfield"),
-  lane2(String.raw`${VP}\s+growth\s*-?\s*next\s+steps`, "Igor Trojanowski"),
-  lane2(String.raw`${VP}\s+horizon\s*-?\s*next\s+steps`, "Ariella Irvine"),
-];
-
-/** The 12 approved new-call families an unmapped title can earn Marketing with. */
-export const FIRST_CALL_FAMILIES: readonly RegExp[] = [
-  /vending\s+strategy\s+call/i,
-  /vendingpren[eu]+rs?\s+consultation/i,
-  /vendingpren[eu]+rs?\s+strategy\s+call/i,
-  /new\s+vendingpren[eu]+r\s+strategy\s+call/i,
-  /vending\s+consult\b/i,
-  /post\s+masterclass\s+strategy\s+call/i,
-  /vending\s+route\s+consultation/i,
-  /cash[-\s]flowing\s+vending\s+route\s+advisory\s+interview/i,
-  /vending\s+route\s+advisory\s+call/i,
-  /vending\s+route\s+discovery/i,
-  /vending\s+consultation\s+&\s+strategy\s+session/i,
-  /vendhub\s+consultation\s+call/i,
-];
-
-export type HistoricalException = {
+export type TitleRule = {
   key: string;
-  matches: (title: string, leadSetter: string | null) => boolean;
+  pattern: RegExp;
+  setter: string;
+  /** Lead's current setter must be this person for the rule to apply. */
+  requiredSetter: string | null;
+  historical: boolean;
+  bookedBy: BookedBy;
 };
 
-/** Dom's rules.json (v2.2) `title_rules` with `historical: true`, verbatim. */
-const historical = (key: string, source: string, requiredSetter?: string) => {
-  const pattern = new RegExp(source, "i");
-  return {
-    key,
-    matches: (title: string, leadSetter: string | null) =>
-      pattern.test(title) &&
-      (!requiredSetter ||
-        (leadSetter ?? "").trim().toLowerCase() ===
-          requiredSetter.toLowerCase()),
-  };
-};
+/** Order matters: first match wins, in Dom's order. */
+export const TITLE_MAP: readonly TitleRule[] = domRules.title_rules.map(
+  (rule) => ({
+    key: rule.key,
+    pattern: new RegExp(rule.pattern, "i"),
+    setter: rule.setter_name,
+    requiredSetter: rule.required_setter,
+    historical: rule.historical,
+    bookedBy: rule.setter_name === SOCIAL_DM_SETTER ? "Social DMs" : "Lane 2",
+  }),
+);
 
 /**
- * Valid only for meetings created before `HISTORICAL_CUTOFF`. Read from Dom's
- * vendored rules.json, never re-typed: the memo's wording was looser than his
- * patterns and credited three October meetings his pull did not.
+ * Pearl's Social DM leads booked onto a standard closer calendar. Applied
+ * only with one of her social sources: she is the lead's setter, or a
+ * contact's raw `utm_source` is one of `PEARL_SOCIAL_UTM_SOURCES`. The
+ * handoff names "Pearl social-source/title patterns" but not the gate, and
+ * the titles are also ordinary Marketing first calls (every webinar
+ * consultation matches them).
  */
-export const HISTORICAL_EXCEPTIONS: readonly HistoricalException[] =
-  domRules.title_rules
-    .filter((rule) => rule.historical)
-    .map((rule) =>
-      historical(rule.key, rule.pattern, rule.required_setter ?? undefined),
-    );
+export const PEARL_SOURCE_TITLES: readonly RegExp[] =
+  domRules.pearl_source_title_patterns.map((p) => new RegExp(p, "i"));
+
+/**
+ * Pearl's booking channels: her GoHighLevel link and Mike's Instagram DMs.
+ * Not in `rules.json`; inferred from Dom's Oct 1-16 pull, where exactly these
+ * moved 5 webinar and 1 Instagram consultation from Marketing to Social DMs
+ * (and the setter user field moved none).
+ */
+export const PEARL_SOCIAL_UTM_SOURCES: ReadonlySet<string> = new Set([
+  "ghl",
+  "mike-ig",
+]);
+
+/** The 12 approved new-call families an unmapped title can earn Marketing with. */
+export const FIRST_CALL_FAMILIES: readonly RegExp[] =
+  domRules.new_call_patterns.map((p) => new RegExp(p, "i"));
 
 /** Never credit: Stephen Olivas, Ahmad Bukhari. */
-export const EXCLUDED_CALLERS: ReadonlySet<string> = new Set([
-  "user_5cZRqXu8kb4O1IeBVA98UMcMEhYZUhx1fnCHfSL0YMV",
-  "user_yRF070m26JE67J6CJqzkAB3IqY7btNm1K5RisCglKa6",
-]);
+export const EXCLUDED_CALLERS: ReadonlySet<string> = new Set(
+  domRules.excluded_callers,
+);
 /** Setter-only discovery callers: Kristin Nelson, Spencer Reynolds. */
-export const SETTER_ONLY_CALLERS: ReadonlySet<string> = new Set([
-  "user_EmhqCmaHERTfgfWnPADiLGEqQw3ENvRYd3u1VEmblIp",
-  "user_4sfuKGMbv0LQZ4hpS8ipASv406kKTSNP5Xx79jOwSqM",
-]);
+export const SETTER_ONLY_CALLERS: ReadonlySet<string> = new Set(
+  domRules.setter_only_callers,
+);
 
 export const ACTIVE_STATUSES: ReadonlySet<string> = new Set([
   "upcoming",
   "in-progress",
   "completed",
 ]);
-export const CANCELED_OUTCOME = /cancel|reschedul/i;
+export const CANCEL_STATUSES: ReadonlySet<string> = new Set(
+  domRules.candidate_policy.cancellation_statuses,
+);
+/** A native `Rescheduled` outcome is not here: it keeps the original credit. */
+export const CANCEL_OUTCOMES: ReadonlySet<string> = new Set(
+  domRules.candidate_policy.cancellation_outcomes,
+);
 export const CANCELED_TITLE = /^cancel(?:l)?ed[\s:]?/i;
-/** Generic follow-up / reschedule / non-sales titles (update_field.py hard excludes + memo). */
-export const NON_NEW_CALL_TITLE =
-  /follow[-\s]?up|fallow\s+up|f\/u\b|next\s+steps|reschedul|enrollment|silver\s+start\s*up|q\s*&\s*a|walk\s*-?through/i;
-export const RESCHEDULE_SIGNAL = /reschedul/i;
 
-/** Appendix B. `Reactivation Scrapers` is retired and deliberately absent. */
-export const ACCEPTED_SOURCES: readonly string[] = [
-  "Affiliate",
-  "Anthony IG",
-  "Anthony X",
-  "Direct Traffic",
-  "GoHighLevel",
-  "Google Ads",
-  "Instagram",
-  "Internal Webinar",
-  "Linkedin",
-  "LinkedIn Ads",
-  "Low Ticket Funnel",
-  "LTF - In-House",
-  "LTF - Quiz Funnel",
-  "Meta Ads",
-  "Mike Newsletter",
-  "OLD Organic - Misc - Cam",
-  "Passivepreneurs",
-  "Podcast - Paid",
-  "Q4 Misc Traffic Cam",
-  "Reactivation Email",
-  "Reactivation Email Setter",
-  "Referred",
-  "Sales Reactivation",
-  "Search - OG",
-  "Side Hustle Nation",
-  "TikTok",
-  "VSL",
-  "Website",
-  "Website - OG - Cam",
-  "WWWS",
-  "X",
-  "YouTube",
-  "YouTube Ads",
-];
+/** Handoff "Sales-call eligibility": follow-up / reschedule titles. */
+export const FOLLOW_UP_TITLE =
+  /follow[-\s]?up|fallow\s+up|f\/u\b|next\s+steps|reschedul/i;
+/**
+ * Handoff: non-booking and setter-only discovery titles, plus the internal
+ * meetings Dom's engine calls not a sales call (not in `rules.json`; the
+ * Oct 1-16 pull has 11 Webinar Actions Reviews among his 12).
+ */
+export const NOT_SALES_TITLE =
+  /enrollment|silver\s+start\s*up|q\s*&\s*a|walk\s*-?through|vending\s+quick\s+discovery|route\s+planning\s+call|webinar\s+actions\s+review|setter\s+interview/i;
+/** Any title that is not a new first call (Marketing MTD open-call filter). */
+export const NON_NEW_CALL_TITLE = new RegExp(
+  `${FOLLOW_UP_TITLE.source}|${NOT_SALES_TITLE.source}`,
+  "i",
+);
+
+/** `Reactivation Scrapers` is retired and deliberately absent. */
+export const ACCEPTED_SOURCES: readonly string[] = domRules.marketing_sources;

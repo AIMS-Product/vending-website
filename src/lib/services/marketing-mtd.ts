@@ -179,7 +179,6 @@ export function spendChannel(spineChannel: string | null): string | null {
     resolveOrigin({
       funnel: band.funnels[0]!,
       contactUtms: [],
-      resourceTag: null,
     }).source ?? null
   );
 }

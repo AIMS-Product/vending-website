@@ -102,7 +102,7 @@ export const GLOSSARY: ReadonlyArray<{ term: string; meaning: string }> = [
   {
     term: "Booked calls V2",
     meaning:
-      "Dom's shared booked-call rule, shown on the Months page beside the older views. One credit per qualifying Close meeting, dated by the day the meeting was created. A lead can earn another credit 60 days after its previous scheduled meeting. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
+      "Dom's shared booked-call rule, shown on the Months page beside the older views. One credit per qualifying Close meeting, dated by the day the meeting was created. Lane 2 and Social DM bookings earn one credit per lead per 30-day episode, timed from the credited meeting's scheduled start; canceled meetings never start the timer, and a no-show keeps its credit while its reschedule earns none. Booked By (Marketing, Lane 2, Social DMs) comes from the meeting title; the lead source is shown separately and never adds calls. Meetings that cannot be decided are held for review and not counted.",
   },
   {
     term: "Marketing only",

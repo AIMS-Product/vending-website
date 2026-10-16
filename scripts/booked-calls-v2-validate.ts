@@ -6,11 +6,12 @@
  *
  * Needs CLOSE_API_KEY. Makes only GET/search reads (~300 requests). Exit 0 =
  * every certified figure matches, 2 = differences (printed), 1 = error.
- * Close is live, so small drift since Dom's read (2026-10-13 21:54:08Z) is
+ * Close is live, so small drift since Dom's read (2026-10-16 18:01:31Z) is
  * expected; each difference still needs a named reason before V2 is trusted.
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import {
+  HISTORY_START,
   LEAD_LABELS,
   mapLeadFacts,
   mapMeeting,
@@ -22,33 +23,31 @@ import {
 import {
   evaluate,
   summarize,
+  type Decision,
   type LeadFacts,
   type Meeting,
 } from "../src/lib/booked-calls-v2/engine";
 
 const FROM = "2026-10-01T07:00:00Z";
-const FENCE = "2026-10-13T21:54:08Z";
+/** Dom's v2.6 MTD fence: Oct 16 10:51:15 AM PDT, exclusive. */
+const FENCE = "2026-10-16T17:51:15Z";
 
-/** Dom's memo §7, `booked_calls.v2.2`. */
+/** Dom's MTD V2 handoff (2026-10-16), `booked_calls.v2.6-scheduled-anchor-candidate`. */
 const CERTIFIED = {
-  candidates: 524,
-  counted: 206,
-  excluded: 280,
-  held: 38,
-  Marketing: 84,
-  "Lane 2": 119,
-  "Social DMs": 3,
-  canceled: 104,
-  follow_up_title: 56,
-  unapproved_title: 64,
-  repeat_within_60_days: 48,
-  not_sales_call: 8,
-  source_unavailable: 13,
-  unlinked_reschedule: 21,
-  ambiguous_simultaneous: 4,
-  historicalExceptions: 12,
-  unknownOrigin: 46,
-  unknownOffer: 36,
+  candidates: 684,
+  counted: 324,
+  excluded: 348,
+  held: 12,
+  Marketing: 102,
+  "Lane 2": 203,
+  "Social DMs": 19,
+  canceled: 128,
+  follow_up_title: 78,
+  unapproved_title: 83,
+  within_episode: 47,
+  not_sales_call: 12,
+  source_unavailable: 12,
+  unknownOrigin: 72,
 } as const;
 
 const key = process.env.CLOSE_API_KEY;
@@ -126,7 +125,7 @@ async function load(): Promise<{
       if (row) rows.set(row.id, row);
     });
   }
-  console.log(`org meetings: ${rows.size} (Dom: 22,389 at his read)`);
+  console.log(`org meetings: ${rows.size} (Dom: 22,549 at his read)`);
 
   const meetings: Meeting[] = [...rows.values()].map((r) => ({
     id: r.id,
@@ -138,7 +137,6 @@ async function load(): Promise<{
     outcome: r.outcome ?? null,
     startsAt: r.starts_at ?? null,
     dateCreated: r.date_created,
-    rescheduleNote: Boolean(r.reschedule_note),
   }));
   const inWindow = (m: Meeting) =>
     m.dateCreated >= FROM && Date.parse(m.dateCreated) < Date.parse(FENCE);
@@ -189,14 +187,13 @@ async function load(): Promise<{
         contactUtms:
           (row.contact_utms as Array<{ source?: string; medium?: string }>) ??
           [],
-        resourceTag: row.resource_tag ?? null,
         setterName: row.setter_name ?? null,
         businessLine: row.business_line ?? null,
       });
     }
   }
   console.log(
-    `candidate leads: ${leadIds.length} (Dom: 399), facts read: ${leads.size}`,
+    `candidate leads: ${leadIds.length} (Dom: 501), facts read: ${leads.size}`,
   );
 
   return { meetings, leads: [...leads] };
@@ -224,9 +221,7 @@ async function main() {
     held: s.held,
     ...s.byBookedBy,
     ...s.byReason,
-    historicalExceptions: s.historicalExceptions,
     unknownOrigin: s.unknownOrigin,
-    unknownOffer: s.unknownOffer,
   };
   let diffs = 0;
   for (const [name, expected] of Object.entries(CERTIFIED)) {
@@ -237,11 +232,78 @@ async function main() {
     );
   }
   console.log("origin x bucket:", JSON.stringify(s.byOrigin));
+  if (diffs > 0) diagnose(decisions, meetings, leads);
   console.log(`Close requests: ${requests}`);
   const out = process.argv.indexOf("--out");
   if (out > 0)
     writeFileSync(process.argv[out + 1]!, JSON.stringify(decisions, null, 1));
   process.exit(diffs === 0 ? 0 : 2);
+}
+
+/**
+ * Where a difference comes from, without printing prospects: which bucket
+ * anchored each within-episode exclusion, and the title shapes (names cut,
+ * shapes seen once dropped) behind canceled and unapproved rows.
+ */
+function diagnose(
+  decisions: readonly Decision[],
+  meetings: readonly Meeting[],
+  leads: ReadonlyMap<string, LeadFacts>,
+) {
+  const all = evaluate({ meetings, leads, from: HISTORY_START, to: FENCE });
+  const creditBucket = new Map(
+    all
+      .filter((d) => d.disposition === "counted")
+      .map((d) => [d.meetingId, d.bookedBy]),
+  );
+  const tally = (keys: string[]) =>
+    Object.fromEntries(
+      Object.entries(
+        keys.reduce<Record<string, number>>(
+          (acc, k) => ({ ...acc, [k]: (acc[k] ?? 0) + 1 }),
+          {},
+        ),
+      ).sort(([, a], [, b]) => b - a),
+    );
+  console.log(
+    "within_episode, row bucket <- anchor bucket:",
+    JSON.stringify(
+      tally(
+        decisions
+          .filter((d) => d.reason === "within_episode")
+          .map(
+            (d) =>
+              `${d.bookedBy ?? "none"} <- ${creditBucket.get(d.precedingMeetingId ?? "") ?? "?"}`,
+          ),
+      ),
+    ),
+  );
+  const titles = new Map(meetings.map((m) => [m.id, m.title ?? ""]));
+  const shape = (title: string) =>
+    title
+      .replace(/^cancel(?:l)?ed:?\s*/i, "")
+      .replace(/\s+(?:with|between|and|&|<>|x)\s+.*$/i, "")
+      .replace(/\s*[-:|(/].*$/, "")
+      .trim()
+      .toLowerCase();
+  // Calendar-like shapes only: a bare repeated word is usually a person.
+  const calendar =
+    /vend|webinar|tlg|ppa|call|review|interview|session|discovery|consult/;
+  for (const reason of ["canceled", "unapproved_title"] as const) {
+    const shapes = tally(
+      decisions
+        .filter((d) => d.reason === reason)
+        .map((d) => shape(titles.get(d.meetingId) ?? "")),
+    );
+    console.log(
+      `${reason} title shapes (2+):`,
+      JSON.stringify(
+        Object.fromEntries(
+          Object.entries(shapes).filter(([k, n]) => n > 1 && calendar.test(k)),
+        ),
+      ),
+    );
+  }
 }
 
 main().catch((error: unknown) => {

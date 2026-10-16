@@ -7,15 +7,14 @@ import { resolveOrigin } from "./sources";
 const facts = (over: Partial<Parameters<typeof resolveOrigin>[0]> = {}) => ({
   funnel: null,
   contactUtms: [],
-  resourceTag: null,
   ...over,
 });
 
-describe("Dom's v2.2 source resolver", () => {
-  it("reads Dom's rules.json byte for byte (his memo's config SHA)", () => {
-    const bytes = readFileSync(path.join(__dirname, "rules.v2.2.json"));
+describe("Dom's v2.6 source resolver", () => {
+  it("reads Dom's rules.json byte for byte (his handoff's config SHA)", () => {
+    const bytes = readFileSync(path.join(__dirname, "rules.v2.6.json"));
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(
-      "6949a5ee62fb387c569f1536fe63e65c64dc0d347c93560e422202aa894b581a",
+      "2a3343fd339133c62b7accba767893c0b297d4b0be2527c95ca111c84895942f",
     );
   });
 
@@ -27,15 +26,22 @@ describe("Dom's v2.2 source resolver", () => {
     ).toEqual({ source: "YouTube", basis: "funnel" });
   });
 
-  // Dom's certified Oct 1-13 pull held this meeting (redacted_479e3a74ad5a):
-  // one contact mapped to Website-ish evidence, another carried an unmapped
-  // UTM. Our stand-in resolver counted it as Marketing (85 vs his 84).
+  // v2.6 maps `website`, so chatbot + website now agree on Website; one
+  // unmapped UTM beside them still leaves the source unresolved.
   it("leaves the source unresolved when any contact UTM is unmapped", () => {
     expect(
       resolveOrigin(
         facts({
           funnel: "Reactivation Scrapers",
           contactUtms: [{ source: "chatbot" }, { source: "website" }],
+        }),
+      ),
+    ).toEqual({ source: "Website", basis: "contact_utm" });
+    expect(
+      resolveOrigin(
+        facts({
+          funnel: "Reactivation Scrapers",
+          contactUtms: [{ source: "chatbot" }, { source: "partner-site" }],
         }),
       ),
     ).toEqual({ source: null, basis: "unknown" });
@@ -46,7 +52,7 @@ describe("Dom's v2.2 source resolver", () => {
       resolveOrigin(
         facts({
           contactUtms: [
-            { source: " Google&utm_x=1", medium: "cpc" },
+            { source: " Google&utm_x=1" },
             { source: "google?gclid=abc" },
             { source: "" },
           ],
@@ -55,14 +61,20 @@ describe("Dom's v2.2 source resolver", () => {
     ).toEqual({ source: "Google Ads", basis: "contact_utm" });
   });
 
-  it("applies a medium override before the source map", () => {
-    expect(
-      resolveOrigin(
-        facts({
-          contactUtms: [{ source: "instagram", medium: "Organic-Social" }],
-        }),
-      ),
-    ).toEqual({ source: "Anthony IG", basis: "contact_utm" });
+  it("maps the v2.6 aliases and ignores utm_medium", () => {
+    for (const [source, label] of [
+      ["yt", "YouTube"],
+      ["fb", "Meta Ads"],
+      ["facebook", "Meta Ads"],
+      ["ig", "Instagram"],
+      ["internal_webinar", "Internal Webinar"],
+      ["web", "Website"],
+    ]) {
+      expect(resolveOrigin(facts({ contactUtms: [{ source }] }))).toEqual({
+        source: label,
+        basis: "contact_utm",
+      });
+    }
   });
 
   it("holds conflicting contacts rather than picking one", () => {
@@ -75,18 +87,7 @@ describe("Dom's v2.2 source resolver", () => {
     ).toEqual({ source: null, basis: "unknown" });
   });
 
-  it("falls back to Resource Tag only with no UTM evidence", () => {
-    expect(
-      resolveOrigin(facts({ resourceTag: "website-application" })),
-    ).toEqual({ source: "Website", basis: "resource_tag" });
-    expect(resolveOrigin(facts({ resourceTag: "internal-webinar" }))).toEqual({
-      source: null,
-      basis: "unknown",
-    });
-    expect(
-      resolveOrigin(
-        facts({ resourceTag: "newsletter", contactUtms: [{ source: "web" }] }),
-      ),
-    ).toEqual({ source: null, basis: "unknown" });
+  it("never falls back to anything but contact utm_source", () => {
+    expect(resolveOrigin(facts())).toEqual({ source: null, basis: "unknown" });
   });
 });
