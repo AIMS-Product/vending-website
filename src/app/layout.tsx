@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { AttributionSessionTracker } from "@/components/attribution/AttributionSessionTracker";
-import { ChatWidgetLoader } from "@/components/chatbot/ChatWidgetLoader";
+import { ChatWidget } from "@/components/chatbot/ChatWidget";
 import {
   TrackingNoscript,
   TrackingScripts,
@@ -80,7 +80,7 @@ export default async function RootLayout({
           <TrackingScripts />
         </SkipOnAdmin>
         <TrackingNoscript />
-        <ChatWidgetLoader />
+        <ChatWidget />
         <Analytics />
         <SpeedInsights />
       </body>
