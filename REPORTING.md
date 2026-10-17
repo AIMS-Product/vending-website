@@ -290,6 +290,35 @@ counts something we do not tag, and its behaviour changed. **Open question: whic
 
 Scorecard weeks are labelled Mon–Fri but the values are Stephen's Mon–Sun weeks.
 
+### Lane 2 on the scorecard — three counts, three meanings (measured 2026-09-28, W12)
+
+Stephen's Reactivation Scrapers "Booked" is **not** dated by booking. `fetch_and_build.py` /
+`meetings_by_day.py` count Close meetings whose title matches one of 22 "Next Steps" patterns
+on a Reactivation Scrapers lead, **bucketed by the meeting's `starts_at`**. Every other funnel is
+bucketed by First Sales Call Booked Date. So the scorecard's Lane 2 share means "scraper calls on
+the calendar that week", while the marketing share means "first calls booked that week".
+
+| Count                        | Rule                                                                         | 9/21–9/25 | 9/21–9/27 |
+| ---------------------------- | ---------------------------------------------------------------------------- | --------- | --------- |
+| Stephen total                | Rules in §5; LTF Quiz excluded                                               | 129       | 145       |
+| Stephen Reactivation Scrapers | Next Steps meetings by meeting date, VP only                                | 74        | 82        |
+| Stephen marketing            | Total − scrapers                                                             | 55        | 63        |
+| Our Close mirror, scrapers   | `first_sales_call_booked_date` in window, funnel Reactivation Scrapers       | 62        | 71        |
+| Our Close mirror, marketing  | Same, every other funnel                                                     | 55        | 65        |
+| SteelTrap Lane 2 (Anthony)   | Meetings booked by the Lane 2 rep roster, credited to rep, **all offers**, Sunday-start weeks | 132 (as reported, not verified) | — |
+
+- Marketing ties exactly on a matched Mon–Fri window (55 = 55).
+- Our scraper count is lower than Stephen's because we count a lead's *first* call by booked date;
+  he counts every Next Steps meeting by meeting date, including repeat calls for older leads.
+- SteelTrap's number is a rep-activity count (Databricks projection
+  `serving.lane2_activity_rep_daily`), not a VP new-lead count. It cannot be reconciled to the
+  scorecard row without a per-offer breakdown.
+- Close `sales_team_lane` marked only 18 of 117 Mon–Fri leads as Lane 2. Do not report from it.
+- Reproduce Stephen for any window: `CLOSE_API_KEY=… python3 meetings_by_day.py --start … --end …`
+  from `AIMS-Product/mtd-funnel-dashboard` (read-only).
+- **Open decision (Adam):** which definition the "Lane 2 booked" row should use, and whether scraper
+  bookings should be dated by booking rather than by meeting.
+
 ---
 
 ## 7. The two "Won" counts
