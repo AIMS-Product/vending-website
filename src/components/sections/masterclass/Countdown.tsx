@@ -19,8 +19,9 @@ const UNITS = [
 
 /**
  * Counts down to the GHL start time. Computed from the date, so unlike the GHL
- * confirmation page's timer it never needs a weekly hand reset. Renders
- * nothing until mounted so the server and client never disagree on a second.
+ * confirmation page's timer it never needs a weekly hand reset. Before mount
+ * it renders invisible, aria-hidden placeholder boxes (no digits), so the
+ * server and client never disagree on a second and the page never shifts.
  *
  * Between `startsAt` and `endsAt` it shows `expiredLabel` (the live window);
  * after `endsAt`, or on expiry when no live label is given, it renders nothing,
