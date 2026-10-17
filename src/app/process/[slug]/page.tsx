@@ -6,6 +6,7 @@ import {
   listProcessSlugs,
   processNeighbours,
 } from "@/lib/content/process";
+import { defaultOgImage } from "@/lib/site";
 
 type Params = { slug: string };
 
@@ -39,6 +40,7 @@ export async function generateMetadata({
       description,
       url: `/process/${step.slug}`,
       type: "article",
+      images: [defaultOgImage],
     },
   };
 }

@@ -27,7 +27,9 @@ export function Header() {
 
   return (
     <>
-      <CohortBanner />
+      <aside aria-label="Cohort availability">
+        <CohortBanner />
+      </aside>
       <header className="sticky inset-x-0 top-0 z-30 border-b-2 border-[#111111] bg-[#f5fbff]/95 backdrop-blur-md">
         <div className="mx-auto flex max-w-[1500px] items-center justify-between gap-8 px-5 py-4 lg:px-10">
           <Link

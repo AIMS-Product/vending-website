@@ -13,6 +13,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { caseStudyStructuredData } from "@/lib/case-studies/structured-data";
 import { jsonLdHtml } from "@/lib/json-ld";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
+import { defaultOgImage } from "@/lib/site";
 
 type Params = { slug: string };
 
@@ -51,7 +52,7 @@ export async function generateMetadata({
     openGraph: {
       title: `${caseStudy.member_name}: ${caseStudy.title}`,
       description: caseStudy.excerpt ?? undefined,
-      images: ogImage ? [ogImage] : undefined,
+      images: [ogImage ?? defaultOgImage],
       type: "article",
       publishedTime: caseStudy.published_at ?? undefined,
     },

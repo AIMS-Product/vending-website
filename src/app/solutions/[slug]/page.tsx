@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ContentPage } from "@/components/sections/ContentPage";
 import { getSolution, listSolutionSlugs } from "@/lib/content/solutions";
 import { breadcrumbStructuredData } from "@/lib/site-structured-data";
+import { defaultOgImage } from "@/lib/site";
 
 type Params = { slug: string };
 
@@ -36,6 +37,7 @@ export async function generateMetadata({
       description,
       url: `/solutions/${solution.slug}`,
       type: "website",
+      images: [defaultOgImage],
     },
   };
 }
