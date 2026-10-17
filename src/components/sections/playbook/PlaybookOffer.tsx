@@ -87,7 +87,9 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
                 data-reveal
                 className="border-ink grid grid-cols-[3.5rem_1fr] gap-x-5 border-t-2 py-7 sm:grid-cols-[4.5rem_1fr]"
               >
-                <span className={`${NUMERAL} text-[3rem] sm:text-[3.75rem]`}>
+                <span
+                  className={`${NUMERAL} text-[3rem] sm:row-span-2 sm:text-[3.75rem]`}
+                >
                   <span className="sr-only">Chapter </span>
                   {pad(i + 1)}
                 </span>
@@ -98,8 +100,13 @@ export function PlaybookCurriculum({ checkoutHref }: PlaybookOfferProps) {
                   <h3 className="v2-display text-ink text-2xl leading-[1.05] text-balance uppercase">
                     {c.title}
                   </h3>
-                  <CheckList items={c.points} className="mt-4 text-[0.95rem]" />
                 </div>
+                {/* Phones: the points run the full width under the numeral,
+                    so each line holds more words and the list is shorter. */}
+                <CheckList
+                  items={c.points}
+                  className="col-span-2 mt-4 text-[0.95rem] sm:col-span-1 sm:col-start-2"
+                />
               </li>
             ))}
           </ol>
