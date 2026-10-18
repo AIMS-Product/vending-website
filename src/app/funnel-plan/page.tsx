@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { FunnelCheatSheet } from "@/components/sections/FunnelCheatSheet";
 import { funnelPlanMarkdown, funnelPlanTitle } from "@/lib/content/funnel-plan";
 import { labelTableCells } from "@/lib/html-table-labels";
 import { renderMarkdown } from "@/lib/markdown";
@@ -24,6 +25,7 @@ export default async function FunnelPlanPage() {
       <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
         {funnelPlanTitle}
       </h1>
+      <FunnelCheatSheet />
       <div
         className="public-news-prose funnel-plan-prose mt-8"
         dangerouslySetInnerHTML={{ __html: html }}
