@@ -72,3 +72,14 @@ describe("funnel cheat sheet", () => {
     expect(first).toBeLessThan(html.indexOf("Key numbers"));
   });
 });
+
+describe("improvement list", () => {
+  it("shows the full improvement list between the plan and the build order", async () => {
+    mocks.getAuthorizedAdmin.mockResolvedValue({ id: "u1" });
+    const html = renderToStaticMarkup(await FunnelPlanPage());
+    const list = html.indexOf("7. Full improvement list, by funnel stage");
+    expect(list).toBeGreaterThan(html.indexOf("6. The plan"));
+    expect(list).toBeLessThan(html.indexOf("8. Build order"));
+    expect(html).toContain("After the lead (speed to lead, setters, shows)");
+  });
+});
