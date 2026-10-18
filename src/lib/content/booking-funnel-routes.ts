@@ -1,3 +1,4 @@
+import { isMikeBioPath } from "@/lib/routing/mike-bio";
 import { bookingPages } from "./booking-pages";
 import { CONTACT_CLONE_SLUGS } from "./contact-clone-pages";
 import { isLegacyLeadPath } from "./legacy-routes";
@@ -125,6 +126,7 @@ export function suppressesChatTeaser(pathname: string): boolean {
  */
 export function hidesChatWidget(pathname: string): boolean {
   return (
+    isMikeBioPath(pathname) ||
     pathname === "/masterclass" ||
     pathname === "/masterclass-confirmed" ||
     pathname === MASTERCLASS_REVIEW_PATH ||

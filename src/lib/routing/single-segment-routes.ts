@@ -31,6 +31,7 @@ export const APP_TOP_LEVEL_PAGE_SEGMENTS: ReadonlySet<string> = new Set([
   "masterclass-replay-dna",
   "masterclass-replay-meta",
   "masterclass-review",
+  "mike",
   "news",
   "newsletter",
   "playbook",
