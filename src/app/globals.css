@@ -507,6 +507,71 @@ html[data-motion="paused"] .v2-float {
 }
 /* A pull-quote is large type on a left rule. It was a bordered, shadowed
    white box, which read as an input field in the middle of the article. */
+/* /funnel-plan: tables read as a grid on desktop and as stacked cards on
+   phones, each value under its column name (data-label from the page). */
+.funnel-plan-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.925rem;
+}
+.funnel-plan-prose th,
+.funnel-plan-prose td {
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid rgb(0 0 0 / 0.1);
+}
+.funnel-plan-prose th {
+  border-bottom-width: 2px;
+  border-bottom-color: rgb(0 0 0 / 0.2);
+}
+@media (max-width: 639px) {
+  .funnel-plan-prose thead {
+    display: none;
+  }
+  .funnel-plan-prose table,
+  .funnel-plan-prose tbody {
+    display: block;
+    width: 100%;
+  }
+  .funnel-plan-prose tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    column-gap: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid rgb(0 0 0 / 0.12);
+    border-radius: 0.75rem;
+    background: #fff;
+  }
+  .funnel-plan-prose td {
+    min-width: 0;
+    padding: 0.3rem 0;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+  .funnel-plan-prose td[data-wide],
+  .funnel-plan-prose td:first-child {
+    grid-column: 1 / -1;
+  }
+  .funnel-plan-prose td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: rgb(0 0 0 / 0.5);
+  }
+  .funnel-plan-prose td:first-child {
+    font-size: 1.05rem;
+    font-weight: 600;
+  }
+  .funnel-plan-prose td:first-child::before {
+    display: none;
+  }
+}
+
 .public-news-prose blockquote {
   max-width: 72ch;
   margin-block: 2.25rem;
