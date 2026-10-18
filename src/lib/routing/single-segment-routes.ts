@@ -23,6 +23,7 @@ export const APP_TOP_LEVEL_PAGE_SEGMENTS: ReadonlySet<string> = new Set([
   "booking-youtube",
   "case-studies",
   "contact",
+  "funnel-plan",
   "masterclass",
   "masterclass-confirmed",
   "masterclass-replay-adnb",
