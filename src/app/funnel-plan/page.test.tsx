@@ -60,3 +60,15 @@ describe("labelTableCells wide cells", () => {
     expect(labelTableCells(html)).toContain('data-label="Topic" data-wide>');
   });
 });
+
+describe("funnel cheat sheet", () => {
+  it("opens the signed-in page with the three funnel stages", async () => {
+    mocks.getAuthorizedAdmin.mockResolvedValue({ id: "u1" });
+    const html = renderToStaticMarkup(await FunnelPlanPage());
+    const first = html.indexOf("TOFU");
+    expect(first).toBeGreaterThan(-1);
+    expect(html.indexOf("MOFU")).toBeGreaterThan(first);
+    expect(html.indexOf("BOFU")).toBeGreaterThan(html.indexOf("MOFU"));
+    expect(first).toBeLessThan(html.indexOf("Key numbers"));
+  });
+});
