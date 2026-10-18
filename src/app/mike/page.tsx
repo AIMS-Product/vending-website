@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { MikeBioLink } from "@/components/attribution/MikeBioLink";
 import {
   mikeBio as copy,
@@ -149,7 +150,7 @@ export default function MikeBioPage() {
         <footer className={styles.footer}>
           <span>{copy.name}</span>
           <span aria-hidden="true">/</span>
-          <a href="/privacy">{copy.privacyLabel}</a>
+          <Link href="/privacy">{copy.privacyLabel}</Link>
         </footer>
       </div>
     </div>
