@@ -40,3 +40,23 @@ describe("/funnel-plan", () => {
     expect(html).toContain("Where buyers search");
   });
 });
+
+describe("labelTableCells", () => {
+  it("stamps each cell with its column header", async () => {
+    const { labelTableCells } = await import("@/lib/html-table-labels");
+    const html =
+      "<table><thead><tr><th>Topic</th><th>Monthly US searches</th></tr></thead><tbody><tr><td>Locators</td><td>2,400</td></tr></tbody></table>";
+    expect(labelTableCells(html)).toContain(
+      '<td data-label="Topic">Locators</td><td data-label="Monthly US searches">2,400</td>',
+    );
+  });
+});
+
+describe("labelTableCells wide cells", () => {
+  it("marks long text cells as full-width on phones", async () => {
+    const { labelTableCells } = await import("@/lib/html-table-labels");
+    const html =
+      "<table><thead><tr><th>Topic</th></tr></thead><tbody><tr><td>Our YouTube video ranks number two</td></tr></tbody></table>";
+    expect(labelTableCells(html)).toContain('data-label="Topic" data-wide>');
+  });
+});
