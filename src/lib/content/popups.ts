@@ -8,6 +8,8 @@
  * is what lets one card component cover every page's popup without variants.
  */
 
+import { isMikeBioPath } from "@/lib/routing/mike-bio";
+
 export type PopupTrigger =
   | "IMMEDIATE"
   | "TIME_ON_PAGE"
@@ -273,6 +275,7 @@ export const POPUP_EXCLUDED_PATH_PREFIXES = [
  * give an admin a control that does what its label says.
  */
 export function popupMatchesPath(popup: Popup, pathname: string): boolean {
+  if (isMikeBioPath(pathname)) return false;
   if (
     POPUP_EXCLUDED_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   ) {

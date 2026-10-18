@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { Wordmark } from "./Wordmark";
 import { CohortBanner } from "./CohortBanner";
 import { headerCta, primaryNav, type NavItem } from "@/lib/content/nav";
+import { isMikeBioPath } from "@/lib/routing/mike-bio";
 import { isFunnelChromePath } from "@/lib/content/booking-funnel-routes";
 import { isLegacyLeadPath } from "@/lib/content/legacy-routes";
 
@@ -19,7 +20,7 @@ export function Header() {
   // The booking funnels and everything after the form render bare (Adam,
   // 2026-09-17): every link in the site header is a way off a page whose only
   // job is the form, or the calendar that follows it.
-  if (isFunnelChromePath(pathname)) return null;
+  if (isFunnelChromePath(pathname) || isMikeBioPath(pathname)) return null;
   // Legacy lead pages are paid-traffic booking pages too (UI cohesion 9a).
   // Kept out of isFunnelChromePath on purpose: that also sets the analytics
   // page group, and these stay "legacy_lead" there.
