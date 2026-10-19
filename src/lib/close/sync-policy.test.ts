@@ -570,15 +570,16 @@ describe("phone normalization on the wire", () => {
       ],
       leads: [makeLead({ phone })],
     });
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(jsonResponse({ data: [] }))
-      .mockResolvedValueOnce(
-        jsonResponse({
-          id: "lead_created",
-          contacts: [{ id: "cont_created" }],
-        }),
-      );
+    // Searches (by email, then by phone when there is one) find nothing; the
+    // only write is the create.
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) =>
+      init?.method === "POST"
+        ? jsonResponse({
+            id: "lead_created",
+            contacts: [{ id: "cont_created" }],
+          })
+        : jsonResponse({ data: [] }),
+    );
 
     const result = await drain(fake, fetchMock, T0);
     const creates = fetchMock.mock.calls.filter(

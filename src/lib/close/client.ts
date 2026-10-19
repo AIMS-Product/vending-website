@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { CloseActivity } from "@/lib/close/setter-touch";
+import { normalizePhone } from "@/lib/phone";
 
 export type CloseCustomFieldConfig = {
   qualificationStatusFieldId?: string;
@@ -162,6 +163,8 @@ type CloseContactResult = {
   lead_id?: string | null;
   /** On an email search only: when the contact's lead last changed. */
   lead_date_updated?: string | null;
+  /** On a phone search only: the name Close holds for the contact. */
+  name?: string | null;
   emails?: CloseContactEmail[];
   phones?: CloseContactPhone[];
 };
@@ -177,7 +180,9 @@ type CloseLeadSearchResult = {
   date_updated?: string | null;
   contacts?: Array<{
     id?: string | null;
+    name?: string | null;
     emails?: Array<{ email?: string | null }>;
+    phones?: Array<{ phone?: string | null }>;
   }>;
 };
 /**
@@ -258,6 +263,39 @@ function contactsMatchingEmail(
         lead_id: lead.id,
         lead_date_updated: lead.date_updated ?? null,
         emails: contact.emails,
+      })),
+  );
+}
+
+/**
+ * The phone twin of `contactsMatchingEmail`: keep only contacts holding a phone
+ * that normalizes to the searched E.164 number, since Close stores phones in
+ * whatever format they were typed and its search is fuzzy.
+ */
+function contactsMatchingPhone(
+  leads: CloseLeadSearchResult[],
+  phone: string,
+): CloseContactResult[] {
+  return leads.flatMap((lead) =>
+    (lead.contacts ?? [])
+      .filter(
+        (
+          contact,
+        ): contact is {
+          id: string;
+          name?: string | null;
+          phones?: CloseContactPhone[];
+        } =>
+          Boolean(contact.id) &&
+          (contact.phones ?? []).some(
+            (entry) => normalizePhone(entry.phone ?? "") === phone,
+          ),
+      )
+      .map((contact) => ({
+        id: contact.id,
+        lead_id: lead.id,
+        lead_date_updated: lead.date_updated ?? null,
+        name: contact.name ?? null,
       })),
   );
 }
@@ -438,6 +476,15 @@ export function createCloseClient({
         `/lead/?query=${query}&_limit=10`,
       );
       return { data: contactsMatchingEmail(result.data ?? [], email) };
+    },
+    /** `phone` must already be E.164 (`normalizePhone`); anything else matches nothing. */
+    async searchContactsByPhone(phone: string) {
+      const query = encodeURIComponent(`phone:"${escapeCloseQuery(phone)}"`);
+      const result = await request<{ data?: CloseLeadSearchResult[] }>(
+        "GET",
+        `/lead/?query=${query}&_limit=10`,
+      );
+      return { data: contactsMatchingPhone(result.data ?? [], phone) };
     },
     createLead(payload: CloseLeadPayload) {
       return request<CloseLeadResult>("POST", "/lead/", payload);

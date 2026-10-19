@@ -653,6 +653,10 @@ async function syncUnknownCloseLead(
   if (match)
     return updateMatchedCloseContact(close, match, contact, sourceFields);
 
+  const phoneMatch = await matchedContactForPhone(close, contact, event);
+  if (phoneMatch)
+    return updatePhoneMatchedCloseContact(close, phoneMatch, contact);
+
   const created = await close.createLead(
     createLeadPayload({ closeConfig, contact, email, lead, sourceFields }),
   );
@@ -673,6 +677,110 @@ async function matchedContactForEmail(
   email: string | null,
 ) {
   return email ? findSingleCloseContact(close, email) : null;
+}
+
+/**
+ * The one Close contact already holding this submit's phone AND name, when no
+ * email matched. A webinar registrant who later applies on the site with a
+ * second email kept their phone, and creating a lead for them split the booking
+ * from its funnel, UTMs and opportunity (2026-10-19).
+ *
+ * Only a phone on exactly ONE Close lead counts. A phone on several leads is a
+ * household, an office line or junk, and picking one would file a stranger's
+ * application under someone else. A family also shares one phone on one lead,
+ * so the contact's name must match the submitted one too (`sameName`).
+ * Anything else falls back to creating a lead, logged so a human can merge.
+ * Contacts on the same lead are the same record, so they do not make it
+ * ambiguous.
+ */
+async function matchedContactForPhone(
+  close: CloseClient,
+  contact: CloseContactPayload,
+  event: CloseSyncEventRow,
+) {
+  const phone = contact.phones?.[0]?.phone;
+  if (!phone) return null;
+  const matches = (await close.searchContactsByPhone(phone)).data;
+  if (!matches.length) return null;
+  // Ids only: names and the phone stay out of the logs.
+  const context = {
+    eventId: event.id,
+    leadSubmissionId: event.lead_submission_id,
+    closeLeadIds: [...new Set(matches.map((match) => match.lead_id))],
+    closeContactIds: matches.map((match) => match.id),
+  };
+  if (context.closeLeadIds.length > 1) {
+    console.warn(
+      "close sync: phone matches several Close leads; creating a new lead",
+      context,
+    );
+    return null;
+  }
+  const named = matches.find((match) => sameName(match.name, contact.name));
+  if (!named) {
+    console.warn(
+      "close sync: phone matches a Close lead under another name; creating a new lead",
+      context,
+    );
+  }
+  return named ?? null;
+}
+
+/**
+ * Same person by name: first names equal, and last names equal or one side is
+ * only the other's initial ("Jane B." for "Jane Buyer"). Case, surrounding
+ * space and punctuation are ignored. A missing or one-word name never matches:
+ * with no last name there is nothing to tell two people in one household apart.
+ *
+ * ponytail: first and last word only, so a middle name is ignored and a
+ * nickname ("Dave" for "David") does not match; that person gets a new lead,
+ * which is the behaviour before phone matching existed.
+ */
+function sameName(
+  closeName: string | null | undefined,
+  submitted: string | undefined,
+) {
+  const a = nameParts(closeName);
+  const b = nameParts(submitted);
+  if (!a || !b || a.first !== b.first) return false;
+  if (a.last === b.last) return true;
+  const [short, long] =
+    a.last.length <= b.last.length ? [a.last, b.last] : [b.last, a.last];
+  return short.length === 1 && long.startsWith(short);
+}
+
+function nameParts(name: string | null | undefined) {
+  const words = (name ?? "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .split(/\s+/)
+    .filter(Boolean);
+  return words.length >= 2
+    ? { first: words[0], last: words[words.length - 1] }
+    : null;
+}
+
+/**
+ * File the submit under the lead that owns its phone without touching anything
+ * that lead already says about where it came from. Unlike an email match, the
+ * source fields are NOT written: the phone lead was usually created upstream
+ * (webinar, GHL) and its funnel and UTMs are the attribution sales reports on.
+ * Only the new email (and any new phone) is appended to the contact.
+ */
+async function updatePhoneMatchedCloseContact(
+  close: CloseClient,
+  match: Awaited<
+    ReturnType<CloseClient["searchContactsByPhone"]>
+  >["data"][number],
+  contact: CloseContactPayload,
+): Promise<CloseContactInfo> {
+  if (!match.lead_id) {
+    throw new CloseNeedsReviewError(
+      `Close contact ${match.id} did not include a parent lead.`,
+    );
+  }
+  await updateContactAdditively(close, match.id, contact, {});
+  return { leadId: match.lead_id, contactId: match.id };
 }
 
 function createLeadPayload({
