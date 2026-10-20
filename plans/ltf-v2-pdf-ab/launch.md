@@ -13,20 +13,30 @@ Support / reply-to: support@modern-amenities.com.
 - [x] Preview env (branch-scoped `feat/ltf-v2-stripe-playbook`): STRIPE_SECRET_KEY (test), STRIPE_WEBHOOK_SECRET,
       STRIPE_PLAYBOOK_PRICE_ID, PLAYBOOK_PDF_OBJECT, LTF_SUPPORT_EMAIL.
 
+## Live Stripe (done 2026-10-20)
+
+- Live restricted key (Adam) in Vercel **production** as STRIPE_SECRET_KEY, plus STRIPE_WEBHOOK_SECRET,
+  STRIPE_PLAYBOOK_PRICE_ID, PLAYBOOK_PDF_OBJECT, LTF_SUPPORT_EMAIL. PLAYBOOK_GUIDE_LIVE is NOT set.
+- Live product `prod_VTc8cS8Kc0Urke`, price `price_1USetyJIfGazBhNXTFGHUa3h` ($5), webhook
+  `we_1USetyJIfGazBhNXIvU56Dxk` -> https://www.vendingpreneurs.com/api/webhooks/stripe, **created DISABLED**:
+  the route is not on main yet and VendHub's live traffic on the same account would fail against it.
+  **Enable it right after the merge deploys** (Stripe dashboard -> Developers -> Webhooks -> enable, or
+  `stripe-setup.mjs` without `--disabled`).
+
 ## Remaining
 
 1. **Adam:** run `supabase/migrations/20261020002951_ltf_playbook_test.sql` in the SQL editor (section 14 of
    APPLY-IN-SQL-EDITOR.md). New tables only.
 2. **Claude:** E2E on the preview in Stripe test mode: pay with 4242, thank-you download, email delivered,
    declined card 4000 0000 0000 0002, replayed webhook = one order and one email, refund revokes access.
-3. **Live Stripe:** a live secret key for Modern-Amenities LLC is not on this machine (VendHub's local key is test
+3. ~~Live Stripe~~ done (see above). Original note: a live secret key for Modern-Amenities LLC is not on this machine (VendHub's local key is test
    mode). Adam pastes a live restricted key (Checkout Sessions write, Products/Prices write, Webhook Endpoints
    write, Charges/Balance read), then `STRIPE_SECRET_KEY=<live> node scripts/playbook-guide/stripe-setup.mjs
 https://www.vendingpreneurs.com/api/webhooks/stripe /tmp/ltf-stripe-live.env` creates the live product, price and
    webhook. Add STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / STRIPE_PLAYBOOK_PRICE_ID / PLAYBOOK_PDF_OBJECT /
    LTF_SUPPORT_EMAIL to Vercel **production**. Leave PLAYBOOK_GUIDE_LIVE unset.
 4. **Merge** `feat/ltf-v2-stripe-playbook` into main (Adam runs the merge). Nothing changes publicly while the
-   switch is off.
+   switch is off. Then **enable the live webhook** `we_1USetyJIfGazBhNXIvU56Dxk`.
 5. **Go live (Adam says go):** set `PLAYBOOK_GUIDE_LIVE=on` in production and redeploy. Effects:
    `/playbook` and `/playbook/checkout` 307 to `/playbook/go` (UTMs kept), the webinar confirmation page shows the
    $5 teaser, the offer and checkout serve. Optionally point webinar emails/links straight at `/playbook/go`.

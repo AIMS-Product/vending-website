@@ -27,10 +27,15 @@ const EVENTS = [
   "charge.refunded",
 ];
 
-const account = await stripe.accounts.retrieve();
+const mode = key.includes("_live_") ? "LIVE" : "test";
+// A restricted key may not read the account; that is only for the log line.
+const account = await stripe.accounts.retrieve().catch(() => null);
 console.log(
-  `account ${account.id} (${account.settings?.dashboard?.display_name}) mode=${key.startsWith("sk_live") ? "LIVE" : "test"}`,
+  `account ${account?.id ?? "(restricted key)"} mode=${mode}`,
 );
+// --disabled: create the endpoint switched off (e.g. before the route is
+// deployed, so other traffic on a shared account does not fail against it).
+const startDisabled = process.argv.includes("--disabled");
 
 const found = await stripe.products.search({
   query: "metadata['ltf']:'v2-pdf' AND active:'true'",
@@ -71,7 +76,7 @@ const existing = endpoints.data.find((e) => e.url === webhookUrl);
 if (existing) {
   await stripe.webhookEndpoints.update(existing.id, {
     enabled_events: EVENTS,
-    disabled: false,
+    disabled: startDisabled,
   });
   console.log(
     `webhook ${existing.id} exists; events updated. Its secret was only shown at creation.`,
@@ -83,6 +88,10 @@ if (existing) {
     description: "Vendingpreneurs $5 First Location Playbook",
     metadata: TAG,
   });
+  if (startDisabled) {
+    await stripe.webhookEndpoints.update(created.id, { disabled: true });
+    console.log(`webhook ${created.id} DISABLED until launch`);
+  }
   lines.push(`STRIPE_WEBHOOK_SECRET=${created.secret}`);
   console.log(
     `webhook ${created.id} created for ${new URL(webhookUrl).host}${new URL(webhookUrl).pathname}`,
