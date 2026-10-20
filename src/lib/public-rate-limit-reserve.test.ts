@@ -340,6 +340,7 @@ describe("per-action budgets (requests admitted per window, one IP)", () => {
     ["admin_login_guest", 30],
     ["admin_password_reset_ip", 10],
     ["admin_password_reset_email", 10],
+    ["ltf_recover", 5],
   ];
 
   it.each(BUDGETS)("%s admits exactly %i, then blocks", async (action, max) => {

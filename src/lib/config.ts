@@ -257,6 +257,16 @@ const envSchema = z.object({
   CLOSE_RESOURCE_TAG_FIELD_ID: optionalTrimmedOptionalEnv,
   OPENAI_API_KEY: optionalEnv,
   OPENAI_SEO_MODEL: optionalTrimmedEnv("gpt-5.5"),
+  // LTF V2 $5 PDF test (plans/ltf-v2-pdf-ab). Unset = the test pages 404 in production.
+  PLAYBOOK_PDF_TEST: optionalTrimmedOptionalEnv,
+  STRIPE_SECRET_KEY: optionalTrimmedOptionalEnv,
+  STRIPE_WEBHOOK_SECRET: optionalTrimmedOptionalEnv,
+  STRIPE_PLAYBOOK_PRICE_ID: optionalTrimmedOptionalEnv,
+  PLAYBOOK_PDF_OBJECT: optionalTrimmedOptionalEnv,
+  PLAYBOOK_GUIDE_GHL_EMBED_URL: optionalTrimmedOptionalEnv,
+  LTF_GHL_WEBHOOK_SECRET: optionalTrimmedOptionalEnv,
+  LTF_SUPPORT_EMAIL: optionalTrimmedOptionalEnv,
+  VERCEL_ENV: optionalTrimmedOptionalEnv,
   OPENAI_SEO_REASONING_EFFORT: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z
@@ -406,6 +416,15 @@ const parsed = envSchema.safeParse({
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   OPENAI_SEO_MODEL: process.env.OPENAI_SEO_MODEL,
   OPENAI_SEO_REASONING_EFFORT: process.env.OPENAI_SEO_REASONING_EFFORT,
+  PLAYBOOK_PDF_TEST: process.env.PLAYBOOK_PDF_TEST,
+  STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_PLAYBOOK_PRICE_ID: process.env.STRIPE_PLAYBOOK_PRICE_ID,
+  PLAYBOOK_PDF_OBJECT: process.env.PLAYBOOK_PDF_OBJECT,
+  PLAYBOOK_GUIDE_GHL_EMBED_URL: process.env.PLAYBOOK_GUIDE_GHL_EMBED_URL,
+  LTF_GHL_WEBHOOK_SECRET: process.env.LTF_GHL_WEBHOOK_SECRET,
+  LTF_SUPPORT_EMAIL: process.env.LTF_SUPPORT_EMAIL,
+  VERCEL_ENV: process.env.VERCEL_ENV,
 });
 
 if (!parsed.success) {

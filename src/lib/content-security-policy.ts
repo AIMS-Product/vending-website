@@ -110,9 +110,10 @@ const DIRECTIVES: Array<[string, string[]]> = [
   ["worker-src", ["'self'", "blob:"]],
   ["object-src", ["'none'"]],
   ["base-uri", ["'self'"]],
-  // Server actions post to this origin only. Nothing here submits a form
-  // cross-origin — Calendly and HubSpot both render inside an iframe.
-  ["form-action", ["'self'"]],
+  // Server actions post to this origin only. Calendly and HubSpot render
+  // inside an iframe. The LTF $5 playbook buy button posts here and is
+  // 303-redirected to Stripe-hosted Checkout, and form-action covers redirects.
+  ["form-action", ["'self'", "https://checkout.stripe.com"]],
   // Mirrors the X-Frame-Options header for browsers that prefer CSP.
   ["frame-ancestors", ["'self'"]],
   ["report-uri", [CSP_REPORT_PATH]],

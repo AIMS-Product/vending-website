@@ -27,6 +27,9 @@ const HAND_WRITTEN_BOOKING_ROUTES = [
   // The rest of the webinar funnel: entry points from GHL emails, SMS and ads.
   "/playbook",
   "/playbook/checkout",
+  // LTF V2 $5 PDF test (plans/ltf-v2-pdf-ab).
+  "/playbook/guide",
+  "/playbook/guide-checkout",
   "/masterclass-replay-dna",
   "/masterclass-replay-adnb",
   "/masterclass-replay-meta",
@@ -69,6 +72,8 @@ const POST_CONVERSION_PATHS = [
   "/thank-you-for-applying",
   "/masterclass-confirmed",
   "/playbook/thank-you",
+  "/playbook/guide-thanks",
+  "/playbook/guide-access",
 ] as const;
 
 const POST_CONVERSION_PATH_SET: ReadonlySet<string> = new Set(
@@ -133,6 +138,7 @@ export function hidesChatWidget(pathname: string): boolean {
     pathname === "/playbook" ||
     pathname === "/playbook/checkout" ||
     pathname === "/playbook/thank-you" ||
+    pathname.startsWith("/playbook/guide") ||
     pathname.startsWith("/masterclass-replay-")
   );
 }

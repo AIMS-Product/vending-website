@@ -17,7 +17,14 @@ const INITIAL_HEIGHT = 560;
  * framed thank-you page posts "complete" and this page moves to it, keeping
  * its own query (UTMs) for the purchase event. `payment` allows wallet pay.
  */
-export function PlaybookCheckoutFrame({ src }: { src: string }) {
+export function PlaybookCheckoutFrame({
+  src,
+  thankYouPath = PLAYBOOK_THANK_YOU_PATH,
+}: {
+  src: string;
+  /** Where to go once the framed GHL thank-you page reports a finished order. */
+  thankYouPath?: string;
+}) {
   const [height, setHeight] = useState(INITIAL_HEIGHT);
   const router = useRouter();
 
@@ -26,7 +33,7 @@ export function PlaybookCheckoutFrame({ src }: { src: string }) {
       if (
         isCheckoutComplete(event.origin, window.location.origin, event.data)
       ) {
-        router.push(`${PLAYBOOK_THANK_YOU_PATH}${window.location.search}`);
+        router.push(`${thankYouPath}${window.location.search}`);
         return;
       }
       const next = checkoutFrameHeight(event.origin, event.data);
@@ -34,7 +41,7 @@ export function PlaybookCheckoutFrame({ src }: { src: string }) {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [router]);
+  }, [router, thankYouPath]);
 
   return (
     <iframe
