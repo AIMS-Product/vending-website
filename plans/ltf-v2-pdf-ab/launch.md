@@ -53,3 +53,14 @@ noise; a VendHub filter on `metadata.ltf === "v2-pdf"` would silence it.
 
 `/admin/analytics/playbook`: visitors, checkout starts, buyers, conversion, net revenue per visitor, declines,
 paid-but-not-emailed (should stay 0), downloads.
+
+## 2026-10-20: unlisted live entry + test code
+
+- `/playbook-stripe` (307 -> `/playbook/go`) always serves in production, unlisted. `/playbook` keeps selling the
+  GHL course until `PLAYBOOK_GUIDE_LIVE=on`.
+- Test link: `/playbook-stripe?promo=<LTF_PROMO_LINK_KEY>` shows Stripe's promo field on that session only.
+  Code `PLAYBOOKTEST` (100% off, once, playbook product only). Test mode: coupon `EpP0Eep9`. Live: Adam creates the
+  same code in the dashboard (the restricted key has no coupon permission).
+- $0 orders fulfill (thank-you, download, email) and are never sent to Meta or GA4.
+- Verified on the preview in Stripe test mode: paid 4242, $0 promo, declined card, 3x webhook replay, forged signature,
+  fake session id, refund revokes access.
