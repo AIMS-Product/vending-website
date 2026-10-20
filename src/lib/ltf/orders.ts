@@ -234,6 +234,19 @@ export async function fulfillCheckoutSession(
   if (transition.error) {
     throw new Error(`ltf paid transition failed: ${transition.error.message}`);
   }
+  // Stripe settles the fee a moment after payment, so the first caller often
+  // sees none. Any later caller (webhook retry, page reload) fills it in.
+  const fee = feeFromSession(session);
+  if (fee !== null && !transition.data?.length) {
+    const backfill = await deps.db
+      .from("ltf_orders")
+      .update({ fee_cents: fee })
+      .eq("id", order.id)
+      .is("fee_cents", null);
+    if (backfill.error) {
+      throw new Error(`ltf fee backfill failed: ${backfill.error.message}`);
+    }
+  }
 
   const purchase: PaidPurchase = {
     sessionId: session.id,
