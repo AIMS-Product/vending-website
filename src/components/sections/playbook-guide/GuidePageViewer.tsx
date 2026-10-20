@@ -8,6 +8,34 @@ interface ViewerPage {
   alt: string;
   width: number;
   height: number;
+  locked: boolean;
+}
+
+/** Badge over a blurred paid page. */
+export function LockedBadge() {
+  return (
+    <span className="absolute inset-0 flex items-center justify-center p-4">
+      <span className="border-ink text-ink flex items-center gap-2 border-2 bg-white px-4 py-2 text-sm font-black shadow-[4px_4px_0_#111111]">
+        <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden>
+          <rect
+            x="3"
+            y="7"
+            width="10"
+            height="7"
+            rx="1"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <path
+            d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+        </svg>
+        Unlocks with the playbook
+      </span>
+    </span>
+  );
 }
 
 /** Swipeable sample of the PDF: native scroll-snap, arrows for mouse users. */
@@ -44,16 +72,21 @@ export function GuidePageViewer({
           className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {pages.map((page, i) => (
-            <Image
+            <div
               key={page.src}
-              src={page.src}
-              alt={page.alt}
-              width={page.width}
-              height={page.height}
-              sizes="(min-width: 1024px) 440px, 90vw"
-              priority={i === 0}
-              className="h-auto w-full shrink-0 snap-center"
-            />
+              className="relative w-full shrink-0 snap-center"
+            >
+              <Image
+                src={page.src}
+                alt={page.alt}
+                width={page.width}
+                height={page.height}
+                sizes="(min-width: 1024px) 440px, 90vw"
+                priority={i === 0}
+                className="h-auto w-full"
+              />
+              {page.locked ? <LockedBadge /> : null}
+            </div>
           ))}
         </div>
       </div>

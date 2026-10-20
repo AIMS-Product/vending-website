@@ -1,7 +1,10 @@
 import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
-import { GuidePageViewer } from "@/components/sections/playbook-guide/GuidePageViewer";
+import {
+  GuidePageViewer,
+  LockedBadge,
+} from "@/components/sections/playbook-guide/GuidePageViewer";
 import {
   CheckIcon,
   CheckList,
@@ -150,7 +153,7 @@ export function GuideInside() {
         <h2 className={`${H2} mt-3`}>Real pages from the playbook</h2>
         <ul className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
           {guideImages.previews.map((page) => (
-            <li key={page.src}>
+            <li key={page.src} className="relative">
               <Image
                 src={page.src}
                 alt={page.alt}
@@ -159,6 +162,7 @@ export function GuideInside() {
                 sizes="(min-width: 1240px) 380px, 33vw"
                 className="border-ink h-auto w-full border-2 bg-white shadow-[5px_5px_0_#111111]"
               />
+              {page.locked ? <LockedBadge /> : null}
             </li>
           ))}
         </ul>
