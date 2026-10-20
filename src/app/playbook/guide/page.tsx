@@ -97,7 +97,7 @@ export default async function PlaybookGuidePage({
   return (
     <div className={anton.variable}>
       <StripPiiParams />
-      <GuideHero buy={buy("sm:w-full")} notice={error} />
+      <GuideHero buy={buy()} notice={error} />
       <GuideBenefits />
       <GuideInside />
       <GuideProof />

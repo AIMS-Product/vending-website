@@ -372,8 +372,7 @@ export const guideFaq = [
 /** Offer page copy (/playbook/guide). */
 export const guideOffer = {
   eyebrow: "Mike Hoffmann's First Location Playbook",
-  headline: "Land your first vending location in the next 30 days",
-  highlight: "first vending location",
+  headlineLines: ["Land your first", "vending location", "in the next 30 days"],
   sub: "A tactical PDF: eight plays, Mike's exact scripts and contract terms, a video for every play and an assignment to finish before the next one.",
   benefits: [
     {

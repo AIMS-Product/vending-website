@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
+import { GuidePageViewer } from "@/components/sections/playbook-guide/GuidePageViewer";
 import {
   CheckIcon,
   CheckList,
@@ -35,8 +36,8 @@ function OrderCard({ buy }: BuyProps) {
           alt=""
           width={guideImages.cover.width}
           height={guideImages.cover.height}
-          sizes="72px"
-          className="border-ink h-auto w-14 shrink-0 border-2 sm:w-[72px]"
+          sizes="112px"
+          className="border-ink h-auto w-20 shrink-0 border-2 sm:w-28"
         />
         <div className="min-w-0 flex-1">
           <p className="text-ink leading-tight font-black">{GUIDE.title}</p>
@@ -79,13 +80,13 @@ function OrderCard({ buy }: BuyProps) {
 }
 
 export function GuideHero({ buy, notice }: BuyProps & { notice?: string }) {
-  const [before, after] = guideOffer.headline.split(guideOffer.highlight);
+  const [first, highlight, last] = guideOffer.headlineLines;
   return (
     <section className="border-ink v2-dots relative overflow-hidden border-b-2 bg-white">
       <div className="mx-auto max-w-[1180px] px-5 pt-5 lg:px-10 lg:pt-7">
         <Wordmark height={32} eager />
       </div>
-      <div className="mx-auto grid max-w-[1180px] items-center gap-8 px-5 pt-6 pb-12 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-14 lg:px-10 lg:pt-10 lg:pb-16">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 pt-6 pb-12 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-14 lg:px-10 lg:pt-10 lg:pb-16">
         <div className="relative z-10">
           {notice ? (
             <p
@@ -96,18 +97,22 @@ export function GuideHero({ buy, notice }: BuyProps & { notice?: string }) {
             </p>
           ) : null}
           <p className={EYEBROW}>{guideOffer.eyebrow}</p>
-          <h1 className="v2-display text-ink mt-3 text-[clamp(2.25rem,4.2vw,3.6rem)] leading-[1.04] uppercase">
-            {before}
-            <Highlight className="whitespace-normal">
-              {guideOffer.highlight}
-            </Highlight>
-            {after}
+          <h1 className="v2-display text-ink mt-3 text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1.06] uppercase">
+            <span className="block">{first}</span>
+            <span className="block">
+              <Highlight>{highlight}</Highlight>
+            </span>
+            <span className="block">{last}</span>
           </h1>
-          <p className="text-ink/80 mt-4 max-w-xl text-lg leading-snug">
+          <p className="text-ink/80 mt-5 max-w-xl text-lg leading-snug">
             {guideOffer.sub}
           </p>
+          <div className="mt-7">{buy}</div>
+          <p className="text-ink/60 mt-3 text-sm font-bold">
+            One-time payment · Instant PDF download · Secure checkout by Stripe
+          </p>
         </div>
-        <OrderCard buy={buy} />
+        <GuidePageViewer pages={guideImages.viewer} totalPages={12} />
       </div>
     </section>
   );
