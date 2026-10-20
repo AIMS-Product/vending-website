@@ -34,10 +34,10 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-          {guideOffer.eyebrow}
+          Your pre-webinar homework
         </p>
         <h2 className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
-          Get a head start before the webinar
+          Show up to the webinar ready to start
         </h2>
         <ul className="mt-5 space-y-2.5 text-[0.95rem] leading-snug">
           {guideOffer.benefits.map((b) => (

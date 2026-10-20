@@ -8,7 +8,15 @@ import {
   H2,
   NUMERAL,
 } from "@/components/sections/playbook/PlaybookCta";
-import { GUIDE, guideOffer, plays } from "@/lib/content/playbook-guide";
+import { applyTestimonials } from "@/lib/content/apply-page";
+import { images as playbookImages } from "@/lib/content/playbook";
+import {
+  GUIDE,
+  guideFaq,
+  guideHost,
+  guideOffer,
+  plays,
+} from "@/lib/content/playbook-guide";
 import { guideImages } from "@/lib/content/playbook-guide-images";
 
 interface BuyProps {
@@ -172,6 +180,89 @@ export function GuideFinalOffer({ buy }: BuyProps) {
         <p className="text-ink/55 mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed">
           {guideOffer.disclaimer}
         </p>
+      </div>
+    </section>
+  );
+}
+
+const REVIEW_NAMES = ["Kyle Sharp", "Joe Natoli", "Kelsey Corcoran"];
+
+export function GuideProof() {
+  const reviews = applyTestimonials.cards.filter((c) =>
+    REVIEW_NAMES.includes(c.name),
+  );
+  const mike = playbookImages.mike;
+  return (
+    <section className="border-ink border-b-2 bg-white">
+      <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14 lg:px-12 lg:py-20">
+        <div className="flex items-start gap-5">
+          <Image
+            src={mike.src}
+            alt={mike.alt}
+            width={mike.width}
+            height={mike.height}
+            sizes="140px"
+            className="border-ink w-28 shrink-0 border-2 shadow-[5px_5px_0_#111111] sm:w-36"
+          />
+          <div>
+            <p className={EYEBROW}>{guideHost.eyebrow}</p>
+            <h2 className="v2-display text-ink mt-2 text-4xl uppercase">
+              {guideHost.title}
+            </h2>
+            <p className="text-ink/65 text-sm font-bold">{guideHost.role}</p>
+            {guideHost.paragraphs.map((p) => (
+              <p key={p} className="text-ink/80 mt-3 leading-snug">
+                {p}
+              </p>
+            ))}
+          </div>
+        </div>
+        <ul className="grid gap-4">
+          {reviews.map((r) => (
+            <li
+              key={r.name}
+              className="border-ink bg-brand-50 flex gap-4 border-2 p-5 shadow-[5px_5px_0_#111111]"
+            >
+              <Image
+                src={r.headshot}
+                alt=""
+                width={56}
+                height={56}
+                className="border-ink size-14 shrink-0 rounded-full border-2 object-cover"
+              />
+              <div>
+                <p className="text-ink leading-snug">&ldquo;{r.quote}&rdquo;</p>
+                <p className="text-ink mt-2 text-sm font-black">{r.name}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
+export function GuideFaq() {
+  return (
+    <section className="border-ink bg-brand-50 border-b-2">
+      <div className="mx-auto max-w-[860px] px-5 py-14 lg:py-20">
+        <h2 className={H2}>Questions</h2>
+        <div className="border-ink mt-8 divide-y-2 divide-[#111111] border-2 bg-white">
+          {guideFaq.map((item) => (
+            <details key={item.q} className="group px-5 py-4">
+              <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black">
+                {item.q}
+                <span
+                  aria-hidden
+                  className="text-brand-700 text-2xl leading-none group-open:rotate-45"
+                >
+                  +
+                </span>
+              </summary>
+              <p className="text-ink/80 mt-3 leading-snug">{item.a}</p>
+            </details>
+          ))}
+        </div>
       </div>
     </section>
   );

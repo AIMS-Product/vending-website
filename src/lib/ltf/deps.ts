@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { config } from "@/lib/config";
 import { resendDeliverySender } from "@/lib/ltf/delivery-email";
+import { sendMetaPurchase, type BrowserContext } from "@/lib/ltf/meta-capi";
 import type { LtfOrderDeps } from "@/lib/ltf/orders";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -33,11 +34,33 @@ export async function pageOrigin(): Promise<string> {
   return `${proto}://${host}`;
 }
 
-export function ltfOrderDeps(siteOrigin: string): LtfOrderDeps {
+/** Browser signals for the server-side Meta event, from the page request. */
+export async function pageBrowserContext(): Promise<BrowserContext> {
+  const h = await headers();
+  const cookie = (name: string) =>
+    h.get("cookie")?.match(new RegExp(`(?:^|; )${name}=([^;]+)`))?.[1] ?? null;
+  return {
+    ip: h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,
+    userAgent: h.get("user-agent"),
+    fbp: cookie("_fbp"),
+    fbc: cookie("_fbc"),
+  };
+}
+
+export function ltfOrderDeps(
+  siteOrigin: string,
+  browser?: BrowserContext,
+): LtfOrderDeps {
   return {
     db: createAdminClient(),
     stripe: getLtfStripe(),
     sendEmail: resendDeliverySender(siteOrigin),
     siteOrigin,
+    onPaid: (purchase) =>
+      sendMetaPurchase(
+        purchase,
+        `${siteOrigin}/playbook/guide-thanks`,
+        browser,
+      ),
   };
 }

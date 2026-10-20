@@ -36,6 +36,21 @@ export type LtfOrderDeps = {
   /** Absolute origin for links in the email, e.g. https://www.vendingpreneurs.com */
   siteOrigin: string;
   now?: () => Date;
+  /**
+   * Runs once per order, for the caller that wins the paid transition (ad
+   * conversion events). Must not throw into fulfillment: errors are logged.
+   */
+  onPaid?: (purchase: PaidPurchase) => Promise<void>;
+};
+
+export type PaidPurchase = {
+  sessionId: string;
+  livemode: boolean;
+  email: string | null;
+  phone: string | null;
+  name: string | null;
+  amountCents: number | null;
+  currency: string | null;
 };
 
 export const newAccessToken = () => randomBytes(24).toString("base64url");
@@ -103,6 +118,14 @@ export async function createStripeCheckout(
       cancel_url: `${input.siteOrigin}/playbook/guide?canceled=1`,
       submit_type: "pay",
       billing_address_collection: "auto",
+      // The sales team calls buyers; a $5 buyer is a serious one.
+      phone_number_collection: { enabled: true },
+      custom_text: {
+        submit: {
+          message:
+            "Instant PDF download right after payment, plus a copy by email. Digital product, all sales final.",
+        },
+      },
     },
     { idempotencyKey: `ltf-checkout-${input.visitorId}-${bucket}` },
   );
@@ -140,6 +163,10 @@ export type FulfillResult =
       status: "paid";
       accessToken: string;
       email: string | null;
+      name: string | null;
+      livemode: boolean;
+      amountCents: number | null;
+      currency: string | null;
       delivery: "sent" | "already_sent" | "in_progress" | "failed";
     };
 
@@ -194,6 +221,7 @@ export async function fulfillCheckoutSession(
       paid_at: now,
       email,
       name: session.customer_details?.name ?? null,
+      phone: session.customer_details?.phone ?? null,
       amount_cents: session.amount_total,
       currency: session.currency,
       fee_cents: feeFromSession(session),
@@ -207,8 +235,34 @@ export async function fulfillCheckoutSession(
     throw new Error(`ltf paid transition failed: ${transition.error.message}`);
   }
 
+  const purchase: PaidPurchase = {
+    sessionId: session.id,
+    livemode: session.livemode,
+    email,
+    phone: session.customer_details?.phone ?? null,
+    name: session.customer_details?.name ?? null,
+    amountCents: session.amount_total,
+    currency: session.currency,
+  };
+  if (transition.data?.length && deps.onPaid) {
+    try {
+      await deps.onPaid(purchase);
+    } catch (error) {
+      console.error("ltf onPaid hook failed", { sessionId: session.id, error });
+    }
+  }
+
   const delivery = await deliverOnce(deps, order.id, email, order.access_token);
-  return { status: "paid", accessToken: order.access_token, email, delivery };
+  return {
+    status: "paid",
+    accessToken: order.access_token,
+    email,
+    name: purchase.name,
+    livemode: session.livemode,
+    amountCents: session.amount_total,
+    currency: session.currency,
+    delivery,
+  };
 }
 
 type OrderRow = {

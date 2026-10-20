@@ -335,6 +335,36 @@ export const firstThirtyDays = [
   },
 ] as const;
 
+/** Mike's bio for the offer page (from the approved /playbook host copy). */
+export const guideHost = {
+  eyebrow: "Who wrote this",
+  title: "Mike Hoffmann",
+  role: "Founder, Vendingpreneurs",
+  paragraphs: [
+    "Mike grew up on a family farm in Iowa and spent years as a college strength coach: long hours, a paycheck that never moved. His first vending machine brought in $600 a month. It wasn't life-changing, but it was proof.",
+    "Every script and framework in this playbook is what he uses on his own route right now, not what he did five years ago.",
+  ],
+} as const;
+
+export const guideFaq = [
+  {
+    q: "What exactly do I get?",
+    a: "A 12-page PDF: eight plays with steps, scripts and contract terms, a video from Mike for every play, an assignment at the end of each, a 25-target worksheet and a 30-day plan.",
+  },
+  {
+    q: "How do I get it?",
+    a: "Right after checkout you land on a download page, and we email you a link you can use any time. Lost it? Get a fresh link from the access page.",
+  },
+  {
+    q: "Do I need money or experience to use it?",
+    a: "No. The first plays are about picking and pitching a location, which costs nothing. You only buy a machine after a location says yes.",
+  },
+  {
+    q: "Is this the same as the webinar?",
+    a: "It's the homework. The webinar shows you the opportunity; the playbook gives you the steps to start on before and after it.",
+  },
+] as const;
+
 /** Offer page copy (/playbook/guide). */
 export const guideOffer = {
   eyebrow: "Mike Hoffmann's First Location Playbook",
@@ -374,6 +404,22 @@ export const guideOffer = {
   refundTerms: "Digital product, delivered instantly. All sales are final.",
   disclaimer:
     "Results vary. Figures in the playbook are worked examples from Mike's and Anthony's own routes, not a promise of earnings. Nothing here is legal, tax or financial advice.",
+} as const;
+
+/** Closer calendar (LANE 1 - Top 2 Closers), same event as the booking pages. */
+export const GUIDE_CLOSER_CALENDLY =
+  "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
+
+export const guideUpsell = {
+  eyebrow: "One more step for serious buyers",
+  title: "Add a free 1-on-1 consultation",
+  body: "You just showed you're serious about getting started. Book a call with a Vendingpreneurs advisor and we'll map your first location together: your market, the right machine and your next 30 days.",
+  points: [
+    "Your market and the location types that fit it",
+    "Which machine to start with and how to finance it",
+    "A clear plan for your first 30 days",
+  ],
+  note: "Free for playbook buyers. Pick a time below.",
 } as const;
 
 export const guideThanks = {

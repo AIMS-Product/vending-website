@@ -1,4 +1,5 @@
 import Script from "next/script";
+import { META_PIXEL_ID } from "@/lib/tracking/meta-pixel";
 
 /**
  * Third-party marketing / attribution tags ported from the legacy Webflow site
@@ -16,7 +17,6 @@ import Script from "next/script";
  * First-party UTM/source attribution is handled separately by
  * AttributionSessionTracker + the native lead form — that always runs.
  */
-const META_PIXEL_ID = "2008180456764704";
 const HUBSPOT_ID = "48512363";
 
 // Webflow served the Google loader through its own first-party-mode path

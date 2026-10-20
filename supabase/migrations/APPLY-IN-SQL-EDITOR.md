@@ -408,7 +408,7 @@ comment on table public.youtube_playback_sync_state is
 
 ## 14. $5 First Location Playbook (20261020002951)
 
-New tables only (`ltf_visitors`, `ltf_events`, `ltf_orders`) and the `ltf_report` view. The `ltf-playbook` bucket already exists (created via the storage API); the insert below is a no-op.
+New tables only (`ltf_visitors`, `ltf_events`, `ltf_orders`) and the `ltf_report` view. The `ltf-playbook` bucket already exists (created via the storage API); the insert below is a no-op. Safe to re-run.
 
 ```sql
 -- LTF V2: the $5 First Location Playbook, sold through Stripe Checkout on our
@@ -449,6 +449,8 @@ create table if not exists public.ltf_orders (
   checkout_expires_at timestamptz,
   email text,
   name text,
+  -- Collected by Stripe Checkout so the sales team can reach buyers.
+  phone text,
   amount_cents integer,
   fee_cents integer,
   currency text,
@@ -509,4 +511,7 @@ select
   (select count(*) from public.ltf_orders o
      where o.payment_status = 'paid' and o.delivery_status = 'failed') as delivery_failures,
   (select count(*) from public.ltf_orders o where o.download_count > 0) as buyers_downloaded;
+
+-- Safe to re-run: adds phone if the table was created before it was added.
+alter table public.ltf_orders add column if not exists phone text;
 ```

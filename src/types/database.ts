@@ -1669,6 +1669,7 @@ export type Database = {
           name: string | null;
           paid_at: string | null;
           payment_status: string;
+          phone: string | null;
           refunded_at: string | null;
           updated_at: string;
           utm_campaign: string | null;
@@ -1696,6 +1697,7 @@ export type Database = {
           name?: string | null;
           paid_at?: string | null;
           payment_status?: string;
+          phone?: string | null;
           refunded_at?: string | null;
           updated_at?: string;
           utm_campaign?: string | null;
@@ -1723,6 +1725,7 @@ export type Database = {
           name?: string | null;
           paid_at?: string | null;
           payment_status?: string;
+          phone?: string | null;
           refunded_at?: string | null;
           updated_at?: string;
           utm_campaign?: string | null;

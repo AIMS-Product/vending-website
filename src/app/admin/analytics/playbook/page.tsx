@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminPanelClass } from "@/components/admin/AdminUi";
 import { isLtfTestOpen } from "@/lib/ltf/assignment";
-import { loadLtfReport, type LtfReport } from "@/lib/ltf/report";
+import { loadLtfBuyers, loadLtfReport, type LtfReport } from "@/lib/ltf/report";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/supabase/auth";
 
@@ -53,9 +53,11 @@ const ROWS: {
 ];
 
 export default async function PlaybookSalesPage() {
-  const [{ user, role }, report] = await Promise.all([
+  const db = createAdminClient();
+  const [{ user, role }, report, buyers] = await Promise.all([
     requireAdmin(),
-    loadLtfReport(createAdminClient()),
+    loadLtfReport(db),
+    loadLtfBuyers(db),
   ]);
 
   return (
@@ -91,6 +93,64 @@ export default async function PlaybookSalesPage() {
                 </td>
               </tr>
             ))}
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="text-ui-text mt-10 mb-3 text-base font-semibold">
+        Buyers ({buyers.length})
+      </h2>
+      <div className={`${adminPanelClass} overflow-x-auto`}>
+        <table className="text-ui-text w-full text-sm">
+          <thead>
+            <tr className="border-ui-line border-b text-left">
+              {[
+                "Paid",
+                "Name",
+                "Email",
+                "Phone",
+                "Source",
+                "Downloaded",
+                "Emailed",
+              ].map((h) => (
+                <th key={h} className="p-3 font-semibold">
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {buyers.length === 0 ? (
+              <tr>
+                <td className="text-ui-text-muted p-3" colSpan={7}>
+                  No buyers yet.
+                </td>
+              </tr>
+            ) : (
+              buyers.map((b, i) => (
+                <tr
+                  key={`${b.email}-${i}`}
+                  className="border-ui-line border-b last:border-0"
+                >
+                  <td className="p-3 whitespace-nowrap tabular-nums">
+                    {b.paidAt
+                      ? new Date(b.paidAt).toLocaleString("en-US", {
+                          timeZone: "America/Los_Angeles",
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : ""}
+                    {b.refunded ? " (refunded)" : ""}
+                  </td>
+                  <td className="p-3">{b.name}</td>
+                  <td className="p-3">{b.email}</td>
+                  <td className="p-3 whitespace-nowrap">{b.phone}</td>
+                  <td className="p-3">{b.source}</td>
+                  <td className="p-3 tabular-nums">{b.downloads}</td>
+                  <td className="p-3">{b.emailed ? "Yes" : "No"}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

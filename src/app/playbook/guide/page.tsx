@@ -7,9 +7,11 @@ import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams
 import { GuideBuyButton } from "@/components/sections/playbook-guide/GuideBuyButton";
 import {
   GuideBenefits,
+  GuideFaq,
   GuideFinalOffer,
   GuideHero,
   GuideInside,
+  GuideProof,
 } from "@/components/sections/playbook-guide/GuideSections";
 import { GuideStickyBuy } from "@/components/sections/playbook-guide/GuideStickyBuy";
 import { GUIDE, guideOffer } from "@/lib/content/playbook-guide";
@@ -82,6 +84,8 @@ export default async function PlaybookGuidePage({
       <GuideHero buy={buy()} notice={error} />
       <GuideBenefits />
       <GuideInside />
+      <GuideProof />
+      <GuideFaq />
       <GuideFinalOffer buy={buy()} />
       <GuideStickyBuy title={GUIDE.title}>
         {buy("w-full sm:w-auto")}

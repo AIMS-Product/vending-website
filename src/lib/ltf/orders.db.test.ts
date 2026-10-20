@@ -228,13 +228,22 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     expect(await findDownloadableOrder(db, order.access_token)).not.toBeNull();
   });
 
-  it("five concurrent fulfillments send one email", async () => {
+  it("five concurrent fulfillments send one email and one ad conversion", async () => {
+    const paid: string[] = [];
+    const d = {
+      ...deps,
+      onPaid: async (p: { sessionId: string }) => {
+        paid.push(p.sessionId);
+      },
+    };
     const v = await newVisitor();
     const sid = sessionIdOf(await checkout(v.visitorId));
     fake.pay(sid);
     const results = await Promise.all(
-      Array.from({ length: 5 }, () => fulfillCheckoutSession(deps, sid)),
+      Array.from({ length: 5 }, () => fulfillCheckoutSession(d, sid)),
     );
+    await fulfillCheckoutSession(d, sid);
+    expect(paid).toEqual([sid]);
     expect(mail.sent).toHaveLength(1);
     expect(results.every((r) => r.status === "paid")).toBe(true);
     expect(await orderFor(sid)).toHaveLength(1);

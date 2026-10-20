@@ -48,3 +48,40 @@ export async function loadLtfReport(db: LtfDb): Promise<LtfReport> {
     netPerVisitorCents: rate(netCents, visitors),
   };
 }
+
+export type LtfBuyer = {
+  paidAt: string | null;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  source: string | null;
+  downloads: number;
+  emailed: boolean;
+  refunded: boolean;
+};
+
+/** Most recent buyers first, for the sales team (call them, check webinar attendance). */
+export async function loadLtfBuyers(
+  db: LtfDb,
+  limit = 500,
+): Promise<LtfBuyer[]> {
+  const { data, error } = await db
+    .from("ltf_orders")
+    .select(
+      "paid_at, name, email, phone, utm_source, download_count, delivery_status, payment_status",
+    )
+    .in("payment_status", ["paid", "refunded"])
+    .order("paid_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`ltf buyers failed: ${error.message}`);
+  return (data ?? []).map((row) => ({
+    paidAt: row.paid_at,
+    name: row.name,
+    email: row.email,
+    phone: row.phone,
+    source: row.utm_source,
+    downloads: row.download_count,
+    emailed: row.delivery_status === "sent",
+    refunded: row.payment_status === "refunded",
+  }));
+}

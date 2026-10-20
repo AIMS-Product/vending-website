@@ -7,9 +7,17 @@ import {
   GuideShell,
 } from "@/components/sections/playbook-guide/GuideShell";
 import { buttonClass } from "@/components/ui/Button";
-import { GUIDE, guideThanks } from "@/lib/content/playbook-guide";
+import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
+import { CheckIcon } from "@/components/sections/playbook/PlaybookCta";
+import { GuidePurchaseTracker } from "@/components/sections/playbook-guide/GuidePurchaseTracker";
+import {
+  GUIDE,
+  GUIDE_CLOSER_CALENDLY,
+  guideThanks,
+  guideUpsell,
+} from "@/lib/content/playbook-guide";
 import { LTF_PATHS } from "@/lib/ltf/assignment";
-import { ltfOrderDeps, pageOrigin } from "@/lib/ltf/deps";
+import { ltfOrderDeps, pageBrowserContext, pageOrigin } from "@/lib/ltf/deps";
 import {
   downloadUrlFor,
   fulfillCheckoutSession,
@@ -46,7 +54,10 @@ export default async function GuideThanksPage({
     result = "error";
   } else {
     try {
-      result = await fulfillCheckoutSession(ltfOrderDeps(origin), sessionId);
+      result = await fulfillCheckoutSession(
+        ltfOrderDeps(origin, await pageBrowserContext()),
+        sessionId,
+      );
     } catch (error) {
       console.error("ltf thank-you fulfillment failed", error);
       result = "error";
@@ -79,6 +90,46 @@ export default async function GuideThanksPage({
             {guideThanks.next}
           </p>
         </GuideCard>
+        {result.livemode ? (
+          <GuidePurchaseTracker
+            sessionId={sessionId!}
+            value={(result.amountCents ?? 500) / 100}
+            currency={(result.currency ?? "usd").toUpperCase()}
+          />
+        ) : null}
+        <section className="mt-10" aria-labelledby="guide-upsell">
+          <GuideCard>
+            <p className={EYEBROW}>{guideUpsell.eyebrow}</p>
+            <h2
+              id="guide-upsell"
+              className="v2-display text-ink mt-3 text-[clamp(2rem,4.5vw,3rem)] leading-[1.02] uppercase"
+            >
+              {guideUpsell.title}
+            </h2>
+            <p className="text-ink/80 mt-4 text-lg leading-snug">
+              {guideUpsell.body}
+            </p>
+            <ul className="mt-5 space-y-2">
+              {guideUpsell.points.map((point) => (
+                <li key={point} className="text-ink flex gap-3 font-bold">
+                  <CheckIcon className="text-brand-600 mt-0.5 size-5 shrink-0" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+            <p className="text-ink/65 mt-5 text-sm font-bold">
+              {guideUpsell.note}
+            </p>
+            <div className="mt-6">
+              <CalendlyEmbed
+                url={closerCalendarUrl(result)}
+                title="Book your free consultation"
+                hideDetails="phone"
+                heightClassName="h-[1050px] md:h-[720px]"
+              />
+            </div>
+          </GuideCard>
+        </section>
       </GuideShell>
     );
   }
@@ -120,4 +171,18 @@ export default async function GuideThanksPage({
       </GuideCard>
     </GuideShell>
   );
+}
+
+/** Closer calendar prefilled with the buyer, tagged so the booking reads as a playbook buyer's. */
+function closerCalendarUrl(result: {
+  email: string | null;
+  name: string | null;
+}) {
+  const url = new URL(GUIDE_CLOSER_CALENDLY);
+  if (result.name) url.searchParams.set("name", result.name);
+  if (result.email) url.searchParams.set("email", result.email);
+  url.searchParams.set("utm_source", "playbook-guide");
+  url.searchParams.set("utm_medium", "purchase");
+  url.searchParams.set("utm_campaign", "ltf-v2");
+  return url.toString();
 }
