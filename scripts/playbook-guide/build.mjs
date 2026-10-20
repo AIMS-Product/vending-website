@@ -21,8 +21,10 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const outDir = `${root}scripts/playbook-guide/out`;
 const previewDir = `${root}public/images/playbook-guide`;
 const SITE = "https://www.vendingpreneurs.com";
-/** Pages rendered as offer-page images: the hero page viewer samples. */
+/** Pages rendered as offer-page images. Cover and contents are readable;
+ * every other page is the paid product, so it is published blurred only. */
 const PREVIEW_PAGES = [1, 2, 3, 5, 7, 8, 11];
+const READABLE_PAGES = new Set([1, 2]);
 
 const esc = (s) =>
   s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
@@ -246,7 +248,9 @@ try {
   const sections = page.locator("section.page");
   for (const n of PREVIEW_PAGES) {
     const png = await sections.nth(n - 1).screenshot();
-    await sharp(png).resize({ width: 800 }).webp({ quality: 84 }).toFile(`${previewDir}/page-${n}.webp`);
+    const img = sharp(png).resize({ width: 800 });
+    if (READABLE_PAGES.has(n)) await img.webp({ quality: 84 }).toFile(`${previewDir}/page-${n}.webp`);
+    else await img.blur(7).webp({ quality: 70 }).toFile(`${previewDir}/page-${n}-locked.webp`);
   }
   console.log(`wrote ${pdfPath} (${pages.length} pages) and ${PREVIEW_PAGES.length} previews`);
 
