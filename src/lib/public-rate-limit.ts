@@ -75,6 +75,8 @@ const LIMITS = {
   // Each accepted request emails a reset link.
   admin_password_reset_ip: { windowMs: 60 * 60 * 1000, max: 10 },
   admin_password_reset_email: { windowMs: 60 * 60 * 1000, max: 10 },
+  // LTF $5 playbook "send my link again": each accepted request can email a buyer.
+  ltf_recover: { windowMs: 60 * 60 * 1000, max: 5 },
 } as const;
 
 export type PublicRateLimitAction = keyof typeof LIMITS;

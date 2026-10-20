@@ -54,3 +54,6 @@ reports/ux-persona-review/ux-review.html
 
 # ManyChat probe / backfill raw responses (subscriber PII)
 tmp/manychat-*/
+
+# LTF V2 paid PDF build output (never commit the product)
+scripts/playbook-guide/out/

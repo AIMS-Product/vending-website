@@ -67,7 +67,7 @@ describe("content security policy", () => {
     // a real finding rather than a missing allowlist entry.
     expect(directive("object-src")).toBe("'none'");
     expect(directive("base-uri")).toBe("'self'");
-    expect(directive("form-action")).toBe("'self'");
+    expect(directive("form-action")).toBe("'self' https://checkout.stripe.com");
     expect(directive("frame-ancestors")).toBe("'self'");
   });
 

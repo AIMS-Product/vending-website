@@ -1629,6 +1629,141 @@ export type Database = {
         };
         Relationships: [];
       };
+      ltf_events: {
+        Row: {
+          created_at: string;
+          kind: string;
+          visitor_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          kind: string;
+          visitor_id: string;
+        };
+        Update: {
+          created_at?: string;
+          kind?: string;
+          visitor_id?: string;
+        };
+        Relationships: [];
+      };
+      ltf_orders: {
+        Row: {
+          payment_failures: number;
+          payment_intent_id: string | null;
+          refunded_cents: number;
+          access_token: string;
+          amount_cents: number | null;
+          checkout_expires_at: string | null;
+          checkout_url: string | null;
+          created_at: string;
+          currency: string | null;
+          delivery_error: string | null;
+          delivery_status: string;
+          download_count: number;
+          email: string | null;
+          external_id: string;
+          fee_cents: number | null;
+          id: string;
+          last_downloaded_at: string | null;
+          name: string | null;
+          paid_at: string | null;
+          payment_status: string;
+          phone: string | null;
+          refunded_at: string | null;
+          updated_at: string;
+          utm_campaign: string | null;
+          utm_source: string | null;
+          visitor_id: string | null;
+        };
+        Insert: {
+          payment_failures?: number;
+          payment_intent_id?: string | null;
+          refunded_cents?: number;
+          access_token: string;
+          amount_cents?: number | null;
+          checkout_expires_at?: string | null;
+          checkout_url?: string | null;
+          created_at?: string;
+          currency?: string | null;
+          delivery_error?: string | null;
+          delivery_status?: string;
+          download_count?: number;
+          email?: string | null;
+          external_id: string;
+          fee_cents?: number | null;
+          id?: string;
+          last_downloaded_at?: string | null;
+          name?: string | null;
+          paid_at?: string | null;
+          payment_status?: string;
+          phone?: string | null;
+          refunded_at?: string | null;
+          updated_at?: string;
+          utm_campaign?: string | null;
+          utm_source?: string | null;
+          visitor_id?: string | null;
+        };
+        Update: {
+          payment_failures?: number;
+          payment_intent_id?: string | null;
+          refunded_cents?: number;
+          access_token?: string;
+          amount_cents?: number | null;
+          checkout_expires_at?: string | null;
+          checkout_url?: string | null;
+          created_at?: string;
+          currency?: string | null;
+          delivery_error?: string | null;
+          delivery_status?: string;
+          download_count?: number;
+          email?: string | null;
+          external_id?: string;
+          fee_cents?: number | null;
+          id?: string;
+          last_downloaded_at?: string | null;
+          name?: string | null;
+          paid_at?: string | null;
+          payment_status?: string;
+          phone?: string | null;
+          refunded_at?: string | null;
+          updated_at?: string;
+          utm_campaign?: string | null;
+          utm_source?: string | null;
+          visitor_id?: string | null;
+        };
+        Relationships: [];
+      };
+      ltf_visitors: {
+        Row: {
+          is_bot: boolean;
+          created_at: string;
+          utm_campaign: string | null;
+          utm_content: string | null;
+          utm_medium: string | null;
+          utm_source: string | null;
+          visitor_id: string;
+        };
+        Insert: {
+          is_bot?: boolean;
+          created_at?: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          visitor_id: string;
+        };
+        Update: {
+          is_bot?: boolean;
+          created_at?: string;
+          utm_campaign?: string | null;
+          utm_content?: string | null;
+          utm_medium?: string | null;
+          utm_source?: string | null;
+          visitor_id?: string;
+        };
+        Relationships: [];
+      };
       youtube_playback_sync_state: {
         Row: {
           synced_at: string;
@@ -3602,6 +3737,22 @@ export type Database = {
       };
     };
     Views: {
+      ltf_report: {
+        Row: {
+          buyers: number | null;
+          buyers_downloaded: number | null;
+          checkout_starts: number | null;
+          delivery_failures: number | null;
+          fee_cents: number | null;
+          gross_cents: number | null;
+          offer_views: number | null;
+          payment_failures: number | null;
+          refunded_cents: number | null;
+          refunds: number | null;
+          visitors: number | null;
+        };
+        Relationships: [];
+      };
       published_seo_pages: {
         Row: {
           canonical_url: string | null;

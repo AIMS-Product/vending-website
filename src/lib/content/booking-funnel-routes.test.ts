@@ -35,8 +35,8 @@ describe("booking funnel routes", () => {
     }
     expect(BOOKING_FUNNEL_PATHS).toHaveLength(
       // /contact, /book-now, /masterclass, /playbook, /playbook/checkout,
-      // 4 webinar replays, /qa
-      10 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
+      // /playbook/guide, 4 webinar replays, /qa
+      11 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
     );
   });
 
@@ -102,6 +102,15 @@ describe("booking funnel routes", () => {
     "/masterclass-replay-meta",
     "/masterclass-replay-advisory",
   ])("drops the chrome, banner and chatbot on webinar page %s", (route) => {
+    expect(isFunnelChromePath(route)).toBe(true);
+    expect(hidesChatWidget(route)).toBe(true);
+  });
+
+  it.each([
+    "/playbook/guide",
+    "/playbook/guide-thanks",
+    "/playbook/guide-access",
+  ])("drops the chrome and chatbot on $5 playbook page %s", (route) => {
     expect(isFunnelChromePath(route)).toBe(true);
     expect(hidesChatWidget(route)).toBe(true);
   });

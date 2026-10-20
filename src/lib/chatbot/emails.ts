@@ -185,7 +185,7 @@ function hasResendConfig(): boolean {
   return Boolean(config.RESEND_API_KEY);
 }
 
-async function sendResend(
+export async function sendResend(
   message: {
     subject: string;
     text: string;
