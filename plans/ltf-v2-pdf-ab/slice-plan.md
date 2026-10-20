@@ -1,3 +1,6 @@
+> 2026-10-19 update: Adam dropped GHL and the A/B split. This is now a Stripe-only replacement of the
+> playbook offer. Current runbook: `launch.md`. The A/B design below is historical.
+
 # LTF V2: $5 PDF playbook, GHL embed vs Stripe Checkout (A/B)
 
 Branch `feat/ltf-v2-stripe-playbook` (worktree `~/vending-website-ltf-v2`). LOCAL ONLY. No push, no preview,
