@@ -97,12 +97,12 @@ export default async function PlaybookGuidePage({
   return (
     <div className={anton.variable}>
       <StripPiiParams />
-      <GuideHero buy={buy()} notice={error} />
+      <GuideHero buy={buy("sm:w-full")} notice={error} />
       <GuideBenefits />
       <GuideInside />
       <GuideProof />
       <GuideFaq />
-      <GuideFinalOffer buy={buy()} />
+      <GuideFinalOffer buy={buy("sm:w-full")} />
       <GuideStickyBuy title={GUIDE.title}>
         {buy("w-full sm:w-auto")}
       </GuideStickyBuy>
