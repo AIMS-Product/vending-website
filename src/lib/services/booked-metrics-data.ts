@@ -233,7 +233,8 @@ export async function fetchBookings(
       code: error.code,
       message: error.message,
     });
-    if (rows.length === 0) return null;
+    // Reject partial pages: a short read must never look like a lower total.
+    return null;
   }
   return rows.map((row) => ({
     inviteeEmail: row.invitee_email,
@@ -270,7 +271,8 @@ export async function fetchFunnels(
       code: error.code,
       message: error.message,
     });
-    if (rows.length === 0) return null;
+    // Reject partial pages: a short read must never look like a lower total.
+    return null;
   }
   return rows.map((row) => ({
     email: row.email,

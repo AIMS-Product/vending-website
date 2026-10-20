@@ -87,3 +87,26 @@ function pullKpi() {
 `REPORTING_API_KEY` in `.env.local` and Vercel (Production and Preview).
 Rotate by replacing it in both places and redeploying; nothing else depends
 on it. Missing key answers 503, wrong key 401.
+
+## Call Forecast for Mac
+
+`GET /api/reporting/call-forecast` uses the same bearer key and returns only
+aggregate channel counts for **new marketing calls booked today, Eastern time**.
+It wraps the existing `readBookedMetric("newBookedOn")` and `attributionFor`
+functions; it does not read the channel spine or change attribution rules.
+
+The response is schema version 1 with `day`, `timeZone`, `basis: "booked-on"`,
+`metricKey: "newBookedOn"`, `scope: "marketing"`, `total`, `channels`,
+`coverage`, `generatedAt`, and `sourceUpdatedAt`. Cancellations are included;
+Lane 2 outbound, follow-ups, reschedules, other brands and unreviewed event
+types are excluded under the existing metric. Missing channel attribution
+stays explicitly unattributed. Source read failures return an error, never a
+zero count. Channel counts must sum to the headline total.
+
+`generatedAt` is request time, not proof that an upstream sync ran.
+`sourceUpdatedAt` is null until a suitable upstream freshness contract exists.
+The endpoint is private and `no-store`; it returns no names, emails, lead ids,
+raw event payloads or credentials. A missing reporting key returns 503; an
+invalid bearer returns 401. Merely deploying this route does not activate
+reporting access: `REPORTING_API_KEY` must be configured through normal hosting
+settings and kept in a local `.env` file on the Mac.
