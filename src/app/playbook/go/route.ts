@@ -49,8 +49,11 @@ export async function GET(request: NextRequest) {
     });
     return response;
   } catch (error) {
-    // No assignment means no test row; the current page still sells.
+    // Tracking failed: still show the offer, untracked (ltf_fallback stops
+    // the offer page sending the visitor back here).
     console.error("ltf assignment failed", error);
-    return NextResponse.redirect(to("/playbook"));
+    const fallback = to(LTF_PATHS.offer);
+    fallback.searchParams.set("ltf_fallback", "1");
+    return NextResponse.redirect(fallback);
   }
 }

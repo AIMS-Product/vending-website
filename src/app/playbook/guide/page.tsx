@@ -58,11 +58,19 @@ export default async function PlaybookGuidePage({
   if (!isLtfTestOpen()) notFound();
   const params = await searchParams;
   const db = createAdminClient();
-  const visitor = await getLtfVisitor(
-    db,
-    (await cookies()).get(LTF_COOKIE)?.value,
-  );
-  if (!visitor) {
+  // Tracking is never allowed to block the page: if the visitor can't be read
+  // or recorded, the offer still renders (untracked) and still sells.
+  let visitorId: string | null = null;
+  try {
+    const visitor = await getLtfVisitor(
+      db,
+      (await cookies()).get(LTF_COOKIE)?.value,
+    );
+    visitorId = visitor?.visitorId ?? null;
+  } catch (error) {
+    console.error("ltf offer: visitor lookup failed", error);
+  }
+  if (!visitorId && params.ltf_fallback !== "1") {
     const query = new URLSearchParams(
       Object.entries(params).flatMap(([k, v]) =>
         typeof v === "string" ? [[k, v]] : [],
@@ -70,7 +78,11 @@ export default async function PlaybookGuidePage({
     ).toString();
     redirect(`${LTF_PATHS.go}${query ? `?${query}` : ""}`);
   }
-  await recordLtfEvent(db, visitor.visitorId, "offer_view");
+  if (visitorId) {
+    await recordLtfEvent(db, visitorId, "offer_view").catch((error) =>
+      console.error("ltf offer: view not recorded", error),
+    );
+  }
 
   const error =
     typeof params.error === "string" ? NOTICES[params.error] : undefined;
