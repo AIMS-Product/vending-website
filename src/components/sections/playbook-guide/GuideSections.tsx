@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Highlight } from "@/components/ui/Highlight";
+import { GuidePageViewer } from "@/components/sections/playbook-guide/GuidePageViewer";
 import {
   CheckIcon,
   CheckList,
@@ -23,14 +24,69 @@ interface BuyProps {
   buy: React.ReactNode;
 }
 
+const TRUST = ["Secure checkout by Stripe", "Instant PDF download"];
+
+/** Checkout-style order summary: product line, what's inside, total, one button. */
+function OrderCard({ buy }: BuyProps) {
+  return (
+    <div className="border-ink border-2 bg-white shadow-[6px_6px_0_#111111]">
+      <div className="border-ink flex items-center gap-4 border-b-2 p-4 sm:p-5">
+        <Image
+          src={guideImages.cover.src}
+          alt=""
+          width={guideImages.cover.width}
+          height={guideImages.cover.height}
+          sizes="112px"
+          className="border-ink h-auto w-20 shrink-0 border-2 sm:w-28"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-ink leading-tight font-black">{GUIDE.title}</p>
+          <p className="text-ink/65 mt-1 text-sm">PDF + 8 videos</p>
+        </div>
+        <p className="text-ink text-lg font-black tabular-nums">
+          {GUIDE.priceLabel}
+        </p>
+      </div>
+      <div className="p-4 sm:p-5">
+        <p className="text-ink/60 text-xs font-black tracking-[0.12em] uppercase">
+          What you get
+        </p>
+        <CheckList
+          items={guideOffer.includes}
+          className="text-ink mt-3 space-y-1.5 text-[15px]"
+        />
+        <div className="mt-5 flex items-baseline justify-between border-t border-dashed border-[#111111]/30 pt-4">
+          <span className="text-ink font-bold">Total today</span>
+          <span className="text-ink text-xl font-black tabular-nums">
+            {GUIDE.priceLabel}.00{" "}
+            <span className="text-ink/60 text-xs font-bold">USD</span>
+          </span>
+        </div>
+        <p className="text-ink/60 mt-1 text-xs">
+          One-time payment. No subscription.
+        </p>
+        <div className="mt-4">{buy}</div>
+        <ul className="text-ink/60 mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs font-bold">
+          {TRUST.map((t) => (
+            <li key={t} className="flex items-center gap-1.5">
+              <CheckIcon className="text-brand-600 size-3.5 shrink-0" />
+              {t}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 export function GuideHero({ buy, notice }: BuyProps & { notice?: string }) {
-  const [before, after] = guideOffer.headline.split(guideOffer.highlight);
+  const [first, highlight, last] = guideOffer.headlineLines;
   return (
     <section className="border-ink v2-dots relative overflow-hidden border-b-2 bg-white">
-      <div className="mx-auto max-w-[1240px] px-5 pt-6 lg:px-12 lg:pt-8">
-        <Wordmark height={36} eager />
+      <div className="mx-auto max-w-[1180px] px-5 pt-5 lg:px-10 lg:pt-7">
+        <Wordmark height={32} eager />
       </div>
-      <div className="mx-auto grid max-w-[1240px] items-center gap-10 px-5 pt-6 pb-14 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:gap-14 lg:px-12 lg:pt-10 lg:pb-20">
+      <div className="mx-auto grid max-w-[1180px] items-center gap-10 px-5 pt-6 pb-12 lg:grid-cols-[minmax(0,1fr)_440px] lg:gap-14 lg:px-10 lg:pt-10 lg:pb-16">
         <div className="relative z-10">
           {notice ? (
             <p
@@ -41,41 +97,22 @@ export function GuideHero({ buy, notice }: BuyProps & { notice?: string }) {
             </p>
           ) : null}
           <p className={EYEBROW}>{guideOffer.eyebrow}</p>
-          <h1 className="v2-display text-ink mt-4 text-[clamp(2.5rem,5vw,4.4rem)] leading-[1.02] uppercase">
-            {before}
-            <Highlight className="whitespace-normal">
-              {guideOffer.highlight}
-            </Highlight>
-            {after}
+          <h1 className="v2-display text-ink mt-3 text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1.06] uppercase">
+            <span className="block">{first}</span>
+            <span className="block">
+              <Highlight>{highlight}</Highlight>
+            </span>
+            <span className="block">{last}</span>
           </h1>
           <p className="text-ink/80 mt-5 max-w-xl text-lg leading-snug">
             {guideOffer.sub}
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <span className="v2-display text-brand-700 text-6xl leading-none">
-              {GUIDE.priceLabel}
-            </span>
-            {buy}
-          </div>
-          <p className="text-ink/65 mt-3 text-sm font-bold">
-            {guideOffer.ctaNote}
+          <div className="mt-7">{buy}</div>
+          <p className="text-ink/60 mt-3 text-sm font-bold">
+            One-time payment · Instant PDF download · Secure checkout by Stripe
           </p>
         </div>
-        <div className="relative mx-auto w-full max-w-[380px] lg:max-w-[420px]">
-          <div
-            aria-hidden
-            className="bg-brand-200 border-ink absolute inset-0 translate-x-4 translate-y-4 border-2"
-          />
-          <Image
-            src={guideImages.cover.src}
-            alt={guideImages.cover.alt}
-            width={guideImages.cover.width}
-            height={guideImages.cover.height}
-            sizes="(min-width: 1024px) 420px, 380px"
-            priority
-            className="border-ink relative h-auto w-full -rotate-2 border-2 bg-white shadow-[8px_8px_0_#111111]"
-          />
-        </div>
+        <GuidePageViewer pages={guideImages.viewer} totalPages={12} />
       </div>
     </section>
   );
@@ -152,32 +189,14 @@ export function GuideInside() {
 export function GuideFinalOffer({ buy }: BuyProps) {
   return (
     <section className="v2-dots bg-white">
-      <div className="mx-auto max-w-[860px] px-5 py-14 lg:py-20">
-        <div className="border-ink border-2 bg-white p-6 shadow-[8px_8px_0_#111111] sm:p-10">
-          <p className={EYEBROW}>Everything inside</p>
-          <h2 className="v2-display text-ink mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.04] uppercase">
-            {GUIDE.title}
-          </h2>
-          <CheckList
-            items={guideOffer.includes}
-            className="mt-6 text-lg font-bold"
-          />
-          <div className="border-ink mt-8 flex flex-wrap items-center gap-x-6 gap-y-4 border-t-2 pt-6">
-            <span className="v2-display text-brand-700 text-6xl leading-none">
-              {GUIDE.priceLabel}
-            </span>
-            {buy}
-          </div>
-          <ul className="text-ink/75 mt-8 space-y-2 text-sm">
-            {[...guideOffer.terms, guideOffer.refundTerms].map((t) => (
-              <li key={t} className="flex gap-2">
-                <CheckIcon className="text-brand-600 mt-0.5 size-4 shrink-0" />
-                <span>{t}</span>
-              </li>
-            ))}
-          </ul>
+      <div className="mx-auto max-w-[520px] px-5 py-14 lg:py-20">
+        <h2 className="v2-display text-ink text-center text-[clamp(2rem,4vw,2.75rem)] leading-[1.04] uppercase">
+          Start on play one tonight
+        </h2>
+        <div className="mt-8">
+          <OrderCard buy={buy} />
         </div>
-        <p className="text-ink/55 mx-auto mt-8 max-w-2xl text-center text-xs leading-relaxed">
+        <p className="text-ink/55 mt-8 text-center text-xs leading-relaxed">
           {guideOffer.disclaimer}
         </p>
       </div>

@@ -21,8 +21,8 @@ const root = fileURLToPath(new URL("../../", import.meta.url));
 const outDir = `${root}scripts/playbook-guide/out`;
 const previewDir = `${root}public/images/playbook-guide`;
 const SITE = "https://www.vendingpreneurs.com";
-/** Pages rendered as offer-page images: cover, Play 03, Play 05, Play 06. */
-const PREVIEW_PAGES = [1, 5, 7, 8];
+/** Pages rendered as offer-page images: the hero page viewer samples. */
+const PREVIEW_PAGES = [1, 2, 3, 5, 7, 8, 11];
 
 const esc = (s) =>
   s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");

@@ -363,13 +363,16 @@ export const guideFaq = [
     q: "Is this the same as the webinar?",
     a: "It's the homework. The webinar shows you the opportunity; the playbook gives you the steps to start on before and after it.",
   },
+  {
+    q: "Is it a subscription? Can I get a refund?",
+    a: "No subscription: it's a one-time $5 payment. Because it's a digital product delivered instantly, all sales are final. A problem with your order? Reply to your delivery email and we'll sort it out.",
+  },
 ] as const;
 
 /** Offer page copy (/playbook/guide). */
 export const guideOffer = {
   eyebrow: "Mike Hoffmann's First Location Playbook",
-  headline: "Land your first vending location in the next 30 days",
-  highlight: "first vending location",
+  headlineLines: ["Land your first", "vending location", "in the next 30 days"],
   sub: "A tactical PDF: eight plays, Mike's exact scripts and contract terms, a video for every play and an assignment to finish before the next one.",
   benefits: [
     {
@@ -385,8 +388,7 @@ export const guideOffer = {
       body: "The five contract terms Mike uses on every placement, which machine fits which location, and how to stock for profit per slot.",
     },
   ],
-  cta: "Get the playbook for $5",
-  ctaNote: "One-time payment. Instant PDF download, plus a copy in your inbox.",
+  cta: "Get instant access for $5",
   previewTitle: "Look inside",
   contentsTitle: "The eight plays",
   includes: [
@@ -395,13 +397,6 @@ export const guideOffer = {
     "An assignment at the end of every play",
     "25-target worksheet and 30-day plan",
   ],
-  terms: [
-    "One-time $5 payment. No subscription.",
-    "Instant digital delivery: download right after checkout, and a link by email.",
-    "Lost your link? Get a new one any time from the access page.",
-    "Questions or a problem with your order? Reply to your delivery email.",
-  ],
-  refundTerms: "Digital product, delivered instantly. All sales are final.",
   disclaimer:
     "Results vary. Figures in the playbook are worked examples from Mike's and Anthony's own routes, not a promise of earnings. Nothing here is legal, tax or financial advice.",
 } as const;
