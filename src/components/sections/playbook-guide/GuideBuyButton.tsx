@@ -1,46 +1,28 @@
-import { Button, buttonClass } from "@/components/ui/Button";
+import { buttonClass } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import type { LtfVariant } from "@/lib/ltf/assignment";
-import { LTF_PATHS } from "@/lib/ltf/assignment";
 
 interface GuideBuyButtonProps {
-  variant: LtfVariant;
   label: string;
   className?: string;
 }
 
 /**
- * The only thing that differs between the test's two versions. A: link to
- * the GHL checkout embed. B: a plain form POST that the server turns into a
- * Stripe Checkout redirect (works before hydration, no client price).
+ * A plain form POST that the server turns into a Stripe Checkout redirect:
+ * works before hydration, and no price ever comes from the browser.
  */
-export function GuideBuyButton({
-  variant,
-  label,
-  className,
-}: GuideBuyButtonProps) {
-  const classes = cn("min-h-14 w-full sm:w-auto", className);
-  if (variant === "a") {
-    return (
-      <Button
-        href={LTF_PATHS.ghlCheckout}
-        size="lg"
-        showArrow
-        className={classes}
-      >
-        {label}
-      </Button>
-    );
-  }
+export function GuideBuyButton({ label, className }: GuideBuyButtonProps) {
   return (
     <form
       action="/api/playbook-guide/checkout"
       method="post"
-      className={cn("contents")}
+      className="contents"
     >
       <button
         type="submit"
-        className={buttonClass({ size: "lg", className: classes })}
+        className={buttonClass({
+          size: "lg",
+          className: cn("min-h-14 w-full sm:w-auto", className),
+        })}
       >
         <span>{label}</span>
         <span

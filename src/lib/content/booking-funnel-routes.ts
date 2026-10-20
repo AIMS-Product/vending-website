@@ -27,9 +27,8 @@ const HAND_WRITTEN_BOOKING_ROUTES = [
   // The rest of the webinar funnel: entry points from GHL emails, SMS and ads.
   "/playbook",
   "/playbook/checkout",
-  // LTF V2 $5 PDF test (plans/ltf-v2-pdf-ab).
+  // The $5 First Location Playbook (plans/ltf-v2-pdf-ab).
   "/playbook/guide",
-  "/playbook/guide-checkout",
   "/masterclass-replay-dna",
   "/masterclass-replay-adnb",
   "/masterclass-replay-meta",

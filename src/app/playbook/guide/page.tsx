@@ -73,11 +73,7 @@ export default async function PlaybookGuidePage({
   const error =
     typeof params.error === "string" ? NOTICES[params.error] : undefined;
   const buy = (className?: string) => (
-    <GuideBuyButton
-      variant={visitor.variant}
-      label={guideOffer.cta}
-      className={className}
-    />
+    <GuideBuyButton label={guideOffer.cta} className={className} />
   );
 
   return (

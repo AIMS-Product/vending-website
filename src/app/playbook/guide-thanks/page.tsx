@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "../../home-v2.css";
 import { EYEBROW } from "@/components/sections/playbook/PlaybookCta";
-import { PlaybookThankYouBreakout } from "@/components/sections/playbook/PlaybookThankYou";
 import {
   GuideCard,
   GuideShell,
@@ -27,11 +26,9 @@ const SESSION_ID = /^cs_(test|live)_[A-Za-z0-9]{10,200}$/;
 type SearchParams = Record<string, string | string[] | undefined>;
 
 /**
- * B: Stripe returns here with ?session_id. The page runs the same
+ * Stripe returns here with ?session_id. The page runs the same
  * fulfillment as the webhook (whichever lands first wins, the other is a
  * no-op), and shows the download only if Stripe says the session is paid.
- * A: GHL's order form redirects here inside its iframe with no session id;
- * the breakout moves the tab here and GHL emails the PDF.
  * Never unlocks anything from the URL alone.
  */
 export default async function GuideThanksPage({
@@ -42,11 +39,10 @@ export default async function GuideThanksPage({
   const params = await searchParams;
   const sessionId =
     typeof params.session_id === "string" ? params.session_id : null;
-  if (!sessionId) return <GhlThanks />;
 
   const origin = await pageOrigin();
   let result: FulfillResult | "error";
-  if (!SESSION_ID.test(sessionId)) {
+  if (!sessionId || !SESSION_ID.test(sessionId)) {
     result = "error";
   } else {
     try {
@@ -121,24 +117,6 @@ export default async function GuideThanksPage({
         >
           Send me my link
         </Link>
-      </GuideCard>
-    </GuideShell>
-  );
-}
-
-function GhlThanks() {
-  return (
-    <GuideShell>
-      <PlaybookThankYouBreakout trackPurchase={false} />
-      <GuideCard>
-        <p className={EYEBROW}>Order confirmed</p>
-        <h1 className="v2-display text-ink mt-3 text-[clamp(2.2rem,5vw,3.6rem)] leading-[1.02] uppercase">
-          {guideThanks.ghlTitle}
-        </h1>
-        <p className="text-ink/80 mt-4 text-lg leading-snug">
-          {guideThanks.ghlBody}
-        </p>
-        <p className="text-ink/70 mt-6 text-sm font-bold">{guideThanks.next}</p>
       </GuideCard>
     </GuideShell>
   );

@@ -3,7 +3,7 @@
  * (/playbook/guide) and the PDF itself (scripts/playbook-guide/build.ts).
  * Every tactic is taken from the linked video's transcript, Mike's (or
  * Anthony's) own words; figures are their worked examples, never a promise.
- * DRAFT: Adam approves this copy before launch.
+ * Copy approved by Adam 2026-10-19.
  */
 
 export const GUIDE = {
@@ -371,8 +371,7 @@ export const guideOffer = {
     "Lost your link? Get a new one any time from the access page.",
     "Questions or a problem with your order? Reply to your delivery email.",
   ],
-  refundTerms:
-    "Not useful? Reply to your delivery email within 14 days for a full refund.",
+  refundTerms: "Digital product, delivered instantly. All sales are final.",
   disclaimer:
     "Results vary. Figures in the playbook are worked examples from Mike's and Anthony's own routes, not a promise of earnings. Nothing here is legal, tax or financial advice.",
 } as const;
@@ -386,7 +385,4 @@ export const guideThanks = {
   pendingTitle: "Confirming your payment",
   pendingBody:
     "This usually takes a few seconds. This page refreshes on its own. Your download link is also on its way by email.",
-  ghlTitle: "You're in. Check your inbox.",
-  ghlBody:
-    "Your download link is on its way to your inbox. It can take a couple of minutes.",
 } as const;

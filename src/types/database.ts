@@ -1669,12 +1669,10 @@ export type Database = {
           name: string | null;
           paid_at: string | null;
           payment_status: string;
-          provider: string;
           refunded_at: string | null;
           updated_at: string;
           utm_campaign: string | null;
           utm_source: string | null;
-          variant: string;
           visitor_id: string | null;
         };
         Insert: {
@@ -1698,12 +1696,10 @@ export type Database = {
           name?: string | null;
           paid_at?: string | null;
           payment_status?: string;
-          provider: string;
           refunded_at?: string | null;
           updated_at?: string;
           utm_campaign?: string | null;
           utm_source?: string | null;
-          variant: string;
           visitor_id?: string | null;
         };
         Update: {
@@ -1727,12 +1723,10 @@ export type Database = {
           name?: string | null;
           paid_at?: string | null;
           payment_status?: string;
-          provider?: string;
           refunded_at?: string | null;
           updated_at?: string;
           utm_campaign?: string | null;
           utm_source?: string | null;
-          variant?: string;
           visitor_id?: string | null;
         };
         Relationships: [];
@@ -1745,7 +1739,6 @@ export type Database = {
           utm_content: string | null;
           utm_medium: string | null;
           utm_source: string | null;
-          variant: string;
           visitor_id: string;
         };
         Insert: {
@@ -1755,7 +1748,6 @@ export type Database = {
           utm_content?: string | null;
           utm_medium?: string | null;
           utm_source?: string | null;
-          variant: string;
           visitor_id: string;
         };
         Update: {
@@ -1765,7 +1757,6 @@ export type Database = {
           utm_content?: string | null;
           utm_medium?: string | null;
           utm_source?: string | null;
-          variant?: string;
           visitor_id?: string;
         };
         Relationships: [];
@@ -3752,11 +3743,9 @@ export type Database = {
           fee_cents: number | null;
           gross_cents: number | null;
           offer_views: number | null;
-          orders_missing_fee: number | null;
           payment_failures: number | null;
           refunded_cents: number | null;
           refunds: number | null;
-          variant: string | null;
           visitors: number | null;
         };
         Relationships: [];

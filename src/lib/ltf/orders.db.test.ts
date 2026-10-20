@@ -23,7 +23,6 @@ import {
   handleStripeEvent,
   LTF_METADATA_KEY,
   LTF_METADATA_VALUE,
-  recordGhlOrder,
   resendAccess,
   type DeliveryEmail,
   type LtfOrderDeps,
@@ -149,7 +148,6 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     const v = await assignLtfVisitor(db, {
       source: { utm_source: "webinar", utm_campaign: "oct21" },
       userAgent: "Mozilla/5.0",
-      roll: 1,
     });
     visitors.push(v.visitorId);
     return v;
@@ -171,7 +169,6 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     const { data, error } = await db
       .from("ltf_orders")
       .select("*")
-      .eq("provider", "stripe")
       .eq("external_id", sessionId);
     if (error) throw error;
     return data;
@@ -389,33 +386,7 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     expect(await findDownloadableOrder(db, "x".repeat(32))).toBeNull();
   });
 
-  it("GHL (version A) orders upsert once and record refunds", async () => {
-    const orderId = `ghl_${randomUUID()}`;
-    const input = {
-      orderId,
-      email: "A@Example.com",
-      name: "A",
-      amountCents: 500,
-      status: "paid" as const,
-    };
-    await recordGhlOrder(db, input);
-    await recordGhlOrder(db, input);
-    await recordGhlOrder(db, { ...input, status: "refunded" });
-    const { data } = await db
-      .from("ltf_orders")
-      .select("*")
-      .eq("provider", "ghl")
-      .eq("external_id", orderId);
-    expect(data).toHaveLength(1);
-    expect(data![0]).toMatchObject({
-      variant: "a",
-      payment_status: "refunded",
-      email: "a@example.com",
-    });
-    await db.from("ltf_orders").delete().eq("external_id", orderId);
-  });
-
-  it("the report counts visitors, starts, buyers and net per version", async () => {
+  it("the report counts visitors, starts, buyers and net", async () => {
     const before = await loadLtfReport(db);
     const v = await newVisitor();
     await recordLtfEvent(db, v.visitorId, "checkout_start");
@@ -426,14 +397,12 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     const bot = await assignLtfVisitor(db, {
       source: {},
       userAgent: "Slackbot 1.0",
-      roll: 1,
     });
     visitors.push(bot.visitorId);
 
     const after = await loadLtfReport(db);
-    const b0 = before.find((r) => r.variant === "b")!;
-    const b1 = after.find((r) => r.variant === "b")!;
-    expect(after.map((r) => r.variant)).toEqual(["a", "b"]);
+    const b0 = before;
+    const b1 = after;
     expect(b1.visitors - b0.visitors).toBe(1);
     expect(b1.checkoutStarts - b0.checkoutStarts).toBe(1);
     expect(b1.buyers - b0.buyers).toBe(1);

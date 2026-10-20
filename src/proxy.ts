@@ -77,10 +77,9 @@ const TWO_SEGMENT_ROUTED_ELSEWHERE = new Set<string>([
 const CODED_TWO_SEGMENT_PAGES = new Set<string>([
   "/playbook/checkout",
   "/playbook/thank-you",
-  // LTF V2 $5 PDF test (plans/ltf-v2-pdf-ab).
+  // The $5 First Location Playbook (plans/ltf-v2-pdf-ab).
   "/playbook/go",
   "/playbook/guide",
-  "/playbook/guide-checkout",
   "/playbook/guide-thanks",
   "/playbook/guide-access",
 ]);

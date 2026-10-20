@@ -1,21 +1,17 @@
 import { describe, expect, it } from "vitest";
-import {
-  isBotUserAgent,
-  isLtfTestOpen,
-  pickVariant,
-} from "@/lib/ltf/assignment";
+import { isBotUserAgent, isLtfTestOpen } from "@/lib/ltf/assignment";
 
 describe("isLtfTestOpen (launch switch)", () => {
   it("is closed in production unless explicitly on", () => {
     expect(isLtfTestOpen({ VERCEL_ENV: "production" })).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_PDF_TEST: "off" }),
+      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "off" }),
     ).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_PDF_TEST: "true" }),
+      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "true" }),
     ).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_PDF_TEST: "on" }),
+      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "on" }),
     ).toBe(true);
   });
 
@@ -27,20 +23,6 @@ describe("isLtfTestOpen (launch switch)", () => {
   it("fails closed when nothing says otherwise", () => {
     expect(isLtfTestOpen({})).toBe(false);
     expect(isLtfTestOpen({ NODE_ENV: "production" })).toBe(false);
-  });
-});
-
-describe("pickVariant", () => {
-  it("maps the coin flip to a and b", () => {
-    expect(pickVariant(0)).toBe("a");
-    expect(pickVariant(1)).toBe("b");
-  });
-
-  it("splits roughly 50/50", () => {
-    const rolls = Array.from({ length: 4000 }, () => pickVariant());
-    const a = rolls.filter((v) => v === "a").length;
-    expect(a).toBeGreaterThan(1800);
-    expect(a).toBeLessThan(2200);
   });
 });
 

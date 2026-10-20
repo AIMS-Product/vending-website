@@ -158,6 +158,25 @@ const nextConfig: NextConfig = {
       // keeps the query, so only tabs with their own page are matched; any
       // other ?tab= simply lands on the dashboard, which ignores it.
       ...ADMIN_ANALYTICS_REDIRECTS,
+      // The $5 First Location Playbook replaces the GHL course offer once
+      // PLAYBOOK_GUIDE_LIVE=on (read at build; flipping it needs a redeploy,
+      // like every Vercel env change). Temporary, so turning it off restores
+      // the old pages. The query (UTMs) is kept. /playbook/thank-you stays
+      // for past course buyers. Plan: plans/ltf-v2-pdf-ab.
+      ...(process.env.PLAYBOOK_GUIDE_LIVE === "on"
+        ? [
+            {
+              source: "/playbook",
+              destination: "/playbook/go",
+              permanent: false,
+            },
+            {
+              source: "/playbook/checkout",
+              destination: "/playbook/go",
+              permanent: false,
+            },
+          ]
+        : []),
       {
         source: "/login",
         destination: "/admin/login",

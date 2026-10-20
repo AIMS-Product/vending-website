@@ -59,7 +59,7 @@ export type CreateCheckoutInput = {
  * Returns the hosted Checkout URL for a version-B visitor. Repeat clicks reuse
  * the visitor's still-open session; concurrent clicks share one Stripe
  * idempotency key, so Stripe hands both the same session and the unique
- * (provider, external_id) key keeps one order row.
+ * external_id (session id) key keeps one order row.
  */
 export async function createStripeCheckout(
   deps: Pick<LtfOrderDeps, "db" | "stripe" | "now">,
@@ -69,7 +69,6 @@ export async function createStripeCheckout(
   const open = await deps.db
     .from("ltf_orders")
     .select("checkout_url, checkout_expires_at")
-    .eq("provider", "stripe")
     .eq("visitor_id", input.visitorId)
     .eq("payment_status", "pending")
     .gt(
@@ -87,7 +86,6 @@ export async function createStripeCheckout(
   const metadata = {
     [LTF_METADATA_KEY]: LTF_METADATA_VALUE,
     visitor_id: input.visitorId,
-    variant: "b",
     utm_source: input.utmSource ?? "",
     utm_campaign: input.utmCampaign ?? "",
   };
@@ -112,9 +110,7 @@ export async function createStripeCheckout(
 
   const inserted = await deps.db.from("ltf_orders").upsert(
     {
-      provider: "stripe",
       external_id: session.id,
-      variant: "b",
       visitor_id: input.visitorId,
       utm_source: input.utmSource,
       utm_campaign: input.utmCampaign,
@@ -124,7 +120,7 @@ export async function createStripeCheckout(
       amount_cents: session.amount_total,
       access_token: newAccessToken(),
     },
-    { onConflict: "provider,external_id", ignoreDuplicates: true },
+    { onConflict: "external_id", ignoreDuplicates: true },
   );
   if (inserted.error) {
     throw new Error(`ltf order insert failed: ${inserted.error.message}`);
@@ -231,7 +227,6 @@ async function ensureOrderRow(
   const existing = await db
     .from("ltf_orders")
     .select(columns)
-    .eq("provider", "stripe")
     .eq("external_id", session.id)
     .maybeSingle();
   if (existing.error) {
@@ -242,15 +237,13 @@ async function ensureOrderRow(
   const visitorId = session.metadata?.visitor_id || null;
   const inserted = await db.from("ltf_orders").upsert(
     {
-      provider: "stripe",
       external_id: session.id,
-      variant: "b",
       visitor_id: await knownVisitor(db, visitorId),
       utm_source: session.metadata?.utm_source || null,
       utm_campaign: session.metadata?.utm_campaign || null,
       access_token: newAccessToken(),
     },
-    { onConflict: "provider,external_id", ignoreDuplicates: true },
+    { onConflict: "external_id", ignoreDuplicates: true },
   );
   if (inserted.error) {
     throw new Error(`ltf order recreate failed: ${inserted.error.message}`);
@@ -258,7 +251,6 @@ async function ensureOrderRow(
   const row = await db
     .from("ltf_orders")
     .select(columns)
-    .eq("provider", "stripe")
     .eq("external_id", session.id)
     .single();
   if (row.error)
@@ -427,7 +419,6 @@ async function updatePending(
       checkout_url: null,
       updated_at: (nowFn?.() ?? new Date()).toISOString(),
     })
-    .eq("provider", "stripe")
     .eq("external_id", sessionId)
     .eq("payment_status", "pending");
   if (error) throw new Error(`ltf ${next} update failed: ${error.message}`);
@@ -442,7 +433,6 @@ async function countPaymentFailure(db: LtfDb, visitorId: string | undefined) {
   const row = await db
     .from("ltf_orders")
     .select("id, payment_failures")
-    .eq("provider", "stripe")
     .eq("visitor_id", visitorId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -473,7 +463,6 @@ async function recordRefund(
       ...(full ? { payment_status: "refunded", refunded_at: now } : {}),
       updated_at: now,
     })
-    .eq("provider", "stripe")
     .eq("payment_intent_id", paymentIntentId)
     .select("id");
   if (error) throw new Error(`ltf refund update failed: ${error.message}`);
@@ -530,7 +519,6 @@ export async function resendAccess(
   const { data, error } = await deps.db
     .from("ltf_orders")
     .select("access_token, email")
-    .eq("provider", "stripe")
     .eq("payment_status", "paid")
     .eq("email", email.trim().toLowerCase())
     .limit(3);
@@ -547,72 +535,4 @@ export async function resendAccess(
     else console.error("ltf recovery email failed", { error: result.error });
   }
   return { sent };
-}
-
-/* ------------------------------------------------------------------ */
-/* Version A: GHL orders                                               */
-/* ------------------------------------------------------------------ */
-
-export type GhlOrderInput = {
-  orderId: string;
-  email: string | null;
-  name: string | null;
-  amountCents: number | null;
-  status: "paid" | "refunded";
-};
-
-/**
- * Version A's orders, posted by the product-filtered GHL workflow for the $5
- * PDF product. GHL delivers A's PDF itself; this row exists so both versions
- * report from one table. Replays upsert the same row.
- */
-export async function recordGhlOrder(
-  db: LtfDb,
-  input: GhlOrderInput,
-  nowFn?: () => Date,
-): Promise<void> {
-  const now = (nowFn?.() ?? new Date()).toISOString();
-  const existing = await db
-    .from("ltf_orders")
-    .select("id")
-    .eq("provider", "ghl")
-    .eq("external_id", input.orderId)
-    .maybeSingle();
-  if (existing.error) {
-    throw new Error(`ltf ghl order lookup failed: ${existing.error.message}`);
-  }
-  if (!existing.data) {
-    const inserted = await db.from("ltf_orders").upsert(
-      {
-        provider: "ghl",
-        external_id: input.orderId,
-        variant: "a",
-        email: input.email?.trim().toLowerCase() ?? null,
-        name: input.name,
-        amount_cents: input.amountCents,
-        currency: "usd",
-        payment_status: "paid",
-        delivery_status: "sent",
-        paid_at: now,
-        access_token: newAccessToken(),
-      },
-      { onConflict: "provider,external_id", ignoreDuplicates: true },
-    );
-    if (inserted.error) {
-      throw new Error(`ltf ghl order insert failed: ${inserted.error.message}`);
-    }
-  }
-  if (input.status === "refunded") {
-    const { error } = await db
-      .from("ltf_orders")
-      .update({
-        payment_status: "refunded",
-        refunded_at: now,
-        refunded_cents: input.amountCents ?? 0,
-        updated_at: now,
-      })
-      .eq("provider", "ghl")
-      .eq("external_id", input.orderId);
-    if (error) throw new Error(`ltf ghl refund failed: ${error.message}`);
-  }
 }

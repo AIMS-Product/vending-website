@@ -35,8 +35,8 @@ describe("booking funnel routes", () => {
     }
     expect(BOOKING_FUNNEL_PATHS).toHaveLength(
       // /contact, /book-now, /masterclass, /playbook, /playbook/checkout,
-      // /playbook/guide, /playbook/guide-checkout, 4 webinar replays, /qa
-      12 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
+      // /playbook/guide, 4 webinar replays, /qa
+      11 + CONTACT_CLONE_SLUGS.length + Object.keys(bookingPages).length,
     );
   });
 
@@ -108,10 +108,9 @@ describe("booking funnel routes", () => {
 
   it.each([
     "/playbook/guide",
-    "/playbook/guide-checkout",
     "/playbook/guide-thanks",
     "/playbook/guide-access",
-  ])("drops the chrome and chatbot on LTF $5 PDF page %s", (route) => {
+  ])("drops the chrome and chatbot on $5 playbook page %s", (route) => {
     expect(isFunnelChromePath(route)).toBe(true);
     expect(hidesChatWidget(route)).toBe(true);
   });

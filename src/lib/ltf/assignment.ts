@@ -1,19 +1,17 @@
 import "server-only";
-import { randomInt, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { config } from "@/lib/config";
 import type { Database } from "@/types/database";
 
 /**
- * LTF V2 A/B assignment (plans/ltf-v2-pdf-ab). Both versions sell the same $5
- * PDF from the same offer page; only the checkout differs:
- *   a = GHL checkout embed, b = Stripe-hosted Checkout.
- * The cookie holds only the visitor id. The version is always read back from
- * `ltf_visitors`, so a hand-edited cookie cannot pick a version.
+ * Visitor tracking for the $5 First Location Playbook (plans/ltf-v2-pdf-ab).
+ * Every visitor to the offer gets a first-party id so conversion is buyers
+ * divided by real visitors. The cookie holds only that id; it is checked
+ * against `ltf_visitors` on every read.
  */
 export type LtfDb = SupabaseClient<Database>;
-export type LtfVariant = "a" | "b";
-export type LtfVisitor = { visitorId: string; variant: LtfVariant };
+export type LtfVisitor = { visitorId: string };
 export type LtfEventKind = "offer_view" | "checkout_start";
 
 export const LTF_COOKIE = "vp_ltf";
@@ -22,7 +20,6 @@ export const LTF_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 export const LTF_PATHS = {
   go: "/playbook/go",
   offer: "/playbook/guide",
-  ghlCheckout: "/playbook/guide-checkout",
   thanks: "/playbook/guide-thanks",
   access: "/playbook/guide-access",
 } as const;
@@ -32,29 +29,26 @@ const BOT_UA =
   /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|curl|wget|python-requests|headless/i;
 
 /**
- * The launch switch, fail closed. Serves the test only with
- * PLAYBOOK_PDF_TEST=on, on a Vercel preview, or under `next dev`, so it can be
- * tested before launch and never opens in production by a missing variable.
- * Switching it off closes new visits and checkouts only: thank-you, download,
- * recovery and webhooks keep working for buyers.
+ * The launch switch, fail closed. The offer and checkout serve with
+ * PLAYBOOK_GUIDE_LIVE=on, on a Vercel preview, or under `next dev`, and never
+ * open in production by a missing variable. When on, /playbook and
+ * /playbook/checkout also redirect here (next.config.ts). Switching it off
+ * closes new visits and checkouts only: thank-you, download, recovery and the
+ * webhook keep working for buyers.
  */
 export function isLtfTestOpen(
   env: {
-    PLAYBOOK_PDF_TEST?: string;
+    PLAYBOOK_GUIDE_LIVE?: string;
     VERCEL_ENV?: string;
     NODE_ENV?: string;
   } = config,
 ): boolean {
-  if (env.PLAYBOOK_PDF_TEST === "on") return true;
+  if (env.PLAYBOOK_GUIDE_LIVE === "on") return true;
   return env.VERCEL_ENV === "preview" || env.NODE_ENV === "development";
 }
 
 export function isBotUserAgent(userAgent: string | null): boolean {
   return !userAgent || BOT_UA.test(userAgent);
-}
-
-export function pickVariant(roll: number = randomInt(2)): LtfVariant {
-  return roll === 0 ? "a" : "b";
 }
 
 export async function getLtfVisitor(
@@ -64,12 +58,11 @@ export async function getLtfVisitor(
   if (!cookieValue || !UUID.test(cookieValue)) return null;
   const { data, error } = await db
     .from("ltf_visitors")
-    .select("visitor_id, variant")
+    .select("visitor_id")
     .eq("visitor_id", cookieValue)
     .maybeSingle();
   if (error) throw new Error(`ltf visitor lookup failed: ${error.message}`);
-  if (!data || (data.variant !== "a" && data.variant !== "b")) return null;
-  return { visitorId: data.visitor_id, variant: data.variant };
+  return data ? { visitorId: data.visitor_id } : null;
 }
 
 export type LtfSource = {
@@ -84,15 +77,11 @@ const clip = (value: string | null | undefined) =>
 
 export async function assignLtfVisitor(
   db: LtfDb,
-  input: { source: LtfSource; userAgent: string | null; roll?: number },
+  input: { source: LtfSource; userAgent: string | null },
 ): Promise<LtfVisitor> {
-  const visitor: LtfVisitor = {
-    visitorId: randomUUID(),
-    variant: pickVariant(input.roll),
-  };
+  const visitor: LtfVisitor = { visitorId: randomUUID() };
   const { error } = await db.from("ltf_visitors").insert({
     visitor_id: visitor.visitorId,
-    variant: visitor.variant,
     utm_source: clip(input.source.utm_source),
     utm_medium: clip(input.source.utm_medium),
     utm_campaign: clip(input.source.utm_campaign),

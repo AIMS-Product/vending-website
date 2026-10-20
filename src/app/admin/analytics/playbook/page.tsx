@@ -1,0 +1,99 @@
+import type { Metadata } from "next";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { adminPanelClass } from "@/components/admin/AdminUi";
+import { isLtfTestOpen } from "@/lib/ltf/assignment";
+import { loadLtfReport, type LtfReport } from "@/lib/ltf/report";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/supabase/auth";
+
+export const metadata: Metadata = {
+  title: "$5 Playbook sales",
+  robots: { index: false, follow: false },
+};
+
+export const dynamic = "force-dynamic";
+
+const usd = (cents: number) =>
+  (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+const pct = (value: number) => `${(value * 100).toFixed(2)}%`;
+const num = (value: number) => value.toLocaleString();
+
+const ROWS: {
+  label: string;
+  value: (r: LtfReport) => string;
+  note?: string;
+}[] = [
+  {
+    label: "Unique visitors",
+    value: (r) => num(r.visitors),
+    note: "Bots excluded.",
+  },
+  { label: "Checkout starts", value: (r) => num(r.checkoutStarts) },
+  { label: "Paid buyers", value: (r) => num(r.buyers) },
+  { label: "Conversion (buyers ÷ visitors)", value: (r) => pct(r.conversion) },
+  {
+    label: "Checkout start → paid",
+    value: (r) => pct(r.checkoutStarts ? r.buyers / r.checkoutStarts : 0),
+  },
+  { label: "Gross revenue", value: (r) => usd(r.grossCents) },
+  { label: "Stripe fees", value: (r) => usd(r.feeCents) },
+  {
+    label: "Refunds",
+    value: (r) => `${num(r.refunds)} · ${usd(r.refundedCents)}`,
+  },
+  { label: "Net revenue", value: (r) => usd(r.netCents) },
+  { label: "Net revenue per visitor", value: (r) => usd(r.netPerVisitorCents) },
+  { label: "Declined payments", value: (r) => num(r.paymentFailures) },
+  {
+    label: "Paid but email not sent",
+    value: (r) => num(r.deliveryFailures),
+    note: "Should be 0. Stripe retries the webhook, which retries the email.",
+  },
+  { label: "Buyers who downloaded", value: (r) => num(r.buyersDownloaded) },
+];
+
+export default async function PlaybookSalesPage() {
+  const [{ user, role }, report] = await Promise.all([
+    requireAdmin(),
+    loadLtfReport(createAdminClient()),
+  ]);
+
+  return (
+    <AdminShell
+      activeSection="analytics"
+      eyebrow="Funnels"
+      title="$5 First Location Playbook"
+      description="Sold through Stripe Checkout on /playbook/guide. All-time totals."
+      userEmail={user.email}
+      userRole={role}
+    >
+      <p className={`${adminPanelClass} text-ui-text mb-6 p-4 text-sm`}>
+        <strong>Offer is {isLtfTestOpen() ? "ON" : "OFF"}.</strong>
+      </p>
+      <div className={`${adminPanelClass} overflow-x-auto`}>
+        <table className="text-ui-text w-full text-sm">
+          <tbody>
+            {ROWS.map((row) => (
+              <tr
+                key={row.label}
+                className="border-ui-line border-b last:border-0"
+              >
+                <td className="p-3">
+                  {row.label}
+                  {row.note ? (
+                    <span className="text-ui-text-muted block text-xs">
+                      {row.note}
+                    </span>
+                  ) : null}
+                </td>
+                <td className="p-3 text-right tabular-nums">
+                  {row.value(report)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </AdminShell>
+  );
+}

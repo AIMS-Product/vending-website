@@ -1,16 +1,16 @@
--- LTF V2: $5 PDF playbook A/B test (GHL checkout embed vs Stripe Checkout).
--- Plan: plans/ltf-v2-pdf-ab/slice-plan.md. Written only by server code with the
--- service role; RLS on with no policies so anon/auth roles read nothing.
+-- LTF V2: the $5 First Location Playbook, sold through Stripe Checkout on our
+-- own pages (plans/ltf-v2-pdf-ab). Replaces the GHL playbook course funnel.
+-- Written only by server code with the service role; RLS on with no policies
+-- so anon/auth roles read nothing.
 
--- One row per visitor assigned a version. The primary metric's denominator.
+-- One row per visitor who reached the offer. The conversion denominator.
 create table if not exists public.ltf_visitors (
   visitor_id uuid primary key,
-  variant text not null check (variant in ('a', 'b')),
   utm_source text,
   utm_medium text,
   utm_campaign text,
   utm_content text,
-  -- Link unfurlers and crawlers: assigned (so the page renders) but left out of the report.
+  -- Link unfurlers and crawlers: tracked (so the page renders) but left out of the report.
   is_bot boolean not null default false,
   created_at timestamptz not null default now()
 );
@@ -23,13 +23,11 @@ create table if not exists public.ltf_events (
   primary key (visitor_id, kind)
 );
 
--- One row per checkout (B: a Stripe Checkout Session; A: a GHL order).
+-- One row per Stripe Checkout Session.
 create table if not exists public.ltf_orders (
   id uuid primary key default gen_random_uuid(),
-  provider text not null check (provider in ('stripe', 'ghl')),
-  -- Stripe Checkout Session id, or the GHL order id.
-  external_id text not null,
-  variant text not null check (variant in ('a', 'b')),
+  -- Stripe Checkout Session id (cs_...). One session = one order.
+  external_id text not null unique,
   visitor_id uuid references public.ltf_visitors (visitor_id),
   utm_source text,
   utm_campaign text,
@@ -57,8 +55,7 @@ create table if not exists public.ltf_orders (
   paid_at timestamptz,
   refunded_at timestamptz,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (provider, external_id)
+  updated_at timestamptz not null default now()
 );
 
 create index if not exists ltf_orders_visitor_idx on public.ltf_orders (visitor_id);
@@ -75,40 +72,27 @@ insert into storage.buckets (id, name, public)
 values ('ltf-playbook', 'ltf-playbook', false)
 on conflict (id) do nothing;
 
--- One row per version for /admin/analytics/ltf-test. Bots are left out of the
--- visitor counts. Version A's orders come from GHL and carry no visitor id, so
--- buyers are counted per version, not joined to visitors; the $5 product is
--- sold only through this test, so every A order belongs to it.
+-- One-row funnel summary for /admin/analytics/ltf-test. Bots left out of visitors.
 create or replace view public.ltf_report
 with (security_invoker = true) as
 select
-  x.variant,
-  (select count(*) from public.ltf_visitors v
-     where v.variant = x.variant and not v.is_bot) as visitors,
+  (select count(*) from public.ltf_visitors v where not v.is_bot) as visitors,
   (select count(*) from public.ltf_events e
      join public.ltf_visitors v using (visitor_id)
-     where v.variant = x.variant and not v.is_bot and e.kind = 'offer_view') as offer_views,
+     where not v.is_bot and e.kind = 'offer_view') as offer_views,
   (select count(*) from public.ltf_events e
      join public.ltf_visitors v using (visitor_id)
-     where v.variant = x.variant and not v.is_bot and e.kind = 'checkout_start') as checkout_starts,
+     where not v.is_bot and e.kind = 'checkout_start') as checkout_starts,
   (select count(*) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status in ('paid', 'refunded')) as buyers,
+     where o.payment_status in ('paid', 'refunded')) as buyers,
   (select count(*) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status = 'refunded') as refunds,
+     where o.payment_status = 'refunded') as refunds,
   (select coalesce(sum(o.amount_cents), 0) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status in ('paid', 'refunded')) as gross_cents,
+     where o.payment_status in ('paid', 'refunded')) as gross_cents,
   (select coalesce(sum(o.fee_cents), 0) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status in ('paid', 'refunded')) as fee_cents,
+     where o.payment_status in ('paid', 'refunded')) as fee_cents,
+  (select coalesce(sum(o.refunded_cents), 0) from public.ltf_orders o) as refunded_cents,
+  (select coalesce(sum(o.payment_failures), 0) from public.ltf_orders o) as payment_failures,
   (select count(*) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status in ('paid', 'refunded')
-       and o.fee_cents is null) as orders_missing_fee,
-  (select coalesce(sum(o.refunded_cents), 0) from public.ltf_orders o
-     where o.variant = x.variant) as refunded_cents,
-  (select coalesce(sum(o.payment_failures), 0) from public.ltf_orders o
-     where o.variant = x.variant) as payment_failures,
-  (select count(*) from public.ltf_orders o
-     where o.variant = x.variant and o.payment_status = 'paid'
-       and o.delivery_status = 'failed') as delivery_failures,
-  (select count(*) from public.ltf_orders o
-     where o.variant = x.variant and o.download_count > 0) as buyers_downloaded
-from (values ('a'), ('b')) as x (variant);
+     where o.payment_status = 'paid' and o.delivery_status = 'failed') as delivery_failures,
+  (select count(*) from public.ltf_orders o where o.download_count > 0) as buyers_downloaded;

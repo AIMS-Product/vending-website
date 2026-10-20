@@ -13,9 +13,9 @@ import { createStripeCheckout } from "@/lib/ltf/orders";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
- * Version B's buy button (a plain form POST, so it works before hydration).
- * The price comes from STRIPE_PLAYBOOK_PRICE_ID only; nothing in the request
- * sets an amount. A version-A visitor is sent to the GHL checkout instead.
+ * The buy button (a plain form POST, so it works before hydration). The
+ * price comes from STRIPE_PLAYBOOK_PRICE_ID only; nothing in the request sets
+ * an amount.
  */
 export async function POST(request: NextRequest) {
   const back = (path: string) =>
@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
       (await cookies()).get(LTF_COOKIE)?.value,
     );
     if (!visitor) return back(LTF_PATHS.go);
-    if (visitor.variant === "a") return back(LTF_PATHS.ghlCheckout);
     if (!config.STRIPE_PLAYBOOK_PRICE_ID) {
       throw new Error("STRIPE_PLAYBOOK_PRICE_ID is not set");
     }
