@@ -163,6 +163,12 @@ const nextConfig: NextConfig = {
       // like every Vercel env change). Temporary, so turning it off restores
       // the old pages. The query (UTMs) is kept. /playbook/thank-you stays
       // for past course buyers. Plan: plans/ltf-v2-pdf-ab.
+      // Unlisted live entry for the $5 playbook (shareable test link).
+      {
+        source: "/playbook-stripe",
+        destination: "/playbook/go",
+        permanent: false,
+      },
       ...(process.env.PLAYBOOK_GUIDE_LIVE === "on"
         ? [
             {

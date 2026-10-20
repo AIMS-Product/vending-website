@@ -264,6 +264,8 @@ const envSchema = z.object({
   STRIPE_PLAYBOOK_PRICE_ID: optionalTrimmedOptionalEnv,
   PLAYBOOK_PDF_OBJECT: optionalTrimmedOptionalEnv,
   LTF_SUPPORT_EMAIL: optionalTrimmedOptionalEnv,
+  /** ?promo=<this> on the offer shows Stripe's promo-code field (test codes). */
+  LTF_PROMO_LINK_KEY: optionalTrimmedOptionalEnv,
   VERCEL_ENV: optionalTrimmedOptionalEnv,
   OPENAI_SEO_REASONING_EFFORT: z.preprocess(
     (value) => (value === "" ? undefined : value),
@@ -420,6 +422,7 @@ const parsed = envSchema.safeParse({
   STRIPE_PLAYBOOK_PRICE_ID: process.env.STRIPE_PLAYBOOK_PRICE_ID,
   PLAYBOOK_PDF_OBJECT: process.env.PLAYBOOK_PDF_OBJECT,
   LTF_SUPPORT_EMAIL: process.env.LTF_SUPPORT_EMAIL,
+  LTF_PROMO_LINK_KEY: process.env.LTF_PROMO_LINK_KEY,
   VERCEL_ENV: process.env.VERCEL_ENV,
 });
 

@@ -6,23 +6,19 @@ import {
   LTF_PATHS,
   assignLtfVisitor,
   getLtfVisitor,
-  isLtfTestOpen,
 } from "@/lib/ltf/assignment";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * The one shared webinar offer link. Assigns the visitor a sticky version
  * (cookie + `ltf_visitors` row) and sends them to the offer page with the
- * link's query intact. With the test switched off it sends them to the
- * current playbook page instead, so a shared link never dead-ends.
+ * link's query intact.
  */
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const query = searchParams.toString();
   const to = (path: string) =>
     new URL(`${path}${query ? `?${query}` : ""}`, request.url);
-
-  if (!isLtfTestOpen()) return NextResponse.redirect(to("/playbook"));
 
   const db = createAdminClient();
   const jar = await cookies();

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminPanelClass } from "@/components/admin/AdminUi";
-import { isLtfTestOpen } from "@/lib/ltf/assignment";
+import { isGuideSwapLive } from "@/lib/ltf/assignment";
 import { loadLtfBuyers, loadLtfReport, type LtfReport } from "@/lib/ltf/report";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/supabase/auth";
@@ -70,7 +70,11 @@ export default async function PlaybookSalesPage() {
       userRole={role}
     >
       <p className={`${adminPanelClass} text-ui-text mb-6 p-4 text-sm`}>
-        <strong>Offer is {isLtfTestOpen() ? "ON" : "OFF"}.</strong>
+        <strong>
+          {isGuideSwapLive()
+            ? "Swapped in: /playbook sells this offer."
+            : "Unlisted: live at /playbook-stripe, /playbook still sells the course."}
+        </strong>
       </p>
       <div className={`${adminPanelClass} overflow-x-auto`}>
         <table className="text-ui-text w-full text-sm">

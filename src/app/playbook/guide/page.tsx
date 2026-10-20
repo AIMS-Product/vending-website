@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { redirect } from "next/navigation";
 import "../../home-v2.css";
 import { anton } from "../../fonts";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
@@ -20,7 +20,6 @@ import {
   LTF_COOKIE,
   LTF_PATHS,
   getLtfVisitor,
-  isLtfTestOpen,
   recordLtfEvent,
 } from "@/lib/ltf/assignment";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -55,7 +54,6 @@ export default async function PlaybookGuidePage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  if (!isLtfTestOpen()) notFound();
   const params = await searchParams;
   const db = createAdminClient();
   // Tracking is never allowed to block the page: if the visitor can't be read
@@ -84,10 +82,16 @@ export default async function PlaybookGuidePage({
     );
   }
 
+  const promo =
+    typeof params.promo === "string" ? params.promo.slice(0, 100) : undefined;
   const error =
     typeof params.error === "string" ? NOTICES[params.error] : undefined;
   const buy = (className?: string) => (
-    <GuideBuyButton label={guideOffer.cta} className={className} />
+    <GuideBuyButton
+      label={guideOffer.cta}
+      className={className}
+      promo={promo}
+    />
   );
 
   return (

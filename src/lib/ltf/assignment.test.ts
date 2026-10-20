@@ -1,28 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { isBotUserAgent, isLtfTestOpen } from "@/lib/ltf/assignment";
+import { isBotUserAgent, isGuideSwapLive } from "@/lib/ltf/assignment";
 
-describe("isLtfTestOpen (launch switch)", () => {
+describe("isGuideSwapLive (swap switch)", () => {
   it("is closed in production unless explicitly on", () => {
-    expect(isLtfTestOpen({ VERCEL_ENV: "production" })).toBe(false);
+    expect(isGuideSwapLive({ VERCEL_ENV: "production" })).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "off" }),
+      isGuideSwapLive({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "off" }),
     ).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "true" }),
+      isGuideSwapLive({
+        VERCEL_ENV: "production",
+        PLAYBOOK_GUIDE_LIVE: "true",
+      }),
     ).toBe(false);
     expect(
-      isLtfTestOpen({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "on" }),
+      isGuideSwapLive({ VERCEL_ENV: "production", PLAYBOOK_GUIDE_LIVE: "on" }),
     ).toBe(true);
   });
 
   it("is open on preview and next dev for testing", () => {
-    expect(isLtfTestOpen({ VERCEL_ENV: "preview" })).toBe(true);
-    expect(isLtfTestOpen({ NODE_ENV: "development" })).toBe(true);
+    expect(isGuideSwapLive({ VERCEL_ENV: "preview" })).toBe(true);
+    expect(isGuideSwapLive({ NODE_ENV: "development" })).toBe(true);
   });
 
   it("fails closed when nothing says otherwise", () => {
-    expect(isLtfTestOpen({})).toBe(false);
-    expect(isLtfTestOpen({ NODE_ENV: "production" })).toBe(false);
+    expect(isGuideSwapLive({})).toBe(false);
+    expect(isGuideSwapLive({ NODE_ENV: "production" })).toBe(false);
   });
 });
 

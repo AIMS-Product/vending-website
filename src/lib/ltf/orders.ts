@@ -68,6 +68,8 @@ export type CreateCheckoutInput = {
   siteOrigin: string;
   utmSource: string | null;
   utmCampaign: string | null;
+  /** Show Stripe's promotion-code field. Only for the secret test link. */
+  allowPromotionCodes?: boolean;
 };
 
 /**
@@ -96,7 +98,10 @@ export async function createStripeCheckout(
   if (open.error) {
     throw new Error(`ltf open checkout lookup failed: ${open.error.message}`);
   }
-  if (open.data?.checkout_url) return open.data.checkout_url;
+  // A promo-link session is never reused for (or replaced by) a normal one.
+  if (open.data?.checkout_url && !input.allowPromotionCodes) {
+    return open.data.checkout_url;
+  }
 
   const metadata = {
     [LTF_METADATA_KEY]: LTF_METADATA_VALUE,
@@ -117,6 +122,7 @@ export async function createStripeCheckout(
       success_url: `${input.siteOrigin}/playbook/guide-thanks?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${input.siteOrigin}/playbook/guide?canceled=1`,
       submit_type: "pay",
+      ...(input.allowPromotionCodes ? { allow_promotion_codes: true } : {}),
       billing_address_collection: "auto",
       // The sales team calls buyers; a $5 buyer is a serious one.
       phone_number_collection: { enabled: true },
@@ -127,7 +133,9 @@ export async function createStripeCheckout(
         },
       },
     },
-    { idempotencyKey: `ltf-checkout-${input.visitorId}-${bucket}` },
+    {
+      idempotencyKey: `ltf-checkout-${input.visitorId}-${bucket}${input.allowPromotionCodes ? "-promo" : ""}`,
+    },
   );
   if (!session.url) throw new Error("Stripe returned a session without a URL");
 
@@ -197,7 +205,13 @@ export async function fulfillCheckoutSession(
     expand: ["payment_intent.latest_charge.balance_transaction"],
   });
   if (!isLtfSession(session)) return { status: "not_ltf" };
-  if (session.payment_status !== "paid") return { status: "unpaid" };
+  // A 100% off promotion completes with nothing to pay: Stripe reports
+  // `no_payment_required` on a completed session instead of `paid`.
+  const settled =
+    session.payment_status === "paid" ||
+    (session.payment_status === "no_payment_required" &&
+      session.status === "complete");
+  if (!settled) return { status: "unpaid" };
 
   const order = await ensureOrderRow(deps.db, session);
   if (order.payment_status === "refunded") return { status: "refunded" };
@@ -257,7 +271,12 @@ export async function fulfillCheckoutSession(
     amountCents: session.amount_total,
     currency: session.currency,
   };
-  if (transition.data?.length && deps.onPaid) {
+  // $0 promo orders are tests, never ad conversions.
+  if (
+    transition.data?.length &&
+    deps.onPaid &&
+    (session.amount_total ?? 0) > 0
+  ) {
     try {
       await deps.onPaid(purchase);
     } catch (error) {

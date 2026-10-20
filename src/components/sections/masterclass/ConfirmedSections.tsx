@@ -15,7 +15,7 @@ import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import { GuideTeaser } from "@/components/sections/playbook-guide/GuideTeaser";
-import { isLtfTestOpen } from "@/lib/ltf/assignment";
+import { isGuideSwapLive } from "@/lib/ltf/assignment";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
@@ -331,7 +331,7 @@ export function PlaybookBand({
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1080px] px-5 pt-14 pb-16 lg:px-10">
-        {isLtfTestOpen() ? (
+        {isGuideSwapLive() ? (
           <GuideTeaser searchParams={params} />
         ) : (
           <PlaybookTeaser searchParams={params} />

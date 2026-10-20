@@ -90,7 +90,7 @@ export default async function GuideThanksPage({
             {guideThanks.next}
           </p>
         </GuideCard>
-        {result.livemode ? (
+        {result.livemode && (result.amountCents ?? 0) > 0 ? (
           <GuidePurchaseTracker
             sessionId={sessionId!}
             value={(result.amountCents ?? 500) / 100}

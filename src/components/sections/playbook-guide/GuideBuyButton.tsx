@@ -4,19 +4,26 @@ import { cn } from "@/lib/utils";
 interface GuideBuyButtonProps {
   label: string;
   className?: string;
+  /** Carried from a secret test link (?promo=...) to the checkout route. */
+  promo?: string;
 }
 
 /**
  * A plain form POST that the server turns into a Stripe Checkout redirect:
  * works before hydration, and no price ever comes from the browser.
  */
-export function GuideBuyButton({ label, className }: GuideBuyButtonProps) {
+export function GuideBuyButton({
+  label,
+  className,
+  promo,
+}: GuideBuyButtonProps) {
   return (
     <form
       action="/api/playbook-guide/checkout"
       method="post"
       className="contents"
     >
+      {promo ? <input type="hidden" name="promo" value={promo} /> : null}
       <button
         type="submit"
         className={buttonClass({

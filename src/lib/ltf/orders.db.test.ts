@@ -34,7 +34,9 @@ const enabled = Boolean(url && key && /127\.0\.0\.1|localhost/.test(url ?? ""));
 
 type FakeSession = {
   id: string;
-  payment_status: "paid" | "unpaid";
+  payment_status: "paid" | "unpaid" | "no_payment_required";
+  status?: "open" | "complete";
+  amount_total?: number;
   metadata: Record<string, string>;
   email: string;
 };
@@ -50,7 +52,8 @@ function fakeStripe() {
       url: `https://checkout.stripe.com/c/pay/${s.id}`,
       expires_at: Math.floor(Date.now() / 1000) + 24 * 3600,
       currency: "usd",
-      amount_total: 500,
+      amount_total: s.amount_total ?? 500,
+      status: s.status ?? "open",
       payment_status: s.payment_status,
       metadata: s.metadata,
       customer_details: { email: s.email, name: "Test Buyer" },
@@ -417,5 +420,30 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     expect(b1.buyers - b0.buyers).toBe(1);
     expect(b1.grossCents - b0.grossCents).toBe(500);
     expect(b1.netCents - b0.netCents).toBe(455);
+  });
+
+  it("a 100% off promo order delivers once and sends no ad conversion", async () => {
+    const paid: string[] = [];
+    const d = {
+      ...deps,
+      onPaid: async (p: { sessionId: string }) => void paid.push(p.sessionId),
+    };
+    const v = await newVisitor();
+    const sid = sessionIdOf(await checkout(v.visitorId));
+    const session = fake.sessions.get(sid)!;
+    // Open but not completed: still nothing to unlock.
+    session.payment_status = "no_payment_required";
+    expect(await fulfillCheckoutSession(d, sid)).toEqual({ status: "unpaid" });
+    session.status = "complete";
+    session.amount_total = 0;
+    const result = await fulfillCheckoutSession(d, sid);
+    await handleStripeEvent(d, completed(sid));
+    expect(result).toMatchObject({
+      status: "paid",
+      delivery: "sent",
+      amountCents: 0,
+    });
+    expect(mail.sent).toHaveLength(1);
+    expect(paid).toEqual([]);
   });
 });

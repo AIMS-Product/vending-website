@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse, type NextRequest } from "next/server";
 import { config } from "@/lib/config";
@@ -5,7 +6,6 @@ import {
   LTF_COOKIE,
   LTF_PATHS,
   getLtfVisitor,
-  isLtfTestOpen,
   recordLtfEvent,
 } from "@/lib/ltf/assignment";
 import { getLtfStripe, originOf } from "@/lib/ltf/deps";
@@ -20,7 +20,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 export async function POST(request: NextRequest) {
   const back = (path: string) =>
     NextResponse.redirect(new URL(path, request.url), 303);
-  if (!isLtfTestOpen()) return back("/playbook");
 
   const db = createAdminClient();
   try {
@@ -48,6 +47,7 @@ export async function POST(request: NextRequest) {
         siteOrigin: originOf(request),
         utmSource: source.data.utm_source,
         utmCampaign: source.data.utm_campaign,
+        allowPromotionCodes: await isPromoLink(request),
       },
     );
     await recordLtfEvent(db, visitor.visitorId, "checkout_start");
@@ -56,4 +56,16 @@ export async function POST(request: NextRequest) {
     console.error("ltf stripe checkout failed", error);
     return back(`${LTF_PATHS.offer}?error=checkout`);
   }
+}
+
+/** True only when the form carries the secret test-link key (LTF_PROMO_LINK_KEY). */
+async function isPromoLink(request: NextRequest): Promise<boolean> {
+  const key = config.LTF_PROMO_LINK_KEY;
+  if (!key) return false;
+  const form = await request.formData().catch(() => null);
+  const given = form?.get("promo");
+  if (typeof given !== "string") return false;
+  const a = Buffer.from(given);
+  const b = Buffer.from(key);
+  return a.length === b.length && timingSafeEqual(a, b);
 }

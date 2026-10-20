@@ -29,14 +29,14 @@ const BOT_UA =
   /bot|crawl|spider|slurp|preview|facebookexternalhit|embedly|whatsapp|telegram|discord|curl|wget|python-requests|headless/i;
 
 /**
- * The launch switch, fail closed. The offer and checkout serve with
- * PLAYBOOK_GUIDE_LIVE=on, on a Vercel preview, or under `next dev`, and never
- * open in production by a missing variable. When on, /playbook and
- * /playbook/checkout also redirect here (next.config.ts). Switching it off
- * closes new visits and checkouts only: thank-you, download, recovery and the
- * webhook keep working for buyers.
+ * The swap switch, fail closed. The offer itself is always served (unlisted,
+ * at /playbook-stripe). PLAYBOOK_GUIDE_LIVE=on makes it THE playbook offer:
+ * /playbook and /playbook/checkout redirect to it (next.config.ts) and the
+ * webinar confirmation page shows its teaser. Previews and `next dev` show the
+ * swapped state so it can be reviewed; production never swaps by a missing
+ * variable.
  */
-export function isLtfTestOpen(
+export function isGuideSwapLive(
   env: {
     PLAYBOOK_GUIDE_LIVE?: string;
     VERCEL_ENV?: string;
