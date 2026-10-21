@@ -21,16 +21,23 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
     ),
   ).toString();
   return (
-    <div className="border-ink shadow-card rounded-card overflow-hidden border-2 bg-white md:grid md:grid-cols-[0.8fr_1.2fr]">
-      <div className="bg-tint v2-dots border-ink flex items-center justify-center border-b-2 p-8 md:border-r-2 md:border-b-0">
+    <div className="border-ink shadow-card rounded-card overflow-hidden border-2 bg-white">
+      <div className="border-ink bg-tint v2-dots flex items-center gap-4 border-b-2 p-4 sm:p-5">
         <Image
           src={guideImages.cover.src}
           alt={guideImages.cover.alt}
           width={guideImages.cover.width}
           height={guideImages.cover.height}
-          sizes="(min-width: 768px) 300px, 70vw"
-          className="border-ink h-auto w-full max-w-[280px] -rotate-2 border-2 bg-white shadow-[6px_6px_0_#111111]"
+          sizes="112px"
+          className="border-ink h-auto w-20 shrink-0 border-2 bg-white sm:w-28"
         />
+        <div className="min-w-0 flex-1">
+          <p className="text-ink leading-tight font-black">{GUIDE.title}</p>
+          <p className="text-ink/65 mt-1 text-sm">PDF + 8 videos</p>
+        </div>
+        <p className="text-ink text-lg font-black tabular-nums">
+          {GUIDE.priceLabel}
+        </p>
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
@@ -51,9 +58,6 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
           ))}
         </ul>
         <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
-          <span className="v2-display text-brand-700 text-5xl leading-none">
-            {GUIDE.priceLabel}
-          </span>
           <Link
             data-track="playbook_clicked"
             data-track-detail="confirmed"
@@ -65,6 +69,9 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
           >
             See the Playbook
           </Link>
+          <p className="text-ink/60 text-sm font-bold">
+            {GUIDE.priceLabel} · one-time · Instant PDF
+          </p>
         </div>
       </div>
     </div>
