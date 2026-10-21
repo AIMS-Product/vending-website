@@ -226,7 +226,7 @@ export function NextSteps({
             <a
               href={seatTextHref(seatTextBody(first, startsAt))}
               data-track="seat_text_clicked"
-              className={buttonClass({ size: "lg", className: "mt-4 w-full sm:w-auto" })}
+              className={buttonClass({ size: "lg", className: "mt-4 flex w-full sm:w-fit" })}
             >
               Text Anthony
             </a>
