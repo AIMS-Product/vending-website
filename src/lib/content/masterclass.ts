@@ -527,9 +527,14 @@ export const confirmedCopy = {
       title: "Watch the video",
       body: "Hit play on Anthony's welcome video above. It's short, and it tells you what to expect on the call.",
     },
-    { n: "02", title: "Check your email" },
     {
-      n: "03",
+      n: "02",
+      title: "Confirm your seat by text",
+      body: "One tap opens a text to Anthony with your message already written. Hit send so he can text you the link and answer questions before we go live.",
+    },
+    { n: "03", title: "Check your email" },
+    {
+      n: "04",
       title: "Do your homework",
       body: "Answer three quick questions so Anthony can build part of the masterclass around where you're at.",
     },
@@ -909,3 +914,23 @@ export function shortOccupation(text: string): string {
   const short = (cut > 0 ? text.slice(0, cut) : text).trim();
   return short || text.trim();
 }
+
+/** The GHL number the webinar texts go out from; a registrant's text lands in their existing GHL thread. */
+export const SEAT_TEXT_NUMBER = "+15412369273";
+export const SEAT_TEXT_DISPLAY = "(541) 236-9273";
+
+/** The pre-typed confirmation text; "saved my seat" is the phrase the board counts. */
+export function seatTextBody(
+  first: string | null | undefined,
+  startsAt: string | null | undefined,
+): string {
+  const when = startsAt
+    ? ` on ${new Date(startsAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "America/Chicago" })}`
+    : "";
+  const who = first ? `Hi Anthony, it's ${first}.` : "Hi Anthony!";
+  return `${who} I saved my seat for the masterclass${when}. Text me here before we go live.`;
+}
+
+/** sms: link with the body pre-filled. "?&body=" opens with the text typed on both iOS and Android. */
+export const seatTextHref = (body: string) =>
+  `sms:${SEAT_TEXT_NUMBER}?&body=${encodeURIComponent(body)}`;
