@@ -71,6 +71,12 @@ export type CloseConfig = {
   baseUrl: string;
   leadStatusId?: string;
   followUpAssignedTo?: string;
+  /**
+   * File a no-email-match submit under the one Close lead already holding its
+   * phone and name, instead of creating a duplicate. Off unless
+   * CLOSE_PHONE_MATCH is exactly "on" (unset everywhere as of 2026-10-21).
+   */
+  phoneMatch: boolean;
   customFields: CloseCustomFieldConfig;
 };
 
@@ -300,6 +306,9 @@ function contactsMatchingPhone(
   );
 }
 
+const PHONE_SEARCH_PAGE = 25;
+const PHONE_SEARCH_MAX_PAGES = 4;
+
 export class CloseApiError extends Error {
   status: number;
 
@@ -327,6 +336,7 @@ export function closeConfigFromEnv(env: CloseEnv): CloseConfig {
     baseUrl: trimmed(env.CLOSE_API_BASE_URL) ?? "https://api.close.com/api/v1",
     leadStatusId: trimmed(env.CLOSE_LEAD_STATUS_ID),
     followUpAssignedTo: trimmed(env.CLOSE_FOLLOW_UP_ASSIGNED_TO),
+    phoneMatch: trimmed(env.CLOSE_PHONE_MATCH) === "on",
     customFields: {
       qualificationStatusFieldId: trimmed(
         env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,
@@ -480,11 +490,25 @@ export function createCloseClient({
     /** `phone` must already be E.164 (`normalizePhone`); anything else matches nothing. */
     async searchContactsByPhone(phone: string) {
       const query = encodeURIComponent(`phone:"${escapeCloseQuery(phone)}"`);
-      const result = await request<{ data?: CloseLeadSearchResult[] }>(
-        "GET",
-        `/lead/?query=${query}&_limit=10`,
-      );
-      return { data: contactsMatchingPhone(result.data ?? [], phone) };
+      const leads: CloseLeadSearchResult[] = [];
+      // Close's search is fuzzy, so the exact matches can sit past the first
+      // page. Paged to the end (bounded): stopping at page one could miss the
+      // second lead that makes a phone ambiguous and file a stranger's submit.
+      for (let page = 0; page < PHONE_SEARCH_MAX_PAGES; page += 1) {
+        const result = await request<{
+          data?: CloseLeadSearchResult[];
+          has_more?: boolean;
+        }>(
+          "GET",
+          `/lead/?query=${query}&_limit=${PHONE_SEARCH_PAGE}&_skip=${page * PHONE_SEARCH_PAGE}`,
+        );
+        leads.push(...(result.data ?? []));
+        if (!result.has_more) {
+          return { data: contactsMatchingPhone(leads, phone), complete: true };
+        }
+      }
+      // Ran out of pages with more left: the caller must not trust "one lead".
+      return { data: contactsMatchingPhone(leads, phone), complete: false };
     },
     createLead(payload: CloseLeadPayload) {
       return request<CloseLeadResult>("POST", "/lead/", payload);
@@ -533,6 +557,16 @@ export function createCloseClient({
         data?: CloseWonOpportunity[];
         has_more?: boolean;
       }>("GET", `/opportunity/?${params.toString()}`);
+    },
+    /**
+     * Only the named `custom.cf_*` keys of one lead (Close honours them in
+     * `_fields`). A key Close leaves out of the answer is blank on the lead.
+     */
+    getLeadFields(leadId: string, keys: string[]) {
+      return request<Record<string, unknown>>(
+        "GET",
+        `/lead/${encodeURIComponent(leadId)}/?_fields=${["id", ...keys].map(encodeURIComponent).join(",")}`,
+      );
     },
     getContact(contactId: string) {
       return request<CloseContactResult>(

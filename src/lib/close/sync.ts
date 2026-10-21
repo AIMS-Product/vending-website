@@ -653,7 +653,9 @@ async function syncUnknownCloseLead(
   if (match)
     return updateMatchedCloseContact(close, match, contact, sourceFields);
 
-  const phoneMatch = await matchedContactForPhone(close, contact, event);
+  const phoneMatch = closeConfig.phoneMatch
+    ? await matchedContactForPhone(close, contact, event)
+    : null;
   if (phoneMatch)
     return updatePhoneMatchedCloseContact(close, phoneMatch, contact);
 
@@ -700,7 +702,8 @@ async function matchedContactForPhone(
 ) {
   const phone = contact.phones?.[0]?.phone;
   if (!phone) return null;
-  const matches = (await close.searchContactsByPhone(phone)).data;
+  const search = await close.searchContactsByPhone(phone);
+  const matches = search.data;
   if (!matches.length) return null;
   // Ids only: names and the phone stay out of the logs.
   const context = {
@@ -709,6 +712,13 @@ async function matchedContactForPhone(
     closeLeadIds: [...new Set(matches.map((match) => match.lead_id))],
     closeContactIds: matches.map((match) => match.id),
   };
+  if (!search.complete) {
+    console.warn(
+      "close sync: phone search ran past its page limit; creating a new lead",
+      context,
+    );
+    return null;
+  }
   if (context.closeLeadIds.length > 1) {
     console.warn(
       "close sync: phone matches several Close leads; creating a new lead",
@@ -1122,10 +1132,11 @@ async function syncQualificationEnrichment(
   // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
   // vice versa) makes Close reject the whole update with a 400, so we split by
   // scope and write each group to its own object.
-  const leadFields = qualificationLeadCustomFields(
-    event.payload,
-    closeConfig,
-    isNewsletter,
+  const leadFields = await withoutFilledAttribution(
+    close,
+    leadId,
+    qualificationLeadCustomFields(event.payload, closeConfig, isNewsletter),
+    qualificationAttributionKeys(event.payload, closeConfig),
   );
   if (Object.keys(leadFields).length) {
     await close.updateLead(leadId, leadFields);
@@ -1356,6 +1367,48 @@ function qualificationLeadCustomFields(
       completed_at: stringAt(qualification, "completedAt"),
     },
     closeConfig.customFields,
+  );
+}
+
+/** The lead keys `qualificationLeadCustomFields` fills from attribution. */
+function qualificationAttributionKeys(payload: Json, closeConfig: CloseConfig) {
+  return Object.keys(
+    closeCustomFieldPayload(
+      sourceAttributionValues(objectAt(payload, "attribution"), null),
+      closeConfig.customFields,
+    ),
+  );
+}
+
+/**
+ * Attribution on a lead is filled when blank and never overwritten. The lead a
+ * qualification lands on may be one we matched by phone, created upstream by
+ * the webinar or GHL, and its source path and click ids are what sales reports
+ * on; overwriting them re-credited the lead to the site form. Score, band and
+ * status are ours and still update every time.
+ */
+async function withoutFilledAttribution(
+  close: CloseClient,
+  leadId: string,
+  fields: Record<`custom.${string}`, unknown>,
+  attributionKeys: string[],
+): Promise<Record<`custom.${string}`, unknown>> {
+  const keys = attributionKeys.filter((key) => key in fields);
+  if (!keys.length) return fields;
+  const existing = await close.getLeadFields(leadId, keys);
+  return Object.fromEntries(
+    Object.entries(fields).filter(
+      ([key]) => !keys.includes(key) || isBlankCloseValue(existing[key]),
+    ),
+  ) as Record<`custom.${string}`, unknown>;
+}
+
+function isBlankCloseValue(value: unknown) {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" && value.trim() === "") ||
+    (Array.isArray(value) && value.length === 0)
   );
 }
 
