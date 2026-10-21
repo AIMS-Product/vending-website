@@ -21,9 +21,10 @@ export function GuideShell({ children, note }: GuideShellProps) {
           ) : null}
         </div>
       </header>
-      <main className="mx-auto max-w-[760px] px-5 py-12 lg:py-16">
+      {/* The root layout already renders <main>; a second one breaks landmarks. */}
+      <div className="mx-auto max-w-[760px] px-5 py-12 lg:py-16">
         {children}
-      </main>
+      </div>
     </div>
   );
 }
