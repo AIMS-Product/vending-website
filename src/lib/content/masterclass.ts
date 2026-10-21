@@ -522,18 +522,23 @@ export const confirmedCopy = {
   zoomTextLine: "We'll also text it to you before we go live.",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
   steps: [
-    { n: "01", title: "Find your Zoom link" },
     {
-      n: "02",
-      title: "Hit reply to Anthony",
-      body: "Tell him what made you sign up. He reads every response, and it shapes the live Q&A.",
+      n: "01",
+      title: "Watch the video",
+      body: "Hit play on Anthony's welcome video above. It's short, and it tells you what to expect on the call.",
+    },
+    { n: "02", title: "Check your email" },
+    {
+      n: "03",
+      title: "Do your homework",
+      body: "Answer three quick questions so Anthony can build part of the masterclass around where you're at.",
     },
   ],
   storiesEyebrow: "While you wait",
   storiesHeading: "How they did it",
   /** Built only from the on-page step titles and calendar line above. */
   metaDescription:
-    "Seat confirmed for the Vendingpreneurs Live Masterclass with Anthony. Find your Zoom link, add it to your calendar now, and hit reply to Anthony.",
+    "Seat confirmed for the Vendingpreneurs Live Masterclass with Anthony. Watch the welcome video, check your email for your Zoom link, and do your homework before the call.",
 };
 
 /**
@@ -602,7 +607,7 @@ export const MASTERCLASS_BUSY_MESSAGE =
  * never reword an option, or GHL stores a value its own field does not offer.
  */
 export const intakeCopy = {
-  eyebrow: "Two minutes",
+  eyebrow: "Your homework · two minutes",
   heading: "We like to meet you where you're at.",
   body: "Answer these questions so we can build a few sections of the masterclass around you.",
   questions: [

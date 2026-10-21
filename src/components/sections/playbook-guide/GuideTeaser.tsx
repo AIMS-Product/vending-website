@@ -34,11 +34,15 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-          Your pre-webinar homework
+          Optional VIP upgrade
         </p>
         <h2 className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
-          Show up to the webinar ready to start
+          Want to show up ahead of the room?
         </h2>
+        <p className="mt-3 text-[15px] text-slate-600">
+          Mike&apos;s First Location Playbook, our VIP prep packet. Totally
+          optional: the masterclass is free either way.
+        </p>
         <ul className="mt-5 space-y-2.5 text-[0.95rem] leading-snug">
           {guideOffer.benefits.map((b) => (
             <li key={b.title} className="flex gap-3">

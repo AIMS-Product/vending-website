@@ -46,7 +46,7 @@ export function IntakeForm() {
   return (
     // Sits under the bordered ShowUpLive band; PlaybookBand's top padding
     // spaces it from the card below.
-    <section className="bg-white">
+    <section id="homework" className="scroll-mt-6 bg-white">
       <div className="mx-auto max-w-[760px] px-5 pt-14">
         <div className="rounded-card border-ink shadow-card border-2 bg-white p-6 sm:p-8">
           <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
