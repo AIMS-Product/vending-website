@@ -116,9 +116,9 @@ export default async function MasterclassConfirmedPage({
         renderedAt={renderedAt}
       />
       <NextSteps />
+      <PlaybookBand params={confirmedPlaybookParams(params)} />
       <ShowUpLive startsAt={event.startsAt} renderedAt={renderedAt} />
       {hasSession ? <IntakeForm /> : null}
-      <PlaybookBand params={confirmedPlaybookParams(params)} />
       <CoverSection />
       <FeaturedStories stories={stories} />
       <MasterclassFooter />

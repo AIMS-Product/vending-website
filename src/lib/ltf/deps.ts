@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import Stripe from "stripe";
 import { config } from "@/lib/config";
 import { resendDeliverySender } from "@/lib/ltf/delivery-email";
+import { tagBuyerInGhl } from "@/lib/ltf/ghl-buyer-tag";
 import { sendMetaPurchase, type BrowserContext } from "@/lib/ltf/meta-capi";
 import type { LtfOrderDeps } from "@/lib/ltf/orders";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -56,11 +57,15 @@ export function ltfOrderDeps(
     stripe: getLtfStripe(),
     sendEmail: resendDeliverySender(siteOrigin),
     siteOrigin,
-    onPaid: (purchase) =>
-      sendMetaPurchase(
-        purchase,
-        `${siteOrigin}/playbook/guide-thanks`,
-        browser,
-      ),
+    onPaid: async (purchase) => {
+      await Promise.all([
+        sendMetaPurchase(
+          purchase,
+          `${siteOrigin}/playbook/guide-thanks`,
+          browser,
+        ),
+        tagBuyerInGhl(purchase),
+      ]);
+    },
   };
 }

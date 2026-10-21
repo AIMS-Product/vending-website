@@ -88,7 +88,9 @@ export type WebinarRegistrationStep =
   | "intake"
   | "join-fields"
   | "join-read"
-  | "calendar-tag";
+  | "calendar-tag"
+  | "buyer-lookup"
+  | "buyer-tag";
 
 export class WebinarRegistrationError extends Error {
   constructor(
@@ -461,4 +463,35 @@ export async function tagCalendarAdd(
     `/contacts/${encodeURIComponent(contactId)}/tags`,
     { tags: [tag] },
   );
+}
+
+/** On a $5 Playbook buyer's GHL contact; the pre-webinar playbook emails skip anyone holding it. */
+export const PLAYBOOK_BUYER_TAG = "playbook-5-buyer";
+
+/**
+ * Tags the GHL contact holding this email as a Playbook buyer. Never creates a
+ * contact: a buyer GHL does not know returns false and the caller logs it.
+ */
+export async function tagPlaybookBuyer(
+  email: string,
+  { locationId, ...options }: Omit<Options, "now" | "beforeTrigger">,
+): Promise<boolean> {
+  const call = ghlCaller(options);
+  const found = duplicateResponse.safeParse(
+    await call(
+      "buyer-lookup",
+      "GET",
+      `/contacts/search/duplicate?${new URLSearchParams({ locationId, email })}`,
+    ),
+  );
+  if (!found.success) throw new WebinarRegistrationError("buyer-lookup", 200);
+  const contact = found.data.contact;
+  if (!contact) return false;
+  await call(
+    "buyer-tag",
+    "POST",
+    `/contacts/${encodeURIComponent(contact.id)}/tags`,
+    { tags: [PLAYBOOK_BUYER_TAG] },
+  );
+  return true;
 }
