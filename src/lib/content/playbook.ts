@@ -25,6 +25,12 @@ export const PRICE = {
   save: "Save $132.00 today",
 };
 
+/** What a GHL Playbook purchase reports to GA4 and PostHog: derived from the price shown, so they cannot drift. */
+export const PURCHASE = {
+  value: Number(PRICE.today.replace(/[^0-9.]/g, "")),
+  currency: "USD",
+} as const;
+
 /** Ad-click parameters carried onto the checkout link. */
 export const PLAYBOOK_ATTRIBUTION_KEYS = [
   "utm_source",
