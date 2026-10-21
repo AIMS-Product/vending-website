@@ -1,4 +1,5 @@
 import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
+import { PURCHASE } from "@/lib/content/playbook";
 import { pushDataLayerEvent } from "@/lib/tracking/lead-events";
 import { captureEvent, SEND_NOW } from "@/lib/tracking/posthog";
 
@@ -175,11 +176,10 @@ export const PURCHASE_STORAGE_KEY = "vp_playbook_purchased";
  */
 export function playbookPurchaseEvents(utms: Record<string, string>) {
   return {
-    posthog: { product: "playbook", value: 67, currency: "USD", ...utms },
+    posthog: { product: "playbook", ...PURCHASE, ...utms },
     dataLayer: {
       event: "vp_playbook_purchase",
-      value: 67,
-      currency: "USD",
+      ...PURCHASE,
       ...utms,
     },
   };

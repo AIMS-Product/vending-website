@@ -1,3 +1,4 @@
+import { PRICE, PURCHASE } from "@/lib/content/playbook";
 import { describe, expect, it } from "vitest";
 import { MASTERCLASS_BUSY_MESSAGE } from "@/lib/content/masterclass";
 import {
@@ -163,5 +164,11 @@ describe("playbookPurchaseEvents", () => {
       currency: "USD",
       utm_source: "fb",
     });
+  });
+
+  it("reports the price the offer shows, not a hard-coded number", () => {
+    expect(PURCHASE.value).toBe(Number(PRICE.today.replace(/[^0-9.]/g, "")));
+    expect(Number.isFinite(PURCHASE.value) && PURCHASE.value > 0).toBe(true);
+    expect(playbookPurchaseEvents({}).dataLayer.value).toBe(PURCHASE.value);
   });
 });
