@@ -2524,7 +2524,6 @@ describe("matching an existing Close lead by phone", () => {
 
   it.each([
     ["case, spacing and punctuation", "  JANE   buyer! "],
-    ["a last initial", "Jane B."],
   ])("accepts a name that differs only by %s", async (_label, closeName) => {
     const fake = buildClient({ events: [attributedEvent()] });
     const fetchMock = routedFetch({
@@ -2545,6 +2544,8 @@ describe("matching an existing Close lead by phone", () => {
 
   it.each([
     ["a different last name", "Jane Brown"],
+    // Guessable from a phone and a first name: not enough to file under (review 2026-10-21).
+    ["only a last initial", "Jane B."],
     ["a first name only", "Jane"],
     ["no name in Close", null],
   ])("creates a new lead when Close has %s", async (_label, closeName) => {
@@ -2737,6 +2738,7 @@ describe("phone match guard rails", () => {
       CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
       CLOSE_GCLID_FIELD_ID: "cf_gclid",
       CLOSE_QUALIFICATION_STATUS_FIELD_ID: "cf_status",
+      CLOSE_PHONE_MATCH: "on",
     });
     const read = fetchMock.mock.calls.find(([url, init]) => (init?.method ?? "GET") === "GET" && String(url).includes("/lead/lead_webinar/"));
     expect(decodeURIComponent(String(read?.[0]))).toContain("custom.cf_campaign");
@@ -2744,5 +2746,67 @@ describe("phone match guard rails", () => {
     const body = JSON.parse(String(update?.[1]?.body));
     expect(body).toEqual({ "custom.cf_gclid": "gclid-site", "custom.cf_status": "qualified" });
     expect(body).not.toHaveProperty("custom.cf_campaign");
+  });
+
+  it("with the flag off, qualification writes attribution as before and reads nothing", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ event_type: "qualification_enrichment", payload: { qualification: { status: "qualified" }, attribution: { campaign_id: "camp-site" } } })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async () => jsonResponse({ id: "ok" }));
+    await run(fake, fetchMock as never, { CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign" });
+    const methods = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
+    expect(methods.some((m) => m.startsWith("GET") && m.includes("/lead/lead_webinar/"))).toBe(false);
+    const update = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).find(([url, init]) => init?.method === "PUT" && url.includes("/lead/lead_webinar/"));
+    expect(JSON.parse(String(update?.[1]?.body))).toMatchObject({ "custom.cf_campaign": "camp-site" });
+  });
+
+  it("a later submit on a known lead fills blanks only, and last-touch keys still update", async () => {
+    const fake = buildClient({
+      events: [makeEvent({
+        close_lead_id: "lead_webinar",
+        close_contact_id: "cont_webinar",
+        payload: {
+          contact: { full_name: "Jane Buyer", email: "buyer@example.com", phone: "415-555-0101" },
+          attribution: { campaign_id: "camp-site", gclid: "gclid-site", utm_source: "facebook", latest_landing_path: "/apply" },
+        },
+      })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      if (method === "GET" && url.includes("/contact/cont_webinar/")) {
+        return jsonResponse({ id: "cont_webinar", emails: [{ email: "buyer@example.com" }], phones: [{ phone: "+14155550101" }], "custom.cf_utm_source": "webinar" });
+      }
+      if (method === "GET" && url.includes("/lead/lead_webinar/")) {
+        return jsonResponse({ id: "lead_webinar", "custom.cf_campaign": "camp-webinar", "custom.cf_latest_landing": "/old" });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+    await run(fake, fetchMock as never, {
+      CLOSE_PHONE_MATCH: "on",
+      CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
+      CLOSE_GCLID_FIELD_ID: "cf_gclid",
+      CLOSE_UTM_SOURCE_FIELD_ID: "cf_utm_source",
+      CLOSE_LATEST_LANDING_PATH_FIELD_ID: "cf_latest_landing",
+    });
+    const puts = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).filter(([, init]) => init?.method === "PUT");
+    const leadPut = JSON.parse(String(puts.find(([url]) => url.includes("/lead/lead_webinar/"))?.[1]?.body));
+    expect(leadPut).toEqual({ "custom.cf_gclid": "gclid-site", "custom.cf_latest_landing": "/apply" });
+    const contactPut = puts.find(([url]) => url.includes("/contact/cont_webinar/"));
+    expect(contactPut ? JSON.parse(String(contactPut[1]?.body)) : {}).not.toHaveProperty("custom.cf_utm_source");
+  });
+
+  it("refuses to treat a lead read without an id as blank", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ event_type: "qualification_enrichment", payload: { qualification: { status: "qualified" }, attribution: { campaign_id: "camp-site" } } })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+      (init?.method ?? "GET") === "GET" && url.includes("/lead/lead_webinar/") ? jsonResponse({}) : jsonResponse({ id: "ok" }));
+    await run(fake, fetchMock as never, { CLOSE_PHONE_MATCH: "on", CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign" });
+    const leadPut = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).find(([url, init]) => init?.method === "PUT" && url.includes("/lead/lead_webinar/"));
+    expect(leadPut).toBeUndefined();
+    expect(fake.state.events[0].status).not.toBe("synced");
   });
 });

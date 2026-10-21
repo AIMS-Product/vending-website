@@ -196,6 +196,7 @@ const envSchema = z.object({
    */
   CHATBOT_VALUE_FIRST: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
+  CLOSE_PHONE_MATCH: optionalTrimmedOptionalEnv,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_VP_SESSION_ID_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_SOURCE_PATH_FIELD_ID: optionalTrimmedOptionalEnv,
@@ -343,6 +344,7 @@ const parsed = envSchema.safeParse({
   NO_BOOK_ALERT_ENABLED: process.env.NO_BOOK_ALERT_ENABLED,
   CHATBOT_VALUE_FIRST: process.env.CHATBOT_VALUE_FIRST,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
+  CLOSE_PHONE_MATCH: process.env.CLOSE_PHONE_MATCH,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
     process.env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,
   CLOSE_VP_SESSION_ID_FIELD_ID: process.env.CLOSE_VP_SESSION_ID_FIELD_ID,
