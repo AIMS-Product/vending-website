@@ -215,7 +215,7 @@ export function NextSteps() {
             {reply.body}
           </Step>
           {guideLive ? (
-            <Step n="3" title="Do your homework">
+            <Step n="03" title="Do your homework">
               Grab Mike&apos;s First Location Playbook for $5 and show up
               knowing how to land your first location.{" "}
               <a
