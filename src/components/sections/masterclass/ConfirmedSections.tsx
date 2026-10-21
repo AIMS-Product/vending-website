@@ -22,6 +22,9 @@ import { Highlight } from "@/components/ui/Highlight";
 import { cn } from "@/lib/utils";
 import {
   SENDER_EMAIL,
+  SEAT_TEXT_DISPLAY,
+  seatTextBody,
+  seatTextHref,
   ANTHONY_VIDEO_ID,
   COUNTDOWN_LABEL,
   CONFIRMED_VIDEO_EMBED_ID,
@@ -194,8 +197,16 @@ export function ConfirmedHero({
 }
 
 /** Whitelist the sender, then reply to Anthony (both from his confirmation email). */
-export function NextSteps({ homework }: { homework: boolean }) {
-  const [video, email, intake] = confirmedCopy.steps;
+export function NextSteps({
+  homework,
+  first,
+  startsAt,
+}: {
+  homework: boolean;
+  first: string | null;
+  startsAt: string | null;
+}) {
+  const [video, text, email, intake] = confirmedCopy.steps;
   const link = "text-brand-700 font-bold underline underline-offset-2";
   return (
     <section className="bg-white">
@@ -203,30 +214,36 @@ export function NextSteps({ homework }: { homework: boolean }) {
         <h2 className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           Before the call
         </h2>
-        <div
-          className={`mt-4 grid gap-6 ${homework ? "md:grid-cols-3" : "md:grid-cols-2"}`}
-        >
+        <div className="mt-4 grid gap-6 md:grid-cols-2">
           <Step n={video.n} title={video.title}>
             {video.body}{" "}
             <a href="#welcome" className={link}>
               Watch it
             </a>
           </Step>
+          <Step n={text.n} title={text.title}>
+            {text.body}
+            <a
+              href={seatTextHref(seatTextBody(first, startsAt))}
+              data-track="seat_text_clicked"
+              className={buttonClass({ size: "lg", className: "mt-4 flex w-full sm:w-fit" })}
+            >
+              Text Anthony
+            </a>
+            <span className="mt-2 block text-sm text-slate-500">
+              On a computer? Text SEAT to {SEAT_TEXT_DISPLAY}.
+            </span>
+          </Step>
           <Step n={email.n} title={email.title}>
             Your Zoom link is in the email from{" "}
             <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
             (check spam and promotions, then move it to your inbox).{" "}
-            {confirmedCopy.zoomTextLine} Hit reply and tell Anthony what made
-            you sign up.
+            {confirmedCopy.zoomTextLine}
           </Step>
           {homework ? (
             <Step n={intake.n} title={intake.title}>
               {intake.body}{" "}
-              <a
-                href="#homework"
-                data-track="homework_clicked"
-                className={link}
-              >
+              <a href="#homework" data-track="homework_clicked" className={link}>
                 Start your homework
               </a>
             </Step>
