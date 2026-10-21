@@ -9,8 +9,6 @@ import {
   CheckIcon,
   CheckList,
   EYEBROW,
-  H2,
-  NUMERAL,
 } from "@/components/sections/playbook/PlaybookCta";
 import { applyTestimonials } from "@/lib/content/apply-page";
 import { images as playbookImages } from "@/lib/content/playbook";
@@ -28,6 +26,12 @@ interface BuyProps {
 }
 
 const TRUST = ["Secure checkout by Stripe", "Instant PDF download"];
+/** Below-the-fold headings stay a step under the hero (Adam 10-20: no second heroes). */
+const H2 =
+  "v2-display text-ink text-[clamp(1.9rem,3.4vw,2.75rem)] leading-[1.04] uppercase";
+const SECTION_Y = "py-12 lg:py-16";
+/** Small step marker in place of the giant outlined numerals. */
+const STEP = "text-brand-700 text-sm font-black tabular-nums";
 
 /** Checkout-style order summary: product line, what's inside, total, one button. */
 function OrderCard({ buy }: BuyProps) {
@@ -124,18 +128,16 @@ export function GuideHero({ buy, notice }: BuyProps & { notice?: string }) {
 export function GuideBenefits() {
   return (
     <section className="border-ink border-b-2 bg-white">
-      <div className="mx-auto max-w-[1240px] px-5 py-14 lg:px-12 lg:py-20">
+      <div className={`mx-auto max-w-[1240px] px-5 ${SECTION_Y} lg:px-12`}>
         <h2 className={H2}>What you&rsquo;ll walk away with</h2>
-        <ul className="mt-10 grid gap-5 md:grid-cols-3">
+        <ul className="mt-8 grid gap-5 md:grid-cols-3">
           {guideOffer.benefits.map((b, i) => (
             <li
               key={b.title}
               className="border-ink bg-brand-50 border-2 p-6 shadow-[6px_6px_0_#111111]"
             >
-              <span className={`${NUMERAL} text-5xl`}>
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <h3 className="text-ink mt-3 text-xl font-black">{b.title}</h3>
+              <span className={STEP}>{String(i + 1).padStart(2, "0")}</span>
+              <h3 className="text-ink mt-2 text-xl font-black">{b.title}</h3>
               <p className="text-ink/80 mt-2 leading-snug">{b.body}</p>
             </li>
           ))}
@@ -148,34 +150,37 @@ export function GuideBenefits() {
 export function GuideInside() {
   return (
     <section className="border-ink bg-brand-50 border-b-2">
-      <div className="mx-auto max-w-[1240px] px-5 py-14 lg:px-12 lg:py-20">
+      <div className={`mx-auto max-w-[1240px] px-5 ${SECTION_Y} lg:px-12`}>
         <p className={EYEBROW}>{guideOffer.previewTitle}</p>
         <h2 className={`${H2} mt-3`}>Real pages from the playbook</h2>
-        <ul className="mt-10 grid grid-cols-3 gap-3 sm:gap-6">
-          {guideImages.previews.map((page) => (
-            <li key={page.src} className="relative">
+        <ul className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6">
+          {guideImages.previews.map((page, i) => (
+            <li
+              key={page.src}
+              className={`relative ${i > 1 ? "max-sm:hidden" : ""}`}
+            >
               <Image
                 src={page.src}
                 alt={page.alt}
                 width={page.width}
                 height={page.height}
-                sizes="(min-width: 1240px) 380px, 33vw"
+                sizes="(min-width: 1240px) 380px, (min-width: 640px) 33vw, 50vw"
                 className="border-ink h-auto w-full border-2 bg-white shadow-[5px_5px_0_#111111]"
               />
-              {page.locked ? <LockedBadge /> : null}
+              {page.locked ? <LockedBadge compact /> : null}
             </li>
           ))}
         </ul>
-        <h3 className="v2-display text-ink mt-16 text-3xl uppercase">
+        <h3 className="v2-display text-ink mt-12 text-2xl uppercase sm:text-3xl">
           {guideOffer.contentsTitle}
         </h3>
         <ol className="border-ink mt-6 divide-y-2 divide-[#111111] border-2 bg-white">
           {plays.map((play) => (
             <li
               key={play.number}
-              className="flex gap-5 px-5 py-4 sm:items-center"
+              className="flex gap-4 px-5 py-4 sm:items-baseline"
             >
-              <span className={`${NUMERAL} w-12 shrink-0 text-4xl`}>
+              <span className={`${STEP} w-6 shrink-0 pt-1 sm:pt-0`}>
                 {play.number}
               </span>
               <div>
@@ -193,7 +198,7 @@ export function GuideInside() {
 export function GuideFinalOffer({ buy }: BuyProps) {
   return (
     <section className="v2-dots bg-white">
-      <div className="mx-auto max-w-[520px] px-5 py-14 lg:py-20">
+      <div className={`mx-auto max-w-[520px] px-5 ${SECTION_Y}`}>
         <h2 className="v2-display text-ink text-center text-[clamp(2rem,4vw,2.75rem)] leading-[1.04] uppercase">
           Start on play one tonight
         </h2>
@@ -217,7 +222,9 @@ export function GuideProof() {
   const mike = playbookImages.mike;
   return (
     <section className="border-ink border-b-2 bg-white">
-      <div className="mx-auto grid max-w-[1240px] gap-10 px-5 py-14 lg:grid-cols-[0.8fr_1.2fr] lg:gap-14 lg:px-12 lg:py-20">
+      <div
+        className={`mx-auto grid max-w-[1240px] gap-10 px-5 ${SECTION_Y} lg:grid-cols-[0.8fr_1.2fr] lg:gap-14 lg:px-12`}
+      >
         <div className="flex items-start gap-5">
           <Image
             src={mike.src}
@@ -268,21 +275,21 @@ export function GuideProof() {
 export function GuideFaq() {
   return (
     <section className="border-ink bg-brand-50 border-b-2">
-      <div className="mx-auto max-w-[860px] px-5 py-14 lg:py-20">
+      <div className={`mx-auto max-w-[860px] px-5 ${SECTION_Y}`}>
         <h2 className={H2}>Questions</h2>
-        <div className="border-ink mt-8 divide-y-2 divide-[#111111] border-2 bg-white">
+        <div className="border-ink mt-6 divide-y-2 divide-[#111111] border-2 bg-white">
           {guideFaq.map((item) => (
-            <details key={item.q} className="group px-5 py-4">
-              <summary className="text-ink flex cursor-pointer list-none items-center justify-between gap-4 text-lg font-black">
+            <details key={item.q} className="group">
+              <summary className="text-ink focus-visible:outline-brand-600 flex min-h-14 cursor-pointer list-none items-center justify-between gap-4 px-5 py-3 text-lg font-black focus-visible:outline-2 focus-visible:-outline-offset-4 [&::-webkit-details-marker]:hidden">
                 {item.q}
                 <span
                   aria-hidden
-                  className="text-brand-700 text-2xl leading-none group-open:rotate-45"
+                  className="text-brand-700 text-2xl leading-none transition-transform duration-200 ease-out group-open:rotate-45 motion-reduce:transition-none"
                 >
                   +
                 </span>
               </summary>
-              <p className="text-ink/80 mt-3 leading-snug">{item.a}</p>
+              <p className="text-ink/80 px-5 pb-4 leading-snug">{item.a}</p>
             </details>
           ))}
         </div>
