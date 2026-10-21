@@ -34,7 +34,7 @@ export function GuideTeaser({ searchParams = {} }: GuideTeaserProps) {
       </div>
       <div className="p-6 lg:p-8">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-          Optional VIP upgrade
+          Mike Hoffmann&apos;s First Location Playbook
         </p>
         <h2 className="v2-display text-ink mt-2 text-[clamp(1.8rem,3vw,2.4rem)] leading-[1.02] text-balance uppercase">
           Want to show up ahead of the room?

@@ -523,21 +523,16 @@ export const confirmedCopy = {
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",
   steps: [
     {
-      n: "01",
-      title: "Watch the video",
-      body: "Hit play on Anthony's welcome video above. It's short, and it tells you what to expect on the call.",
+      n: "1",
+      title: "Watch Anthony's welcome",
+      body: "Hit play above. It's short, and it tells you what to expect.",
     },
     {
-      n: "02",
+      n: "2",
       title: "Confirm your seat by text",
-      body: "One tap opens a text to Anthony with your message already written. Hit send so he can text you the link and answer questions before we go live.",
+      body: "One tap writes the text for you. Hit send so Anthony can text you the link.",
     },
-    { n: "03", title: "Check your email" },
-    {
-      n: "04",
-      title: "Do your homework",
-      body: "Answer three quick questions so Anthony can build part of the masterclass around where you're at.",
-    },
+    { n: "3", title: "Find your Zoom link email" },
   ],
   storiesEyebrow: "While you wait",
   storiesHeading: "How they did it",
