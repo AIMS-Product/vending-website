@@ -114,11 +114,7 @@ export default async function MasterclassConfirmedPage({
         startsAt={event.startsAt}
         links={links}
         renderedAt={renderedAt}
-      />
-      <NextSteps
-        homework={hasSession}
-        first={first ?? null}
-        startsAt={event.startsAt}
+        steps={<NextSteps first={first ?? null} startsAt={event.startsAt} />}
       />
       <PlaybookBand params={confirmedPlaybookParams(params)} />
       <ShowUpLive startsAt={event.startsAt} renderedAt={renderedAt} />

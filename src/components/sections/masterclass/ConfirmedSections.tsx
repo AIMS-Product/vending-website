@@ -51,7 +51,8 @@ export function ConfirmedHero({
   startsAt,
   links,
   renderedAt,
-}: Props) {
+  steps,
+}: Props & { steps?: React.ReactNode }) {
   const endsAt = masterclassLiveEnd(startsAt);
   return (
     <section
@@ -69,18 +70,18 @@ export function ConfirmedHero({
           <Wordmark height={44} eager />
         </div>
       </div>
-      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 py-12 text-center lg:pt-8 lg:pb-14">
+      <div className="mx-auto flex max-w-[940px] flex-col items-center px-5 pt-5 pb-12 text-center lg:pb-14">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {confirmedCopy.eyebrow}
         </p>
         <h1
           className={cn(
-            "v2-display text-ink mt-4 max-w-full min-w-0 leading-[1] uppercase",
+            "v2-display text-ink mt-2 max-w-full min-w-0 leading-[1] uppercase",
             // A long first name (up to 40 characters) steps down so it
             // breaks less often; the name wraps at its spaces and
             // overflow-wrap catches one long word.
             !first || first.length <= 10
-              ? "text-[clamp(2.8rem,6vw,4.75rem)]"
+              ? "text-[clamp(2.2rem,4.4vw,3.4rem)]"
               : first.length <= 20
                 ? "text-[clamp(2.2rem,5vw,4.75rem)]"
                 : "text-[clamp(1.9rem,4.2vw,3.75rem)]",
@@ -99,7 +100,7 @@ export function ConfirmedHero({
           )}
         </h1>
         {label ? (
-          <p className="text-ink mt-4 text-xl font-black">
+          <p className="text-ink mt-2 text-lg font-black">
             <EventDateLine
               label={label}
               startsAt={startsAt}
@@ -116,15 +117,16 @@ export function ConfirmedHero({
         <VidalyticsPlayer
           embedId={CONFIRMED_VIDEO_EMBED_ID}
           title="A welcome from Anthony"
-          className="mt-6 w-full max-w-[620px]"
+          className="mt-3 w-full max-w-[480px]"
           loadOn="click"
           poster={CONFIRMED_VIDEO_POSTER}
           playLabel="Play Anthony's welcome"
-          posterSizes="(min-width: 1024px) 620px, 100vw"
+          posterSizes="(min-width: 1024px) 480px, 100vw"
         />
+        {steps}
         {/* Live, the date line says so; after that, nothing counts down. */}
         {startsAt && endsAt ? (
-          <div className="mt-4">
+          <div className="mt-8">
             <Countdown
               startsAt={startsAt}
               endsAt={endsAt}
@@ -196,61 +198,121 @@ export function ConfirmedHero({
   );
 }
 
-/** Whitelist the sender, then reply to Anthony (both from his confirmation email). */
+const MAIL_SEARCH = encodeURIComponent(SENDER_EMAIL);
+/** Inbox links that open already searching for Anthony's email (spam included where the mail app allows it). */
+const MAIL_APPS = [
+  { app: "gmail", label: "Open Gmail", href: `https://mail.google.com/mail/u/0/#search/in%3Aanywhere+from%3A${MAIL_SEARCH}` },
+  { app: "outlook", label: "Outlook", href: `https://outlook.live.com/mail/0/search/q/${MAIL_SEARCH}` },
+  { app: "yahoo", label: "Yahoo", href: `https://mail.yahoo.com/d/search/keyword=${MAIL_SEARCH}` },
+] as const;
+
+function NumberedStep({
+  n,
+  title,
+  children,
+  action,
+}: {
+  n: string;
+  title: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <li className="border-ink rounded-card grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 gap-y-3 border-2 bg-white px-4 py-3 text-left sm:grid-cols-[auto_minmax(0,1fr)_auto] sm:px-5">
+      <span
+        aria-hidden="true"
+        className="v2-display text-brand-600 w-9 text-center text-5xl leading-none"
+      >
+        {n}
+      </span>
+      <div className="min-w-0">
+        <h2 className="v2-display text-ink text-xl leading-tight uppercase">
+          <span className="sr-only">Step {n}: </span>
+          {title}
+        </h2>
+        <div className="text-[14px] leading-snug text-slate-600">{children}</div>
+      </div>
+      {action ? (
+        <div className="col-span-2 sm:col-span-1">{action}</div>
+      ) : null}
+    </li>
+  );
+}
+
+/** Steps 1 to 3, stacked under Anthony's video so they sit above the fold. */
 export function NextSteps({
-  homework,
   first,
   startsAt,
 }: {
-  homework: boolean;
   first: string | null;
   startsAt: string | null;
 }) {
-  const [video, text, email, intake] = confirmedCopy.steps;
-  const link = "text-brand-700 font-bold underline underline-offset-2";
+  const [video, text, email] = confirmedCopy.steps;
+  const [gmail, ...otherMail] = MAIL_APPS;
   return (
-    <section className="bg-white">
-      <div className="mx-auto max-w-[1080px] px-5 pt-8 pb-14 sm:pt-14 lg:px-10">
-        <h2 className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-          Before the call
-        </h2>
-        <div className="mt-4 grid gap-6 md:grid-cols-2">
-          <Step n={video.n} title={video.title}>
-            {video.body}{" "}
-            <a href="#welcome" className={link}>
-              Watch it
-            </a>
-          </Step>
-          <Step n={text.n} title={text.title}>
-            {text.body}
+    <ol className="mt-4 grid w-full max-w-[680px] gap-2.5">
+      <NumberedStep n="1" title={video.title}>
+        {video.body}
+      </NumberedStep>
+      <NumberedStep
+        n="2"
+        title={text.title}
+        action={
+          <a
+            href={seatTextHref(seatTextBody(first, startsAt))}
+            data-track="seat_text_clicked"
+            className={buttonClass({ className: "flex w-full whitespace-nowrap sm:w-auto" })}
+          >
+            Text Anthony
+          </a>
+        }
+      >
+        {text.body}{" "}
+        <span className="text-slate-500">
+          On a computer? Text SEAT to{" "}
+          <span className="whitespace-nowrap">{SEAT_TEXT_DISPLAY}</span>.
+        </span>
+      </NumberedStep>
+      <NumberedStep
+        n="3"
+        title={email.title}
+        action={
+          <div className="flex flex-col items-stretch gap-1 text-center sm:items-center">
             <a
-              href={seatTextHref(seatTextBody(first, startsAt))}
-              data-track="seat_text_clicked"
-              className={buttonClass({ size: "lg", className: "mt-4 flex w-full sm:w-fit" })}
+              href={gmail.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-track="email_search_clicked"
+              data-track-detail={gmail.app}
+              className={buttonClass({ className: "flex w-full whitespace-nowrap sm:w-auto" })}
             >
-              Text Anthony
+              {gmail.label}
             </a>
-            <span className="mt-2 block text-sm text-slate-500">
-              On a computer? Text SEAT to {SEAT_TEXT_DISPLAY}.
+            <span className="text-[13px] text-slate-500">
+              or{" "}
+              {otherMail.map((m, i) => (
+                <span key={m.app}>
+                  {i > 0 ? " · " : null}
+                  <a
+                    href={m.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-track="email_search_clicked"
+                    data-track-detail={m.app}
+                    className="text-brand-700 font-bold underline underline-offset-2"
+                  >
+                    {m.label}
+                  </a>
+                </span>
+              ))}
             </span>
-          </Step>
-          <Step n={email.n} title={email.title}>
-            Your Zoom link is in the email from{" "}
-            <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
-            (check spam and promotions, then move it to your inbox).{" "}
-            {confirmedCopy.zoomTextLine}
-          </Step>
-          {homework ? (
-            <Step n={intake.n} title={intake.title}>
-              {intake.body}{" "}
-              <a href="#homework" data-track="homework_clicked" className={link}>
-                Start your homework
-              </a>
-            </Step>
-          ) : null}
-        </div>
-      </div>
-    </section>
+          </div>
+        }
+      >
+        From <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>
+        . Not there? Check spam and promotions, then move it to your inbox.
+      </NumberedStep>
+    </ol>
   );
 }
 
@@ -336,28 +398,6 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
   );
 }
 
-function Step({
-  n,
-  title,
-  children,
-}: {
-  n: string;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-card border-ink min-w-0 border-2 bg-white p-6">
-      <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
-        Step {n}
-      </p>
-      <h3 className="v2-display text-ink mt-2 text-2xl leading-none uppercase">
-        {title}
-      </h3>
-      <p className="mt-2 text-[15px] text-slate-600">{children}</p>
-    </div>
-  );
-}
-
 /** The low-ticket offer the GHL emails promote, offered while the visitor is here. */
 export function PlaybookBand({
   params,
@@ -367,7 +407,19 @@ export function PlaybookBand({
 }) {
   return (
     <section id="playbook" className="scroll-mt-6 bg-white">
-      <div className="mx-auto max-w-[1080px] px-5 pt-0 pb-16 lg:px-10">
+      <div className="mx-auto max-w-[1080px] px-5 pt-14 pb-16 lg:px-10">
+        <div className="mb-5 flex items-center gap-4">
+          <span
+            aria-hidden="true"
+            className="v2-display text-brand-600 text-6xl leading-none"
+          >
+            4
+          </span>
+          <h2 className="v2-display text-ink text-2xl leading-tight uppercase sm:text-3xl">
+            <span className="sr-only">Step 4: </span>
+            Optional VIP upgrade
+          </h2>
+        </div>
         {isGuideSwapLive() ? (
           <GuideTeaser searchParams={params} />
         ) : (
