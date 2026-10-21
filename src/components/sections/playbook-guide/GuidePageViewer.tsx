@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
 
 interface ViewerPage {
   src: string;
@@ -51,7 +51,22 @@ export function GuidePageViewer({
 
   const go = (to: number) => {
     const el = track.current;
-    if (el) el.scrollTo({ left: to * el.clientWidth, behavior: "smooth" });
+    if (!el || to < 0 || to >= pages.length) return;
+    const reduce = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    el.scrollTo({
+      left: to * el.clientWidth,
+      behavior: reduce ? "auto" : "smooth",
+    });
+  };
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    // Read the live position: rapid presses outrun the scroll-driven state.
+    const el = track.current;
+    const at = el ? Math.round(el.scrollLeft / el.clientWidth) : index;
+    go(at + (e.key === "ArrowRight" ? 1 : -1));
   };
   const onScroll = () => {
     const el = track.current;
@@ -67,6 +82,7 @@ export function GuidePageViewer({
         <div
           ref={track}
           onScroll={onScroll}
+          onKeyDown={onKeyDown}
           tabIndex={0}
           aria-label="Sample pages from the playbook"
           className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
@@ -108,7 +124,10 @@ export function GuidePageViewer({
             />
           </svg>
         </button>
-        <span className="text-ink/70 text-sm font-bold tabular-nums">
+        <span
+          aria-live="polite"
+          className="text-ink/70 text-sm font-bold tabular-nums"
+        >
           Sample page {index + 1} of {pages.length}
           <span className="text-ink/50 font-normal max-sm:hidden">
             {" "}
