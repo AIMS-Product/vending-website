@@ -52,7 +52,8 @@ export function ConfirmedHero({
   const endsAt = masterclassLiveEnd(startsAt);
   return (
     <section
-      className="border-ink relative isolate border-b-2 bg-[#eaf6ff]"
+      id="welcome"
+      className="border-ink relative isolate scroll-mt-4 border-b-2 bg-[#eaf6ff]"
       style={{
         backgroundImage:
           "radial-gradient(rgba(42,143,204,0.20) 1.4px, transparent 1.4px)",
@@ -193,9 +194,9 @@ export function ConfirmedHero({
 }
 
 /** Whitelist the sender, then reply to Anthony (both from his confirmation email). */
-export function NextSteps() {
-  const [zoom, reply] = confirmedCopy.steps;
-  const guideLive = isGuideSwapLive();
+export function NextSteps({ homework }: { homework: boolean }) {
+  const [video, email, intake] = confirmedCopy.steps;
+  const link = "text-brand-700 font-bold underline underline-offset-2";
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1080px] px-5 pt-8 pb-14 sm:pt-14 lg:px-10">
@@ -203,28 +204,30 @@ export function NextSteps() {
           Before the call
         </h2>
         <div
-          className={`mt-4 grid gap-6 ${guideLive ? "md:grid-cols-3" : "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"}`}
+          className={`mt-4 grid gap-6 ${homework ? "md:grid-cols-3" : "md:grid-cols-2"}`}
         >
-          <Step n={zoom.n} title={zoom.title}>
+          <Step n={video.n} title={video.title}>
+            {video.body}{" "}
+            <a href="#welcome" className={link}>
+              Watch it
+            </a>
+          </Step>
+          <Step n={email.n} title={email.title}>
             Your Zoom link is in the email from{" "}
             <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
             (check spam and promotions, then move it to your inbox).{" "}
-            {confirmedCopy.zoomTextLine}
+            {confirmedCopy.zoomTextLine} Hit reply and tell Anthony what made
+            you sign up.
           </Step>
-          <Step n={reply.n} title={reply.title}>
-            {reply.body}
-          </Step>
-          {guideLive ? (
-            <Step n="03" title="Do your homework">
-              Grab Mike&apos;s First Location Playbook for $5 and show up
-              knowing how to land your first location.{" "}
+          {homework ? (
+            <Step n={intake.n} title={intake.title}>
+              {intake.body}{" "}
               <a
-                href="#playbook"
-                data-track="playbook_clicked"
-                data-track-detail="confirmed-step"
-                className="text-brand-700 font-bold underline underline-offset-2"
+                href="#homework"
+                data-track="homework_clicked"
+                className={link}
               >
-                See the Playbook
+                Start your homework
               </a>
             </Step>
           ) : null}
