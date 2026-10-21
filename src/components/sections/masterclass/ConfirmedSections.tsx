@@ -195,13 +195,16 @@ export function ConfirmedHero({
 /** Whitelist the sender, then reply to Anthony (both from his confirmation email). */
 export function NextSteps() {
   const [zoom, reply] = confirmedCopy.steps;
+  const guideLive = isGuideSwapLive();
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1080px] px-5 pt-8 pb-14 sm:pt-14 lg:px-10">
         <h2 className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           Before the call
         </h2>
-        <div className="mt-4 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div
+          className={`mt-4 grid gap-6 ${guideLive ? "md:grid-cols-3" : "md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]"}`}
+        >
           <Step n={zoom.n} title={zoom.title}>
             Your Zoom link is in the email from{" "}
             <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>{" "}
@@ -211,6 +214,20 @@ export function NextSteps() {
           <Step n={reply.n} title={reply.title}>
             {reply.body}
           </Step>
+          {guideLive ? (
+            <Step n="3" title="Do your homework">
+              Grab Mike&apos;s First Location Playbook for $5 and show up
+              knowing how to land your first location.{" "}
+              <a
+                href="#playbook"
+                data-track="playbook_clicked"
+                data-track-detail="confirmed-step"
+                className="text-brand-700 font-bold underline underline-offset-2"
+              >
+                See the Playbook
+              </a>
+            </Step>
+          ) : null}
         </div>
       </div>
     </section>
@@ -329,8 +346,8 @@ export function PlaybookBand({
   params: Record<string, string | string[] | undefined>;
 }) {
   return (
-    <section className="bg-white">
-      <div className="mx-auto max-w-[1080px] px-5 pt-14 pb-16 lg:px-10">
+    <section id="playbook" className="scroll-mt-6 bg-white">
+      <div className="mx-auto max-w-[1080px] px-5 pt-0 pb-16 lg:px-10">
         {isGuideSwapLive() ? (
           <GuideTeaser searchParams={params} />
         ) : (
