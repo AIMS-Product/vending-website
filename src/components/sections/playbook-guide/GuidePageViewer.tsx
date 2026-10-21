@@ -48,10 +48,13 @@ export function GuidePageViewer({
 }) {
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
+  /** Page the last key press aimed at; smooth scroll lags behind it. */
+  const target = useRef(0);
 
   const go = (to: number) => {
     const el = track.current;
     if (!el || to < 0 || to >= pages.length) return;
+    target.current = to;
     const reduce = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -61,16 +64,18 @@ export function GuidePageViewer({
     });
   };
   const onKeyDown = (e: KeyboardEvent) => {
+    if (e.target !== e.currentTarget) return;
     if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
     e.preventDefault();
-    // Read the live position: rapid presses outrun the scroll-driven state.
-    const el = track.current;
-    const at = el ? Math.round(el.scrollLeft / el.clientWidth) : index;
-    go(at + (e.key === "ArrowRight" ? 1 : -1));
+    go(target.current + (e.key === "ArrowRight" ? 1 : -1));
   };
   const onScroll = () => {
     const el = track.current;
-    if (el) setIndex(Math.round(el.scrollLeft / el.clientWidth));
+    if (!el) return;
+    const at = Math.round(el.scrollLeft / el.clientWidth);
+    setIndex(at);
+    // Swipes move the page too; re-sync once the track lands on a page.
+    if (Math.abs(el.scrollLeft - at * el.clientWidth) < 1) target.current = at;
   };
 
   const arrow =
@@ -126,6 +131,7 @@ export function GuidePageViewer({
         </button>
         <span
           aria-live="polite"
+          aria-atomic="true"
           className="text-ink/70 text-sm font-bold tabular-nums"
         >
           Sample page {index + 1} of {pages.length}

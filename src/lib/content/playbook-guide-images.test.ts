@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { guideImages } from "./playbook-guide-images";
@@ -28,5 +28,26 @@ describe("playbook guide page images", () => {
   it("public folder holds only page-1, page-2 and *-locked.webp files", () => {
     const allowed = /^(page-[12]\.webp|page-\d+-locked\.webp)$/;
     expect(readdirSync(dir).filter((f) => !allowed.test(f))).toEqual([]);
+  });
+
+  // A readable render saved under a locked name would pass the name check.
+  // Blurred files are 4-10 KB; readable renders are ~55 KB.
+  it("every *-locked.webp is small enough to be blurred", () => {
+    const big = readdirSync(dir).filter(
+      (f) => f.endsWith("-locked.webp") && statSync(join(dir, f)).size > 20_000,
+    );
+    expect(big).toEqual([]);
+  });
+
+  it("no page render sits anywhere else in public/", () => {
+    const stray = readdirSync(pub, {
+      recursive: true,
+      encoding: "utf8",
+    }).filter(
+      (f) =>
+        /(^|\/)page-\d+[^/]*$/.test(f) &&
+        !f.startsWith("images/playbook-guide/"),
+    );
+    expect(stray).toEqual([]);
   });
 });
