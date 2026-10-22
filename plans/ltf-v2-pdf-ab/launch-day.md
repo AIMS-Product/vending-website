@@ -58,8 +58,7 @@ So "launch day" is now "first real sale day". Work top to bottom. Each step list
 8. Watch for the first real $5 order on `/admin/analytics/playbook`. Once it lands, check all of the following:
    - The buyer row shows **Emailed: Yes**, and "Paid but email not sent" stays 0.
    - Downloads go to 1 once the buyer opens the PDF. If they don't, that's not a bug yet. Re-check the next day.
-   - **GA4 purchase** (item 5): GA4 > Reports > Realtime, or DebugView, shows `purchase` value 5 from `/playbook/guide-thanks`.
-     If it is missing, add the GTM tag (GA4 Event, name `purchase`, trigger on the dataLayer `purchase` event) and publish.
+   - **GA4 purchase** (item 5): needs PR #216 merged (the site forwards `purchase` itself; GA4 got 0 before it). Check GA4 Realtime or DebugView for `purchase` value 5. **Do not add a GTM GA4 purchase tag**: it would double count.
    - **Meta**: Events Manager shows one `Purchase` worth 5.00 for that order (browser pixel + server CAPI, deduplicated on the Checkout Session id). $0 orders never send a server event.
    - **GHL**: the buyer's existing contact has the tag `playbook-5-buyer` (#209; tags existing contacts only, fail-soft).
    - **Stripe**: the payment shows the PLAYBOOK descriptor.
