@@ -63,9 +63,15 @@ export async function GET(request: Request) {
       timeZone: REPORTING_TIME_ZONE,
     });
     const weekDates = datesInWeek(day);
+    // Current scorecard week plus four completed Monday–Friday periods.
+    const scorecardDates = Array.from({ length: 5 }, (_, index) => {
+      const at = new Date(`${weekDates[0]}T12:00:00Z`);
+      at.setUTCDate(at.getUTCDate() - (4 - index) * 7);
+      return datesInWeek(at.toISOString().slice(0, 10)).slice(0, 5);
+    });
     const client = createAdminClient();
     const [bookings, funnels] = await Promise.all([
-      fetchBookings(client, weekDates[0]),
+      fetchBookings(client, scorecardDates[0][0]),
       fetchFunnels(client),
     ]);
     if (bookings === null || funnels === null) {
@@ -89,49 +95,59 @@ export async function GET(request: Request) {
         { status: 503, headers },
       );
     }
-    const dailyMetrics = weekDates.map((date) =>
-      date > day
-        ? null
-        : date === day
-          ? metric
-          : readBookedMetric("newBookedOn", { ...input, day: date }),
-    );
-    if (
-      dailyMetrics.some((result) => result !== null && result.value === null)
-    ) {
+    const metrics = new Map([[day, metric]]);
+    function period(dates: string[]) {
+      const dailyMetrics = dates.map((date) => {
+        if (date > day) return null;
+        let result = metrics.get(date);
+        if (!result) {
+          result = readBookedMetric("newBookedOn", { ...input, day: date });
+          metrics.set(date, result);
+        }
+        return result;
+      });
+      return {
+        start: dates[0],
+        end: dates[dates.length - 1],
+        total: dailyMetrics.reduce(
+          (sum, result) => sum + (result?.value ?? 0),
+          0,
+        ),
+        days: dates.map((date, index) => ({
+          date,
+          total: dailyMetrics[index]?.value ?? null,
+        })),
+        coverage: {
+          unreviewed: dailyMetrics.reduce(
+            (sum, result) => sum + (result?.coverage.unreviewed ?? 0),
+            0,
+          ),
+          // Undated rows cannot be assigned to a week. Report the source gap once.
+          undatable: metric.coverage.undatable,
+          noCloseMatch: dailyMetrics.reduce(
+            (sum, result) => sum + (result?.coverage.noCloseMatch ?? 0),
+            0,
+          ),
+          laneTwoExcluded: dailyMetrics.reduce(
+            (sum, result) => sum + (result?.coverage.laneTwoExcluded ?? 0),
+            0,
+          ),
+        },
+      };
+    }
+    // Preserve the original seven-day extension for older Mac clients.
+    const week = period(weekDates);
+    const scorecard = {
+      weekdays: "monday-friday",
+      timeZone: REPORTING_TIME_ZONE,
+      weeks: scorecardDates.map(period),
+    };
+    if ([...metrics.values()].some((result) => result.value === null)) {
       return NextResponse.json(
         { ok: false, message: "Weekly booking totals could not be verified." },
         { status: 503, headers },
       );
     }
-    const week = {
-      start: weekDates[0],
-      end: weekDates[6],
-      total: dailyMetrics.reduce(
-        (sum, result) => sum + (result?.value ?? 0),
-        0,
-      ),
-      days: weekDates.map((date, index) => ({
-        date,
-        total: dailyMetrics[index]?.value ?? null,
-      })),
-      coverage: {
-        unreviewed: dailyMetrics.reduce(
-          (sum, result) => sum + (result?.coverage.unreviewed ?? 0),
-          0,
-        ),
-        // Undated rows cannot be assigned to any week. Report the source gap once.
-        undatable: metric.coverage.undatable,
-        noCloseMatch: dailyMetrics.reduce(
-          (sum, result) => sum + (result?.coverage.noCloseMatch ?? 0),
-          0,
-        ),
-        laneTwoExcluded: dailyMetrics.reduce(
-          (sum, result) => sum + (result?.coverage.laneTwoExcluded ?? 0),
-          0,
-        ),
-      },
-    };
     return NextResponse.json(
       {
         schemaVersion: 1,
@@ -147,6 +163,7 @@ export async function GET(request: Request) {
         sourceUpdatedAt: null,
         total: metric.value,
         week,
+        scorecard,
         channels: channels.map(({ label, booked }) => ({ label, booked })),
         coverage: {
           unreviewed: metric.coverage.unreviewed,
