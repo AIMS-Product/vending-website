@@ -1,6 +1,6 @@
 # Spec: "Organic content" admin view (content-funnel Step 5), 2026-10-21
 
-Status: PLAN ONLY. Not built overnight on purpose: the plan's bar is "numbers verified against a direct query",
+Status: PLAN + slice 1 done (2026-10-21 pm, read-only prod counts below). Not built overnight on purpose: the plan's bar is "numbers verified against a direct query",
 and a half-correct analytics page is worse than none (AGENTS.md history: channel_daily double counts, shows derived
 wrongly). Source: `reports/content-funnel-2026-10-18/CONTENT-FUNNEL-PLAN.md` section 2 Step 5.
 
@@ -47,3 +47,30 @@ their own group.
   totals first, pages second.
 - `first_referrer` is often empty (Safari/ITP, in-app browsers, `noreferrer`). Slice 1 decides if the view is honest.
 - AI assistants frequently strip referrers; "AI referral" will undercount. Label it as a floor.
+
+## Slice 1 result (2026-10-21 ~22:00 PT, prod, counts only via PostgREST HEAD + `count=exact`; no rows read)
+
+**Data path:** `lead_submissions.metadata -> 'attribution_session' ->> 'first_referrer'` (and `first_landing_path`),
+written by `attributionSessionMetadata` in `src/lib/services/leads.ts`. Not a column. Absent keys are dropped
+(`compactObject`), so "missing" = key not present. Paid tags are the `utm_source` / `utm_medium` columns.
+
+| Month (from 07-06) | Leads | With attribution_session | With first_referrer | google.\* | bing.com | chatgpt / perplexity / gemini / copilot |
+| ------------------ | ----- | ------------------------ | ------------------- | --------- | -------- | --------------------------------------- |
+| Jul (06-31)        | 135   | 124                      | 103 (76%)           | 26        | 2        | 0                                       |
+| Aug                | 625   | 575                      | 444 (71%)           | 195       | 4        | 0                                       |
+| Sep                | 562   | 551                      | 394 (70%)           | 166       | 6        | 0                                       |
+| Oct (to 10-21)     | 375   | 364                      | 273 (73%)           | 132       | 6        | 0                                       |
+
+Organic = search referrer **and** no UTM (`utm_source` and `utm_medium` null), all-time since 07-06 (1,697 leads):
+
+- Google organic **129**, Bing organic **17**. Total 146 (8.6% of leads). All 129 Google organic leads have `first_landing_path`.
+- YouTube referrer with no UTM: 5 (YouTube traffic is almost all tagged).
+- No referrer and no UTM ("direct/unknown"): 246 (14.5%). Organic is undercounted by some share of these.
+- Most `google.*` referrers (390 of 519) carry UTMs, i.e. paid Google; the classifier must exclude them.
+
+**Verdict: usable, with labels.** ~72% referrer coverage is enough for a totals-first view. 146 organic leads over
+3.5 months means single-digit counts per landing page, so slice 5 should show totals and the top ~10 paths only.
+**AI referral is zero** in every month: ship it as a row that says "0 (floor; assistants often strip referrers)", or drop
+it until it is non-zero. Decision for Adam; default is to keep the row.
+
+Next: slice 2 (classifier). Rule from this pass: `organic = host in {google.*, bing.com} && !utm_source && !utm_medium`.
