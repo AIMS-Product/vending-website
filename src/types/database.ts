@@ -3744,6 +3744,7 @@ export type Database = {
           checkout_starts: number | null;
           delivery_failures: number | null;
           fee_cents: number | null;
+          free_orders: number | null;
           gross_cents: number | null;
           offer_views: number | null;
           payment_failures: number | null;
