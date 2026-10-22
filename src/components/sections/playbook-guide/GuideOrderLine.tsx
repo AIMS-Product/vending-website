@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { GUIDE } from "@/lib/content/playbook-guide";
+import { GUIDE, GUIDE_FORMAT } from "@/lib/content/playbook-guide";
 import { guideImages } from "@/lib/content/playbook-guide-images";
 
 interface GuideOrderLineProps {
@@ -21,7 +21,7 @@ export function GuideOrderLine({ status }: GuideOrderLineProps) {
       />
       <div className="min-w-0 flex-1">
         <p className="text-ink leading-tight font-black">{GUIDE.title}</p>
-        <p className="text-ink/65 mt-1 text-sm">PDF + 8 videos</p>
+        <p className="text-ink/65 mt-1 text-sm">{GUIDE_FORMAT}</p>
       </div>
       {status ? (
         <span className="border-ink text-ink shrink-0 border-2 px-2.5 py-1 text-xs font-black tracking-[0.08em] uppercase">
