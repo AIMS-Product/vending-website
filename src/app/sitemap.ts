@@ -9,6 +9,7 @@ import { listIndexableSolutionSlugs } from "@/lib/content/solutions";
 import { listPublishedSlugs } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
+import { reportRouteError } from "@/lib/observability/route-error";
 
 export const revalidate = 0;
 
@@ -16,10 +17,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // lastModified only where a real edit date exists (/resources pages).
   // Stamping every URL with the request time taught Google to ignore it.
   const now = new Date();
-  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
+  // One failed content read must not 500 the whole sitemap for crawlers:
+  // log and report it, drop only that source; static routes always go out.
+  const [news, caseStudies, seoPages] = await Promise.allSettled([
     listPublishedSlugs(),
     listPublishedCaseStudySlugs(),
     listSitemapSeoPages(),
+  ]);
+  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
+    valueOrEmpty("news", news),
+    valueOrEmpty("case-studies", caseStudies),
+    valueOrEmpty("seo-pages", seoPages),
   ]);
 
   return [
@@ -73,4 +81,19 @@ function validDateOrFallback(value: string | null | undefined, fallback: Date) {
   if (!value) return fallback;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? fallback : parsed;
+}
+
+async function valueOrEmpty<T>(
+  source: string,
+  result: PromiseSettledResult<T[]>,
+): Promise<T[]> {
+  if (result.status === "fulfilled") return result.value;
+  console.error(
+    `sitemap: ${source} read failed, omitting its URLs`,
+    result.reason,
+  );
+  // Fails soft for crawlers, so nothing else would surface it. Message-free
+  // (reportRouteError strips it); the source rides in the route tag.
+  await reportRouteError(`sitemap-${source}`, result.reason);
+  return [];
 }
