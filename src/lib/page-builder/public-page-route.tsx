@@ -10,6 +10,7 @@ import {
 import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
 import { resolveDefaultQualificationFormVersion } from "@/lib/services/qualification-forms";
 import { getPublishedSeoPageByPathOnce } from "@/lib/page-builder/request-cache";
+import { defaultOgImage } from "@/lib/site";
 
 export async function generateBuilderPageMetadata(
   routePrefix: string,
@@ -30,6 +31,7 @@ export async function generateBuilderPageMetadata(
       title,
       description: page.meta_description ?? undefined,
       type: "article",
+      images: [defaultOgImage],
     },
   };
 }
