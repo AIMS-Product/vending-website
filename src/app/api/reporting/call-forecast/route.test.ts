@@ -100,6 +100,21 @@ describe("Call Forecast read-only reporting route", () => {
       ),
     ).toBe(report.total);
     expect(report.channels).toContainEqual({ label: "YouTube", booked: 2 });
+    expect(report.week).toMatchObject({
+      start: "2026-10-19",
+      end: "2026-10-25",
+      total: 4,
+      days: [
+        { date: "2026-10-19", total: 1 },
+        { date: "2026-10-20", total: 3 },
+        { date: "2026-10-21", total: null },
+        { date: "2026-10-22", total: null },
+        { date: "2026-10-23", total: null },
+        { date: "2026-10-24", total: null },
+        { date: "2026-10-25", total: null },
+      ],
+      coverage: { unreviewed: 1, undatable: 1, laneTwoExcluded: 1 },
+    });
     expect(report.coverage).toMatchObject({
       laneTwoExcluded: 1,
       unreviewed: 1,
@@ -109,5 +124,30 @@ describe("Call Forecast read-only reporting route", () => {
     const serialized = JSON.stringify(report);
     expect(serialized).not.toContain("@example.test");
     expect(serialized).not.toContain("test-only-key");
+  });
+
+  it("keeps Sunday in its Eastern week after UTC Monday and the DST change", async () => {
+    vi.setSystemTime(new Date("2026-11-02T04:30:00Z"));
+    const report = await (await GET(authenticated())).json();
+    expect(report.day).toBe("2026-11-01");
+    expect(report.week.start).toBe("2026-10-26");
+    expect(report.week.end).toBe("2026-11-01");
+    expect(report.week.days).toHaveLength(7);
+    expect(
+      report.week.days.every(
+        (row: { total: number | null }) => row.total === 0,
+      ),
+    ).toBe(true);
+  });
+
+  it("resets on Eastern Monday, with future days unknown rather than zero", async () => {
+    vi.setSystemTime(new Date("2026-11-02T05:00:00Z"));
+    const report = await (await GET(authenticated())).json();
+    expect(report.week.start).toBe("2026-11-02");
+    expect(report.week.end).toBe("2026-11-08");
+    expect(report.week.total).toBe(0);
+    expect(
+      report.week.days.map((row: { total: number | null }) => row.total),
+    ).toEqual([0, null, null, null, null, null, null]);
   });
 });
