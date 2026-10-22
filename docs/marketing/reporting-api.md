@@ -110,3 +110,19 @@ raw event payloads or credentials. A missing reporting key returns 503; an
 invalid bearer returns 401. Merely deploying this route does not activate
 reporting access: `REPORTING_API_KEY` must be configured through normal hosting
 settings and kept in a local `.env` file on the Mac.
+
+### Call Forecast weekly progress
+
+The same schema-version-1 response also includes `week`: `start` (Monday),
+`end` (Sunday), `total`, seven `days` entries (`date`, `total`), and aggregate
+`coverage`. Week boundaries use the existing Eastern reporting timezone. Each
+elapsed day reuses `readBookedMetric("newBookedOn")`; `week.total` is their sum.
+The current day equals the existing top-level daily total. Future days have
+`total: null` and never pretend to be an observed zero. Undatable source rows
+are reported once as an unknown-date coverage gap, rather than summed per day.
+
+The Mac owns the user-editable weekly goal (initially 125), progress and pace.
+Pace is a labeled even seven-calendar-day benchmark, using elapsed local dates
+and the fraction of today's actual duration so DST does not move a week boundary.
+The endpoint changes no classification, attribution, cancellation or Lane 2 rules.
+Older Mac versions ignore the additional `week` field and continue reading today.
