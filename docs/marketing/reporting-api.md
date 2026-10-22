@@ -126,3 +126,22 @@ Pace is a labeled even seven-calendar-day benchmark, using elapsed local dates
 and the fraction of today's actual duration so DST does not move a week boundary.
 The endpoint changes no classification, attribution, cancellation or Lane 2 rules.
 Older Mac versions ignore the additional `week` field and continue reading today.
+
+### Company scorecard weeks (Mac)
+
+The optional `scorecard` extension supplies `weekdays: "monday-friday"`, the
+Eastern `timeZone`, and five `weeks` in chronological order: four completed
+weeks plus the current week. Each week has `start` (Monday), `end` (Friday),
+`total`, five `days` entries and aggregate `coverage`. The periods match the
+company scorecard (for example September 28–October 2 and October 5–9, 2026).
+Weekend bookings are outside these totals. Today's daily counter continues
+counting on weekends; it need not equal any scorecard day then. Friday's window
+stays selected through Sunday, and a new week begins at Eastern Monday midnight.
+Future weekdays are null; past days sum to each weekly total. Totals are read
+from current source data, not immutable historical snapshots; delayed backfills
+or reviewed call types can revise completed weeks.
+
+The Mac now uses this extension for its 125-call goal, weekday history, completed
+week copy buttons and pace: goal × elapsed weekdays / 5, capped at Friday's end.
+The original `week` extension retains its Monday–Sunday behavior for older clients.
+No booked-on metric, classification, attribution or cancellation policy changed.

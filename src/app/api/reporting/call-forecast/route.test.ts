@@ -20,6 +20,18 @@ const url = "https://www.vendingpreneurs.com/api/reporting/call-forecast";
 const authenticated = () =>
   new Request(url, { headers: { Authorization: "Bearer test-only-key" } });
 
+const booking = (email: string, overrides = {}) => ({
+  inviteeEmail: email,
+  status: "booked",
+  eventName: "Vendingpreneurs Consultation Call",
+  eventTypeUri: null,
+  bookedAt: "2026-10-20T18:00:00Z",
+  eventStartAt: "2026-10-25T18:00:00Z",
+  utmSource: null,
+  utmMedium: null,
+  ...overrides,
+});
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.setSystemTime(new Date("2026-10-20T19:00:00Z"));
@@ -44,17 +56,6 @@ describe("Call Forecast read-only reporting route", () => {
   });
 
   it("preserves booked-on date, marketing scope, cancellations and channel totals", async () => {
-    const booking = (email: string, overrides = {}) => ({
-      inviteeEmail: email,
-      status: "booked",
-      eventName: "Vendingpreneurs Consultation Call",
-      eventTypeUri: null,
-      bookedAt: "2026-10-20T18:00:00Z",
-      eventStartAt: "2026-10-25T18:00:00Z",
-      utmSource: null,
-      utmMedium: null,
-      ...overrides,
-    });
     state.bookings = [
       booking("youtube@example.test"),
       booking("cancelled@example.test", { status: "canceled" }),
@@ -149,5 +150,73 @@ describe("Call Forecast read-only reporting route", () => {
     expect(
       report.week.days.map((row: { total: number | null }) => row.total),
     ).toEqual([0, null, null, null, null, null, null]);
+  });
+
+  it("matches the scorecard's cross-month Monday–Friday ranges and excludes weekends", async () => {
+    state.bookings = [
+      booking("monday@example.test", { bookedAt: "2026-09-28T04:00:00Z" }),
+      booking("friday@example.test", { bookedAt: "2026-10-03T03:59:59Z" }),
+      booking("saturday@example.test", { bookedAt: "2026-10-03T04:00:00Z" }),
+      booking("sunday@example.test", { bookedAt: "2026-10-05T03:59:59Z" }),
+      booking("next-monday@example.test", { bookedAt: "2026-10-05T04:00:00Z" }),
+    ];
+    const report = await (await GET(authenticated())).json();
+    expect(report.scorecard.weekdays).toBe("monday-friday");
+    expect(report.scorecard.timeZone).toBe("America/New_York");
+    expect(
+      report.scorecard.weeks.map(
+        (week: { start: string; end: string; total: number }) => [
+          week.start,
+          week.end,
+          week.total,
+        ],
+      ),
+    ).toEqual([
+      ["2026-09-21", "2026-09-25", 0],
+      ["2026-09-28", "2026-10-02", 2],
+      ["2026-10-05", "2026-10-09", 1],
+      ["2026-10-12", "2026-10-16", 0],
+      ["2026-10-19", "2026-10-23", 0],
+    ]);
+    expect(
+      report.scorecard.weeks
+        .at(-1)
+        .days.map((row: { total: number | null }) => row.total),
+    ).toEqual([0, 0, null, null, null]);
+  });
+
+  it("freezes Friday's scorecard total through the weekend while daily and legacy weekly totals keep counting", async () => {
+    vi.setSystemTime(new Date("2026-11-02T04:30:00Z"));
+    state.bookings = [
+      booking("friday@example.test", { bookedAt: "2026-10-31T03:59:59Z" }),
+      booking("saturday@example.test", { bookedAt: "2026-10-31T04:00:00Z" }),
+      booking("sunday@example.test", { bookedAt: "2026-11-02T04:15:00Z" }),
+    ];
+    const report = await (await GET(authenticated())).json();
+    expect(report.total).toBe(1);
+    expect(report.week.total).toBe(3);
+    expect(report.scorecard.weeks.at(-1)).toMatchObject({
+      start: "2026-10-26",
+      end: "2026-10-30",
+      total: 1,
+    });
+    expect(
+      report.scorecard.weeks
+        .at(-1)
+        .days.every((row: { total: number | null }) => row.total !== null),
+    ).toBe(true);
+    vi.setSystemTime(new Date("2026-11-02T05:00:00Z"));
+    const monday = await (await GET(authenticated())).json();
+    expect(monday.scorecard.weeks.at(-1)).toMatchObject({
+      start: "2026-11-02",
+      end: "2026-11-06",
+      total: 0,
+    });
+    expect(
+      monday.scorecard.weeks
+        .at(-1)
+        .days.map((row: { total: number | null }) => row.total),
+    ).toEqual([0, null, null, null, null]);
+    expect(monday.scorecard.weeks.at(-2).total).toBe(1);
   });
 });
