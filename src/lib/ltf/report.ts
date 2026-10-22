@@ -14,6 +14,8 @@ export type LtfReport = {
   paymentFailures: number;
   deliveryFailures: number;
   buyersDownloaded: number;
+  /** Paid $0 orders (100% off promo). Not buyers. */
+  freeOrders: number;
   conversion: number;
   netPerVisitorCents: number;
 };
@@ -44,6 +46,7 @@ export async function loadLtfReport(db: LtfDb): Promise<LtfReport> {
     paymentFailures: n(data.payment_failures),
     deliveryFailures: n(data.delivery_failures),
     buyersDownloaded: n(data.buyers_downloaded),
+    freeOrders: n(data.free_orders),
     conversion: rate(buyers, visitors),
     netPerVisitorCents: rate(netCents, visitors),
   };
