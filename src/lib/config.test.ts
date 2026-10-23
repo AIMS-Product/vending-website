@@ -64,6 +64,18 @@ describe("Close custom-field env wiring", () => {
     expect(missing).toEqual([]);
   });
 
+  it("CLOSE_PHONE_MATCH reaches the Close config only as exactly \"on\"", async () => {
+    const { closeConfigFromEnv } = await import("./close/client");
+    stubConfigEnv();
+    expect(closeConfigFromEnv((await import("./config")).config).phoneMatch).toBe(false);
+    vi.resetModules();
+    vi.stubEnv("CLOSE_PHONE_MATCH", "on");
+    expect(closeConfigFromEnv((await import("./config")).config).phoneMatch).toBe(true);
+    vi.resetModules();
+    vi.stubEnv("CLOSE_PHONE_MATCH", "true");
+    expect(closeConfigFromEnv((await import("./config")).config).phoneMatch).toBe(false);
+  });
+
   it("passes the contact preference field id through to the Close config", async () => {
     stubConfigEnv();
     vi.stubEnv("CLOSE_CONTACT_PREFERENCE_FIELD_ID", "cf_sms_consent");

@@ -2255,3 +2255,558 @@ describe("Close tagging fields", () => {
     expect(bodies.join(" ")).not.toContain("cf_ever_had_call");
   });
 });
+
+// 2026-10-19: a webinar registrant applied on the site with a second email and
+// the same phone, and got a fresh Close lead with no funnel, UTMs or
+// opportunity. With no email match, a phone on exactly one Close lead now
+// files the submit under that lead.
+describe("matching an existing Close lead by phone", () => {
+  const WEBINAR_LEAD = {
+    id: "lead_webinar",
+    contacts: [
+      {
+        id: "cont_webinar",
+        name: "Jane Buyer",
+        emails: [{ email: "webinar@example.com" }],
+        // Stored the way it was typed upstream; still the same number.
+        phones: [{ phone: "(415) 555-0101" }],
+      },
+    ],
+  };
+
+  const attributedEvent = () =>
+    makeEvent({
+      payload: {
+        contact: {
+          full_name: "Jane Buyer",
+          email: "buyer@example.com",
+          phone: "415-555-0101",
+        },
+        attribution: { utm_source: "facebook", source_path: "/apply" },
+      },
+    });
+
+  function routedFetch({
+    emailHits = [] as unknown[],
+    phoneHits = [] as unknown[],
+  } = {}) {
+    return vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const query = decodeURIComponent(url);
+      if (method === "GET" && query.includes('query=email:"')) {
+        return jsonResponse({ data: emailHits });
+      }
+      if (method === "GET" && query.includes('query=phone:"')) {
+        return jsonResponse({ data: phoneHits });
+      }
+      if (method === "GET" && url.includes("/contact/cont_webinar/")) {
+        return jsonResponse({
+          id: "cont_webinar",
+          name: "Jane Webinar",
+          emails: [{ email: "webinar@example.com", type: "office" }],
+          phones: [{ phone: "+14155550101", type: "mobile" }],
+        });
+      }
+      if (method === "GET" && url.includes("/contact/cont_email/")) {
+        return jsonResponse({
+          id: "cont_email",
+          emails: [{ email: "buyer@example.com" }],
+        });
+      }
+      if (method === "POST" && url.endsWith("/lead/")) {
+        return jsonResponse({
+          id: "lead_created",
+          contacts: [{ id: "cont_created" }],
+        });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+  }
+
+  async function drain(
+    fake: ReturnType<typeof buildClient>,
+    fetchMock: ReturnType<typeof routedFetch>,
+  ) {
+    return adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({
+        CLOSE_API_KEY: "close_key_123",
+        CLOSE_PHONE_MATCH: "on",
+        CLOSE_UTM_SOURCE_FIELD_ID: "cf_utm_source",
+        CLOSE_SOURCE_PATH_FIELD_ID: "cf_source_path",
+      }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+  }
+
+  const calls = (fetchMock: ReturnType<typeof routedFetch>) =>
+    fetchMock.mock.calls.map(([url, init]) => ({
+      url: decodeURIComponent(String(url)),
+      method: init?.method ?? "GET",
+      body: init?.body ? JSON.parse(String(init.body)) : undefined,
+    }));
+
+  it("an email match wins and the phone is never searched", async () => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      emailHits: [
+        {
+          id: "lead_email",
+          contacts: [
+            { id: "cont_email", emails: [{ email: "buyer@example.com" }] },
+          ],
+        },
+      ],
+      phoneHits: [WEBINAR_LEAD],
+    });
+
+    await drain(fake, fetchMock);
+
+    expect(calls(fetchMock).some((c) => c.url.includes("phone:"))).toBe(false);
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_email",
+      close_contact_id: "cont_email",
+    });
+  });
+
+  it("files a phone-only match under that lead and appends the new email", async () => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({ phoneHits: [WEBINAR_LEAD] });
+
+    const result = await drain(fake, fetchMock);
+
+    expect(result).toMatchObject({ synced: 1, failed: 0 });
+    const made = calls(fetchMock);
+    expect(made.some((c) => c.url.includes('phone:"+14155550101"'))).toBe(true);
+    expect(made.some((c) => c.method === "POST")).toBe(false);
+    const writes = made.filter((c) => c.method === "PUT");
+    expect(writes).toHaveLength(1);
+    expect(writes[0].url).toContain("/contact/cont_webinar/");
+    // Existing email first and intact, new one appended; the name and the
+    // phone Close already holds are left alone.
+    expect(writes[0].body).toEqual({
+      emails: [
+        { email: "webinar@example.com", type: "office" },
+        { email: "buyer@example.com", type: "direct" },
+      ],
+    });
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_webinar",
+      close_contact_id: "cont_webinar",
+    });
+    expect(fake.state.leads[0]).toMatchObject({
+      close_lead_id: "lead_webinar",
+      close_contact_id: "cont_webinar",
+    });
+  });
+
+  it("never writes funnel, UTM or source fields onto the phone-matched lead", async () => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({ phoneHits: [WEBINAR_LEAD] });
+
+    await drain(fake, fetchMock);
+
+    const writes = calls(fetchMock).filter((c) => c.method !== "GET");
+    expect(writes.length).toBeGreaterThan(0);
+    expect(writes.some((c) => c.url.includes("/lead/"))).toBe(false);
+    for (const write of writes) {
+      expect(
+        Object.keys(write.body ?? {}).filter((k) => k.startsWith("custom.")),
+      ).toEqual([]);
+      expect(write.body).not.toHaveProperty("name");
+    }
+  });
+
+  it("creates a lead as before and logs the ambiguity when the phone is on several leads", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        WEBINAR_LEAD,
+        {
+          id: "lead_household",
+          contacts: [
+            { id: "cont_household", phones: [{ phone: "+14155550101" }] },
+          ],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    const made = calls(fetchMock);
+    expect(
+      made.filter((c) => c.method === "POST" && c.url.endsWith("/lead/")),
+    ).toHaveLength(1);
+    expect(
+      made.some((c) => c.method === "PUT" && c.url.includes("cont_webinar")),
+    ).toBe(false);
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_created",
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("phone matches several Close leads"),
+      expect.objectContaining({
+        eventId: "event_1",
+        leadSubmissionId: "lead_local_1",
+        closeLeadIds: ["lead_webinar", "lead_household"],
+      }),
+    );
+    warn.mockRestore();
+  });
+
+  it("treats two contacts on one lead as one lead and picks the one by name", async () => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        {
+          ...WEBINAR_LEAD,
+          contacts: [
+            {
+              id: "cont_spouse",
+              name: "John Buyer",
+              phones: [{ phone: "+14155550101" }],
+            },
+            ...WEBINAR_LEAD.contacts,
+          ],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    expect(fake.state.events[0]).toMatchObject({
+      close_lead_id: "lead_webinar",
+      close_contact_id: "cont_webinar",
+    });
+  });
+
+  it("same phone, different name -> creates a new lead and logs the near-miss", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        {
+          ...WEBINAR_LEAD,
+          contacts: [{ ...WEBINAR_LEAD.contacts[0], name: "John Buyer" }],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    const made = calls(fetchMock);
+    expect(
+      made.filter((c) => c.method === "POST" && c.url.endsWith("/lead/")),
+    ).toHaveLength(1);
+    expect(
+      made.some((c) => c.method === "PUT" && c.url.includes("cont_webinar")),
+    ).toBe(false);
+    expect(fake.state.events[0]).toMatchObject({
+      status: "synced",
+      close_lead_id: "lead_created",
+    });
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("under another name"),
+      {
+        eventId: "event_1",
+        leadSubmissionId: "lead_local_1",
+        closeLeadIds: ["lead_webinar"],
+        closeContactIds: ["cont_webinar"],
+      },
+    );
+    warn.mockRestore();
+  });
+
+  it.each([
+    ["case, spacing and punctuation", "  JANE   buyer! "],
+  ])("accepts a name that differs only by %s", async (_label, closeName) => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        {
+          ...WEBINAR_LEAD,
+          contacts: [{ ...WEBINAR_LEAD.contacts[0], name: closeName }],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    expect(fake.state.events[0]).toMatchObject({
+      close_lead_id: "lead_webinar",
+    });
+  });
+
+  it.each([
+    ["a different last name", "Jane Brown"],
+    // Guessable from a phone and a first name: not enough to file under (review 2026-10-21).
+    ["only a last initial", "Jane B."],
+    ["a first name only", "Jane"],
+    ["no name in Close", null],
+  ])("creates a new lead when Close has %s", async (_label, closeName) => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        {
+          ...WEBINAR_LEAD,
+          contacts: [{ ...WEBINAR_LEAD.contacts[0], name: closeName }],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    expect(fake.state.events[0]).toMatchObject({
+      close_lead_id: "lead_created",
+    });
+    vi.restoreAllMocks();
+  });
+
+  it("ignores a search hit whose phone is not the submitted number", async () => {
+    const fake = buildClient({ events: [attributedEvent()] });
+    const fetchMock = routedFetch({
+      phoneHits: [
+        {
+          ...WEBINAR_LEAD,
+          contacts: [
+            {
+              ...WEBINAR_LEAD.contacts[0],
+              phones: [{ phone: "+14155550199" }],
+            },
+          ],
+        },
+      ],
+    });
+
+    await drain(fake, fetchMock);
+
+    expect(fake.state.events[0]).toMatchObject({
+      close_lead_id: "lead_created",
+    });
+  });
+
+  it.each([
+    ["no phone", null],
+    ["a phone normalizePhone rejects", "1"],
+  ])(
+    "with %s, never searches by phone and creates as before",
+    async (_label, phone) => {
+      const fake = buildClient({
+        events: [
+          makeEvent({
+            payload: {
+              contact: { full_name: "Jane Buyer", email: "buyer@example.com" },
+            },
+          }),
+        ],
+        leads: [makeLead({ phone })],
+      });
+      const fetchMock = routedFetch({ phoneHits: [WEBINAR_LEAD] });
+
+      await drain(fake, fetchMock);
+
+      const made = calls(fetchMock);
+      expect(made.some((c) => c.url.includes("phone:"))).toBe(false);
+      expect(made.filter((c) => c.method === "POST")).toHaveLength(1);
+      expect(fake.state.events[0]).toMatchObject({
+        close_lead_id: "lead_created",
+      });
+    },
+  );
+});
+
+// Review blockers on fix/close-match-by-phone (2026-10-21): the match is off by
+// default, the phone search pages to the end, and attribution on an existing
+// lead is filled when blank, never overwritten.
+describe("phone match guard rails", () => {
+  const PHONE_LEAD = {
+    id: "lead_webinar",
+    contacts: [
+      { id: "cont_webinar", name: "Jane Buyer", phones: [{ phone: "+14155550101" }] },
+    ],
+  };
+  const OTHER_LEAD = {
+    id: "lead_other",
+    contacts: [
+      { id: "cont_other", name: "Jane Buyer", phones: [{ phone: "415.555.0101" }] },
+    ],
+  };
+  const submit = () =>
+    makeEvent({
+      payload: {
+        contact: { full_name: "Jane Buyer", email: "buyer@example.com", phone: "415-555-0101" },
+      },
+    });
+
+  function fetchFor(phonePages: Array<{ data: unknown[]; has_more?: boolean }>) {
+    let page = 0;
+    return vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      const query = decodeURIComponent(url);
+      if (method === "GET" && query.includes('query=email:"')) return jsonResponse({ data: [] });
+      if (method === "GET" && query.includes('query=phone:"')) {
+        return jsonResponse(phonePages[Math.min(page++, phonePages.length - 1)]);
+      }
+      if (method === "GET" && url.includes("/contact/cont_webinar/")) {
+        return jsonResponse({ id: "cont_webinar", emails: [], phones: [{ phone: "+14155550101" }] });
+      }
+      if (method === "POST" && url.endsWith("/lead/")) {
+        return jsonResponse({ id: "lead_created", contacts: [{ id: "cont_created" }] });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+  }
+
+  const run = (fake: ReturnType<typeof buildClient>, fetchMock: ReturnType<typeof fetchFor>, env: Record<string, string> = {}) =>
+    adminRunCloseSync({
+      client: fake.client,
+      closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123", ...env }),
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => new Date("2026-06-17T09:00:00.000Z"),
+    });
+  const urls = (fetchMock: ReturnType<typeof fetchFor>) =>
+    fetchMock.mock.calls.map(([url, init]) => `${init?.method ?? "GET"} ${decodeURIComponent(String(url))}`);
+
+  it("is off unless CLOSE_PHONE_MATCH is on: the phone is never searched and a lead is created", async () => {
+    const fake = buildClient({ events: [submit()] });
+    const fetchMock = fetchFor([{ data: [PHONE_LEAD] }]);
+    await run(fake, fetchMock);
+    expect(urls(fetchMock).some((u) => u.includes('query=phone:"'))).toBe(false);
+    expect(urls(fetchMock)).toContain("POST https://api.close.com/api/v1/lead/");
+    expect(fake.state.events[0]).toMatchObject({ close_lead_id: "lead_created" });
+  });
+
+  it("with the flag on, a phone on one lead files under it", async () => {
+    const fake = buildClient({ events: [submit()] });
+    const fetchMock = fetchFor([{ data: [PHONE_LEAD] }]);
+    await run(fake, fetchMock, { CLOSE_PHONE_MATCH: "on" });
+    expect(fake.state.events[0]).toMatchObject({ close_lead_id: "lead_webinar" });
+  });
+
+  it("pages the phone search: a second lead on page two makes the phone ambiguous", async () => {
+    const fake = buildClient({ events: [submit()] });
+    const fetchMock = fetchFor([{ data: [PHONE_LEAD], has_more: true }, { data: [OTHER_LEAD], has_more: false }]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await run(fake, fetchMock, { CLOSE_PHONE_MATCH: "on" });
+    const searches = urls(fetchMock).filter((u) => u.includes('query=phone:"'));
+    expect(searches).toHaveLength(2);
+    expect(searches[1]).toContain("_skip=25");
+    expect(fake.state.events[0]).toMatchObject({ close_lead_id: "lead_created" });
+    expect(warn.mock.calls.map(([m]) => m)).toContain("close sync: phone matches several Close leads; creating a new lead");
+    warn.mockRestore();
+  });
+
+  it("a search that never ends is not trusted as one lead", async () => {
+    const fake = buildClient({ events: [submit()] });
+    const fetchMock = fetchFor([{ data: [PHONE_LEAD], has_more: true }]);
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    await run(fake, fetchMock, { CLOSE_PHONE_MATCH: "on" });
+    expect(urls(fetchMock).filter((u) => u.includes('query=phone:"'))).toHaveLength(4);
+    expect(fake.state.events[0]).toMatchObject({ close_lead_id: "lead_created" });
+    expect(warn.mock.calls.map(([m]) => m)).toContain("close sync: phone search ran past its page limit; creating a new lead");
+    warn.mockRestore();
+  });
+
+  it("qualification fills blank attribution on the lead and never overwrites a filled one", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          payload: {
+            qualification: { status: "qualified", score: 80 },
+            attribution: { campaign_id: "camp-site", gclid: "gclid-site" },
+          },
+        }),
+      ],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      // The webinar lead already says where it came from; gclid is blank.
+      if (method === "GET" && url.includes("/lead/lead_webinar/")) {
+        return jsonResponse({ id: "lead_webinar", "custom.cf_campaign": "camp-webinar" });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+    await run(fake, fetchMock as never, {
+      CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
+      CLOSE_GCLID_FIELD_ID: "cf_gclid",
+      CLOSE_QUALIFICATION_STATUS_FIELD_ID: "cf_status",
+      CLOSE_PHONE_MATCH: "on",
+    });
+    const read = fetchMock.mock.calls.find(([url, init]) => (init?.method ?? "GET") === "GET" && String(url).includes("/lead/lead_webinar/"));
+    expect(decodeURIComponent(String(read?.[0]))).toContain("custom.cf_campaign");
+    const update = fetchMock.mock.calls.find(([url, init]) => init?.method === "PUT" && String(url).includes("/lead/lead_webinar/"));
+    const body = JSON.parse(String(update?.[1]?.body));
+    expect(body).toEqual({ "custom.cf_gclid": "gclid-site", "custom.cf_status": "qualified" });
+    expect(body).not.toHaveProperty("custom.cf_campaign");
+  });
+
+  it("with the flag off, qualification writes attribution as before and reads nothing", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ event_type: "qualification_enrichment", payload: { qualification: { status: "qualified" }, attribution: { campaign_id: "camp-site" } } })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async () => jsonResponse({ id: "ok" }));
+    await run(fake, fetchMock as never, { CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign" });
+    const methods = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).map(([url, init]) => `${init?.method ?? "GET"} ${url}`);
+    expect(methods.some((m) => m.startsWith("GET") && m.includes("/lead/lead_webinar/"))).toBe(false);
+    const update = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).find(([url, init]) => init?.method === "PUT" && url.includes("/lead/lead_webinar/"));
+    expect(JSON.parse(String(update?.[1]?.body))).toMatchObject({ "custom.cf_campaign": "camp-site" });
+  });
+
+  it("a later submit on a known lead fills blanks only, and last-touch keys still update", async () => {
+    const fake = buildClient({
+      events: [makeEvent({
+        close_lead_id: "lead_webinar",
+        close_contact_id: "cont_webinar",
+        payload: {
+          contact: { full_name: "Jane Buyer", email: "buyer@example.com", phone: "415-555-0101" },
+          attribution: { campaign_id: "camp-site", gclid: "gclid-site", utm_source: "facebook", latest_landing_path: "/apply" },
+        },
+      })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? "GET";
+      if (method === "GET" && url.includes("/contact/cont_webinar/")) {
+        return jsonResponse({ id: "cont_webinar", emails: [{ email: "buyer@example.com" }], phones: [{ phone: "+14155550101" }], "custom.cf_utm_source": "webinar" });
+      }
+      if (method === "GET" && url.includes("/lead/lead_webinar/")) {
+        return jsonResponse({ id: "lead_webinar", "custom.cf_campaign": "camp-webinar", "custom.cf_latest_landing": "/old" });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+    await run(fake, fetchMock as never, {
+      CLOSE_PHONE_MATCH: "on",
+      CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign",
+      CLOSE_GCLID_FIELD_ID: "cf_gclid",
+      CLOSE_UTM_SOURCE_FIELD_ID: "cf_utm_source",
+      CLOSE_LATEST_LANDING_PATH_FIELD_ID: "cf_latest_landing",
+    });
+    const puts = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).filter(([, init]) => init?.method === "PUT");
+    const leadPut = JSON.parse(String(puts.find(([url]) => url.includes("/lead/lead_webinar/"))?.[1]?.body));
+    expect(leadPut).toEqual({ "custom.cf_gclid": "gclid-site", "custom.cf_latest_landing": "/apply" });
+    const contactPut = puts.find(([url]) => url.includes("/contact/cont_webinar/"));
+    expect(contactPut ? JSON.parse(String(contactPut[1]?.body)) : {}).not.toHaveProperty("custom.cf_utm_source");
+  });
+
+  it("refuses to treat a lead read without an id as blank", async () => {
+    const fake = buildClient({
+      events: [makeEvent({ event_type: "qualification_enrichment", payload: { qualification: { status: "qualified" }, attribution: { campaign_id: "camp-site" } } })],
+      leads: [makeLead({ close_lead_id: "lead_webinar", close_contact_id: "cont_webinar" })],
+    });
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) =>
+      (init?.method ?? "GET") === "GET" && url.includes("/lead/lead_webinar/") ? jsonResponse({}) : jsonResponse({ id: "ok" }));
+    await run(fake, fetchMock as never, { CLOSE_PHONE_MATCH: "on", CLOSE_CAMPAIGN_ID_FIELD_ID: "cf_campaign" });
+    const leadPut = (fetchMock.mock.calls as unknown as [string, RequestInit?][]).find(([url, init]) => init?.method === "PUT" && url.includes("/lead/lead_webinar/"));
+    expect(leadPut).toBeUndefined();
+    expect(fake.state.events[0].status).not.toBe("synced");
+  });
+});

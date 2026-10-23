@@ -562,6 +562,7 @@ async function writeLeadToClose(
   if (closeIds.leadId) {
     try {
       return await updateKnownCloseLead(close, {
+        closeConfig,
         contact,
         contactId: closeIds.contactId,
         leadId: closeIds.leadId,
@@ -651,7 +652,13 @@ async function syncUnknownCloseLead(
   const email = primaryEmail(event, lead);
   const match = await matchedContactForEmail(close, email);
   if (match)
-    return updateMatchedCloseContact(close, match, contact, sourceFields);
+    return updateMatchedCloseContact(close, match, contact, sourceFields, closeConfig);
+
+  const phoneMatch = closeConfig.phoneMatch
+    ? await matchedContactForPhone(close, contact, event)
+    : null;
+  if (phoneMatch)
+    return updatePhoneMatchedCloseContact(close, phoneMatch, contact);
 
   const created = await close.createLead(
     createLeadPayload({ closeConfig, contact, email, lead, sourceFields }),
@@ -673,6 +680,117 @@ async function matchedContactForEmail(
   email: string | null,
 ) {
   return email ? findSingleCloseContact(close, email) : null;
+}
+
+/**
+ * The one Close contact already holding this submit's phone AND name, when no
+ * email matched. A webinar registrant who later applies on the site with a
+ * second email kept their phone, and creating a lead for them split the booking
+ * from its funnel, UTMs and opportunity (2026-10-19).
+ *
+ * Only a phone on exactly ONE Close lead counts. A phone on several leads is a
+ * household, an office line or junk, and picking one would file a stranger's
+ * application under someone else. A family also shares one phone on one lead,
+ * so the contact's name must match the submitted one too (`sameName`).
+ * Anything else falls back to creating a lead, logged so a human can merge.
+ * Contacts on the same lead are the same record, so they do not make it
+ * ambiguous.
+ */
+async function matchedContactForPhone(
+  close: CloseClient,
+  contact: CloseContactPayload,
+  event: CloseSyncEventRow,
+) {
+  const phone = contact.phones?.[0]?.phone;
+  if (!phone) return null;
+  const search = await close.searchContactsByPhone(phone);
+  const matches = search.data;
+  if (!matches.length) return null;
+  // Ids only: names and the phone stay out of the logs.
+  const context = {
+    eventId: event.id,
+    leadSubmissionId: event.lead_submission_id,
+    closeLeadIds: [...new Set(matches.map((match) => match.lead_id))],
+    closeContactIds: matches.map((match) => match.id),
+  };
+  if (!search.complete) {
+    console.warn(
+      "close sync: phone search ran past its page limit; creating a new lead",
+      context,
+    );
+    return null;
+  }
+  if (context.closeLeadIds.length > 1) {
+    console.warn(
+      "close sync: phone matches several Close leads; creating a new lead",
+      context,
+    );
+    return null;
+  }
+  const named = matches.find((match) => sameName(match.name, contact.name));
+  if (!named) {
+    console.warn(
+      "close sync: phone matches a Close lead under another name; creating a new lead",
+      context,
+    );
+  }
+  return named ?? null;
+}
+
+/**
+ * Same person by name: first and last names equal, ignoring case, surrounding
+ * space and punctuation. A missing or one-word name never matches: with no last
+ * name there is nothing to tell two people in one household apart.
+ *
+ * A last initial ("Jane B.") is NOT enough (review 2026-10-21): a phone plus a
+ * first name and an initial is guessable, and a match appends the submitter's
+ * email and writes their consent answers onto the matched contact.
+ *
+ * ponytail: first and last word only, so a middle name is ignored and a
+ * nickname ("Dave" for "David") does not match; that person gets a new lead,
+ * which is the behaviour before phone matching existed.
+ */
+function sameName(
+  closeName: string | null | undefined,
+  submitted: string | undefined,
+) {
+  const a = nameParts(closeName);
+  const b = nameParts(submitted);
+  return Boolean(a && b && a.first === b.first && a.last === b.last);
+}
+
+function nameParts(name: string | null | undefined) {
+  const words = (name ?? "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, "")
+    .split(/\s+/)
+    .filter(Boolean);
+  return words.length >= 2
+    ? { first: words[0], last: words[words.length - 1] }
+    : null;
+}
+
+/**
+ * File the submit under the lead that owns its phone without touching anything
+ * that lead already says about where it came from. Unlike an email match, the
+ * source fields are NOT written: the phone lead was usually created upstream
+ * (webinar, GHL) and its funnel and UTMs are the attribution sales reports on.
+ * Only the new email (and any new phone) is appended to the contact.
+ */
+async function updatePhoneMatchedCloseContact(
+  close: CloseClient,
+  match: Awaited<
+    ReturnType<CloseClient["searchContactsByPhone"]>
+  >["data"][number],
+  contact: CloseContactPayload,
+): Promise<CloseContactInfo> {
+  if (!match.lead_id) {
+    throw new CloseNeedsReviewError(
+      `Close contact ${match.id} did not include a parent lead.`,
+    );
+  }
+  await updateContactAdditively(close, match.id, contact, {});
+  return { leadId: match.lead_id, contactId: match.id };
 }
 
 function createLeadPayload({
@@ -786,11 +904,13 @@ function leadStatusPayload({ leadStatusId }: CloseConfig) {
 async function updateKnownCloseLead(
   close: CloseClient,
   {
+    closeConfig,
     contact,
     contactId,
     leadId,
     sourceFields,
   }: {
+    closeConfig: CloseConfig;
     contact: CloseContactPayload;
     contactId?: string | null;
     leadId: string;
@@ -800,9 +920,9 @@ async function updateKnownCloseLead(
   if (contactId) {
     await updateContactAdditively(close, contactId, contact, {
       ...sourceFields.contact,
-    });
+    }, keptAttributionKeys(closeConfig, sourceFields.contact));
   }
-  await updateCloseLeadSourceFields(close, leadId, sourceFields);
+  await updateCloseLeadSourceFields(close, leadId, sourceFields, closeConfig);
   return { leadId, contactId: contactId ?? null };
 }
 
@@ -835,6 +955,7 @@ async function updateMatchedCloseContact(
   >["data"][number],
   contact: CloseContactPayload,
   sourceFields: SourceFields,
+  closeConfig: CloseConfig,
 ): Promise<CloseContactInfo> {
   if (!match.lead_id) {
     throw new CloseNeedsReviewError(
@@ -843,8 +964,8 @@ async function updateMatchedCloseContact(
   }
   await updateContactAdditively(close, match.id, contact, {
     ...sourceFields.contact,
-  });
-  await updateCloseLeadSourceFields(close, match.lead_id, sourceFields);
+  }, keptAttributionKeys(closeConfig, sourceFields.contact));
+  await updateCloseLeadSourceFields(close, match.lead_id, sourceFields, closeConfig);
   return { leadId: match.lead_id, contactId: match.id };
 }
 
@@ -869,8 +990,16 @@ async function updateContactAdditively(
   contactId: string,
   contact: CloseContactPayload,
   contactFields: Record<string, unknown>,
+  /** Keys written only when the contact holds no value for them yet. */
+  fillBlankKeys: string[] = [],
 ) {
   const existing = await close.getContact(contactId);
+  const held = existing as unknown as Record<string, unknown>;
+  const fields = Object.fromEntries(
+    Object.entries(contactFields).filter(
+      ([key]) => !fillBlankKeys.includes(key) || isBlankCloseValue(held[key]),
+    ),
+  );
   const emails = appendedContactEntries(
     "email",
     existing.emails,
@@ -884,7 +1013,7 @@ async function updateContactAdditively(
   const payload = {
     ...(emails ? { emails } : {}),
     ...(phones ? { phones } : {}),
-    ...contactFields,
+    ...fields,
   };
   if (Object.keys(payload).length) {
     await close.updateContact(contactId, payload);
@@ -945,9 +1074,15 @@ async function updateCloseLeadSourceFields(
   close: CloseClient,
   leadId: string,
   sourceFields: SourceFields,
+  closeConfig: CloseConfig,
 ) {
-  if (Object.keys(sourceFields.lead).length)
-    await close.updateLead(leadId, sourceFields.lead);
+  const fields = await withoutFilledAttribution(
+    close,
+    leadId,
+    sourceFields.lead,
+    keptAttributionKeys(closeConfig, sourceFields.lead),
+  );
+  if (Object.keys(fields).length) await close.updateLead(leadId, fields);
 }
 
 /**
@@ -1014,10 +1149,16 @@ async function syncQualificationEnrichment(
   // contact-scoped IDs on the contact. Sending a contact field to updateLead (or
   // vice versa) makes Close reject the whole update with a 400, so we split by
   // scope and write each group to its own object.
-  const leadFields = qualificationLeadCustomFields(
-    event.payload,
-    closeConfig,
-    isNewsletter,
+  const leadFields = await withoutFilledAttribution(
+    close,
+    leadId,
+    qualificationLeadCustomFields(event.payload, closeConfig, isNewsletter),
+    keptAttributionKeys(
+      closeConfig,
+      Object.fromEntries(
+        qualificationAttributionKeys(event.payload, closeConfig).map((k) => [k, true]),
+      ),
+    ),
   );
   if (Object.keys(leadFields).length) {
     await close.updateLead(leadId, leadFields);
@@ -1248,6 +1389,73 @@ function qualificationLeadCustomFields(
       completed_at: stringAt(qualification, "completedAt"),
     },
     closeConfig.customFields,
+  );
+}
+
+/** The lead keys `qualificationLeadCustomFields` fills from attribution. */
+function qualificationAttributionKeys(payload: Json, closeConfig: CloseConfig) {
+  return Object.keys(
+    closeCustomFieldPayload(
+      sourceAttributionValues(objectAt(payload, "attribution"), null),
+      closeConfig.customFields,
+    ),
+  );
+}
+
+/**
+ * The attribution keys an existing Close record keeps once written: none while
+ * phone matching is off (every path overwrites, as before 2026-10-21), and with
+ * it on every first-touch key. The `latest_*` and session keys are last-touch by
+ * definition and keep updating.
+ */
+function keptAttributionKeys(
+  closeConfig: CloseConfig,
+  fields: Record<string, unknown>,
+): string[] {
+  if (!closeConfig.phoneMatch) return [];
+  const f = closeConfig.customFields;
+  const lastTouch = new Set(
+    [f.latestLandingUrlFieldId, f.latestLandingPathFieldId, f.latestReferrerFieldId, f.vpSessionIdFieldId]
+      .filter(Boolean)
+      .map((id) => `custom.${id}`),
+  );
+  return Object.keys(fields).filter((key) => key.startsWith("custom.") && !lastTouch.has(key));
+}
+
+/**
+ * Attribution on a lead is filled when blank and never overwritten. The lead a
+ * qualification lands on may be one we matched by phone, created upstream by
+ * the webinar or GHL, and its source path and click ids are what sales reports
+ * on; overwriting them re-credited the lead to the site form. Score, band and
+ * status are ours and still update every time.
+ */
+async function withoutFilledAttribution(
+  close: CloseClient,
+  leadId: string,
+  fields: Record<`custom.${string}`, unknown>,
+  attributionKeys: string[],
+): Promise<Record<`custom.${string}`, unknown>> {
+  const keys = attributionKeys.filter((key) => key in fields);
+  if (!keys.length) return fields;
+  const existing = await close.getLeadFields(leadId, keys);
+  // A read that does not name the lead is not proof the fields are blank: refuse
+  // rather than overwrite on a misread.
+  if (existing?.id !== leadId) {
+    throw new Error(`Close lead ${leadId} read returned no id; attribution left untouched.`);
+  }
+  return Object.fromEntries(
+    Object.entries(fields).filter(
+      ([key]) => !keys.includes(key) || isBlankCloseValue(existing[key]),
+    ),
+  ) as Record<`custom.${string}`, unknown>;
+}
+
+function isBlankCloseValue(value: unknown) {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === "string" && value.trim() === "") ||
+    (Array.isArray(value) && value.length === 0)
   );
 }
 
