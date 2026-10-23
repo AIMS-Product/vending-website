@@ -1,10 +1,16 @@
 import "server-only";
 
 import { config, publicConfig } from "@/lib/config";
-import type { CustomFieldWrite } from "@/lib/ghl/webinar-registration";
-import { signCalendarToken } from "@/lib/masterclass-session";
 import {
+  readContactField,
+  type CustomFieldWrite,
+} from "@/lib/ghl/webinar-registration";
+import { signCalendarToken } from "@/lib/masterclass-session";
+import { checkPublicRateLimit } from "@/lib/public-rate-limit";
+import {
+  joinLinkFor,
   registerZoomRegistrant,
+  roomWebinarId,
   type ZoomCredentials,
 } from "@/lib/zoom/webinar-registrant";
 
@@ -14,7 +20,7 @@ export const ZOOM_URL_FIELD_ID = "xoutue68ds9zlMLTkabO";
 let warnedMissing = false;
 
 /** Anthony's Zoom S2S credentials, or null when any part is unset. */
-export function zoomCredentials(): ZoomCredentials | null {
+function zoomCredentials(): ZoomCredentials | null {
   const {
     ANTHONY_ZOOM_ACCOUNT_ID,
     ANTHONY_ZOOM_CLIENT_ID,
@@ -89,4 +95,52 @@ export function joinLinkFields(
     }
     return fields;
   };
+}
+
+/** The zap can still be writing the link a few seconds after sign-up. */
+export const JOIN_RETRY_MS = 3000;
+
+/**
+ * This room's personal Zoom join link for the contact, read from GHL at tap
+ * time (calendar route, wallet Join), or null. Never throws.
+ */
+export async function readJoinUrl(
+  contactId: string,
+  startsAt: string,
+  action: "masterclass_cal" | "masterclass_join",
+): Promise<string | null> {
+  const creds = zoomCredentials();
+  if (!config.GHL_WRITE_TOKEN || !creds) return null;
+  // Over budget, or the limiter is down: the generic event, no GHL read.
+  const allowed = await checkPublicRateLimit(
+    action,
+    { ip: null, email: `contact:${contactId}` },
+    { failClosed: true },
+  );
+  if (!allowed) return null;
+  // Only this room's link: a returning contact's field can still hold last week's.
+  const webinarId = await roomWebinarId(startsAt, creds);
+  if (webinarId === null) return null;
+  const read = async () =>
+    joinLinkFor(
+      await readContactField(contactId, ZOOM_URL_FIELD_ID, {
+        token: config.GHL_WRITE_TOKEN ?? "",
+      }),
+      webinarId,
+    );
+  try {
+    return (
+      (await read()) ??
+      (await new Promise((resolve) => setTimeout(resolve, JOIN_RETRY_MS)).then(
+        read,
+      ))
+    );
+  } catch (error) {
+    // Degrades to the generic fallback (calendar event, or the confirmed page).
+    console.error("[masterclass] join link read failed", {
+      action,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return null;
+  }
 }
