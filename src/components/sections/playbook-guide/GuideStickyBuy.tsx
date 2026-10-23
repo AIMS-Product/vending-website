@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 
 interface GuideStickyBuyProps {
   title: string;
+  /** Small context line under the title, like the order card's. */
+  note?: string;
   children: React.ReactNode;
 }
 
 /** Bottom buy bar once the hero button has scrolled away; hidden near the final offer. */
-export function GuideStickyBuy({ title, children }: GuideStickyBuyProps) {
+export function GuideStickyBuy({ title, note, children }: GuideStickyBuyProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -35,8 +37,13 @@ export function GuideStickyBuy({ title, children }: GuideStickyBuyProps) {
       }`}
     >
       <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-4 px-5 py-3 lg:px-10">
-        <span className="text-ink text-[15px] font-black max-sm:hidden">
-          {title}
+        <span className="max-sm:hidden">
+          <span className="text-ink block text-[15px] leading-tight font-black">
+            {title}
+          </span>
+          {note ? (
+            <span className="text-ink/60 block text-xs font-bold">{note}</span>
+          ) : null}
         </span>
         {children}
       </div>

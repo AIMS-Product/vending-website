@@ -103,7 +103,10 @@ export default async function PlaybookGuidePage({
       <GuideProof />
       <GuideFaq />
       <GuideFinalOffer buy={buy("sm:w-full")} />
-      <GuideStickyBuy title={GUIDE.title}>
+      <GuideStickyBuy
+        title={GUIDE.title}
+        note={`One-time ${GUIDE.priceLabel} · Instant PDF`}
+      >
         {buy("w-full sm:w-auto")}
       </GuideStickyBuy>
     </div>
