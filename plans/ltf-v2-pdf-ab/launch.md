@@ -23,25 +23,35 @@ Support / reply-to: support@modern-amenities.com.
   **Enable it right after the merge deploys** (Stripe dashboard -> Developers -> Webhooks -> enable, or
   `stripe-setup.mjs` without `--disabled`).
 
-## Remaining
+## Status (2026-10-21)
 
-1. **Adam:** run `supabase/migrations/20261020002951_ltf_playbook_test.sql` in the SQL editor (section 14 of
-   APPLY-IN-SQL-EDITOR.md). New tables only.
-2. **Claude:** E2E on the preview in Stripe test mode: pay with 4242, thank-you download, email delivered,
-   declined card 4000 0000 0000 0002, replayed webhook = one order and one email, refund revokes access.
-3. ~~Live Stripe~~ done (see above). Original note: a live secret key for Modern-Amenities LLC is not on this machine (VendHub's local key is test
-   mode). Adam pastes a live restricted key (Checkout Sessions write, Products/Prices write, Webhook Endpoints
-   write, Charges/Balance read), then `STRIPE_SECRET_KEY=<live> node scripts/playbook-guide/stripe-setup.mjs
-https://www.vendingpreneurs.com/api/webhooks/stripe /tmp/ltf-stripe-live.env` creates the live product, price and
-   webhook. Add STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET / STRIPE_PLAYBOOK_PRICE_ID / PLAYBOOK_PDF_OBJECT /
-   LTF_SUPPORT_EMAIL to Vercel **production**. Leave PLAYBOOK_GUIDE_LIVE unset.
-4. **Merge** `feat/ltf-v2-stripe-playbook` into main (Adam runs the merge). Nothing changes publicly while the
-   switch is off. Then **enable the live webhook** `we_1USetyJIfGazBhNXIvU56Dxk`.
-5. **Go live (Adam says go):** set `PLAYBOOK_GUIDE_LIVE=on` in production and redeploy. Effects:
-   `/playbook` and `/playbook/checkout` 307 to `/playbook/go` (UTMs kept), the webinar confirmation page shows the
-   $5 teaser, the offer and checkout serve. Optionally point webinar emails/links straight at `/playbook/go`.
-6. **Turn off:** unset `PLAYBOOK_GUIDE_LIVE` and redeploy. Old pages return; buyers keep thank-you, download,
-   recovery and the webhook.
+Done:
+
+- Merged to main: #197 (Stripe $5 playbook, unlisted `/playbook-stripe` -> `/playbook/go` -> `/playbook/guide`),
+  #198 (checkout-style order card, hero with PDF page viewer), #199 (hotfix below).
+- Live webhook `we_1USetyJIfGazBhNXIvU56Dxk` enabled after the merge deployed.
+- Live coupon code `PLAYBOOKTEST` created (Adam, dashboard).
+- Live $0 test passed twice on 2026-10-20 (16:41 and 19:02 UTC): both orders `paid`, email `sent`,
+  `download_count` 1. Three abandoned $5 test sessions sit `pending` and expire on their own.
+
+10-20 preview leak: the hero viewer (#198) reused the full-resolution page renders, so readable copies of
+paid play pages were served from `public/images/playbook-guide/`. #199 replaced them with `page-<n>-locked.webp`
+(blur baked into the file) and removed the readable files; the old URLs now return the HTML fallback and
+`/_next/image` answers 400 for them. Prevention: `src/lib/content/playbook-guide-images.test.ts` fails if any
+page other than 1 or 2 is unlocked or any readable page file sits in that folder, and `build.mjs` refuses to
+start if `READABLE_PAGES` holds anything but 1 and 2.
+
+Open (Adam decides; see `.claude/specs/2026-10-21-overnight-plan.md` section 6):
+
+1. Delete the 10-20 test rows (2 $0 orders, 3 abandoned $5 sessions, their events/visitors)?
+2. Delete the old #197/#198 production deployments (their immutable URLs still hold the readable pages)?
+3. Go live: set `PLAYBOOK_GUIDE_LIVE=on` in production and redeploy. `/playbook` and `/playbook/checkout`
+   307 to `/playbook/go` (UTMs kept) and the webinar confirmation page shows the $5 teaser.
+   Turn off: unset it and redeploy; buyers keep thank-you, download, recovery and the webhook.
+4. Stripe statement descriptor suffix "PLAYBOOK" (checkout shows Modern-Amenities LLC).
+5. GA4 `purchase` needs a GTM tag; verify on the first real sale.
+6. VendHub's webhook logs one "unresolved checkout" per sale (see below); fix belongs in the vendhub repo.
+7. Roll the Stripe keys that appeared in session transcripts.
 
 ## Shared Stripe account note
 
