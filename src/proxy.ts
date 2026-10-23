@@ -84,8 +84,8 @@ const CODED_TWO_SEGMENT_PAGES = new Set<string>([
   "/playbook/guide-access",
 ]);
 
-/** The personal calendar route handler (/masterclass/cal/<token>), three segments deep. */
-const MASTERCLASS_CAL_PATH = /^\/masterclass\/cal\/[^/]+$/;
+/** The personal token routes (/masterclass/{cal,join,wallet}/<token>), three segments deep. */
+const MASTERCLASS_CAL_PATH = /^\/masterclass\/(?:cal|join|wallet)\/[^/]+$/;
 
 async function isMissingPublicPage(path: string): Promise<boolean> {
   if (CODED_TWO_SEGMENT_PAGES.has(path) || MASTERCLASS_CAL_PATH.test(path)) {

@@ -120,6 +120,10 @@
     {
       "path": "/api/admin/seo-triggers/run",
       "schedule": "0 14 * * 1"
+    },
+    {
+      "path": "/api/admin/wallet-reminders/run",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

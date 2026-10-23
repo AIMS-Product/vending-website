@@ -31,6 +31,10 @@ const LIMITS = {
   // Personal calendar link (/masterclass/cal/<token>): GHL reads per click,
   // keyed per contact, so one token cannot spend the location's API budget.
   masterclass_cal: { windowMs: 10 * 60 * 1000, max: 20 },
+  // Wallet pass Join taps: one GHL read each, per contact.
+  masterclass_join: { windowMs: 10 * 60 * 1000, max: 20 },
+  // Wallet reminder cron: one run per room+reminder at a time (a claim, not a budget).
+  wallet_reminder_run: { windowMs: 4 * 60 * 1000, max: 1 },
   // Confirmation-page calendar buttons: one GHL tag per click, per contact.
   masterclass_calendar: { windowMs: 10 * 60 * 1000, max: 10 },
   qualification_intake: { windowMs: 10 * 60 * 1000, max: 12 },
