@@ -9,6 +9,10 @@ import {
 import { buttonClass } from "@/components/ui/Button";
 import { CalendlyEmbed } from "@/components/embeds/CalendlyEmbed";
 import { CheckIcon } from "@/components/sections/playbook/PlaybookCta";
+import {
+  GuideHelpLine,
+  GuideOrderLine,
+} from "@/components/sections/playbook-guide/GuideOrderLine";
 import { GuidePurchaseTracker } from "@/components/sections/playbook-guide/GuidePurchaseTracker";
 import {
   GUIDE,
@@ -16,6 +20,7 @@ import {
   guideThanks,
   guideUpsell,
 } from "@/lib/content/playbook-guide";
+import { config } from "@/lib/config";
 import { LTF_PATHS } from "@/lib/ltf/assignment";
 import { ltfOrderDeps, pageBrowserContext, pageOrigin } from "@/lib/ltf/deps";
 import {
@@ -48,6 +53,7 @@ export default async function GuideThanksPage({
   const sessionId =
     typeof params.session_id === "string" ? params.session_id : null;
 
+  const support = config.LTF_SUPPORT_EMAIL;
   const origin = await pageOrigin();
   let result: FulfillResult | "error";
   if (!sessionId || !SESSION_ID.test(sessionId)) {
@@ -68,11 +74,12 @@ export default async function GuideThanksPage({
     return (
       <GuideShell>
         <GuideCard>
-          <p className={EYEBROW}>{guideThanks.eyebrow}</p>
-          <h1 className="v2-display text-ink mt-3 text-[clamp(2.2rem,5vw,3.6rem)] leading-[1.02] uppercase">
+          <GuideOrderLine status="Paid" />
+          <p className={`${EYEBROW} mt-6`}>{guideThanks.eyebrow}</p>
+          <h1 className="v2-display text-ink mt-2 text-[clamp(2rem,4.4vw,3rem)] leading-[1.04] uppercase">
             {guideThanks.title}
           </h1>
-          <p className="text-ink/80 mt-4 text-lg leading-snug">
+          <p className="text-ink/80 mt-3 text-lg leading-snug break-words">
             {result.email
               ? guideThanks.body.replace("{email}", result.email)
               : guideThanks.body.replace(" to {email}", "")}
@@ -81,14 +88,15 @@ export default async function GuideThanksPage({
             href={downloadUrlFor(origin, result.accessToken)}
             className={buttonClass({
               size: "lg",
-              className: "mt-8 w-full sm:w-auto",
+              className: "mt-6 w-full sm:w-auto",
             })}
           >
             {guideThanks.cta}
           </a>
-          <p className="text-ink/70 mt-6 text-sm font-bold">
+          <p className="text-ink/70 mt-5 text-sm font-bold">
             {guideThanks.next}
           </p>
+          <GuideHelpLine email={support} />
         </GuideCard>
         {result.livemode && (result.amountCents ?? 0) > 0 ? (
           <GuidePurchaseTracker
@@ -139,13 +147,15 @@ export default async function GuideThanksPage({
       <GuideShell>
         <meta httpEquiv="refresh" content="4" />
         <GuideCard>
-          <p className={EYEBROW}>One moment</p>
-          <h1 className="v2-display text-ink mt-3 text-4xl uppercase">
+          <GuideOrderLine status="Pending" />
+          <p className={`${EYEBROW} mt-6`}>One moment</p>
+          <h1 className="v2-display text-ink mt-2 text-3xl uppercase sm:text-4xl">
             {guideThanks.pendingTitle}
           </h1>
-          <p className="text-ink/80 mt-4 text-lg leading-snug">
+          <p role="status" className="text-ink/80 mt-3 text-lg leading-snug">
             {guideThanks.pendingBody}
           </p>
+          <GuideHelpLine email={support} />
         </GuideCard>
       </GuideShell>
     );
@@ -154,8 +164,9 @@ export default async function GuideThanksPage({
   return (
     <GuideShell>
       <GuideCard>
-        <p className={EYEBROW}>Need a hand?</p>
-        <h1 className="v2-display text-ink mt-3 text-4xl uppercase">
+        <GuideOrderLine />
+        <p className={`${EYEBROW} mt-6`}>Need a hand?</p>
+        <h1 className="v2-display text-ink mt-2 text-3xl uppercase sm:text-4xl">
           We couldn&rsquo;t load your order here
         </h1>
         <p className="text-ink/80 mt-4 text-lg leading-snug">
@@ -164,10 +175,14 @@ export default async function GuideThanksPage({
         </p>
         <Link
           href={LTF_PATHS.access}
-          className={buttonClass({ size: "lg", className: "mt-8" })}
+          className={buttonClass({
+            size: "lg",
+            className: "mt-6 w-full sm:w-auto",
+          })}
         >
           Send me my link
         </Link>
+        <GuideHelpLine email={support} />
       </GuideCard>
     </GuideShell>
   );

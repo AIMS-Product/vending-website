@@ -16,6 +16,7 @@ import { applyTestimonials } from "@/lib/content/apply-page";
 import { images as playbookImages } from "@/lib/content/playbook";
 import {
   GUIDE,
+  GUIDE_FORMAT,
   guideFaq,
   guideHost,
   guideOffer,
@@ -44,7 +45,7 @@ function OrderCard({ buy }: BuyProps) {
         />
         <div className="min-w-0 flex-1">
           <p className="text-ink leading-tight font-black">{GUIDE.title}</p>
-          <p className="text-ink/65 mt-1 text-sm">PDF + 8 videos</p>
+          <p className="text-ink/65 mt-1 text-sm">{GUIDE_FORMAT}</p>
         </div>
         <p className="text-ink text-lg font-black tabular-nums">
           {GUIDE.priceLabel}

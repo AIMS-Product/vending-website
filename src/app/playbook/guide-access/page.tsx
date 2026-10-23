@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import "../../home-v2.css";
-import { EYEBROW } from "@/components/sections/playbook/PlaybookCta";
 import {
   GuideCard,
   GuideShell,
 } from "@/components/sections/playbook-guide/GuideShell";
+import {
+  GuideHelpLine,
+  GuideOrderLine,
+} from "@/components/sections/playbook-guide/GuideOrderLine";
 import { buttonClass } from "@/components/ui/Button";
+import { config } from "@/lib/config";
 import { GUIDE } from "@/lib/content/playbook-guide";
 
 export const metadata: Metadata = {
@@ -50,18 +54,18 @@ export default async function GuideAccessPage({
   return (
     <GuideShell>
       <GuideCard>
-        <p className={EYEBROW}>{GUIDE.title}</p>
-        <h1 className="v2-display text-ink mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[1.02] uppercase">
+        <GuideOrderLine />
+        <h1 className="v2-display text-ink mt-6 text-[clamp(2rem,4.4vw,3rem)] leading-[1.04] uppercase">
           Get your download link
         </h1>
-        <p className="text-ink/80 mt-4 text-lg leading-snug">
+        <p className="text-ink/80 mt-3 text-lg leading-snug">
           Already bought the playbook? Enter the email you used at checkout and
           we&rsquo;ll send you a working link. No need to buy again.
         </p>
         {message ? (
           <p
             role="status"
-            className={`border-ink mt-6 border-2 px-4 py-3 text-sm font-bold ${
+            className={`border-ink mt-5 border-2 px-4 py-3 text-sm font-bold ${
               message.tone === "ok"
                 ? "bg-ui-ok-fill text-ui-ok-ink"
                 : "bg-ui-warn-fill text-ui-warn-ink"
@@ -73,7 +77,7 @@ export default async function GuideAccessPage({
         <form
           action="/api/playbook-guide/recover"
           method="post"
-          className="mt-8 grid gap-3 sm:grid-cols-[1fr_auto]"
+          className="mt-6 grid gap-3 sm:grid-cols-[1fr_auto]"
         >
           <label className="sr-only" htmlFor="ltf-email">
             Email
@@ -85,12 +89,13 @@ export default async function GuideAccessPage({
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="border-ink text-ink min-h-14 border-2 bg-white px-4 text-base"
+            className="border-ink text-ink focus-visible:outline-brand-600 min-h-14 min-w-0 border-2 bg-white px-4 text-base focus-visible:outline-2 focus-visible:outline-offset-2"
           />
           <button type="submit" className={buttonClass({ size: "lg" })}>
             Send my link
           </button>
         </form>
+        <GuideHelpLine email={config.LTF_SUPPORT_EMAIL} />
       </GuideCard>
     </GuideShell>
   );
