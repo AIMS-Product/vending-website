@@ -24,6 +24,8 @@ import {
   mentionsAvailability,
 } from "@/lib/chatbot/availability-guard";
 import { findPriceLeak, type PriceLeak } from "@/lib/chatbot/price-guard";
+import { buildOutageMessages, hadOutage } from "@/lib/chatbot/outage-fallback";
+import { postChatbotOutageToSlack } from "@/lib/chatbot/slack";
 import {
   CHATBOT_TOOL_DEFINITIONS,
   runChatbotTool,
@@ -111,6 +113,7 @@ export function createTurnStream(
         }
       };
 
+      let failure: string | null = null;
       try {
         for (let call = 0; call < MAX_MODEL_CALLS_PER_TURN; call += 1) {
           const upstream = await streamChatbotReply({
@@ -210,14 +213,11 @@ export function createTurnStream(
           await runToolRound(toolCalls, input, emit);
         }
       } catch (error) {
-        console.error("chatbot: turn failed", {
-          error:
-            error instanceof ChatbotOpenAiError
-              ? error.message
-              : error instanceof Error
-                ? error.message
-                : "unknown error",
-        });
+        failure =
+          error instanceof ChatbotOpenAiError || error instanceof Error
+            ? error.message
+            : "unknown error";
+        console.error("chatbot: turn failed", { error: failure });
       } finally {
         // Outside the catch on purpose. A turn can finish with nothing to
         // show WITHOUT throwing: the second model call can return only
@@ -227,25 +227,45 @@ export function createTurnStream(
         // visitor's own message. Anything that reaches this point with an
         // empty turn gets a spoken fallback instead.
         if (input.sink.messages.length === 0) {
-          const fallback =
-            "Sorry, something glitched on my end. Mind sending that again?";
-          // Recorded BEFORE it is emitted. A visitor who closed the widget
-          // mid-turn has a cancelled stream, and enqueuing into that throws
-          // ("Controller is already closed") — doing it the other way round
-          // would lose the fallback and throw out of `finally`, so the turn
-          // would persist nothing at all.
-          input.sink.messages.push({
-            role: "assistant",
-            content: fallback,
-            ts: new Date().toISOString(),
-          });
-          emit({ t: "text", v: fallback });
-          emit({ t: "flush" });
+          await sendOutageFallback(input, emit, failure);
         }
         closeStream();
       }
     },
   });
+}
+
+/**
+ * The turn produced nothing (OpenAI threw, or returned an empty reply). The
+ * visitor gets the outage line plus the calendar and a free guide, and the
+ * team gets a Slack alert on the conversation's first failed turn. Every
+ * message is recorded BEFORE it is emitted: a visitor who closed the widget
+ * mid-turn has a cancelled stream, and the turn must still persist.
+ */
+async function sendOutageFallback(
+  input: TurnStreamInput,
+  emit: (frame: ChatStreamFrame) => void,
+  failure: string | null,
+): Promise<void> {
+  const firstFailure = !hadOutage(input.toolContext.transcript);
+  const [text, ...cards] = await buildOutageMessages(input.toolContext);
+  input.sink.messages.push(text, ...cards);
+  emit({ t: "text", v: text.content });
+  emit({ t: "flush" });
+  for (const card of cards) {
+    if (!card.kind) continue;
+    emit({ t: "msg", content: card.content, kind: card.kind, data: card.data });
+  }
+
+  if (firstFailure) {
+    const visitorMessage =
+      input.modelMessages.findLast((m) => m.role === "user")?.content ?? null;
+    await postChatbotOutageToSlack({
+      conversationId: input.toolContext.conversationId,
+      reason: failure ?? "The model returned an empty reply.",
+      visitorMessage,
+    });
+  }
 }
 
 /** Carries no figure, so it can never itself read as a price. */

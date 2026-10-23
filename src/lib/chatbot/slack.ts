@@ -35,28 +35,63 @@ export async function postChatbotLeadToSlack(
   profile?: ProspectProfile | null,
   deps: { fetchImpl?: typeof fetch } = {},
 ): Promise<boolean> {
+  return postSlackText(
+    buildChatbotSlackText(conversation, profile ?? null),
+    "chatbot: Slack lead post failed",
+    conversation.id,
+    deps.fetchImpl,
+  );
+}
+
+/**
+ * Tells the team the chatbot could not answer a visitor (OpenAI down, out of
+ * credits, rate limited). Before this existed, a month of failed chats went
+ * unnoticed. Fires once per conversation, on its first failed turn. Never throws.
+ */
+export async function postChatbotOutageToSlack(
+  input: { conversationId: string; reason: string; visitorMessage: string | null },
+  deps: { fetchImpl?: typeof fetch } = {},
+): Promise<boolean> {
+  const adminUrl = `${publicConfig.siteUrl}/admin/chatbot/conversations/${input.conversationId}`;
+  const text = [
+    "*Chatbot is failing: a visitor got the fallback message instead of an answer*",
+    `Reason: ${input.reason.slice(0, 300)}`,
+    fieldLine("Visitor asked", input.visitorMessage?.slice(0, 500)),
+    `Transcript: ${adminUrl}`,
+  ]
+    .filter(isPresent)
+    .join("\n");
+  return postSlackText(
+    text,
+    "chatbot: Slack outage post failed",
+    input.conversationId,
+    deps.fetchImpl,
+  );
+}
+
+async function postSlackText(
+  text: string,
+  logLabel: string,
+  conversationId: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<boolean> {
   const webhookUrl = config.SLACK_WEBHOOK_URL;
   if (!webhookUrl) return false;
 
   try {
-    const response = await (deps.fetchImpl ?? fetch)(webhookUrl, {
+    const response = await fetchImpl(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: buildChatbotSlackText(conversation, profile ?? null),
-      }),
+      body: JSON.stringify({ text }),
     });
     if (!response.ok) {
-      console.warn("chatbot: Slack lead post failed", {
-        conversationId: conversation.id,
-        status: response.status,
-      });
+      console.warn(logLabel, { conversationId, status: response.status });
       return false;
     }
     return true;
   } catch (error) {
-    console.warn("chatbot: Slack lead post failed", {
-      conversationId: conversation.id,
+    console.warn(logLabel, {
+      conversationId,
       error: error instanceof Error ? error.message : "unknown error",
     });
     return false;

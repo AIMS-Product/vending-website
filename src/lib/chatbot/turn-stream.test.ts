@@ -3,6 +3,9 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 const streamChatbotReply = vi.hoisted(() => vi.fn());
 const runChatbotTool = vi.hoisted(() => vi.fn());
 const resolveBookingCalendar = vi.hoisted(() => vi.fn());
+const postChatbotOutageToSlack = vi.hoisted(() => vi.fn());
+
+vi.mock("@/lib/chatbot/slack", () => ({ postChatbotOutageToSlack }));
 
 vi.mock("@/lib/chatbot/availability", async (importOriginal) => ({
   ...(await importOriginal<typeof import("./availability")>()),
@@ -115,6 +118,7 @@ beforeEach(() => {
   streamChatbotReply.mockReset();
   runChatbotTool.mockReset();
   resolveBookingCalendar.mockReset();
+  postChatbotOutageToSlack.mockReset();
 });
 
 afterEach(() => {
@@ -239,15 +243,61 @@ describe("createTurnStream", () => {
     expect(captured.email).toBe("original@example.com");
   });
 
-  it("says something human when OpenAI fails before any output", async () => {
-    streamChatbotReply.mockRejectedValueOnce(new Error("upstream down"));
-    const { input, sink } = makeInput();
+  // 2026-10-23: OpenAI ran out of credits and visitors were told "something
+  // glitched, send that again" for weeks, with nobody alerted.
+  it("answers a failed turn with the outage line, calendar and roadmap, and alerts Slack", async () => {
+    streamChatbotReply.mockRejectedValueOnce(
+      new Error("You have no credits remaining."),
+    );
+    resolveBookingCalendar.mockResolvedValue({
+      calendar: { label: "test", url: "https://calendly.com/x", eventTypeUri: "x" },
+      slots: [],
+    });
+    const { input, sink } = makeInput({
+      modelMessages: [
+        { role: "system" as const, content: "system" },
+        { role: "user" as const, content: "Is this ad yours?" },
+      ],
+    });
 
     const frames = await readFrames(createTurnStream(input));
 
-    expect(frames.some((f) => f.t === "text")).toBe(true);
-    expect(sink.messages).toHaveLength(1);
-    expect(sink.messages[0].content).toContain("Mind sending that again");
+    expect(sink.messages[0].content).toContain("stepped away for a moment");
+    expect(sink.messages.some((m) => /glitch/i.test(m.content))).toBe(false);
+    expect(sink.messages.map((m) => m.kind)).toEqual([
+      undefined,
+      "calendar",
+      "shared_resource",
+    ]);
+    expect(frames.filter((f) => f.t === "msg").map((f) => f.kind)).toEqual([
+      "calendar",
+      "shared_resource",
+    ]);
+    expect(postChatbotOutageToSlack).toHaveBeenCalledWith({
+      conversationId: "conv-1",
+      reason: "You have no credits remaining.",
+      visitorMessage: "Is this ad yours?",
+    });
+  });
+
+  it("still answers when the calendar lookup also fails, and alerts Slack only once per chat", async () => {
+    streamChatbotReply.mockRejectedValueOnce(new Error("upstream down"));
+    resolveBookingCalendar.mockRejectedValue(new Error("calendly down"));
+    const { OUTAGE_LINE } = await import("./outage-fallback");
+    const { input, sink } = makeInput({
+      toolContext: {
+        conversationId: "conv-1",
+        transcript: [
+          { role: "assistant", content: OUTAGE_LINE, ts: "2026-10-23T00:00:00Z" },
+        ],
+      } as unknown as ChatbotToolContext,
+    });
+
+    await readFrames(createTurnStream(input));
+
+    expect(sink.messages[0].content).toBe(OUTAGE_LINE);
+    expect(sink.messages.map((m) => m.kind)).toEqual([undefined, "shared_resource"]);
+    expect(postChatbotOutageToSlack).not.toHaveBeenCalled();
   });
 
   it("keeps a partial reply rather than replacing it with the fallback", async () => {

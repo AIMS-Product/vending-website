@@ -11,6 +11,7 @@ import {
   runChatbotTool,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
+import { OUTAGE_LINE } from "@/lib/chatbot/outage-fallback";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
 import {
   CHATBOT_RESOURCE_CATALOG,
@@ -210,8 +211,7 @@ export async function replayTurn(
   };
 }
 
-export const GLITCH_LINE =
-  "Sorry, something glitched on my end. Mind sending that again?";
+export const GLITCH_LINE = OUTAGE_LINE;
 
 // ---------------------------------------------------------------------------
 // Scoring
