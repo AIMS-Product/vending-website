@@ -335,6 +335,16 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
   it("hands /masterclass/cal/<token> to its route handler, even a dotless token", async () => {
     expect((await proxy(request("/masterclass/cal/garbage"))).status).toBe(200);
     expect((await proxy(request("/masterclass/cal/a/b"))).status).toBe(404);
+    expect((await proxy(request("/masterclass/join/garbage"))).status).toBe(
+      200,
+    );
+    expect((await proxy(request("/masterclass/wallet/garbage"))).status).toBe(
+      200,
+    );
+    expect((await proxy(request("/masterclass/join/a/b"))).status).toBe(404);
+    expect((await proxy(request("/masterclass/other/garbage"))).status).toBe(
+      404,
+    );
   });
 
   it("lets configured custom-prefix pages without a redirect row render normally", async () => {
