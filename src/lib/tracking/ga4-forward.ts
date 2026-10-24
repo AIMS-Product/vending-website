@@ -3,8 +3,8 @@
  * that GTM installs, because the GTM container has no triggers for them
  * (checked 2026-10-01: GA4 had none of them). A gtag-style `arguments` push
  * on the shared dataLayer is read by that Google tag; `send_to` keeps it to
- * GA4 only. If GTM ever gets its own GA4 event tags for these names, remove
- * this or GA4 counts each twice.
+ * GA4 only. If GTM ever gets its own GA4 event tags for these names (including
+ * a GA4 `purchase` tag), remove this or GA4 counts each twice.
  *
  * Only named events and named parameters pass: other site forms put
  * lead_email / lead_phone on the same dataLayer events for Google Ads, and
@@ -43,13 +43,49 @@ const PARAMS = [
   "error_keys",
 ] as const;
 
-type Ga4Params = Record<string, string | number>;
+type Ga4Item = Record<string, string | number>;
+type Ga4Params = Record<string, string | number | Ga4Item[]>;
+
+const ITEM_KEYS = ["item_id", "item_name", "price", "quantity"] as const;
+
+/**
+ * GA4's ecommerce `purchase` (the $5 Playbook, GuidePurchaseTracker). Its
+ * fields sit under `ecommerce` on the dataLayer, so they are lifted here.
+ * Order id, value, currency and product fields only: never buyer details.
+ */
+function purchaseParams(event: Record<string, unknown>): Ga4Params | null {
+  const ecommerce = event.ecommerce as Record<string, unknown> | undefined;
+  const { transaction_id: id, value, currency } = ecommerce ?? {};
+  if (typeof id !== "string" || typeof value !== "number") return null;
+  if (typeof currency !== "string") return null;
+  const items = Array.isArray(ecommerce?.items) ? ecommerce.items : [];
+  return {
+    send_to: GA4_MEASUREMENT_ID,
+    transaction_id: id.slice(0, 100),
+    value,
+    currency,
+    items: items.map((item: Record<string, unknown>) =>
+      Object.fromEntries(
+        ITEM_KEYS.flatMap((key) => {
+          const v = item?.[key];
+          return typeof v === "string" || typeof v === "number"
+            ? [[key, v]]
+            : [];
+        }),
+      ),
+    ),
+  };
+}
 
 /** The gtag command for a dataLayer event, or null when it is not forwarded. */
 export function ga4Command(
   event: Record<string, unknown>,
 ): ["event", string, Ga4Params] | null {
   const name = event.event;
+  if (name === "purchase") {
+    const params = purchaseParams(event);
+    return params ? ["event", name, params] : null;
+  }
   if (typeof name !== "string" || !FORWARDED.has(name)) return null;
   const params: Ga4Params = { send_to: GA4_MEASUREMENT_ID };
   for (const key of PARAMS) {
