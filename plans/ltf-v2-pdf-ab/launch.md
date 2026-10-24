@@ -1,7 +1,9 @@
 # $5 First Location Playbook: launch runbook (Stripe only, no GHL)
 
 Adam 2026-10-19: replaces the GHL playbook course. Stripe Checkout on our pages, PDF delivered by us,
-all sales final, no GoHighLevel anywhere. Stripe account: Modern-Amenities LLC (`acct_1Q4q40JIfGazBhNX`).
+all sales final, no GoHighLevel anywhere.
+
+**Launch-day / first-sale checklist: [`launch-day.md`](launch-day.md).** Stripe account: Modern-Amenities LLC (`acct_1Q4q40JIfGazBhNX`).
 Support / reply-to: support@modern-amenities.com.
 
 ## Done
