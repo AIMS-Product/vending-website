@@ -423,6 +423,7 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
   });
 
   it("a 100% off promo order delivers once and sends no ad conversion", async () => {
+    const before = await loadLtfReport(db);
     const paid: string[] = [];
     const d = {
       ...deps,
@@ -445,5 +446,9 @@ describe.skipIf(!enabled)("ltf orders (real Postgres)", () => {
     });
     expect(mail.sent).toHaveLength(1);
     expect(paid).toEqual([]);
+    // A $0 order is delivered but is not a buyer (10-20: test orders inflated conversion).
+    const after = await loadLtfReport(db);
+    expect(after.buyers - before.buyers).toBe(0);
+    expect(after.freeOrders - before.freeOrders).toBe(1);
   });
 });

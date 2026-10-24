@@ -50,6 +50,11 @@ const ROWS: {
     note: "Should be 0. Stripe retries the webhook, which retries the email.",
   },
   { label: "Buyers who downloaded", value: (r) => num(r.buyersDownloaded) },
+  {
+    label: "Free orders (100% off code)",
+    value: (r) => num(r.freeOrders),
+    note: "Delivered, but not counted as buyers or revenue.",
+  },
 ];
 
 export default async function PlaybookSalesPage() {
