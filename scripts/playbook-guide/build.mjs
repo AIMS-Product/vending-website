@@ -25,6 +25,10 @@ const SITE = "https://www.vendingpreneurs.com";
  * every other page is the paid product, so it is published blurred only. */
 const PREVIEW_PAGES = [1, 2, 3, 5, 7, 8, 11];
 const READABLE_PAGES = new Set([1, 2]);
+// Only the cover and contents may ever ship readable (10-20 leak, see
+// src/lib/content/playbook-guide-images.test.ts).
+if ([...READABLE_PAGES].some((n) => n !== 1 && n !== 2))
+  throw new Error("READABLE_PAGES may only contain pages 1 and 2");
 
 const esc = (s) =>
   s.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;");
