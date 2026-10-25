@@ -67,6 +67,7 @@ export function ApplyStickyCta({
     <div
       ref={barRef}
       aria-hidden={!visible}
+      inert={!visible}
       className={`fixed inset-x-0 bottom-0 z-40 border-t-2 border-[#111111] bg-white shadow-[0_-6px_20px_rgba(0,0,0,0.12)] transition-transform duration-300 ${
         visible ? "translate-y-0" : "translate-y-full"
       }`}

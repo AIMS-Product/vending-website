@@ -12,7 +12,7 @@ import { SkipOnAdmin } from "@/components/tracking/SkipOnAdmin";
 import { FormTracker } from "@/components/tracking/FormTracker";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
-import { SitePopup } from "@/components/site/SitePopup";
+import { SitePopupLoader } from "@/components/site/SitePopupLoader";
 import { loadSitePopups } from "@/lib/services/popups";
 import { siteDescription, siteName, siteUrl } from "@/lib/site";
 import { siteStructuredData } from "@/lib/site-structured-data";
@@ -75,7 +75,7 @@ export default async function RootLayout({
         <Footer />
         <AttributionSessionTracker />
         <FormTracker />
-        <SitePopup popups={popups} />
+        <SitePopupLoader popups={popups} />
         <SkipOnAdmin>
           <TrackingScripts />
         </SkipOnAdmin>
