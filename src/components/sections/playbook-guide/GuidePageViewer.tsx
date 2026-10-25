@@ -12,10 +12,12 @@ interface ViewerPage {
 }
 
 /** Badge over a blurred paid page. */
-export function LockedBadge() {
+export function LockedBadge({ compact = false }: { compact?: boolean }) {
   return (
     <span className="absolute inset-0 flex items-center justify-center p-4">
-      <span className="border-ink text-ink flex items-center gap-2 border-2 bg-white px-4 py-2 text-sm font-black shadow-[4px_4px_0_#111111]">
+      <span
+        className={`border-ink text-ink flex items-center gap-2 border-2 bg-white text-sm font-black shadow-[4px_4px_0_#111111] ${compact ? "px-2.5 py-2 sm:px-4" : "px-4 py-2"}`}
+      >
         <svg viewBox="0 0 16 16" className="size-4" fill="none" aria-hidden>
           <rect
             x="3"
@@ -32,7 +34,9 @@ export function LockedBadge() {
             strokeWidth="2"
           />
         </svg>
-        Unlocks with the playbook
+        <span className={compact ? "max-sm:sr-only" : undefined}>
+          Unlocks with the playbook
+        </span>
       </span>
     </span>
   );
