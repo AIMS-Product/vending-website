@@ -1069,6 +1069,7 @@ describe("adminRunCloseSync", () => {
     });
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] })) // existing notes
       .mockResolvedValueOnce(jsonResponse({ id: "acti_note_1" }));
 
     await adminRunCloseSync({
@@ -1078,7 +1079,10 @@ describe("adminRunCloseSync", () => {
       now: () => new Date("2026-06-17T09:00:00.000Z"),
     });
 
-    const note = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      "https://api.close.com/api/v1/activity/note/?lead_id=lead_current&_limit=50",
+    );
+    const note = JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string);
     expect(note).toMatchObject({
       lead_id: "lead_current",
       contact_id: "cont_current",
@@ -1684,9 +1688,10 @@ describe("adminRunCloseSync", () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_1" }))
       .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }))
-      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }));
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] })) // existing notes
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_1" }));
 
     const result = await adminRunCloseSync({
       client: fake.client,
@@ -1705,30 +1710,33 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+    // Field writes first, note last, so a failed field write never leaves a
+    // note behind to be posted again on retry.
+    expect(fetchMock.mock.calls).toHaveLength(4);
+    expect(fetchMock.mock.calls[3]?.[0]).toBe(
       "https://api.close.com/api/v1/activity/note/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual(
+    expect(JSON.parse(fetchMock.mock.calls[3]?.[1]?.body as string)).toEqual(
       expect.objectContaining({
         lead_id: "lead_close_1",
         note_html: expect.stringContaining("Available capital"),
       }),
     );
     // Lead-scoped analytics fields go on the lead.
-    expect(fetchMock.mock.calls[1]?.[0]).toBe(
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
       "https://api.close.com/api/v1/lead/lead_close_1/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
       "custom.cf_score": 82,
       "custom.cf_band": "top_closers",
     });
     // Contact-scoped answer/consent fields go on the contact — sending these to
     // the lead makes Close reject the whole update with a 400.
-    expect(fetchMock.mock.calls[2]?.[0]).toBe(
+    expect(fetchMock.mock.calls[1]?.[0]).toBe(
       "https://api.close.com/api/v1/contact/cont_close_1/",
     );
-    expect(JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
       "custom.cf_state": "SA",
       "custom.cf_capital": "$25k-$50k",
       "custom.cf_consent": "true",
@@ -1756,8 +1764,9 @@ describe("adminRunCloseSync", () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_newsletter" }))
-      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }));
+      .mockResolvedValueOnce(jsonResponse({ id: "cont_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] })) // existing notes
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_newsletter" }));
 
     const result = await adminRunCloseSync({
       client: fake.client,
@@ -1770,13 +1779,13 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    const note = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string) as {
+    const note = JSON.parse(fetchMock.mock.calls[2]?.[1]?.body as string) as {
       note_html: string;
     };
     expect(note.note_html).toContain("The Route newsletter signup");
     expect(note.note_html).not.toContain("Qualification completed");
     expect(note.note_html).not.toContain("qualified");
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_consent": "true",
     });
   });
@@ -1802,8 +1811,9 @@ describe("adminRunCloseSync", () => {
     });
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_2" }))
-      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }));
+      .mockResolvedValueOnce(jsonResponse({ id: "lead_close_1" }))
+      .mockResolvedValueOnce(jsonResponse({ data: [] })) // existing notes
+      .mockResolvedValueOnce(jsonResponse({ id: "acti_note_2" }));
 
     const result = await adminRunCloseSync({
       client: fake.client,
@@ -1818,7 +1828,7 @@ describe("adminRunCloseSync", () => {
     });
 
     expect(result).toMatchObject({ synced: 1 });
-    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({
       "custom.cf_status": "qualified",
     });
   });
@@ -1840,10 +1850,11 @@ describe("adminRunCloseSync", () => {
       ],
       leads: [],
     });
-    // Only the note POST should fire; the contact-scoped update must not be
-    // sent to the lead, and with no contact ID the event parks for retry.
+    // Only the note check and POST should fire; the contact-scoped update must
+    // not be sent to the lead, and with no contact ID the event parks for retry.
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(jsonResponse({ data: [] })) // existing notes
       .mockResolvedValueOnce(jsonResponse({ id: "acti_note_guard" }));
 
     const result = await adminRunCloseSync({
@@ -1864,6 +1875,104 @@ describe("adminRunCloseSync", () => {
       "https://api.close.com/api/v1/lead/lead_close_1/",
     );
     expect(urls.some((url) => String(url).includes("/contact/"))).toBe(false);
+  });
+
+  // A fake Close that keeps the notes it is sent. `losePostResponses` makes
+  // that many note POSTs save the note and then fail on the way back -- a
+  // timeout after Close committed the write.
+  function closeNoteStore({ losePostResponses = 0 } = {}) {
+    const notes: Array<{ note_html: string }> = [];
+    let lost = 0;
+    const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.includes("/activity/note/?lead_id=")) {
+        return jsonResponse({ data: notes });
+      }
+      if (url.endsWith("/activity/note/") && init?.method === "POST") {
+        notes.push(JSON.parse(init.body as string));
+        if (lost < losePostResponses) {
+          lost += 1;
+          throw new DOMException("The operation timed out.", "TimeoutError");
+        }
+        return jsonResponse({ id: `acti_note_${notes.length}` });
+      }
+      return jsonResponse({ id: "ok" });
+    });
+    return { notes, fetchMock };
+  }
+
+  it("posts the qualification note once when a timed-out POST is retried", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          close_lead_id: "lead_close_1",
+          close_contact_id: "cont_close_1",
+          payload: { qualification: { status: "qualified" }, answers: [] },
+        }),
+      ],
+    });
+    const close = closeNoteStore({ losePostResponses: 1 });
+    const run = (at: string) =>
+      adminRunCloseSync({
+        client: fake.client,
+        closeConfig: closeConfigFromEnv({ CLOSE_API_KEY: "close_key_123" }),
+        fetchImpl: close.fetchMock as unknown as typeof fetch,
+        now: () => new Date(at),
+      });
+
+    expect(await run("2026-06-17T09:00:00.000Z")).toMatchObject({ failed: 1 });
+    expect(fake.state.events[0].status).toBe("failed");
+    expect(await run("2026-06-17T10:00:00.000Z")).toMatchObject({ synced: 1 });
+
+    expect(close.notes).toHaveLength(1);
+    expect(close.notes[0].note_html).toContain(
+      `close-sync-event:${fake.state.events[0].id}`,
+    );
+  });
+
+  it("posts the qualification note once when a needs-review event is retried by hand", async () => {
+    const fake = buildClient({
+      events: [
+        makeEvent({
+          event_type: "qualification_enrichment",
+          lead_submission_id: null,
+          close_lead_id: "lead_close_1",
+          close_contact_id: null,
+          payload: {
+            qualification: { status: "qualified" },
+            normalized: { consent: true },
+            answers: [],
+          },
+        }),
+      ],
+      leads: [],
+    });
+    const close = closeNoteStore();
+    const run = (at: string) =>
+      adminRunCloseSync({
+        client: fake.client,
+        closeConfig: closeConfigFromEnv({
+          CLOSE_API_KEY: "close_key_123",
+          CLOSE_CONSENT_STATUS_FIELD_ID: "cf_consent",
+        }),
+        fetchImpl: close.fetchMock as unknown as typeof fetch,
+        now: () => new Date(at),
+      });
+
+    expect(await run("2026-06-17T09:00:00.000Z")).toMatchObject({
+      needsReview: 1,
+    });
+    // What adminRetryCloseSyncEvent does: same row, back to pending.
+    Object.assign(fake.state.events[0], {
+      status: "pending",
+      next_retry_at: "2026-06-17T09:30:00.000Z",
+      last_error: null,
+    });
+    expect(await run("2026-06-17T10:00:00.000Z")).toMatchObject({
+      needsReview: 1,
+    });
+
+    expect(close.notes).toHaveLength(1);
   });
 
   it("dead-letters exhausted events with bounded sanitized provider errors", async () => {

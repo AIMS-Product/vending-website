@@ -653,66 +653,24 @@ describe("qualification enrichment retried after a partial write", () => {
     CLOSE_QUALIFICATION_STATUS_FIELD_ID: "cf_status",
   });
 
-  // The note is POSTed first and Close's note endpoint has no idempotency key.
-  // If the lead-field PUT that follows hits a 5xx, the event is retried and the
-  // retry POSTs the note again, so one qualified lead ends up with two identical
-  // "Qualification completed" notes on the Close record. Other note writers
-  // (chatbot close-note, pre-call-note) look for their own marker first; this
-  // path does not. Left as-is: src/lib/close is off limits for behaviour
-  // changes in this pass.
-  it.fails(
-    "posts the qualification note once even when the write after it fails and is retried",
-    async () => {
-      const fake = buildClient({ events: [enrichment()], leads: [] });
-      const notePosts: unknown[] = [];
-      let leadPuts = 0;
-      const fetchMock = vi
-        .fn()
-        .mockImplementation(async (url: unknown, init?: RequestInit) => {
-          const target = String(url);
-          if (target.endsWith("/activity/note/") && init?.method === "POST") {
-            notePosts.push(init.body);
-            return jsonResponse({ id: `note_${notePosts.length}` });
-          }
-          if (target.endsWith("/lead/lead_close_1/")) {
-            leadPuts += 1;
-            // First attempt: Close is down for the lead update. Second: fine.
-            return leadPuts === 1
-              ? new Response("down", { status: 503 })
-              : jsonResponse({ id: "lead_close_1" });
-          }
-          return jsonResponse({ data: [] });
-        });
-
-      const run = (now: Date) =>
-        adminRunCloseSync({
-          client: fake.client,
-          closeConfig: enrichConfig,
-          fetchImpl: fetchMock as unknown as typeof fetch,
-          now: () => now,
-        });
-      await run(T0);
-      await run(minutesAfter(T0, 5));
-
-      expect(fake.state.events[0].status).toBe("synced");
-      expect(notePosts).toHaveLength(1);
-    },
-  );
-
-  it("documents today's behaviour for that retry: the note is posted on every attempt", async () => {
+  // Close's note endpoint has no idempotency key, so the note is posted only
+  // after the idempotent field writes; a failed field write is retried without
+  // a second "Qualification completed" note.
+  it("posts the qualification note once even when the write after it fails and is retried", async () => {
     const fake = buildClient({ events: [enrichment()], leads: [] });
+    const notePosts: unknown[] = [];
     let leadPuts = 0;
-    let notePosts = 0;
     const fetchMock = vi
       .fn()
       .mockImplementation(async (url: unknown, init?: RequestInit) => {
         const target = String(url);
         if (target.endsWith("/activity/note/") && init?.method === "POST") {
-          notePosts += 1;
-          return jsonResponse({ id: `note_${notePosts}` });
+          notePosts.push(init.body);
+          return jsonResponse({ id: `note_${notePosts.length}` });
         }
         if (target.endsWith("/lead/lead_close_1/")) {
           leadPuts += 1;
+          // First attempt: Close is down for the lead update. Second: fine.
           return leadPuts === 1
             ? new Response("down", { status: 503 })
             : jsonResponse({ id: "lead_close_1" });
@@ -730,6 +688,36 @@ describe("qualification enrichment retried after a partial write", () => {
     await run(T0);
     await run(minutesAfter(T0, 5));
 
-    expect(notePosts).toBe(2);
+    expect(fake.state.events[0].status).toBe("synced");
+    expect(notePosts).toHaveLength(1);
+  });
+
+  it("writes the lead fields before the note", async () => {
+    const fake = buildClient({ events: [enrichment()], leads: [] });
+    const order: string[] = [];
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(async (url: unknown, init?: RequestInit) => {
+        const target = String(url);
+        if (target.endsWith("/activity/note/") && init?.method === "POST") {
+          order.push("note");
+          return jsonResponse({ id: "note_1" });
+        }
+        if (target.endsWith("/lead/lead_close_1/")) {
+          order.push("lead");
+          return jsonResponse({ id: "lead_close_1" });
+        }
+        return jsonResponse({ data: [] });
+      });
+
+    await adminRunCloseSync({
+      client: fake.client,
+      closeConfig: enrichConfig,
+      fetchImpl: fetchMock as unknown as typeof fetch,
+      now: () => T0,
+    });
+
+    expect(fake.state.events[0].status).toBe("synced");
+    expect(order).toEqual(["lead", "note"]);
   });
 });
