@@ -314,6 +314,9 @@ export const plays: readonly GuidePlay[] = [
   },
 ] as const;
 
+/** Short format line for order summaries, e.g. "PDF + 8 videos". */
+export const GUIDE_FORMAT = `PDF + ${plays.length} videos`;
+
 export const firstThirtyDays = [
   {
     week: "Week 1",

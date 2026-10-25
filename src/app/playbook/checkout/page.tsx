@@ -44,7 +44,7 @@ export default async function PlaybookCheckoutPage({
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1180px] px-5 pt-8 pb-14 lg:px-10 lg:pt-12">
+      <div className="mx-auto max-w-[1180px] px-5 pt-8 pb-14 lg:px-10 lg:pt-12">
         <h1 className="v2-display text-ink text-[clamp(2rem,3.4vw,3rem)] leading-[1.02] uppercase">
           {checkoutPage.title}
         </h1>
@@ -97,7 +97,7 @@ export default async function PlaybookCheckoutPage({
         <p className="mx-auto mt-12 max-w-3xl text-center text-xs leading-relaxed text-slate-600">
           {DISCLAIMER}
         </p>
-      </main>
+      </div>
     </div>
   );
 }

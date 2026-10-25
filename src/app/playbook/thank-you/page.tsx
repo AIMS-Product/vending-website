@@ -22,7 +22,7 @@ export default function PlaybookThankYouPage() {
           <Wordmark height={36} eager />
         </div>
       </header>
-      <main className="mx-auto max-w-[760px] px-5 py-12 text-center lg:py-16">
+      <div className="mx-auto max-w-[760px] px-5 py-12 text-center lg:py-16">
         <p className={EYEBROW}>{thankYou.eyebrow}</p>
         <h1 className="v2-display text-ink mt-3 text-[clamp(2.4rem,5vw,4rem)] leading-[1.02] uppercase">
           {thankYou.title}
@@ -41,7 +41,7 @@ export default function PlaybookThankYouPage() {
           sizes="(min-width:768px) 680px, 100vw"
           className="mx-auto mt-10 h-auto w-full max-w-[680px]"
         />
-      </main>
+      </div>
     </div>
   );
 }
