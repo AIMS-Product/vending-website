@@ -1734,6 +1734,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      apple_wallet_registrations: {
+        Row: {
+          device_library_id: string;
+          serial_number: string;
+          push_token: string;
+          room_start: string;
+          created_at: string;
+        };
+        Insert: {
+          device_library_id: string;
+          serial_number: string;
+          push_token: string;
+          room_start: string;
+          created_at?: string;
+        };
+        Update: {
+          device_library_id?: string;
+          serial_number?: string;
+          push_token?: string;
+          room_start?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       ltf_visitors: {
         Row: {
           is_bot: boolean;

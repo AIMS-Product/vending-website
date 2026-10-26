@@ -131,6 +131,25 @@ const envSchema = z.object({
   /** Id of the GHL contact field "Calendar Link" (created by hand once). Absent -> that field is not written. */
   GHL_CALENDAR_LINK_FIELD_ID: optionalTrimmedOptionalEnv,
   /**
+   * Google Wallet event-ticket pass (.claude/specs/2026-10-23-google-wallet-pass.md).
+   * Issuer id from the Pay & Wallet console; the service-account key JSON as one
+   * string. Either absent -> no wallet button, the reminder cron does nothing.
+   */
+  GOOGLE_WALLET_ISSUER_ID: optionalTrimmedOptionalEnv,
+  GOOGLE_WALLET_SA_KEY: optionalTrimmedOptionalEnv,
+  /** 0-100 share of registrants shown the button (by contact id). Absent -> 0. */
+  GOOGLE_WALLET_ROLLOUT_PERCENT: optionalTrimmedOptionalEnv,
+  /**
+   * Apple Wallet signing: pass type id, team id, and the pass certificate, its
+   * key and Apple's WWDR intermediate as PEM (raw or base64). Any absent -> no
+   * Apple button. Shares GOOGLE_WALLET_ROLLOUT_PERCENT / ?wallet=1.
+   */
+  APPLE_WALLET_PASS_TYPE_ID: optionalTrimmedOptionalEnv,
+  APPLE_WALLET_TEAM_ID: optionalTrimmedOptionalEnv,
+  APPLE_WALLET_SIGNER_CERT: optionalTrimmedOptionalEnv,
+  APPLE_WALLET_SIGNER_KEY: optionalTrimmedOptionalEnv,
+  APPLE_WALLET_WWDR: optionalTrimmedOptionalEnv,
+  /**
    * Forwarding leads OUT to WeScale's GoHighLevel sub-account — a different
    * account from the GHL_* pair above, which is our own and read-only.
    *
@@ -321,6 +340,14 @@ const parsed = envSchema.safeParse({
   ANTHONY_ZOOM_CLIENT_SECRET: process.env.ANTHONY_ZOOM_CLIENT_SECRET,
   MASTERCLASS_CAL_SECRET: process.env.MASTERCLASS_CAL_SECRET,
   GHL_CALENDAR_LINK_FIELD_ID: process.env.GHL_CALENDAR_LINK_FIELD_ID,
+  GOOGLE_WALLET_ISSUER_ID: process.env.GOOGLE_WALLET_ISSUER_ID,
+  GOOGLE_WALLET_SA_KEY: process.env.GOOGLE_WALLET_SA_KEY,
+  GOOGLE_WALLET_ROLLOUT_PERCENT: process.env.GOOGLE_WALLET_ROLLOUT_PERCENT,
+  APPLE_WALLET_PASS_TYPE_ID: process.env.APPLE_WALLET_PASS_TYPE_ID,
+  APPLE_WALLET_TEAM_ID: process.env.APPLE_WALLET_TEAM_ID,
+  APPLE_WALLET_SIGNER_CERT: process.env.APPLE_WALLET_SIGNER_CERT,
+  APPLE_WALLET_SIGNER_KEY: process.env.APPLE_WALLET_SIGNER_KEY,
+  APPLE_WALLET_WWDR: process.env.APPLE_WALLET_WWDR,
   KIT_API_KEY: process.env.KIT_API_KEY,
   WESCALE_GHL_WEBHOOK_URL: process.env.WESCALE_GHL_WEBHOOK_URL,
   WESCALE_GHL_TOKEN: process.env.WESCALE_GHL_TOKEN,

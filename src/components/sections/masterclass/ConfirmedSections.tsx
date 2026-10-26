@@ -40,6 +40,10 @@ type Props = {
   label: string | null;
   startsAt: string | null;
   links: ReturnType<typeof calendarLinks> | null;
+  /** /masterclass/wallet/<token> for a registrant in the wallet rollout, else null. */
+  walletHref?: string | null;
+  /** /masterclass/wallet/<token>/apple when Apple Wallet is configured, else null. */
+  appleWalletHref?: string | null;
   /** Server render time (ms), so the date line hydrates in the same phase. */
   renderedAt: number;
 };
@@ -50,6 +54,8 @@ export function ConfirmedHero({
   label,
   startsAt,
   links,
+  walletHref = null,
+  appleWalletHref = null,
   renderedAt,
   steps,
 }: Props & { steps?: React.ReactNode }) {
@@ -190,6 +196,45 @@ export function ConfirmedHero({
                   Outlook
                 </a>
               </div>
+              {walletHref || appleWalletHref ? (
+                // Apple's and Google's own badges, unmodified (brand rules).
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  {appleWalletHref ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="apple"
+                      href={appleWalletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-apple-wallet.svg"
+                        alt="Add to Apple Wallet"
+                        width={110}
+                        height={35}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                  {walletHref ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="google"
+                      href={walletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-google-wallet.svg"
+                        alt="Add to Google Wallet"
+                        width={199}
+                        height={55}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </UntilEnded>
         ) : null}
@@ -201,9 +246,21 @@ export function ConfirmedHero({
 const MAIL_SEARCH = encodeURIComponent(SENDER_EMAIL);
 /** Inbox links that open already searching for Anthony's email (spam included where the mail app allows it). */
 const MAIL_APPS = [
-  { app: "gmail", label: "Open Gmail", href: `https://mail.google.com/mail/u/0/#search/in%3Aanywhere+from%3A${MAIL_SEARCH}` },
-  { app: "outlook", label: "Outlook", href: `https://outlook.live.com/mail/0/search/q/${MAIL_SEARCH}` },
-  { app: "yahoo", label: "Yahoo", href: `https://mail.yahoo.com/d/search/keyword=${MAIL_SEARCH}` },
+  {
+    app: "gmail",
+    label: "Open Gmail",
+    href: `https://mail.google.com/mail/u/0/#search/in%3Aanywhere+from%3A${MAIL_SEARCH}`,
+  },
+  {
+    app: "outlook",
+    label: "Outlook",
+    href: `https://outlook.live.com/mail/0/search/q/${MAIL_SEARCH}`,
+  },
+  {
+    app: "yahoo",
+    label: "Yahoo",
+    href: `https://mail.yahoo.com/d/search/keyword=${MAIL_SEARCH}`,
+  },
 ] as const;
 
 function NumberedStep({
@@ -230,11 +287,11 @@ function NumberedStep({
           <span className="sr-only">Step {n}: </span>
           {title}
         </h2>
-        <div className="text-[14px] leading-snug text-slate-600">{children}</div>
+        <div className="text-[14px] leading-snug text-slate-600">
+          {children}
+        </div>
       </div>
-      {action ? (
-        <div className="col-span-2 sm:col-span-1">{action}</div>
-      ) : null}
+      {action ? <div className="col-span-2 sm:col-span-1">{action}</div> : null}
     </li>
   );
 }
@@ -261,7 +318,9 @@ export function NextSteps({
           <a
             href={seatTextHref(seatTextBody(first, startsAt))}
             data-track="seat_text_clicked"
-            className={buttonClass({ className: "flex w-full whitespace-nowrap sm:w-auto" })}
+            className={buttonClass({
+              className: "flex w-full whitespace-nowrap sm:w-auto",
+            })}
           >
             Text Anthony
           </a>
@@ -284,7 +343,9 @@ export function NextSteps({
               rel="noopener noreferrer"
               data-track="email_search_clicked"
               data-track-detail={gmail.app}
-              className={buttonClass({ className: "flex w-full whitespace-nowrap sm:w-auto" })}
+              className={buttonClass({
+                className: "flex w-full whitespace-nowrap sm:w-auto",
+              })}
             >
               {gmail.label}
             </a>
@@ -309,8 +370,9 @@ export function NextSteps({
           </div>
         }
       >
-        From <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>
-        . Not there? Check spam and promotions, then move it to your inbox.
+        From{" "}
+        <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>.
+        Not there? Check spam and promotions, then move it to your inbox.
       </NumberedStep>
     </ol>
   );
