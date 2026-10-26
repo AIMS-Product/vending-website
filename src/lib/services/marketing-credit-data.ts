@@ -6,24 +6,14 @@ import {
   fetchCloseDeals,
   type WinsCloseClient,
 } from "@/lib/services/close-wins";
-import {
-  type BookedLead,
-  chatFunnel,
-  type ChatFunnel,
-  creditBySource,
-  type CreditRow,
-  REACTIVATION,
-  siteFormFunnel,
-  type SiteFormFunnel,
-  sourceOf,
-  type Touches,
-} from "@/lib/services/marketing-credit";
 import { NEWSLETTER_FORM_ID } from "@/lib/content/newsletter";
 import {
-  selfBookedBreakdown,
-  type SelfBookedBreakdown,
-  type SelfBookedRow,
-} from "@/lib/services/self-booked";
+  type BookedLead,
+  creditBySource,
+  type CreditRow,
+  type MarketingSource,
+  type Touches,
+} from "@/lib/services/marketing-credit";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
 
@@ -33,22 +23,7 @@ const TIME_ZONE = "America/Los_Angeles";
 const PAGE = 1000;
 
 export type MarketingCredit =
-  | {
-      ok: true;
-      from: string;
-      to: string;
-      selfBooked: SelfBookedBreakdown;
-      credit: CreditRow[];
-      siteForms: SiteFormFunnel;
-      chat: ChatFunnel;
-      reactivation: {
-        calls: number;
-        assistedCalls: number;
-        wins: number;
-        assistedWins: number;
-        assistedRevenue: number;
-      };
-    }
+  | { ok: true; from: string; to: string; rows: CreditRow[] }
   | { ok: false; error: string };
 
 const pacificDay = (iso: string) =>
@@ -99,7 +74,8 @@ export async function getMarketingCredit(
     const client = deps.client ?? createAdminClient();
     const to = pacificDay((deps.now ?? new Date()).toISOString());
     const from = `${to.slice(0, 7)}-01`;
-    return await load(client, deps.close ?? cachedCloseReads(), from, to);
+    const rows = await load(client, deps.close ?? cachedCloseReads(), from, to);
+    return { ok: true, from, to, rows };
   } catch (error) {
     console.error("marketing credit failed", {
       message: error instanceof Error ? error.message : "unknown",
@@ -111,16 +87,21 @@ export async function getMarketingCredit(
   }
 }
 
+/** Site lead tags that belong to another source's row, not "Site form". */
+const NOT_SITE_FORM_TAG =
+  /^(chatbot|newsletter|lead-magnet|internal-webinar|webinar-)/;
+const LEAD_MAGNET_PATH = /^\/resources\//;
+
 async function load(
   client: Client,
   close: WinsCloseClient,
   from: string,
   to: string,
-): Promise<MarketingCredit> {
+): Promise<CreditRow[]> {
   const padFrom = `${from}T00:00:00-08:00`;
   const padTo = `${to}T23:59:59-07:00`;
 
-  const [mirror, calendly, forms, chats, deals] = await Promise.all([
+  const [mirror, forms, chats, spine, deals] = await Promise.all([
     readAll<MirrorRow>(
       (a, b) =>
         client
@@ -131,33 +112,16 @@ async function load(
           .range(a, b),
       "the Close mirror",
     ),
-    readAll<SelfBookedRow & { created_at: string }>(
-      (a, b) =>
-        client
-          .from("calendly_bookings")
-          .select(
-            "invitee_email,scheduled_event_name,utm_source,utm_medium,utm_content,lead_submission_id,raw_payload,created_at",
-          )
-          .eq("event_kind", "invitee.created")
-          .gte("created_at", padFrom)
-          .lte("created_at", padTo)
-          .order("created_at", { ascending: true })
-          .range(a, b),
-      "Calendly bookings",
-    ),
     readAll<{
       email: string;
-      call_booked_at: string | null;
-      booked_by_setter: string | null;
-      call_status: string | null;
+      source_path: string | null;
+      entry_resource_tag: string | null;
       created_at: string;
     }>(
       (a, b) =>
         client
           .from("lead_submissions")
-          .select(
-            "email,call_booked_at,booked_by_setter,call_status,created_at",
-          )
+          .select("email,source_path,entry_resource_tag,created_at")
           .neq("lifecycle_status", "newsletter_subscribed")
           .or(
             `latest_qualification_form_id.is.null,latest_qualification_form_id.neq.${NEWSLETTER_FORM_ID}`,
@@ -167,21 +131,28 @@ async function load(
           .range(a, b),
       "site forms",
     ),
-    readAll<{
-      captured_email: string | null;
-      call_booked_at: string | null;
-      created_at: string;
-      lead_submission_id: string | null;
-    }>(
+    readAll<{ created_at: string }>(
       (a, b) =>
         client
           .from("chatbot_conversations")
-          .select("captured_email,call_booked_at,created_at,lead_submission_id")
+          .select("created_at")
           .gte("created_at", padFrom)
           .lte("created_at", padTo)
           .gte("message_count", 2)
           .range(a, b),
       "chatbot conversations",
+    ),
+    // Webinar registrations and off-site lead magnet opt-ins (GHL forms), by day.
+    readAll<{ channel: string; medium: string; leads: number | null }>(
+      (a, b) =>
+        client
+          .from("channel_daily")
+          .select("channel,medium,leads")
+          .gte("day", from)
+          .lte("day", to)
+          .gt("leads", 0)
+          .range(a, b),
+      "registrations and opt-ins",
     ),
     fetchCloseDeals({ from, to, close, mirror: client }),
   ]);
@@ -191,6 +162,26 @@ async function load(
       const d = pacificDay(r.created_at);
       return d >= from && d <= to;
     });
+
+  const siteEmails = new Set<string>();
+  const magnetEmails = new Set<string>();
+  for (const f of inMonth(forms)) {
+    const email = f.email.trim().toLowerCase();
+    if (LEAD_MAGNET_PATH.test(f.source_path ?? "")) magnetEmails.add(email);
+    else if (!NOT_SITE_FORM_TAG.test(f.entry_resource_tag ?? ""))
+      siteEmails.add(email);
+  }
+  const spineLeads = (
+    match: (r: { channel: string; medium: string }) => boolean,
+  ) => spine.filter(match).reduce((s, r) => s + (r.leads ?? 0), 0);
+
+  const entered: Partial<Record<MarketingSource, number>> = {
+    Webinar: spineLeads((r) => r.channel === "Webinar"),
+    "Site form": siteEmails.size,
+    "Lead magnet":
+      spineLeads((r) => r.medium === "lead-magnet") + magnetEmails.size,
+    Chatbot: inMonth(chats).length,
+  };
 
   const dealMirror = await readAll<MirrorRow>(
     (a, b) =>
@@ -202,23 +193,6 @@ async function load(
     "won leads in the Close mirror",
   );
 
-  // The chat's lead row says whether they booked later, and who booked it.
-  const chatLeadIds = [
-    ...new Set(chats.map((c) => c.lead_submission_id).filter(Boolean)),
-  ] as string[];
-  const chatLeads = new Map<
-    string,
-    { call_booked_at: string | null; booked_by_setter: string | null }
-  >();
-  for (let i = 0; i < chatLeadIds.length; i += 200) {
-    const { data, error } = await client
-      .from("lead_submissions")
-      .select("id,call_booked_at,booked_by_setter")
-      .in("id", chatLeadIds.slice(i, i + 200));
-    if (error) throw new Error("Could not read chatbot leads.");
-    for (const r of data ?? []) chatLeads.set(r.id, r);
-  }
-
   const booked = mirror.map((r) => toBooked(r, to));
   const dealLeads = new Map(
     dealMirror.map((r) => [r.lead_id, toBooked(r, to)]),
@@ -227,54 +201,7 @@ async function load(
     ...booked.map((b) => b.email),
     ...dealMirror.map((r) => r.email),
   ]);
-  const byEmail = new Map(
-    booked.map((b) => [b.email?.trim().toLowerCase() ?? "", b]),
-  );
-
-  const reactivationCalls = booked.filter((b) => b.funnel === REACTIVATION);
-  const reactivationDeals = deals.filter((d) => d.funnel === REACTIVATION);
-  const assistedDeals = reactivationDeals.filter((d) => {
-    const lead = dealLeads.get(d.leadId);
-    return (
-      lead && sourceOf(lead, lead.bookedDay, touches) !== "No marketing touch"
-    );
-  });
-
-  return {
-    ok: true,
-    from,
-    to,
-    selfBooked: selfBookedBreakdown(inMonth(calendly)),
-    credit: creditBySource(booked, deals, dealLeads, touches),
-    siteForms: siteFormFunnel(
-      inMonth(forms).map((f) => ({
-        email: f.email,
-        callBookedAt: f.call_booked_at,
-        bookedBySetter: f.booked_by_setter,
-        callStatus: f.call_status,
-      })),
-      byEmail,
-    ),
-    chat: chatFunnel(
-      inMonth(chats).map((c) => ({
-        capturedEmail: c.captured_email,
-        bookedInChat: Boolean(c.call_booked_at),
-        leadBookedAt:
-          chatLeads.get(c.lead_submission_id ?? "")?.call_booked_at ?? null,
-        leadSetter:
-          chatLeads.get(c.lead_submission_id ?? "")?.booked_by_setter ?? null,
-      })),
-    ),
-    reactivation: {
-      calls: reactivationCalls.length,
-      assistedCalls: reactivationCalls.filter(
-        (b) => sourceOf(b, b.bookedDay, touches) !== "No marketing touch",
-      ).length,
-      wins: reactivationDeals.length,
-      assistedWins: assistedDeals.length,
-      assistedRevenue: assistedDeals.reduce((s, d) => s + (d.value ?? 0), 0),
-    },
-  };
+  return creditBySource(booked, deals, dealLeads, touches, entered);
 }
 
 /** Every site form and chat for these addresses, by Pacific day, plus any named setter. */

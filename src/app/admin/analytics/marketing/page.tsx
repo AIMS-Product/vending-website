@@ -53,7 +53,7 @@ export default async function AnalyticsMarketingPage({
       title="Marketing MTD"
       description="Booked leads by Close Funnel Name on Jess's field rule, with open calls, shows, qualified, wins and spend, against the same dates last month; plus the Q4 scorecard rows."
       user={{ email: user.email, role }}
-      trust={getTrustBar("marketing")}
+      trust={getTrustBar(view === "credit" ? "credit" : "marketing")}
     >
       <nav
         aria-label="Marketing MTD views"

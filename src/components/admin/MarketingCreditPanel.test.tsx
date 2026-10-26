@@ -2,79 +2,47 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { MarketingCreditPanel } from "./MarketingCreditPanel";
 
+const row = (
+  source: "Webinar" | "No marketing touch",
+  entered: number | null,
+  b: [number, number],
+  w: [number, number],
+  r: [number, number],
+) => ({
+  source,
+  entered,
+  booked: { self: b[0], reactivated: b[1] },
+  won: { self: w[0], reactivated: w[1] },
+  revenue: { self: r[0], reactivated: r[1] },
+});
+
 describe("MarketingCreditPanel", () => {
-  it("renders every section with the totals it was given", () => {
+  it("renders both paths for every source, with totals", () => {
     const html = renderToStaticMarkup(
       <MarketingCreditPanel
         report={{
           ok: true,
           from: "2026-10-01",
           to: "2026-10-26",
-          selfBooked: {
-            total: 240,
-            bySurface: {
-              Webinar: 67,
-              "Site form": 110,
-              Chatbot: 5,
-              "Follow-up email": 0,
-              "Other marketing link": 2,
-              "No tag": 56,
-            },
-          },
-          credit: [
-            {
-              source: "Webinar",
-              booked: 193,
-              themselves: 95,
-              bySetter: 98,
-              won: 15,
-              revenue: 112114,
-            },
-            {
-              source: "No marketing touch",
-              booked: 153,
-              themselves: 7,
-              bySetter: 146,
-              won: 9,
-              revenue: 66170,
-            },
+          rows: [
+            row("Webinar", 1502, [95, 98], [10, 5], [80000, 32114]),
+            row("No marketing touch", null, [7, 146], [1, 8], [6000, 60170]),
           ],
-          siteForms: {
-            filled: 409,
-            bookedThemselves: 126,
-            bookedBySetter: [{ setter: "Connor George", count: 27 }],
-            notBooked: [{ status: "New", count: 171 }],
-          },
-          chat: {
-            chats: 79,
-            gaveEmail: 21,
-            bookedInChat: 7,
-            bookedLaterThemselves: 4,
-            bookedLaterBySetter: 3,
-          },
-          reactivation: {
-            calls: 316,
-            assistedCalls: 170,
-            wins: 19,
-            assistedWins: 12,
-            assistedRevenue: 117720,
-          },
         }}
       />,
     );
     for (const text of [
-      "By source",
-      "Site form fills",
-      "Site chatbot",
-      "Connor George",
+      "Oct 1–26",
+      "1,502",
+      "registered",
+      "Reactivated, then booked",
+      "$80,000",
+      "$32,114",
       "$112,114",
-      "170 / 316",
-      "$117,720",
-      "Marketing-started calls",
+      "12.8%", // 193 booked of 1,502 registered
+      "Total",
     ]) {
       expect(html).toContain(text);
     }
-    // Marketing-started = every row but "No marketing touch".
-    expect(html).toMatch(/>193<\/p>/);
   });
 });
