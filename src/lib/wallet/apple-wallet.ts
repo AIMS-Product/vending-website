@@ -66,8 +66,6 @@ const IMAGES = [
   "icon@3x.png",
   "logo.png",
   "logo@2x.png",
-  "strip.png",
-  "strip@2x.png",
 ];
 
 const MIN = 60_000;
