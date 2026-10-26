@@ -15,6 +15,8 @@ import {
 import { PrintButton } from "@/components/admin/PrintButton";
 import { getTrustBar } from "@/lib/services/data-trust-bar-data";
 import { getMarketingMtd } from "@/lib/services/marketing-mtd-data";
+import { getMarketingCredit } from "@/lib/services/marketing-credit-data";
+import { MarketingCreditPanel } from "@/components/admin/MarketingCreditPanel";
 import { requireReadAccess } from "@/lib/supabase/auth";
 
 export const metadata: Metadata = {
@@ -27,7 +29,10 @@ export const dynamic = "force-dynamic";
 const VIEWS = [
   { key: "mtd", label: "Month to date" },
   { key: "scorecard", label: "Q4 scorecard" },
+  { key: "credit", label: "Marketing credit" },
 ] as const;
+
+type View = (typeof VIEWS)[number]["key"];
 
 /** The marketing month so far on Jess's field rule: a fixed window, so no date range. */
 export default async function AnalyticsMarketingPage({
@@ -35,12 +40,12 @@ export default async function AnalyticsMarketingPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const view =
-    singleParam((await searchParams).view) === "scorecard"
-      ? "scorecard"
-      : "mtd";
+  const requested = singleParam((await searchParams).view);
+  const view: View =
+    requested === "scorecard" || requested === "credit" ? requested : "mtd";
   const { user, role } = await requireReadAccess();
-  const report = getMarketingMtd();
+  // Not started on the credit view: that view never reads it.
+  const report = view === "credit" ? null : getMarketingMtd();
   return (
     <AnalyticsDrillDown
       path="/admin/analytics/marketing"
@@ -81,7 +86,11 @@ export default async function AnalyticsMarketingPage({
           />
         }
       >
-        <Body report={report} view={view} />
+        {view === "credit" ? (
+          <CreditBody />
+        ) : (
+          <Body report={report} view={view} />
+        )}
       </Suspense>
     </AnalyticsDrillDown>
   );
@@ -91,9 +100,10 @@ async function Body({
   report,
   view,
 }: {
-  report: ReturnType<typeof getMarketingMtd>;
+  report: ReturnType<typeof getMarketingMtd> | null;
   view: "mtd" | "scorecard";
 }) {
+  if (!report) return null;
   const loaded = await report;
   if (!loaded.ok) {
     return (
@@ -116,4 +126,18 @@ async function Body({
       <MarketingWebinars events={loaded.webinars} mtd={loaded.mtd} />
     </div>
   );
+}
+
+async function CreditBody() {
+  const loaded = await getMarketingCredit();
+  if (!loaded.ok) {
+    return (
+      <section className={adminPanelClass}>
+        <p className="text-ui-bad px-4 py-4 text-sm">
+          Marketing credit could not be read, so it is not shown: {loaded.error}
+        </p>
+      </section>
+    );
+  }
+  return <MarketingCreditPanel report={loaded} />;
 }

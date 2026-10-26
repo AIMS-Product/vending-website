@@ -194,7 +194,12 @@ describe("tab to feed mapping matches what each loader reads", () => {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
     "google-ads": ["google-ads-dashboard"],
-    marketing: ["marketing-mtd-data", "booked-calls-v2-data", "close-wins"],
+    marketing: [
+      "marketing-mtd-data",
+      "booked-calls-v2-data",
+      "close-wins",
+      "marketing-credit-data",
+    ],
     dashboard: [
       "analytics-dashboard-data",
       "channel-report",

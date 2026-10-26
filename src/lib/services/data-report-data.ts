@@ -6,7 +6,6 @@ import { config } from "@/lib/config";
 import { getChannelsTab } from "@/lib/services/channel-report";
 import { getCloseWeekView } from "@/lib/services/close-week-view-data";
 import { weekStartOf } from "@/lib/services/close-week-view";
-import { selfBookedBlocks } from "@/lib/services/self-booked-data";
 import { getSeoScorecard } from "@/lib/services/seo-scorecard";
 import {
   buildDataReport,
@@ -255,9 +254,8 @@ async function sourceBlocks(
   from: string,
   to: string,
 ): Promise<ReportSourceBlock[]> {
-  const [ownBlocks, webinar, email, chatbot, reach, search, bitly, manychat] =
+  const [webinar, email, chatbot, reach, search, bitly, manychat] =
     await Promise.all([
-      selfBookedBlocks(client, { from, to }),
       latestWebinar(client),
       emailTotals(client, from, to),
       chatbotTotals(client, from, to),
@@ -271,8 +269,7 @@ async function sourceBlocks(
       ),
     ]);
 
-  // Marketing's own output first: the number the team is managed on.
-  const blocks: ReportSourceBlock[] = [...ownBlocks];
+  const blocks: ReportSourceBlock[] = [];
   if (webinar) blocks.push(webinar);
   if (email) blocks.push(email);
   if (chatbot) blocks.push(chatbot);

@@ -279,8 +279,16 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
   "google-ads": ["google-ads", "site-leads"],
   // marketing-mtd-data.ts: Close mirror first calls + meetings (open calls),
-  // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events
-  marketing: ["close", "close-meetings", "metricool-ads", "webinar"],
+  // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events;
+  // marketing-credit-data.ts: Close mirror, site leads, Calendly, Close wins
+  marketing: [
+    "close",
+    "close-meetings",
+    "metricool-ads",
+    "webinar",
+    "site-leads",
+    "calendly",
+  ],
   // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
   seo: ["seo-search", "seo-ranks", "seo-ai", "social-accounts"],
@@ -477,7 +485,12 @@ export function judgeAudit(
 // ---------------------------------------------------------------------------
 
 export type CoveredMetric =
-  "leads" | "booked" | "won" | "revenue" | "calendly" | "spend";
+  | "leads"
+  | "booked"
+  | "won"
+  | "revenue"
+  | "calendly"
+  | "spend";
 
 /** Days a check compares, inclusive, as YYYY-MM-DD. */
 export type DayRange = { from: string; to: string };
