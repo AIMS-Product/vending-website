@@ -111,7 +111,16 @@ describe("GET /masterclass/wallet/<token>/apple", () => {
     expect(pass.eventTicket.backFields[0].value).toBe(
       `https://www.vendingpreneurs.com/masterclass/join/${t}`,
     );
-    expect(JSON.stringify(pass)).not.toMatch(/@|phone/i);
+    expect(JSON.stringify(pass)).not.toMatch(/[\w.+-]+@[\w-]+\.\w+|phone/i);
+    expect(pass.webServiceURL).toBe(
+      "https://www.vendingpreneurs.com/api/wallet/apple",
+    );
+    expect(pass.authenticationToken).toMatch(/^[\w-]{40,}$/);
+    expect(pass.eventTicket.auxiliaryFields[0]).toMatchObject({
+      key: "status",
+      value: "Your seat is saved",
+      changeMessage: "%@",
+    });
   });
 
   it("sends tampered, earlier-room or unconfigured requests to the registration page", async () => {

@@ -1,16 +1,19 @@
 import "server-only";
 
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { PKPass } from "passkit-generator";
 
 import { masterclassLiveEnd } from "@/lib/content/masterclass";
+import { signCalendarToken } from "@/lib/masterclass-session";
 
 /**
  * Apple Wallet event ticket (.pkpass) for one masterclass room. Same privacy
  * rules as the Google pass: no name, email or phone; the Join link is our signed
- * token route. No pass web service yet, so a saved pass never updates (no
- * reminders); iOS still surfaces it on the lock screen near its relevant date.
+ * token route. A saved pass registers with our web service
+ * (/api/wallet/apple/v1/...); at each reminder time the cron pushes, the phone
+ * refetches, and the changed status line shows as a notification.
  */
 
 export type AppleWalletConfig = {
@@ -67,11 +70,67 @@ const IMAGES = [
   "strip@2x.png",
 ];
 
+const MIN = 60_000;
+
+/** Status line by time to start. A change to it is what notifies the phone. */
+const STAGES = [
+  { from: -Infinity, id: "saved", text: "Your seat is saved" },
+  { from: -24 * 60 * MIN, id: "reminder_24h", text: "Tomorrow: see you there" },
+  { from: -60 * MIN, id: "reminder_1h", text: "Starts in 1 hour" },
+  { from: 0, id: "reminder_live", text: "We're live: tap Join" },
+] as const;
+
+export type AppleStage = (typeof STAGES)[number];
+
+/** The stage in force at `now`, and when it began (ms; 0 for "saved"). */
+export function appleStage(startMs: number, now: number) {
+  const offset = now - startMs;
+  const stage = [...STAGES].reverse().find((s) => offset >= s.from)!;
+  return {
+    stage,
+    since: Number.isFinite(stage.from) ? startMs + stage.from : 0,
+  };
+}
+
+const SERIAL = /^vp_(\d{13})_([A-Za-z0-9]{1,64})$/;
+
+export const appleSerial = (startMs: number, contactId: string) =>
+  `vp_${startMs}_${contactId}`;
+
+/** { startMs, contactId } for one of our serials, else null. */
+export function parseAppleSerial(serial: string) {
+  const m = SERIAL.exec(serial);
+  return m ? { startMs: Number(m[1]), contactId: m[2] } : null;
+}
+
+/** The per-pass web-service token: HMAC of the serial, so nothing is stored. */
+export function appleAuthToken(serial: string, secret: string): string {
+  return createHmac("sha256", secret)
+    .update(`apple-pass.${serial}`)
+    .digest("base64url");
+}
+
+/** True when an `Authorization: ApplePass <token>` header matches the serial. */
+export function appleAuthOk(
+  header: string | null,
+  serial: string,
+  secret: string | undefined,
+): boolean {
+  if (!header?.startsWith("ApplePass ") || !secret || secret.length < 32) {
+    return false;
+  }
+  const got = Buffer.from(header.slice("ApplePass ".length));
+  const want = Buffer.from(appleAuthToken(serial, secret));
+  return got.length === want.length && timingSafeEqual(got, want);
+}
+
 export type ApplePassInput = {
   startsAt: string;
   contactId: string;
-  /** Our signed /masterclass/join/<token> URL. */
-  joinUrl: string;
+  siteUrl: string;
+  /** MASTERCLASS_CAL_SECRET: signs the join token and the web-service token. */
+  secret: string;
+  now?: Date;
 };
 
 /** Signed .pkpass bytes for this contact and room. */
@@ -81,6 +140,14 @@ export async function applePassBuffer(
 ): Promise<Buffer> {
   const start = new Date(input.startsAt);
   const end = new Date(masterclassLiveEnd(input.startsAt) ?? input.startsAt);
+  const serial = appleSerial(start.getTime(), input.contactId);
+  const joinToken = signCalendarToken(input.contactId, start, input.secret);
+  if (!joinToken) throw new Error("apple pass: cannot sign the join token");
+  const joinUrl = `${input.siteUrl}/masterclass/join/${joinToken}`;
+  const { stage } = appleStage(
+    start.getTime(),
+    (input.now ?? new Date()).getTime(),
+  );
   const files = Object.fromEntries(
     IMAGES.map((f) => [f, readFileSync(path.join(MODEL_DIR, f))]),
   );
@@ -95,7 +162,9 @@ export async function applePassBuffer(
       formatVersion: 1,
       passTypeIdentifier: cfg.passTypeId,
       teamIdentifier: cfg.teamId,
-      serialNumber: `vp_${start.getTime()}_${input.contactId}`,
+      serialNumber: serial,
+      webServiceURL: `${input.siteUrl}/api/wallet/apple`,
+      authenticationToken: appleAuthToken(serial, input.secret),
       organizationName: "Vendingpreneurs",
       description: "Vending Masterclass: Live",
       backgroundColor: "rgb(31,114,165)",
@@ -127,16 +196,20 @@ export async function applePassBuffer(
       timeStyle: "PKDateStyleShort",
     },
   );
-  pass.auxiliaryFields.push({
-    key: "hosts",
-    label: "HOSTS",
-    value: "Mike & Anthony",
-  });
+  pass.auxiliaryFields.push(
+    {
+      key: "status",
+      label: "STATUS",
+      value: stage.text,
+      changeMessage: "%@",
+    },
+    { key: "hosts", label: "HOSTS", value: "Mike & Anthony" },
+  );
   pass.backFields.push({
     key: "join",
     label: "Join the webinar",
-    value: input.joinUrl,
-    attributedValue: `<a href="${input.joinUrl}">Tap to join</a>`,
+    value: joinUrl,
+    attributedValue: `<a href="${joinUrl}">Tap to join</a>`,
   });
   pass.setRelevantDate(new Date(start.getTime() - 15 * 60_000));
   // Shown as expired a day after the room; the join token ends then too.

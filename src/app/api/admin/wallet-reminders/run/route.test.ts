@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   send: vi.fn(),
   report: vi.fn(),
   walletConfig: vi.fn(),
+  appleConfig: vi.fn(),
+  pushRoom: vi.fn(),
 }));
 vi.mock("@/lib/config", () => ({ config: mocks.config }));
 vi.mock("@/lib/services/masterclass-event", () => ({
@@ -28,6 +30,13 @@ vi.mock("@/lib/wallet/google-wallet", async () => ({
   sendDueReminders: mocks.send,
 }));
 
+vi.mock("@/lib/wallet/apple-wallet", () => ({
+  appleWalletConfig: mocks.appleConfig,
+}));
+vi.mock("@/lib/wallet/apple-wallet-service", () => ({
+  pushRoom: mocks.pushRoom,
+}));
+
 const call = (auth = "Bearer s3cret") =>
   GET(
     new Request("https://x/api/admin/wallet-reminders/run", {
@@ -44,6 +53,13 @@ beforeEach(() => {
     issuerId: "1",
     clientEmail: "e",
     privateKey: "k",
+  });
+  mocks.appleConfig.mockReturnValue(null);
+  mocks.pushRoom.mockResolvedValue({
+    devices: 2,
+    sent: 2,
+    failed: 0,
+    removed: 0,
   });
   mocks.getMasterclassEvent.mockResolvedValue({ startsAt: liveNow() });
   mocks.reserve.mockResolvedValue({ allowed: true, release: mocks.release });
@@ -64,7 +80,7 @@ describe("GET /api/admin/wallet-reminders/run", () => {
 
   it("claims room+reminder, then sends", async () => {
     const r = await call();
-    expect(await r.json()).toMatchObject({ ok: true, sent: 2 });
+    expect(await r.json()).toMatchObject({ ok: true, google: { sent: 2 } });
     expect(mocks.reserve).toHaveBeenCalledWith("wallet_reminder_run", {
       ip: null,
       email: expect.stringMatching(/^1\.vp_masterclass_\d{12}:reminder_live$/),
@@ -74,7 +90,7 @@ describe("GET /api/admin/wallet-reminders/run", () => {
   it("skips while another run holds the claim (no double notifications)", async () => {
     mocks.reserve.mockResolvedValue({ allowed: false, release: mocks.release });
     expect(await (await call()).json()).toMatchObject({
-      skipped: "another run holds it",
+      google: { skipped: "another run holds it" },
     });
     expect(mocks.send).not.toHaveBeenCalled();
   });
@@ -103,8 +119,46 @@ describe("GET /api/admin/wallet-reminders/run", () => {
       alreadySent: 0,
       failed: 1,
     });
-    expect(await (await call()).json()).toMatchObject({ ok: false, failed: 1 });
+    expect(await (await call()).json()).toMatchObject({
+      ok: false,
+      google: { failed: 1 },
+    });
     expect(mocks.report).toHaveBeenCalledOnce();
     expect(mocks.release).not.toHaveBeenCalled();
+  });
+
+  it("pushes Apple phones for the room under their own claim, Google untouched by Apple", async () => {
+    mocks.appleConfig.mockReturnValue({ passTypeId: "pass.x" });
+    const body = await (await call()).json();
+    expect(body).toMatchObject({
+      ok: true,
+      google: { sent: 2 },
+      apple: { devices: 2, sent: 2 },
+    });
+    expect(mocks.reserve).toHaveBeenCalledWith("wallet_reminder_run", {
+      ip: null,
+      email: expect.stringMatching(/^apple:\d+:reminder_live$/),
+    });
+  });
+
+  it("runs Apple alone when Google is not configured", async () => {
+    mocks.walletConfig.mockReturnValue(null);
+    mocks.appleConfig.mockReturnValue({ passTypeId: "pass.x" });
+    const body = await (await call()).json();
+    expect(body).toMatchObject({ ok: true, google: null, apple: { sent: 2 } });
+    expect(mocks.send).not.toHaveBeenCalled();
+  });
+
+  it("releases the Apple claim and fails the run when pushing throws", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.appleConfig.mockReturnValue({ passTypeId: "pass.x" });
+    mocks.pushRoom.mockRejectedValue(new Error("db down"));
+    const r = await call();
+    expect(r.status).toBe(500);
+    expect(await r.json()).toMatchObject({
+      google: { ok: true },
+      apple: { ok: false },
+    });
+    expect(mocks.release).toHaveBeenCalledOnce();
   });
 });

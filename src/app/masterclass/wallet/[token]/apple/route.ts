@@ -21,14 +21,16 @@ export async function GET(
   const token = (await params).token;
   const room = await currentRoomToken(token);
   const cfg = appleWalletConfig(config);
-  if (!room || !cfg) {
+  const secret = config.MASTERCLASS_CAL_SECRET;
+  if (!room || !cfg || !secret) {
     return privateRedirect(new URL("/masterclass", request.url).toString());
   }
   try {
     const body = await applePassBuffer(cfg, {
       startsAt: room.startsAt,
       contactId: room.contactId,
-      joinUrl: `${publicConfig.siteUrl}/masterclass/join/${token}`,
+      siteUrl: publicConfig.siteUrl,
+      secret,
     });
     return new Response(new Uint8Array(body), {
       headers: {

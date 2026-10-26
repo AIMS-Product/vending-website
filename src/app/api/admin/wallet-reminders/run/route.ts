@@ -10,6 +10,8 @@ import {
   sendDueReminders,
   walletConfig,
 } from "@/lib/wallet/google-wallet";
+import { appleWalletConfig } from "@/lib/wallet/apple-wallet";
+import { pushRoom, type ApplePushRun } from "@/lib/wallet/apple-wallet-service";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -25,7 +27,8 @@ export async function GET(request: Request) {
   const rejected = rejectUnlessCron(request, "Wallet reminder");
   if (rejected) return rejected;
   const cfg = walletConfig(config);
-  if (!cfg)
+  const apple = appleWalletConfig(config);
+  if (!cfg && !apple)
     return NextResponse.json({ ok: true, skipped: "wallet not configured" });
   const event = await getMasterclassEvent();
   if (!event.startsAt) {
@@ -34,34 +37,85 @@ export async function GET(request: Request) {
   const now = new Date();
   const due = dueReminder(event.startsAt, now);
   if (!due) return NextResponse.json({ ok: true, reminder: null });
+  const google = cfg ? await runGoogle(cfg, event.startsAt, due.id, now) : null;
+  const applePush = apple
+    ? await runApple(apple, event.startsAt, due.id)
+    : null;
+  const ok = (google?.ok ?? true) && (applePush?.ok ?? true);
+  return NextResponse.json(
+    { ok, reminder: due.id, google, apple: applePush },
+    { status: ok ? 200 : 500 },
+  );
+}
+
+async function runGoogle(
+  cfg: NonNullable<ReturnType<typeof walletConfig>>,
+  startsAt: string,
+  dueId: string,
+  now: Date,
+) {
   // Google keeps duplicate message ids, so two overlapping runs would both
   // notify. One claim per room+reminder (4 min, under the 5-min cron); it is
   // released on a failed run so the next tick retries, and fails closed.
   const claim = await reservePublicRateLimit("wallet_reminder_run", {
     ip: null,
-    email: `${roomClassId(cfg.issuerId, event.startsAt)}:${due.id}`,
+    email: `${roomClassId(cfg.issuerId, startsAt)}:${dueId}`,
   });
-  if (!claim.allowed) {
-    return NextResponse.json({ ok: true, skipped: "another run holds it" });
-  }
+  if (!claim.allowed) return { ok: true, skipped: "another run holds it" };
   try {
-    const run = await sendDueReminders(cfg, event.startsAt, { now });
+    const run = await sendDueReminders(cfg, startsAt, { now });
     if (run.failed > 0) {
       await reportCronException(
         "wallet-reminders",
         new Error(`${run.failed} of ${run.passes} wallet reminders not sent`),
       );
     }
-    return NextResponse.json({ ok: run.failed === 0, ...run });
+    return { ok: run.failed === 0, ...run };
   } catch (error) {
     await claim.release();
     await reportCronException("wallet-reminders", error);
     console.error("wallet reminder runner failed", {
       name: error instanceof Error ? error.name : "UnknownError",
     });
-    return NextResponse.json(
-      { ok: false, message: "Wallet reminder runner failed." },
-      { status: 500 },
-    );
+    return { ok: false, message: "Google wallet reminders failed." };
+  }
+}
+
+/**
+ * Apple: push every phone holding a pass for this room once per reminder
+ * window; each phone refetches and notifies on the changed status line. A
+ * repeated push is harmless (no change, no notification).
+ */
+async function runApple(
+  apple: NonNullable<ReturnType<typeof appleWalletConfig>>,
+  startsAt: string,
+  dueId: string,
+): Promise<
+  ({ ok: boolean } & Partial<ApplePushRun>) & {
+    skipped?: string;
+    message?: string;
+  }
+> {
+  const claim = await reservePublicRateLimit("wallet_reminder_run", {
+    ip: null,
+    email: `apple:${Date.parse(startsAt)}:${dueId}`,
+  });
+  if (!claim.allowed) return { ok: true, skipped: "another run holds it" };
+  try {
+    const run = await pushRoom(apple, startsAt);
+    if (run.failed > 0) {
+      await reportCronException(
+        "wallet-reminders",
+        new Error(`${run.failed} of ${run.devices} Apple wallet pushes failed`),
+      );
+    }
+    return { ok: run.failed === 0, ...run };
+  } catch (error) {
+    await claim.release();
+    await reportCronException("wallet-reminders", error);
+    console.error("apple wallet push runner failed", {
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { ok: false, message: "Apple wallet pushes failed." };
   }
 }
