@@ -44,6 +44,8 @@ type Props = {
   walletHref?: string | null;
   /** /masterclass/wallet/<token>/apple when Apple Wallet is configured, else null. */
   appleWalletHref?: string | null;
+  /** From the user agent: a phone sees only its own wallet's badge. */
+  platform?: "ios" | "android" | "other";
   /** Server render time (ms), so the date line hydrates in the same phase. */
   renderedAt: number;
 };
@@ -56,6 +58,7 @@ export function ConfirmedHero({
   links,
   walletHref = null,
   appleWalletHref = null,
+  platform = "other",
   renderedAt,
   steps,
 }: Props & { steps?: React.ReactNode }) {
@@ -120,35 +123,57 @@ export function ConfirmedHero({
             className="mt-1 text-[15px] font-semibold text-slate-600"
           />
         ) : null}
-        <VidalyticsPlayer
-          embedId={CONFIRMED_VIDEO_EMBED_ID}
-          title="A welcome from Anthony"
-          className="mt-3 w-full max-w-[480px]"
-          loadOn="click"
-          poster={CONFIRMED_VIDEO_POSTER}
-          playLabel="Play Anthony's welcome"
-          posterSizes="(min-width: 1024px) 480px, 100vw"
-        />
-        {steps}
-        {/* Live, the date line says so; after that, nothing counts down. */}
-        {startsAt && endsAt ? (
-          <div className="mt-8">
-            <Countdown
-              startsAt={startsAt}
-              endsAt={endsAt}
-              label={COUNTDOWN_LABEL}
-            />
-          </div>
-        ) : null}
         {links ? (
           // A finished session is not worth a calendar slot.
           <UntilEnded startsAt={startsAt} renderedAt={renderedAt}>
-            <div className="mt-4 flex w-full flex-col items-center">
-              <p className="text-eyebrow mb-3 text-sm font-black tracking-[0.14em] uppercase">
-                Add it to your calendar now
+            <div className="border-ink mt-5 flex w-full max-w-[560px] flex-col items-center rounded-2xl border-2 bg-white px-4 pt-5 pb-5 shadow-[4px_4px_0_0_#0f172a] sm:px-6">
+              <p className="v2-display text-ink text-[1.6rem] leading-none uppercase">
+                Save your seat
               </p>
+              <p className="mt-1.5 mb-4 text-[15px] text-slate-600">
+                Your ticket and your Join link, in one tap.
+              </p>
+              {walletHref || appleWalletHref ? (
+                // Apple's and Google's own badges, unmodified (brand rules).
+                <div className="mb-3 flex flex-wrap items-center justify-center gap-2">
+                  {appleWalletHref && platform !== "android" ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="apple"
+                      href={appleWalletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-apple-wallet.svg"
+                        alt="Add to Apple Wallet"
+                        width={110}
+                        height={35}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                  {walletHref && platform !== "ios" ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="google"
+                      href={walletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-google-wallet.svg"
+                        alt="Add to Google Wallet"
+                        width={199}
+                        height={55}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
               {/* ph-no-capture: an href can carry a personal calendar token. */}
-              <div className="grid w-full grid-cols-2 gap-3 sm:flex sm:w-auto sm:flex-wrap sm:justify-center">
+              <div className="grid w-full grid-cols-2 gap-3">
                 <a
                   data-track="calendar_added"
                   data-track-detail="google"
@@ -196,48 +221,29 @@ export function ConfirmedHero({
                   Outlook
                 </a>
               </div>
-              {walletHref || appleWalletHref ? (
-                // Apple's and Google's own badges, unmodified (brand rules).
-                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-                  {appleWalletHref ? (
-                    <a
-                      data-track="wallet_added"
-                      data-track-detail="apple"
-                      href={appleWalletHref}
-                      className="ph-no-capture inline-block p-2"
-                    >
-                      <Image
-                        unoptimized
-                        src="/images/wallet/add-to-apple-wallet.svg"
-                        alt="Add to Apple Wallet"
-                        width={110}
-                        height={35}
-                        className="h-14 w-auto"
-                      />
-                    </a>
-                  ) : null}
-                  {walletHref ? (
-                    <a
-                      data-track="wallet_added"
-                      data-track-detail="google"
-                      href={walletHref}
-                      className="ph-no-capture inline-block p-2"
-                    >
-                      <Image
-                        unoptimized
-                        src="/images/wallet/add-to-google-wallet.svg"
-                        alt="Add to Google Wallet"
-                        width={199}
-                        height={55}
-                        className="h-14 w-auto"
-                      />
-                    </a>
-                  ) : null}
-                </div>
-              ) : null}
             </div>
           </UntilEnded>
         ) : null}
+        {/* Live, the date line says so; after that, nothing counts down. */}
+        {startsAt && endsAt ? (
+          <div className="mt-8">
+            <Countdown
+              startsAt={startsAt}
+              endsAt={endsAt}
+              label={COUNTDOWN_LABEL}
+            />
+          </div>
+        ) : null}
+        <VidalyticsPlayer
+          embedId={CONFIRMED_VIDEO_EMBED_ID}
+          title="A welcome from Anthony"
+          className="mt-8 w-full max-w-[480px]"
+          loadOn="click"
+          poster={CONFIRMED_VIDEO_POSTER}
+          playLabel="Play Anthony's welcome"
+          posterSizes="(min-width: 1024px) 480px, 100vw"
+        />
+        {steps}
       </div>
     </section>
   );
@@ -300,19 +306,19 @@ function NumberedStep({
 export function NextSteps({
   first,
   startsAt,
+  showEmail = true,
 }: {
   first: string | null;
   startsAt: string | null;
+  /** The Zoom-email step: only for a browser without its personal Join links. */
+  showEmail?: boolean;
 }) {
-  const [video, text, email] = confirmedCopy.steps;
+  const [, text, email] = confirmedCopy.steps;
   const [gmail, ...otherMail] = MAIL_APPS;
   return (
     <ol className="mt-4 grid w-full max-w-[680px] gap-2.5">
-      <NumberedStep n="1" title={video.title}>
-        {video.body}
-      </NumberedStep>
       <NumberedStep
-        n="2"
+        n="1"
         title={text.title}
         action={
           <a
@@ -332,48 +338,50 @@ export function NextSteps({
           <span className="whitespace-nowrap">{SEAT_TEXT_DISPLAY}</span>.
         </span>
       </NumberedStep>
-      <NumberedStep
-        n="3"
-        title={email.title}
-        action={
-          <div className="flex flex-col items-stretch gap-1 text-center sm:items-center">
-            <a
-              href={gmail.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-track="email_search_clicked"
-              data-track-detail={gmail.app}
-              className={buttonClass({
-                className: "flex w-full whitespace-nowrap sm:w-auto",
-              })}
-            >
-              {gmail.label}
-            </a>
-            <span className="text-[13px] text-slate-500">
-              or{" "}
-              {otherMail.map((m, i) => (
-                <span key={m.app}>
-                  {i > 0 ? " · " : null}
-                  <a
-                    href={m.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    data-track="email_search_clicked"
-                    data-track-detail={m.app}
-                    className="text-brand-700 font-bold underline underline-offset-2"
-                  >
-                    {m.label}
-                  </a>
-                </span>
-              ))}
-            </span>
-          </div>
-        }
-      >
-        From{" "}
-        <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>.
-        Not there? Check spam and promotions, then move it to your inbox.
-      </NumberedStep>
+      {showEmail ? (
+        <NumberedStep
+          n="2"
+          title={email.title}
+          action={
+            <div className="flex flex-col items-stretch gap-1 text-center sm:items-center">
+              <a
+                href={gmail.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                data-track="email_search_clicked"
+                data-track-detail={gmail.app}
+                className={buttonClass({
+                  className: "flex w-full whitespace-nowrap sm:w-auto",
+                })}
+              >
+                {gmail.label}
+              </a>
+              <span className="text-[13px] text-slate-500">
+                or{" "}
+                {otherMail.map((m, i) => (
+                  <span key={m.app}>
+                    {i > 0 ? " · " : null}
+                    <a
+                      href={m.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-track="email_search_clicked"
+                      data-track-detail={m.app}
+                      className="text-brand-700 font-bold underline underline-offset-2"
+                    >
+                      {m.label}
+                    </a>
+                  </span>
+                ))}
+              </span>
+            </div>
+          }
+        >
+          From{" "}
+          <strong className="[overflow-wrap:anywhere]">{SENDER_EMAIL}</strong>.
+          Not there? Check spam and promotions, then move it to your inbox.
+        </NumberedStep>
+      ) : null}
     </ol>
   );
 }
@@ -463,9 +471,12 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
 /** The low-ticket offer the GHL emails promote, offered while the visitor is here. */
 export function PlaybookBand({
   params,
+  step,
 }: {
   /** Attribution plus the validated first_name (confirmedPlaybookParams). */
   params: Record<string, string | string[] | undefined>;
+  /** Its number, after the steps above it. */
+  step: number;
 }) {
   return (
     <section id="playbook" className="scroll-mt-6 bg-white">
@@ -475,10 +486,10 @@ export function PlaybookBand({
             aria-hidden="true"
             className="v2-display text-brand-600 text-6xl leading-none"
           >
-            4
+            {step}
           </span>
           <h2 className="v2-display text-ink text-2xl leading-tight uppercase sm:text-3xl">
-            <span className="sr-only">Step 4: </span>
+            <span className="sr-only">Step {step}: </span>
             Optional VIP upgrade
           </h2>
         </div>

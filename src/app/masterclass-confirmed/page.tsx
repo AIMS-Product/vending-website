@@ -1,6 +1,6 @@
 import { TrackedClicks } from "@/components/tracking/TrackedClicks";
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "../home-v2.css";
 import { anton } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
@@ -62,16 +62,25 @@ function renderTime() {
   return Date.now();
 }
 
+/** Which wallet a phone uses; anything else (desktop, tablets) sees both. */
+function platformOf(ua: string | null): "ios" | "android" | "other" {
+  if (!ua) return "other";
+  if (/iPhone|iPod/.test(ua)) return "ios";
+  if (/Android/.test(ua)) return "android";
+  return "other";
+}
+
 export default async function MasterclassConfirmedPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [event, params, stories, cookieStore] = await Promise.all([
+  const [event, params, stories, cookieStore, headerStore] = await Promise.all([
     getMasterclassEvent(),
     searchParams,
     listCaseStudyStories(),
     cookies(),
+    headers(),
   ]);
   // The intake form writes to the contact the signed cookie names, so it only
   // shows for a browser that just registered (and only with the secret set).
@@ -129,10 +138,20 @@ export default async function MasterclassConfirmedPage({
         links={links}
         walletHref={walletHref}
         appleWalletHref={appleWalletHref}
+        platform={platformOf(headerStore.get("user-agent"))}
         renderedAt={renderedAt}
-        steps={<NextSteps first={first ?? null} startsAt={event.startsAt} />}
+        steps={
+          <NextSteps
+            first={first ?? null}
+            startsAt={event.startsAt}
+            showEmail={!calendarToken}
+          />
+        }
       />
-      <PlaybookBand params={confirmedPlaybookParams(params)} />
+      <PlaybookBand
+        params={confirmedPlaybookParams(params)}
+        step={calendarToken ? 2 : 3}
+      />
       <ShowUpLive startsAt={event.startsAt} renderedAt={renderedAt} />
       {hasSession ? <IntakeForm /> : null}
       <CoverSection />
