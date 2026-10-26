@@ -42,6 +42,8 @@ type Props = {
   links: ReturnType<typeof calendarLinks> | null;
   /** /masterclass/wallet/<token> for a registrant in the wallet rollout, else null. */
   walletHref?: string | null;
+  /** /masterclass/wallet/<token>/apple when Apple Wallet is configured, else null. */
+  appleWalletHref?: string | null;
   /** Server render time (ms), so the date line hydrates in the same phase. */
   renderedAt: number;
 };
@@ -53,6 +55,7 @@ export function ConfirmedHero({
   startsAt,
   links,
   walletHref = null,
+  appleWalletHref = null,
   renderedAt,
   steps,
 }: Props & { steps?: React.ReactNode }) {
@@ -193,23 +196,44 @@ export function ConfirmedHero({
                   Outlook
                 </a>
               </div>
-              {walletHref ? (
-                // Google's own badge, unmodified (brand rules: >= 48px tall).
-                <a
-                  data-track="wallet_added"
-                  data-track-detail="google"
-                  href={walletHref}
-                  className="ph-no-capture mt-4 inline-block p-2"
-                >
-                  <Image
-                    unoptimized
-                    src="/images/wallet/add-to-google-wallet.svg"
-                    alt="Add to Google Wallet"
-                    width={199}
-                    height={55}
-                    className="h-14 w-auto"
-                  />
-                </a>
+              {walletHref || appleWalletHref ? (
+                // Apple's and Google's own badges, unmodified (brand rules).
+                <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+                  {appleWalletHref ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="apple"
+                      href={appleWalletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-apple-wallet.svg"
+                        alt="Add to Apple Wallet"
+                        width={110}
+                        height={35}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                  {walletHref ? (
+                    <a
+                      data-track="wallet_added"
+                      data-track-detail="google"
+                      href={walletHref}
+                      className="ph-no-capture inline-block p-2"
+                    >
+                      <Image
+                        unoptimized
+                        src="/images/wallet/add-to-google-wallet.svg"
+                        alt="Add to Google Wallet"
+                        width={199}
+                        height={55}
+                        className="h-14 w-auto"
+                      />
+                    </a>
+                  ) : null}
+                </div>
               ) : null}
             </div>
           </UntilEnded>

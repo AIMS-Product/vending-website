@@ -118,6 +118,8 @@ const nextConfig: NextConfig = {
   // production. `src/lib/services/data-trust.ts` says the same thing.
   outputFileTracingIncludes: {
     "/admin/data": ["./REPORTING.md"],
+    // The Apple pass images are read from disk at request time.
+    "/masterclass/wallet/[token]/apple": ["./src/lib/wallet/apple-model/*"],
   },
   // PostHog reverse proxy: same-origin, so ad blockers and the CSP see our
   // own traffic. posthog-js posts to `/e/`, `/s/`, `/flags/` with a trailing

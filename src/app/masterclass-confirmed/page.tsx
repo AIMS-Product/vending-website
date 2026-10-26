@@ -34,6 +34,7 @@ import {
 } from "@/lib/masterclass-session";
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
+import { appleWalletConfig } from "@/lib/wallet/apple-wallet";
 import { inWalletRollout, walletConfig } from "@/lib/wallet/google-wallet";
 
 export const revalidate = 300;
@@ -102,15 +103,17 @@ export default async function MasterclassConfirmedPage({
       ? personalCalendarLinks(calendarToken)
       : calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)));
 
-  // Google Wallet pass: rollout share by contact, or ?wallet=1 for the team to test.
-  const walletHref =
+  // Wallet passes: rollout share by contact, or ?wallet=1 for the team to test.
+  const walletBase =
     calendarToken &&
     sessionContactId &&
-    walletConfig(config) &&
     (params.wallet === "1" ||
       inWalletRollout(sessionContactId, config.GOOGLE_WALLET_ROLLOUT_PERCENT))
       ? `/masterclass/wallet/${calendarToken}`
       : null;
+  const walletHref = walletBase && walletConfig(config) ? walletBase : null;
+  const appleWalletHref =
+    walletBase && appleWalletConfig(config) ? `${walletBase}/apple` : null;
 
   return (
     <div className={anton.variable}>
@@ -125,6 +128,7 @@ export default async function MasterclassConfirmedPage({
         startsAt={event.startsAt}
         links={links}
         walletHref={walletHref}
+        appleWalletHref={appleWalletHref}
         renderedAt={renderedAt}
         steps={<NextSteps first={first ?? null} startsAt={event.startsAt} />}
       />

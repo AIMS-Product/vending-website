@@ -341,6 +341,12 @@ describe("proxy custom-prefix redirects (S6b-2)", () => {
     expect((await proxy(request("/masterclass/wallet/garbage"))).status).toBe(
       200,
     );
+    expect(
+      (await proxy(request("/masterclass/wallet/garbage/apple"))).status,
+    ).toBe(200);
+    expect(
+      (await proxy(request("/masterclass/wallet/garbage/other"))).status,
+    ).toBe(404);
     expect((await proxy(request("/masterclass/join/a/b"))).status).toBe(404);
     expect((await proxy(request("/masterclass/other/garbage"))).status).toBe(
       404,
