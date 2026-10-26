@@ -63,18 +63,18 @@ describe("MarketingCreditPanel", () => {
       />,
     );
     for (const text of [
-      "First calls by where the person came from",
+      "By source",
       "Site form fills",
       "Site chatbot",
       "Connor George",
       "$112,114",
-      "170 of 316",
+      "170 / 316",
       "$117,720",
-      "193",
+      "Marketing-started calls",
     ]) {
       expect(html).toContain(text);
     }
-    // Booked calls marketing started = total minus the no-touch row.
-    expect(html).toContain("193</p>");
+    // Marketing-started = every row but "No marketing touch".
+    expect(html).toMatch(/>193<\/p>/);
   });
 });
