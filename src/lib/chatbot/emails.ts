@@ -195,6 +195,8 @@ export async function sendResend(
     /** Overrides the display name only — the address always stays the verified sender. */
     fromName?: string;
     replyTo?: string[];
+    /** Extra mail headers, e.g. List-Unsubscribe on lead-facing marketing sends. */
+    headers?: Record<string, string>;
   },
   fetchImpl: typeof fetch,
 ): Promise<ChatbotEmailResult> {
@@ -220,6 +222,7 @@ export async function sendResend(
         text,
         ...(html ? { html } : {}),
         ...(message.replyTo?.length ? { reply_to: message.replyTo } : {}),
+        ...(message.headers ? { headers: message.headers } : {}),
       }),
     });
 
