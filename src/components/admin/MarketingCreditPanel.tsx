@@ -1,270 +1,193 @@
-import type { ReactNode } from "react";
 import {
   AdminMetricPanel,
   AdminMetricStrip,
   adminPanelClass,
-  adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
 import { rangeLabel, TD, TH } from "@/components/admin/marketing-mtd-format";
 import { formatUsd as money } from "@/lib/admin/format-number";
 import type { MarketingCredit } from "@/lib/services/marketing-credit-data";
-import { SURFACES } from "@/lib/services/self-booked";
+import {
+  both,
+  type CreditRow,
+  type MarketingSource,
+  sumRows,
+} from "@/lib/services/marketing-credit";
 
-type Loaded = Extract<MarketingCredit, { ok: true }>;
+interface MarketingCreditPanelProps {
+  report: Extract<MarketingCredit, { ok: true }>;
+}
 
-const ROW_TH = "px-4 py-2 text-left font-medium whitespace-nowrap";
-const HEAD_TH = "px-4 py-2.5 text-left font-semibold";
-const n = (value: number) => value.toLocaleString("en-US");
+/** What "came in" means for each source. */
+const ENTERED_UNIT: Record<MarketingSource, string> = {
+  Webinar: "registered",
+  "Site form": "form fills",
+  "Lead magnet": "opt-ins",
+  Chatbot: "chats",
+  "No marketing touch": "",
+};
+
+const n = (v: number) => v.toLocaleString("en-US");
 const pct = (part: number, whole: number) =>
   whole > 0 ? `${((part / whole) * 100).toFixed(1)}%` : "—";
+const GROUP =
+  "border-ui-line border-l px-3 pt-2.5 text-center text-[11px] font-semibold tracking-wide uppercase";
+const EDGE = "border-ui-line border-l";
 
-function Panel({
-  title,
-  caption,
-  children,
+function Cells({
+  row,
 }: {
-  title: string;
-  caption?: string;
-  children: ReactNode;
+  row: Pick<CreditRow, "entered" | "booked" | "won" | "revenue"> & {
+    unit?: string;
+  };
 }) {
+  const booked = both(row.booked);
   return (
-    <section className={adminPanelClass} aria-label={title}>
-      <div className="px-4 pt-4">
-        <h2 className={adminSectionTitleClass}>{title}</h2>
-        {caption ? (
-          <p className="text-ui-text-subtle mt-1 text-xs">{caption}</p>
+    <>
+      <td className={TD}>
+        {row.entered === null ? "—" : n(row.entered)}
+        {row.unit ? (
+          <span className="text-ui-text-subtle block text-[11px]">
+            {row.unit}
+          </span>
         ) : null}
-      </div>
-      <div className="mt-3 overflow-x-auto">{children}</div>
-    </section>
+      </td>
+      <td className={`${TD} ${EDGE}`}>{n(row.booked.self)}</td>
+      <td className={TD}>{n(row.booked.reactivated)}</td>
+      <td className={`${TD} font-semibold`}>{n(booked)}</td>
+      <td className={TD}>{row.entered ? pct(booked, row.entered) : "—"}</td>
+      <td className={`${TD} ${EDGE}`}>{n(row.won.self)}</td>
+      <td className={TD}>{n(row.won.reactivated)}</td>
+      <td className={TD}>{pct(both(row.won), booked)}</td>
+      <td className={`${TD} ${EDGE}`}>{money(row.revenue.self)}</td>
+      <td className={TD}>{money(row.revenue.reactivated)}</td>
+      <td className={`${TD} font-semibold`}>{money(both(row.revenue))}</td>
+    </>
   );
 }
 
-function Table({
-  head,
-  rows,
-  total,
-}: {
-  head: readonly string[];
-  rows: ReadonlyArray<readonly ReactNode[]>;
-  total?: readonly ReactNode[];
-}) {
-  return (
-    <table className="w-full text-sm">
-      <thead className="bg-ui-canvas text-ui-text-muted text-xs">
-        <tr>
-          {head.map((h, i) => (
-            <th key={h} scope="col" className={i === 0 ? HEAD_TH : TH}>
-              {h}
-            </th>
-          ))}
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((cells, r) => (
-          <tr key={r} className="border-ui-line/60 border-t">
-            {cells.map((cell, i) =>
-              i === 0 ? (
-                <th key={i} scope="row" className={ROW_TH}>
-                  {cell}
-                </th>
-              ) : (
-                <td key={i} className={TD}>
-                  {cell}
-                </td>
-              ),
-            )}
-          </tr>
-        ))}
-        {total ? (
-          <tr className="border-ui-line-strong border-t-2 font-semibold">
-            {total.map((cell, i) =>
-              i === 0 ? (
-                <th key={i} scope="row" className={ROW_TH}>
-                  {cell}
-                </th>
-              ) : (
-                <td key={i} className={TD}>
-                  {cell}
-                </td>
-              ),
-            )}
-          </tr>
-        ) : null}
-      </tbody>
-    </table>
+export function MarketingCreditPanel({ report }: MarketingCreditPanelProps) {
+  const marketing = sumRows(
+    report.rows.filter((r) => r.source !== "No marketing touch"),
   );
-}
-
-export function MarketingCreditPanel({ report }: { report: Loaded }) {
-  const { credit, siteForms, chat, selfBooked, reactivation } = report;
-  const sum = (key: "booked" | "themselves" | "bySetter" | "won" | "revenue") =>
-    credit.reduce((s, r) => s + r[key], 0);
-  const marketing = credit.filter((r) => r.source !== "No marketing touch");
-  const mSum = (
-    key: "booked" | "themselves" | "bySetter" | "won" | "revenue",
-  ) => marketing.reduce((s, r) => s + r[key], 0);
-
-  const setterBooked = siteForms.bookedBySetter.reduce(
-    (s, r) => s + r.count,
-    0,
-  );
-  const notBooked = siteForms.notBooked.reduce((s, r) => s + r.count, 0);
-  const chatBooked =
-    chat.bookedInChat + chat.bookedLaterThemselves + chat.bookedLaterBySetter;
+  const all = sumRows(report.rows);
 
   return (
     <div className="space-y-5">
       <p className="text-ui-text-muted text-sm">
-        {rangeLabel({ from: report.from, to: report.to })} · first sales calls
-        and wins, by who started them and who booked them
+        {rangeLabel({ from: report.from, to: report.to })} · from first touch to
+        closed, booked on their own vs reactivated by a setter or scraper
       </p>
 
       <AdminMetricStrip columns={6}>
         <AdminMetricPanel
-          label="Marketing-started calls"
-          value={n(mSum("booked"))}
-          caption={`${pct(mSum("booked"), sum("booked"))} of ${n(sum("booked"))} first calls`}
+          label="Came in"
+          value={n(marketing.entered)}
+          caption="registrations, form fills, opt-ins, chats"
         />
         <AdminMetricPanel
           label="Booked themselves"
-          value={n(mSum("themselves"))}
-          caption={`${pct(mSum("themselves"), mSum("booked"))} of marketing-started`}
+          value={n(marketing.booked.self)}
+          caption={`${pct(marketing.booked.self, both(marketing.booked))} of marketing calls`}
         />
         <AdminMetricPanel
-          label="Setter assists"
-          value={n(mSum("bySetter"))}
-          caption="marketing lead, setter booked"
+          label="Reactivated, then booked"
+          value={n(marketing.booked.reactivated)}
+          caption="marketing lead, setter or scraper booked"
         />
         <AdminMetricPanel
-          label="Marketing-started wins"
-          value={n(mSum("won"))}
-          caption={`of ${n(sum("won"))} won`}
+          label="Closed themselves"
+          value={money(marketing.revenue.self)}
+          caption={`${n(marketing.won.self)} deals`}
         />
         <AdminMetricPanel
-          label="Marketing-started revenue"
-          value={money(mSum("revenue"))}
-          caption={`${pct(mSum("revenue"), sum("revenue"))} of ${money(sum("revenue"))}`}
+          label="Closed via reactivation"
+          value={money(marketing.revenue.reactivated)}
+          caption={`${n(marketing.won.reactivated)} deals`}
         />
         <AdminMetricPanel
-          label="Reactivation warmed"
-          value={`${n(reactivation.assistedCalls)} / ${n(reactivation.calls)}`}
-          caption={`${n(reactivation.assistedWins)} of ${n(reactivation.wins)} wins · ${money(reactivation.assistedRevenue)}`}
+          label="Marketing share of revenue"
+          value={pct(both(marketing.revenue), both(all.revenue))}
+          caption={`${money(both(marketing.revenue))} of ${money(both(all.revenue))}`}
         />
       </AdminMetricStrip>
 
-      <Panel title="By source">
-        <Table
-          head={[
-            "Source",
-            "Booked",
-            "Booked themselves",
-            "Self %",
-            "Setter booked",
-            "Closed won",
-            "Won / booked",
-            "Won value",
-          ]}
-          rows={credit
-            .filter((r) => r.booked > 0 || r.won > 0)
-            .map((r) => [
-              r.source,
-              n(r.booked),
-              n(r.themselves),
-              pct(r.themselves, r.booked),
-              n(r.bySetter),
-              n(r.won),
-              pct(r.won, r.booked),
-              money(r.revenue),
-            ])}
-          total={[
-            "Total",
-            n(sum("booked")),
-            n(sum("themselves")),
-            pct(sum("themselves"), sum("booked")),
-            n(sum("bySetter")),
-            n(sum("won")),
-            pct(sum("won"), sum("booked")),
-            money(sum("revenue")),
-          ]}
-        />
-      </Panel>
-
-      <Panel title="Site form fills">
-        <Table
-          head={[
-            "People",
-            "Booked themselves",
-            "Setter booked",
-            "Not booked",
-            "Booked %",
-          ]}
-          rows={[
-            [
-              n(siteForms.filled),
-              n(siteForms.bookedThemselves),
-              n(setterBooked),
-              n(notBooked),
-              pct(siteForms.bookedThemselves + setterBooked, siteForms.filled),
-            ],
-          ]}
-        />
-        <div className="border-ui-line/60 grid items-start border-t md:grid-cols-2 md:divide-x">
-          <Table
-            head={["Setter booked by", "Calls", "Share"]}
-            rows={siteForms.bookedBySetter.map((r) => [
-              r.setter,
-              n(r.count),
-              pct(r.count, setterBooked),
-            ])}
-          />
-          <Table
-            head={["Not booked, Close status", "People", "Share"]}
-            rows={siteForms.notBooked.map((r) => [
-              r.status,
-              n(r.count),
-              pct(r.count, notBooked),
-            ])}
-          />
+      <section className={adminPanelClass} aria-label="Credit by source">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[72rem] text-sm">
+            <thead className="bg-ui-canvas text-ui-text-muted text-xs">
+              <tr>
+                <th colSpan={2} />
+                <th colSpan={4} className={GROUP}>
+                  Booked
+                </th>
+                <th colSpan={3} className={GROUP}>
+                  Closed won
+                </th>
+                <th colSpan={3} className={GROUP}>
+                  Revenue
+                </th>
+              </tr>
+              <tr>
+                <th scope="col" className="px-4 py-2.5 text-left font-semibold">
+                  Source
+                </th>
+                <th scope="col" className={TH}>
+                  Came in
+                </th>
+                <th scope="col" className={`${TH} ${EDGE}`}>
+                  Themselves
+                </th>
+                <th scope="col" className={TH}>
+                  Reactivated
+                </th>
+                <th scope="col" className={TH}>
+                  Total
+                </th>
+                <th scope="col" className={TH}>
+                  Book %
+                </th>
+                <th scope="col" className={`${TH} ${EDGE}`}>
+                  Themselves
+                </th>
+                <th scope="col" className={TH}>
+                  Reactivated
+                </th>
+                <th scope="col" className={TH}>
+                  Close %
+                </th>
+                <th scope="col" className={`${TH} ${EDGE}`}>
+                  Themselves
+                </th>
+                <th scope="col" className={TH}>
+                  Reactivated
+                </th>
+                <th scope="col" className={TH}>
+                  Total
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.rows.map((row) => (
+                <tr key={row.source} className="border-ui-line/60 border-t">
+                  <th
+                    scope="row"
+                    className="px-4 py-2 text-left font-medium whitespace-nowrap"
+                  >
+                    {row.source}
+                  </th>
+                  <Cells row={{ ...row, unit: ENTERED_UNIT[row.source] }} />
+                </tr>
+              ))}
+              <tr className="border-ui-line-strong border-t-2 font-semibold">
+                <th scope="row" className="px-4 py-2 text-left">
+                  Total
+                </th>
+                <Cells row={{ ...all, entered: null }} />
+              </tr>
+            </tbody>
+          </table>
         </div>
-      </Panel>
-
-      <Panel title="Site chatbot">
-        <Table
-          head={[
-            "Chats",
-            "Gave email",
-            "Email %",
-            "Booked in chat",
-            "Booked later, themselves",
-            "Booked later, setter",
-            "Booked %",
-          ]}
-          rows={[
-            [
-              n(chat.chats),
-              n(chat.gaveEmail),
-              pct(chat.gaveEmail, chat.chats),
-              n(chat.bookedInChat),
-              n(chat.bookedLaterThemselves),
-              n(chat.bookedLaterBySetter),
-              pct(chatBooked, chat.chats),
-            ],
-          ]}
-        />
-      </Panel>
-
-      <Panel title="Booked themselves, by surface">
-        <Table
-          head={[...SURFACES, "Total"]}
-          rows={[
-            [
-              ...SURFACES.map((s) => n(selfBooked.bySurface[s])),
-              n(selfBooked.total),
-            ],
-          ]}
-        />
-      </Panel>
+      </section>
     </div>
   );
 }

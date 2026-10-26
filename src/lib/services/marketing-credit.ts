@@ -1,12 +1,14 @@
 import { assistTouch, type AssistTouch } from "@/lib/services/self-booked";
 
 /**
- * Marketing credit: which booked calls and wins marketing started, and who
- * finished the booking (the person themselves, or a setter after marketing had
- * already warmed them up). Pure; `marketing-credit-data.ts` loads the rows.
+ * Marketing credit: every source traced from the first touch to the close, on
+ * both paths: the person booked (and bought) on their own, or a setter or the
+ * Reactivation scrapers picked them up after marketing brought them in.
+ * Pure; `marketing-credit-data.ts` loads the rows.
  *
- * Jess and Adam, 2026-10-26: "see which booked calls came from marketing
- * efforts ... how many form fills get a call and then book a call."
+ * Source is the touch that came first in Close (Entry Source), except that a
+ * chat on or before the booked day makes it a Chatbot call: the chat is the
+ * last thing that happened on our side before the booking.
  */
 
 export type MarketingSource = AssistTouch | "No marketing touch";
@@ -34,7 +36,7 @@ export type BookedLead = {
 export type Touches = {
   forms: ReadonlyMap<string, readonly string[]>;
   chats: ReadonlyMap<string, readonly string[]>;
-  /** Close/Calendly setter name recorded on the person's site lead row. */
+  /** Setter name recorded on the person's site lead row. */
   setters: ReadonlyMap<string, string>;
 };
 
@@ -46,17 +48,18 @@ export function sourceOf(
   touches: Touches,
 ): MarketingSource {
   const k = key(lead.email);
+  if ((touches.chats.get(k) ?? []).some((d) => d <= day)) return "Chatbot";
   return (
     assistTouch({
       entrySource: lead.entrySource,
       bookedDay: day,
       formDays: touches.forms.get(k) ?? [],
-      chatDays: touches.chats.get(k) ?? [],
+      chatDays: [],
     }) ?? "No marketing touch"
   );
 }
 
-/** A setter booked it: Reactivation, a Lane 2 / Social DMs booking, or a named setter on the lead. */
+/** Reactivated: Reactivation Scrapers, a Lane 2 / Social DMs booking, or a named setter on the lead. */
 export function setterBooked(lead: BookedLead, touches: Touches): boolean {
   return (
     lead.funnel === REACTIVATION ||
@@ -65,157 +68,71 @@ export function setterBooked(lead: BookedLead, touches: Touches): boolean {
   );
 }
 
+export type PathSplit = { self: number; reactivated: number };
+
 export type CreditRow = {
   source: MarketingSource;
-  booked: number;
-  themselves: number;
-  bySetter: number;
-  won: number;
-  revenue: number;
+  /** Registrations, form fills, opt-ins or chats this period. Null = not measured. */
+  entered: number | null;
+  booked: PathSplit;
+  won: PathSplit;
+  revenue: PathSplit;
 };
 
 export type Deal = { leadId: string; value: number | null; dateWon: string };
+
+const split = (): PathSplit => ({ self: 0, reactivated: 0 });
 
 export function creditBySource(
   booked: readonly BookedLead[],
   deals: readonly Deal[],
   dealLeads: ReadonlyMap<string, BookedLead>,
   touches: Touches,
+  entered: Partial<Record<MarketingSource, number>> = {},
 ): CreditRow[] {
   const rows = new Map<MarketingSource, CreditRow>(
     SOURCE_ORDER.map((source) => [
       source,
-      { source, booked: 0, themselves: 0, bySetter: 0, won: 0, revenue: 0 },
+      {
+        source,
+        entered: entered[source] ?? null,
+        booked: split(),
+        won: split(),
+        revenue: split(),
+      },
     ]),
   );
   for (const lead of booked) {
     const row = rows.get(sourceOf(lead, lead.bookedDay, touches))!;
-    row.booked += 1;
-    if (setterBooked(lead, touches)) row.bySetter += 1;
-    else row.themselves += 1;
+    row.booked[setterBooked(lead, touches) ? "reactivated" : "self"] += 1;
   }
   for (const deal of deals) {
     const lead = dealLeads.get(deal.leadId);
-    const day = lead?.bookedDay ?? deal.dateWon;
-    const row = rows.get(
-      lead ? sourceOf(lead, day, touches) : "No marketing touch",
-    )!;
-    row.won += 1;
-    row.revenue += deal.value ?? 0;
+    // A buyer with no first call on record (an LTF purchase) has no source
+    // and was never reactivated.
+    const source = lead
+      ? sourceOf(lead, lead.bookedDay, touches)
+      : "No marketing touch";
+    const path = lead && setterBooked(lead, touches) ? "reactivated" : "self";
+    const row = rows.get(source)!;
+    row.won[path] += 1;
+    row.revenue[path] += deal.value ?? 0;
   }
   return SOURCE_ORDER.map((s) => rows.get(s)!);
 }
 
-export type SiteFormLead = {
-  email: string;
-  callBookedAt: string | null;
-  bookedBySetter: string | null;
-  callStatus: string | null;
-};
+export const both = (s: PathSplit) => s.self + s.reactivated;
 
-export type SiteFormFunnel = {
-  filled: number;
-  bookedThemselves: number;
-  bookedBySetter: ReadonlyArray<{ setter: string; count: number }>;
-  notBooked: ReadonlyArray<{ status: string; count: number }>;
-};
-
-/** Strips Close's emoji prefixes: "🆕 New" -> "New". */
-const statusLabel = (s: string | null) => {
-  const label = s?.replace(/^[^\p{L}\p{N}]+/u, "").trim();
-  if (!label) return "Not in Close yet";
-  return label === "close_lead_missing" ? "Not found in Close" : label;
-};
-
-const tally = (values: string[]) =>
-  [
-    ...values.reduce(
-      (m, v) => m.set(v, (m.get(v) ?? 0) + 1),
-      new Map<string, number>(),
-    ),
-  ]
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count);
-
-/**
- * One person per address: a booking on any of their rows counts, and the
- * setter named on any row is the one who booked it.
- */
-export function siteFormFunnel(
-  leads: readonly SiteFormLead[],
-  mirror: ReadonlyMap<string, BookedLead>,
-): SiteFormFunnel {
-  const people = new Map<string, SiteFormLead>();
-  for (const lead of leads) {
-    const k = key(lead.email);
-    if (!k) continue;
-    const seen = people.get(k);
-    people.set(k, {
-      email: k,
-      callBookedAt: seen?.callBookedAt ?? lead.callBookedAt,
-      bookedBySetter: seen?.bookedBySetter ?? lead.bookedBySetter,
-      callStatus: lead.callStatus ?? seen?.callStatus ?? null,
-    });
-  }
-  let themselves = 0;
-  const setters: string[] = [];
-  const statuses: string[] = [];
-  for (const person of people.values()) {
-    if (!person.callBookedAt) {
-      statuses.push(statusLabel(person.callStatus));
-      continue;
-    }
-    const m = mirror.get(person.email);
-    const setter =
-      person.bookedBySetter?.trim() ||
-      (m?.funnel === REACTIVATION ? "Reactivation team" : null) ||
-      (m && SETTER_BOOKERS.has(m.bookedBy ?? "") ? m.bookedBy : null);
-    if (setter) setters.push(setter);
-    else themselves += 1;
-  }
+/** Column sums across rows, for the total row and the KPI strip. */
+export function sumRows(rows: readonly CreditRow[]) {
+  const add = (pick: (r: CreditRow) => PathSplit): PathSplit => ({
+    self: rows.reduce((s, r) => s + pick(r).self, 0),
+    reactivated: rows.reduce((s, r) => s + pick(r).reactivated, 0),
+  });
   return {
-    filled: people.size,
-    bookedThemselves: themselves,
-    bookedBySetter: tally(setters).map(({ label, count }) => ({
-      setter: label,
-      count,
-    })),
-    notBooked: tally(statuses).map(({ label, count }) => ({
-      status: label,
-      count,
-    })),
+    entered: rows.reduce((s, r) => s + (r.entered ?? 0), 0),
+    booked: add((r) => r.booked),
+    won: add((r) => r.won),
+    revenue: add((r) => r.revenue),
   };
-}
-
-export type ChatRow = {
-  capturedEmail: string | null;
-  bookedInChat: boolean;
-  leadBookedAt: string | null;
-  leadSetter: string | null;
-};
-
-export type ChatFunnel = {
-  chats: number;
-  gaveEmail: number;
-  bookedInChat: number;
-  bookedLaterThemselves: number;
-  bookedLaterBySetter: number;
-};
-
-export function chatFunnel(chats: readonly ChatRow[]): ChatFunnel {
-  const result: ChatFunnel = {
-    chats: chats.length,
-    gaveEmail: 0,
-    bookedInChat: 0,
-    bookedLaterThemselves: 0,
-    bookedLaterBySetter: 0,
-  };
-  for (const chat of chats) {
-    if (chat.capturedEmail) result.gaveEmail += 1;
-    if (chat.bookedInChat) result.bookedInChat += 1;
-    else if (chat.leadBookedAt && chat.leadSetter)
-      result.bookedLaterBySetter += 1;
-    else if (chat.leadBookedAt) result.bookedLaterThemselves += 1;
-  }
-  return result;
 }

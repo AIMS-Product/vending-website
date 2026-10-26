@@ -217,7 +217,8 @@ export type TrustScope =
   | "data"
   | "seo"
   | "google-ads"
-  | "marketing";
+  | "marketing"
+  | "credit";
 
 /**
  * THE map of tab to the feeds its loader reads. Read off each tab's data
@@ -279,16 +280,11 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
   "google-ads": ["google-ads", "site-leads"],
   // marketing-mtd-data.ts: Close mirror first calls + meetings (open calls),
-  // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events;
-  // marketing-credit-data.ts: Close mirror, site leads, Calendly, Close wins
-  marketing: [
-    "close",
-    "close-meetings",
-    "metricool-ads",
-    "webinar",
-    "site-leads",
-    "calendly",
-  ],
+  // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events
+  marketing: ["close", "close-meetings", "metricool-ads", "webinar"],
+  // marketing-credit-data.ts: Close mirror + wins, site leads, the spine's
+  // webinar registrations and lead magnet opt-ins. No ad spend: it reads none.
+  credit: ["close", "site-leads", "spine-leads"],
   // seo-command-center.ts + seo-plan-data.ts + seo-scorecard.ts: seo_gsc_* (incl. query totals), seo_rank_snapshots,
   // social_account_daily (the plan, task and review tables are edited by hand)
   seo: ["seo-search", "seo-ranks", "seo-ai", "social-accounts"],
@@ -437,11 +433,27 @@ const STATUS_RANK: Record<AuditCheck["status"], number> = {
   pass: 4,
 };
 
+/**
+ * Checks that verify a scope's numbers, when a scope reads only part of what
+ * the nightly audit covers. Unlisted scopes see every check. The credit view
+ * reads no ad spend and no SEO, so an ad or rank-tracker failure is not a
+ * reason to doubt it.
+ */
+const SCOPE_CHECKS: Partial<Record<TrustScope, RegExp>> = {
+  credit:
+    /^(close-|mom-|company-mtd-|calendly-|leads-reached-close$|ghl-forms$|webinar-push$|spine-orphaned-leads$|day-holes$)/,
+};
+
 export function judgeAudit(
   run: AuditRun | null,
   now: Date,
   error: string | null = null,
+  scope?: TrustScope,
 ): AuditVerdict {
+  const only = scope ? SCOPE_CHECKS[scope] : undefined;
+  if (run && only) {
+    run = { ...run, checks: run.checks.filter((c) => only.test(c.checkId)) };
+  }
   if (error || !run) {
     return {
       tone: "bad",
@@ -781,7 +793,12 @@ export function buildTrustBar(input: {
     feedCount: connected.length,
     notConnected,
     feeds: verdicts,
-    audit: judgeAudit(input.run, input.now, input.auditError ?? null),
+    audit: judgeAudit(
+      input.run,
+      input.now,
+      input.auditError ?? null,
+      input.scope,
+    ),
     flags: unverifiedFlags(
       input.scope,
       input.run,

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   type BookedLead,
-  chatFunnel,
   creditBySource,
-  siteFormFunnel,
+  sourceOf,
+  sumRows,
   type Touches,
 } from "./marketing-credit";
 
@@ -25,8 +25,26 @@ function lead(o: Partial<BookedLead> = {}): BookedLead {
   };
 }
 
+describe("sourceOf", () => {
+  it("uses Close's entry source, a chat before booking wins, a later form does not count", () => {
+    expect(sourceOf(lead(), "2026-10-10", none)).toBe("Webinar");
+    const chatted: Touches = {
+      ...none,
+      chats: new Map([["a@example.com", ["2026-10-09"]]]),
+    };
+    expect(sourceOf(lead(), "2026-10-10", chatted)).toBe("Chatbot");
+    const lateForm: Touches = {
+      ...none,
+      forms: new Map([["a@example.com", ["2026-10-11"]]]),
+    };
+    expect(
+      sourceOf(lead({ entrySource: "Rep-Outbound" }), "2026-10-10", lateForm),
+    ).toBe("No marketing touch");
+  });
+});
+
 describe("creditBySource", () => {
-  it("splits each source into booked themselves vs by a setter", () => {
+  it("splits booked and closed into themselves vs reactivated, per source", () => {
     const rows = creditBySource(
       [
         lead(),
@@ -36,148 +54,43 @@ describe("creditBySource", () => {
           email: "c@x.com",
           funnel: "Reactivation Scrapers",
         }),
-        lead({
-          leadId: "l4",
-          email: "d@x.com",
-          entrySource: "Rep-Outbound",
-          funnel: "Reactivation Scrapers",
-        }),
       ],
-      [],
-      new Map(),
-      none,
-    );
-    const webinar = rows.find((r) => r.source === "Webinar")!;
-    expect([webinar.booked, webinar.themselves, webinar.bySetter]).toEqual([
-      3, 1, 2,
-    ]);
-    expect(rows.find((r) => r.source === "No marketing touch")!.bySetter).toBe(
-      1,
-    );
-  });
-
-  it("credits a site form only when it came on or before the booked day", () => {
-    const touches: Touches = {
-      ...none,
-      forms: new Map([["a@example.com", ["2026-10-11"]]]),
-    };
-    const rows = creditBySource(
-      [lead({ entrySource: "Rep-Outbound" })],
-      [],
-      new Map(),
-      touches,
-    );
-    expect(rows.find((r) => r.source === "No marketing touch")!.booked).toBe(1);
-  });
-
-  it("puts wins under their lead's source, and unknown leads under no touch", () => {
-    const rows = creditBySource(
-      [],
       [
         { leadId: "l1", value: 6000, dateWon: "2026-10-20" },
-        { leadId: "zz", value: 1000, dateWon: "2026-10-20" },
-      ],
-      new Map([["l1", lead()]]),
-      none,
-    );
-    expect(rows.find((r) => r.source === "Webinar")).toMatchObject({
-      won: 1,
-      revenue: 6000,
-    });
-    expect(rows.find((r) => r.source === "No marketing touch")).toMatchObject({
-      won: 1,
-      revenue: 1000,
-    });
-  });
-});
-
-describe("siteFormFunnel", () => {
-  it("counts people once and splits booked by who booked", () => {
-    const f = siteFormFunnel(
-      [
-        {
-          email: "a@x.com",
-          callBookedAt: "2026-10-02",
-          bookedBySetter: null,
-          callStatus: "☎️ Call Booked",
-        },
-        {
-          email: "A@x.com ",
-          callBookedAt: null,
-          bookedBySetter: null,
-          callStatus: null,
-        },
-        {
-          email: "b@x.com",
-          callBookedAt: "2026-10-03",
-          bookedBySetter: "Connor George",
-          callStatus: null,
-        },
-        {
-          email: "c@x.com",
-          callBookedAt: "2026-10-04",
-          bookedBySetter: null,
-          callStatus: null,
-        },
-        {
-          email: "d@x.com",
-          callBookedAt: null,
-          bookedBySetter: null,
-          callStatus: "🆕 New",
-        },
+        { leadId: "l3", value: 9000, dateWon: "2026-10-21" },
+        { leadId: "unknown", value: 1000, dateWon: "2026-10-21" },
       ],
       new Map([
+        ["l1", lead()],
         [
-          "c@x.com",
-          lead({ email: "c@x.com", funnel: "Reactivation Scrapers" }),
+          "l3",
+          lead({
+            leadId: "l3",
+            email: "c@x.com",
+            funnel: "Reactivation Scrapers",
+          }),
         ],
       ]),
+      none,
+      { Webinar: 1500 },
     );
-    expect(f.filled).toBe(4);
-    expect(f.bookedThemselves).toBe(1);
-    expect(f.bookedBySetter).toEqual([
-      { setter: "Connor George", count: 1 },
-      { setter: "Reactivation team", count: 1 },
-    ]);
-    expect(f.notBooked).toEqual([{ status: "New", count: 1 }]);
+    const webinar = rows.find((r) => r.source === "Webinar")!;
+    expect(webinar.entered).toBe(1500);
+    expect(webinar.booked).toEqual({ self: 1, reactivated: 2 });
+    expect(webinar.won).toEqual({ self: 1, reactivated: 1 });
+    expect(webinar.revenue).toEqual({ self: 6000, reactivated: 9000 });
+    const noTouch = rows.find((r) => r.source === "No marketing touch")!;
+    expect(noTouch.won).toEqual({ self: 1, reactivated: 0 });
+    expect(rows.find((r) => r.source === "Chatbot")!.entered).toBeNull();
+    expect(sumRows(rows).revenue).toEqual({ self: 7000, reactivated: 9000 });
   });
-});
 
-describe("chatFunnel", () => {
-  it("separates in-chat bookings from later ones", () => {
-    expect(
-      chatFunnel([
-        {
-          capturedEmail: "a",
-          bookedInChat: true,
-          leadBookedAt: "x",
-          leadSetter: null,
-        },
-        {
-          capturedEmail: "b",
-          bookedInChat: false,
-          leadBookedAt: "x",
-          leadSetter: "Pearl",
-        },
-        {
-          capturedEmail: null,
-          bookedInChat: false,
-          leadBookedAt: "x",
-          leadSetter: null,
-        },
-        {
-          capturedEmail: null,
-          bookedInChat: false,
-          leadBookedAt: null,
-          leadSetter: null,
-        },
-      ]),
-    ).toEqual({
-      chats: 4,
-      gaveEmail: 2,
-      bookedInChat: 1,
-      bookedLaterThemselves: 1,
-      bookedLaterBySetter: 1,
-    });
+  it("counts a named setter on the site lead as reactivated", () => {
+    const touches: Touches = {
+      ...none,
+      setters: new Map([["a@example.com", "Connor George"]]),
+    };
+    const rows = creditBySource([lead()], [], new Map(), touches);
+    expect(rows[0].booked).toEqual({ self: 0, reactivated: 1 });
   });
 });

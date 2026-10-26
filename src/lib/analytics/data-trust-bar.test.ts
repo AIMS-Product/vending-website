@@ -194,12 +194,8 @@ describe("tab to feed mapping matches what each loader reads", () => {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
     "google-ads": ["google-ads-dashboard"],
-    marketing: [
-      "marketing-mtd-data",
-      "booked-calls-v2-data",
-      "close-wins",
-      "marketing-credit-data",
-    ],
+    marketing: ["marketing-mtd-data", "booked-calls-v2-data", "close-wins"],
+    credit: ["marketing-credit-data", "close-wins"],
     dashboard: [
       "analytics-dashboard-data",
       "channel-report",
@@ -678,5 +674,48 @@ describe("glossary", () => {
     ]) {
       expect(terms).toContain(term);
     }
+  });
+});
+
+describe("judgeAudit scope", () => {
+  const run = {
+    runAt: "2026-10-26T12:30:00Z",
+    checks: [
+      {
+        checkId: "close-first-calls",
+        label: "a",
+        window: "w",
+        status: "pass" as const,
+        detail: "",
+      },
+      {
+        checkId: "ads-group",
+        label: "ads",
+        window: "w",
+        status: "error" as const,
+        detail: "",
+      },
+      {
+        checkId: "connector-health",
+        label: "c",
+        window: "w",
+        status: "fail" as const,
+        detail: "",
+      },
+    ],
+  };
+  const now = new Date("2026-10-26T20:00:00Z");
+
+  it("the credit view ignores checks for numbers it does not show", () => {
+    const verdict = judgeAudit(run, now, null, "credit");
+    expect(verdict).toMatchObject({ tone: "ok", passed: 1, total: 1 });
+  });
+
+  it("every other scope still sees every check", () => {
+    expect(judgeAudit(run, now, null, "marketing")).toMatchObject({
+      tone: "bad",
+      total: 3,
+    });
+    expect(judgeAudit(run, now)).toMatchObject({ total: 3 });
   });
 });
