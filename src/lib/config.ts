@@ -209,6 +209,16 @@ const envSchema = z.object({
    */
   NO_BOOK_ALERT_ENABLED: optionalTrimmedOptionalEnv,
   /**
+   * Lead-facing "you have not booked yet" emails (services/no-book-followup.ts).
+   * OFF unless exactly "true": this writes to real leads, so it fails closed.
+   */
+  SELF_BOOK_FOLLOWUP_ENABLED: optionalTrimmedOptionalEnv,
+  /**
+   * Postal address printed in the footer of marketing email to leads (CAN-SPAM).
+   * A PO box or virtual mailbox, never a personal address. Unset = nothing sends.
+   */
+  COMPANY_MAILING_ADDRESS: optionalTrimmedOptionalEnv,
+  /**
    * Chatbot "give value before the call" behaviour (member story and resource
    * cards, cost video instead of a forced calendar). OFF unless "on" (every
    * chat) or "split" (half, by conversation id). See chatbot/value-first.ts.
@@ -368,6 +378,8 @@ const parsed = envSchema.safeParse({
   CLOSE_WARM_REPLY_ACTIVITY_ENABLED:
     process.env.CLOSE_WARM_REPLY_ACTIVITY_ENABLED,
   NO_BOOK_ALERT_ENABLED: process.env.NO_BOOK_ALERT_ENABLED,
+  SELF_BOOK_FOLLOWUP_ENABLED: process.env.SELF_BOOK_FOLLOWUP_ENABLED,
+  COMPANY_MAILING_ADDRESS: process.env.COMPANY_MAILING_ADDRESS,
   CHATBOT_VALUE_FIRST: process.env.CHATBOT_VALUE_FIRST,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
