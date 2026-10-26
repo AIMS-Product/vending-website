@@ -121,8 +121,11 @@ export type SiteFormFunnel = {
 };
 
 /** Strips Close's emoji prefixes: "🆕 New" -> "New". */
-const statusLabel = (s: string | null) =>
-  s?.replace(/^[^\p{L}\p{N}]+/u, "").trim() || "Not in Close yet";
+const statusLabel = (s: string | null) => {
+  const label = s?.replace(/^[^\p{L}\p{N}]+/u, "").trim();
+  if (!label) return "Not in Close yet";
+  return label === "close_lead_missing" ? "Not found in Close" : label;
+};
 
 const tally = (values: string[]) =>
   [

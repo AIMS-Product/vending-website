@@ -5,7 +5,7 @@ import {
   adminPanelClass,
   adminSectionTitleClass,
 } from "@/components/admin/AdminUi";
-import { TD, TH } from "@/components/admin/marketing-mtd-format";
+import { rangeLabel, TD, TH } from "@/components/admin/marketing-mtd-format";
 import { formatUsd as money } from "@/lib/admin/format-number";
 import type { MarketingCredit } from "@/lib/services/marketing-credit-data";
 import { SURFACES } from "@/lib/services/self-booked";
@@ -116,8 +116,8 @@ export function MarketingCreditPanel({ report }: { report: Loaded }) {
   return (
     <div className="space-y-5">
       <p className="text-ui-text-muted text-sm">
-        {report.from} to {report.to} · first sales calls and wins, by who
-        started them and who booked them
+        {rangeLabel({ from: report.from, to: report.to })} · first sales calls
+        and wins, by who started them and who booked them
       </p>
 
       <AdminMetricStrip columns={6}>
@@ -165,16 +165,18 @@ export function MarketingCreditPanel({ report }: { report: Loaded }) {
             "Won / booked",
             "Won value",
           ]}
-          rows={credit.map((r) => [
-            r.source,
-            n(r.booked),
-            n(r.themselves),
-            pct(r.themselves, r.booked),
-            n(r.bySetter),
-            n(r.won),
-            pct(r.won, r.booked),
-            money(r.revenue),
-          ])}
+          rows={credit
+            .filter((r) => r.booked > 0 || r.won > 0)
+            .map((r) => [
+              r.source,
+              n(r.booked),
+              n(r.themselves),
+              pct(r.themselves, r.booked),
+              n(r.bySetter),
+              n(r.won),
+              pct(r.won, r.booked),
+              money(r.revenue),
+            ])}
           total={[
             "Total",
             n(sum("booked")),
@@ -207,7 +209,7 @@ export function MarketingCreditPanel({ report }: { report: Loaded }) {
             ],
           ]}
         />
-        <div className="border-ui-line/60 grid border-t md:grid-cols-2 md:divide-x">
+        <div className="border-ui-line/60 grid items-start border-t md:grid-cols-2 md:divide-x">
           <Table
             head={["Setter booked by", "Calls", "Share"]}
             rows={siteForms.bookedBySetter.map((r) => [
