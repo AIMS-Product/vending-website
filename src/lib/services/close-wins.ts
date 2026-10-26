@@ -148,7 +148,10 @@ export function summariseCloseWins(
 }
 
 type MirrorClient = Pick<SupabaseClient<Database>, "from">;
-type WinsCloseClient = Pick<CloseClient, "listWonOpportunities" | "getLead">;
+export type WinsCloseClient = Pick<
+  CloseClient,
+  "listWonOpportunities" | "getLead"
+>;
 
 /**
  * Close reads for the reporting tabs, cached for five minutes (Adam,
