@@ -113,11 +113,11 @@ export async function runNoBookFollowupCron(
       const reason = booked ? "booked" : skipReason(lead, history, step);
       if (reason) {
         result.skipped[reason] = (result.skipped[reason] ?? 0) + 1;
-        // Stamp so the row leaves this step's candidate list; the stamp value
-        // records why nothing was sent.
-        if (reason !== "previous_step_missing") {
-          await stamp(client, lead, step, `skipped:${reason}`);
-        }
+        // Stamp so the row leaves this step's candidate list for good; the
+        // value records why nothing was sent. A missed previous step is stamped
+        // too: its window has closed, and leaving it unstamped let 25 such rows
+        // hold the whole batch until they aged out.
+        await stamp(client, lead, step, `skipped:${reason}`);
         continue;
       }
 
@@ -200,20 +200,34 @@ async function listHistory(client: Client, email: string): Promise<LeadRow[]> {
   return (data ?? []) as LeadRow[];
 }
 
-// ponytail: read-modify-write on metadata, same trade-off as no-book-alert's
-// stampAlerted. This cron is the only writer of the nbf_* keys and Vercel does
-// not overlap a cron with itself; worst case is one repeated email.
+// ponytail: read-modify-write on metadata, not an atomic jsonb merge (that
+// needs a hand-applied RPC). The window is kept to milliseconds by re-reading
+// the row right before writing, and the cron runs at :05/:15/... so it never
+// shares a minute with the no-book Slack alert (:00/:10/...), the other writer
+// of this object. Upgrade path: an `update ... set metadata = metadata ||
+// jsonb_build_object(...)` RPC used by both crons and the unsubscribe route.
 async function stamp(
   client: Client,
   lead: LeadRow,
   step: FollowupStep,
   value: string,
 ): Promise<boolean> {
+  const fresh = await client
+    .from("lead_submissions")
+    .select("metadata")
+    .eq("id", lead.id)
+    .maybeSingle();
+  if (fresh.error) {
+    console.warn("no-book followup: could not re-read lead before stamping", {
+      leadId: lead.id,
+      step,
+    });
+    return false;
+  }
+  const current = fresh.data?.metadata ?? lead.metadata;
   const existing =
-    lead.metadata &&
-    typeof lead.metadata === "object" &&
-    !Array.isArray(lead.metadata)
-      ? (lead.metadata as Record<string, Json>)
+    current && typeof current === "object" && !Array.isArray(current)
+      ? (current as Record<string, Json>)
       : {};
   const { error } = await client
     .from("lead_submissions")

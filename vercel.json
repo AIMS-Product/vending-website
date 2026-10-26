@@ -35,7 +35,7 @@
     },
     {
       "path": "/api/admin/no-book-followup/run",
-      "schedule": "*/10 * * * *"
+      "schedule": "5-59/10 * * * *"
     },
     {
       "path": "/api/admin/bitly-sync/run",

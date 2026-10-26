@@ -83,9 +83,14 @@ export function skipReason(
   }
   if (history.some((r) => metadataOf(r)[stepKey(step)])) return "already_sent";
   if (step > 1) {
+    // Only a real send counts. A "skipped:..." stamp means the person never got
+    // the previous email, so the next one would arrive out of the blue.
     const prev = stepKey((step - 1) as FollowupStep);
-    if (!history.some((r) => metadataOf(r)[prev]))
-      return "previous_step_missing";
+    const sentBefore = history.some((r) => {
+      const v = metadataOf(r)[prev];
+      return typeof v === "string" && !v.startsWith("skipped:");
+    });
+    if (!sentBefore) return "previous_step_missing";
   }
   return null;
 }

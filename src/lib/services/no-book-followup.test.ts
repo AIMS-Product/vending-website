@@ -202,6 +202,8 @@ function fakeClient(options: {
       lte: () => chain,
       order: () => chain,
       ilike: () => chain,
+      eq: () => chain,
+      maybeSingle: async () => ({ data: { metadata: {} }, error: null }),
       limit: async () => {
         if (isHistory) {
           return options.historyError
@@ -324,5 +326,26 @@ describe("runNoBookFollowupCron", () => {
     const fetchImpl = vi.fn(async () => new Response("{}", { status: 200 }));
     await runNoBookFollowupCron({ ...ON, client, fetchImpl });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("missed steps (codex review)", () => {
+  it("does not count a skipped previous step as sent", () => {
+    const l = lead({ metadata: { nbf_step1_at: "skipped:booked" } });
+    expect(skipReason(l, [l], 2)).toBe("previous_step_missing");
+  });
+
+  it("stamps a missed-step row so it cannot clog the batch", async () => {
+    const l = lead();
+    const { client, updates } = fakeClient({
+      candidates: { 2: [l] },
+      history: [l],
+    });
+    const fetchImpl = vi.fn();
+    await runNoBookFollowupCron({ ...ON, client, fetchImpl });
+    expect(fetchImpl).not.toHaveBeenCalled();
+    expect(updates[0].metadata.nbf_step2_at).toBe(
+      "skipped:previous_step_missing",
+    );
   });
 });
