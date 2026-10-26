@@ -912,23 +912,33 @@ export function ChatWidget() {
       )}
     >
       {!open && showTeaser && teaserMessage ? (
-        // Phones (<640px) keep only the launcher: the bubble covered the hero
-        // copy on paid landing pages. CSS-only, so no hydration mismatch.
-        <div className="hidden sm:block">
-          <TeaserBubble
-            text={teaserMessage}
-            avatarUrl={config.avatarUrl}
-            onOpen={() => {
-              setShowTeaser(false);
-              setOpen(true);
-              captureEvent("chat_opened", { trigger: "teaser" });
-            }}
-            onDismiss={() => {
-              setShowTeaser(false);
-              writeSessionFlag(TEASER_DISMISSED_KEY);
-            }}
-          />
-        </div>
+        // Phones get a compact bubble (first question, two lines, 230px, no avatar) so it
+        // sits beside the launcher instead of over the hero copy. Hiding it
+        // outright on 2026-10-11 (#148) cut phone chats from ~28 to ~8 a week.
+        // CSS-only switch, so no hydration mismatch.
+        <>
+          {[true, false].map((compact) => (
+            <div
+              key={String(compact)}
+              className={compact ? "sm:hidden" : "hidden sm:block"}
+            >
+              <TeaserBubble
+                compact={compact}
+                text={teaserMessage}
+                avatarUrl={config.avatarUrl}
+                onOpen={() => {
+                  setShowTeaser(false);
+                  setOpen(true);
+                  captureEvent("chat_opened", { trigger: "teaser" });
+                }}
+                onDismiss={() => {
+                  setShowTeaser(false);
+                  writeSessionFlag(TEASER_DISMISSED_KEY);
+                }}
+              />
+            </div>
+          ))}
+        </>
       ) : null}
 
       {open ? (

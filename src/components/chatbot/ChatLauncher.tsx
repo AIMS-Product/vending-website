@@ -10,6 +10,7 @@ import type { Ref } from "react";
 import Link from "next/link";
 import type { ChatbotQuickAction } from "@/lib/chatbot/config";
 import { quickActionBehavior } from "@/lib/chatbot/quick-actions";
+import { cn } from "@/lib/utils";
 
 export function PanelHeader({
   personaName,
@@ -232,15 +233,25 @@ export function TeaserBubble({
   avatarUrl,
   onOpen,
   onDismiss,
+  compact = false,
 }: {
   text: string;
   avatarUrl: string | null;
   onOpen: () => void;
   onDismiss: () => void;
+  /** Phones: first question only, two lines max, so it never covers the hero. */
+  compact?: boolean;
 }) {
+  const shown = compact ? compactTeaserText(text) : text;
   return (
-    <div className="flex max-w-[290px] items-start gap-2 rounded-[8px] border-2 border-[#111111] bg-white px-3 py-2 shadow-[4px_4px_0_#111111]">
-      {avatarUrl ? (
+    <div
+      className={cn(
+        "flex items-start gap-2 rounded-[8px] border-2 border-[#111111] bg-white shadow-[4px_4px_0_#111111]",
+        compact ? "max-w-[230px] px-2.5 py-1.5" : "max-w-[290px] px-3 py-2",
+      )}
+    >
+      {/* Compact drops the avatar: the launcher right below already shows it. */}
+      {avatarUrl && !compact ? (
         // eslint-disable-next-line @next/next/no-img-element -- small teaser avatar, no responsive sizing needed
         <img
           src={avatarUrl}
@@ -253,9 +264,12 @@ export function TeaserBubble({
       <button
         type="button"
         onClick={onOpen}
-        className="flex-1 text-left text-sm leading-snug text-[#111111]"
+        className={cn(
+          "flex-1 text-left leading-snug text-[#111111]",
+          compact ? "line-clamp-2 text-xs" : "text-sm",
+        )}
       >
-        {text}
+        {shown}
       </button>
       <button
         type="button"
@@ -267,6 +281,12 @@ export function TeaserBubble({
       </button>
     </div>
   );
+}
+
+/** "Hey! Looking into starting a vending business? Ask me…" -> up to the first "?". */
+export function compactTeaserText(text: string): string {
+  const q = text.indexOf("?");
+  return q === -1 ? text : text.slice(0, q + 1);
 }
 
 function CloseIcon({ size = 16 }: { size?: number }) {
