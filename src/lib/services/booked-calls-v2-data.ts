@@ -24,6 +24,8 @@ export type BookedCallsV2Report =
       summary: V2Summary;
       decisions: Decision[];
       syncedAt: string | null;
+      meetings: Meeting[];
+      generations: string[];
     }
   | { ok: false; error: string };
 
@@ -96,6 +98,7 @@ export async function getBookedCallsV2(
   const leadIds = [...new Set(candidates.rows.map((m) => m.lead_id))];
   const history: MeetingRecord[] = [];
   const leads = new Map<string, LeadFacts>();
+  const generations = new Set(candidates.rows.map((m) => m.synced_at));
   for (let i = 0; i < leadIds.length; i += IN_BATCH) {
     const ids = leadIds.slice(i, i + IN_BATCH);
     const [meetings, facts] = await Promise.all([
@@ -109,7 +112,9 @@ export async function getBookedCallsV2(
       ),
       db
         .from("close_meeting_leads")
-        .select("lead_id,funnel,contact_utms,setter_name,business_line")
+        .select(
+          "lead_id,funnel,contact_utms,setter_name,business_line,synced_at",
+        )
         .in("lead_id", ids),
     ]);
     if (meetings.error || facts.error) {
@@ -120,7 +125,9 @@ export async function getBookedCallsV2(
       return { ok: false, error: "Could not read meeting history." };
     }
     history.push(...meetings.rows);
+    meetings.rows.forEach((m: MeetingRecord) => generations.add(m.synced_at));
     for (const f of facts.data ?? []) {
+      generations.add(f.synced_at);
       leads.set(f.lead_id, {
         funnel: f.funnel,
         contactUtms: Array.isArray(f.contact_utms)
@@ -132,6 +139,17 @@ export async function getBookedCallsV2(
     }
   }
 
+  if (leadIds.some((id) => !leads.has(id)))
+    return {
+      ok: false,
+      error: "Close lead facts are incomplete; totals withheld.",
+    };
+  const expected = new Set(candidates.rows.map((row) => row.id));
+  if ([...expected].some((id) => !history.some((row) => row.id === id)))
+    return {
+      ok: false,
+      error: "Close meeting history is incomplete; totals withheld.",
+    };
   const decisions = evaluate({
     meetings: history.map(toMeeting),
     leads,
@@ -150,5 +168,7 @@ export async function getBookedCallsV2(
     summary: summarize(decisions),
     decisions,
     syncedAt,
+    meetings: history.map(toMeeting),
+    generations: [...generations],
   };
 }

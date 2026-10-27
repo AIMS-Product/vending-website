@@ -143,7 +143,7 @@ describe("title map", () => {
 describe("Pearl's Social DMs", () => {
   const pearl = { ...youtube, setterName: "Pearl Sathekge" };
 
-  it("her source titles are Social DMs when she is the lead's setter", () => {
+  it("setter name alone does not make source titles Social DMs", () => {
     for (const title of [
       "Vendingpreneurs Consultation",
       "New Vendingpreneur Strategy Call with Oscar Pugh",
@@ -151,14 +151,14 @@ describe("Pearl's Social DMs", () => {
       const [d] = decide([meeting({ title })], pearl);
       expect(d).toMatchObject({
         disposition: "counted",
-        bookedBy: "Social DMs",
-        mappedSetter: "Pearl Sathekge",
+        bookedBy: "Marketing",
+        mappedSetter: null,
       });
     }
   });
 
   it("a contact from her GoHighLevel link or Mike's IG DMs gates the same way", () => {
-    for (const source of ["ghl", "Mike-IG?fbclid=x"]) {
+    for (const source of ["ghl", "Mike-IG", "instagram"]) {
       const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
         ...youtube,
         funnel: "Internal Webinar",
@@ -184,13 +184,13 @@ describe("marketing credit", () => {
     expect(d.origin).toEqual({ source: "YouTube", basis: "funnel" });
   });
 
-  it("holds an approved family with no origin, never defaulting to Marketing", () => {
+  it("counts Marketing with an unresolved source in its own review channel", () => {
     const lead = { ...youtube, funnel: "Reactivation Scrapers" };
     const [d] = decide([meeting()], lead);
     expect(d).toMatchObject({
-      disposition: "held",
-      reason: "source_unavailable",
-      bookedBy: null,
+      disposition: "counted",
+      reason: "counted",
+      bookedBy: "Marketing",
     });
   });
 
@@ -246,11 +246,11 @@ describe("status", () => {
     expect(d).toMatchObject({ disposition: "excluded", bookedBy: "Lane 2" });
   });
 
-  it("calls an internal meeting not a sales call even when canceled", () => {
+  it("cancellation takes precedence in the audit reason", () => {
     const [d] = decide([
       meeting({ title: "Webinar Actions Review", status: "canceled" }),
     ]);
-    expect(d.reason).toBe("not_sales_call");
+    expect(d.reason).toBe("canceled");
   });
 
   it("excludes setter-only and non-booking titles as not sales calls", () => {
@@ -261,7 +261,7 @@ describe("status", () => {
       "Silver Start Up Walkthrough",
     ]) {
       const [d] = decide([meeting({ title })]);
-      expect(d.reason).toBe("not_sales_call");
+      expect(d.disposition).toBe("excluded");
     }
   });
 });
@@ -275,7 +275,7 @@ describe("30 x 24 hour episodes", () => {
   const lane2 = (over: Partial<Meeting> = {}) =>
     meeting({ title: "Vendingpreneur Next Steps", ...over });
 
-  it("one hour short of 720 is the same episode; 720 hours is a new one", () => {
+  it("both 719 and exactly 720 elapsed hours suppress a repeat", () => {
     const credit = lane2({
       startsAt: START,
       dateCreated: "2026-09-10T18:00:00Z",
@@ -299,12 +299,12 @@ describe("30 x 24 hour episodes", () => {
       intervalDays: 29,
     });
     expect(out.find((d) => d.meetingId === outside.id)).toMatchObject({
-      disposition: "counted",
+      disposition: "excluded",
       intervalDays: 30,
     });
   });
 
-  it("canceled and unapproved meetings never start the timer", () => {
+  it("canceled meetings do not start the timer; unapproved meetings do", () => {
     const canceled = meeting({
       status: "canceled",
       startsAt: "2026-09-25T18:00:00Z",
@@ -315,13 +315,13 @@ describe("30 x 24 hour episodes", () => {
       startsAt: "2026-09-28T18:00:00Z",
       dateCreated: "2026-09-20T18:00:00Z",
     });
-    const rebooked = meeting({ startsAt: "2026-10-08T18:00:00Z" });
+    const rebooked = lane2({ startsAt: "2026-10-08T18:00:00Z" });
     const out = decide([canceled, internal, rebooked]);
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
       meetingId: rebooked.id,
-      disposition: "counted",
-      precedingMeetingId: null,
+      disposition: "excluded",
+      precedingMeetingId: internal.id,
     });
   });
 
@@ -340,7 +340,7 @@ describe("30 x 24 hour episodes", () => {
     ]);
   });
 
-  it("a held Marketing meeting does not anchor the episode", () => {
+  it("unknown-source Marketing counts and advances the repeat clock", () => {
     const scrapers = { ...youtube, funnel: "Reactivation Scrapers" };
     const held = meeting({ startsAt: "2026-10-03T18:00:00Z" });
     const mapped = meeting({
@@ -348,7 +348,7 @@ describe("30 x 24 hour episodes", () => {
       startsAt: "2026-10-09T18:00:00Z",
     });
     const out = decide([held, mapped], scrapers);
-    expect(out.map((d) => d.reason)).toEqual(["source_unavailable", "counted"]);
+    expect(out.map((d) => d.reason)).toEqual(["counted", "within_episode"]);
   });
 
   it("simultaneous meetings: earliest created, then lowest id, takes the credit", () => {
@@ -361,7 +361,7 @@ describe("30 x 24 hour episodes", () => {
     );
   });
 
-  it("Marketing credits neither repeat-limit nor anchor an episode", () => {
+  it("Marketing is not repeat-limited but advances the shared repeat clock", () => {
     const first = meeting({ startsAt: "2026-10-03T18:00:00Z" });
     const again = meeting({ startsAt: "2026-10-06T18:00:00Z" });
     const setter = lane2({ startsAt: "2026-10-09T18:00:00Z" });
@@ -369,7 +369,7 @@ describe("30 x 24 hour episodes", () => {
     expect(out.map((d) => [d.bookedBy, d.reason])).toEqual([
       ["Marketing", "counted"],
       ["Marketing", "counted"],
-      ["Lane 2", "counted"],
+      ["Lane 2", "within_episode"],
     ]);
   });
 
@@ -391,7 +391,7 @@ describe("30 x 24 hour episodes", () => {
     });
   });
 
-  it("ignores meetings created after the snapshot fence", () => {
+  it("candidate fence does not filter full current-state meeting history", () => {
     const candidate = meeting({
       startsAt: "2026-10-20T18:00:00Z",
       dateCreated: "2026-10-05T18:00:00Z",
@@ -409,7 +409,7 @@ describe("30 x 24 hour episodes", () => {
     expect(out).toHaveLength(1);
     expect(out[0]).toMatchObject({
       disposition: "counted",
-      precedingMeetingId: null,
+      precedingMeetingId: later.id,
     });
   });
 
@@ -454,4 +454,73 @@ describe("summarize", () => {
         s.byBookedBy["Social DMs"],
     ).toBe(s.counted);
   });
+});
+
+describe("canonical any-meeting-clock regressions", () => {
+  const mapped = (over: Partial<Meeting> = {}) =>
+    meeting({ title: "Vendingpreneurs Next Steps Call", ...over });
+  it("William consult retires at the exclusive Pacific cutoff and can fall through to Marketing", () => {
+    for (const [created, bucket] of [
+      ["2026-10-14T06:59:59Z", "Lane 2"],
+      ["2026-10-14T07:00:00Z", "Marketing"],
+    ]) {
+      const [d] = evaluate({
+        meetings: [
+          meeting({ title: "Vending Consult Call", dateCreated: created }),
+        ],
+        leads: new Map([["lead_a", youtube]]),
+        from: FROM,
+        to: "2026-10-15T07:00:00Z",
+      });
+      expect(d?.bookedBy).toBe(bucket);
+    }
+  });
+  it("raw Pearl source query tails do not pass the Social DM gate", () => {
+    const [d] = decide([meeting({ title: "Vendingpreneurs Consultation" })], {
+      ...youtube,
+      setterName: "Pearl Sathekge",
+      contactUtms: [{ source: "mike-ig?x=1" }],
+    });
+    expect(d?.bookedBy).toBe("Marketing");
+  });
+  it("mapped titles outrank excluded Marketing callers", () => {
+    const [d] = decide([
+      mapped({ userId: "user_4sfuKGMbv0LQZ4hpS8ipASv406kKTSNP5Xx79jOwSqM" }),
+    ]);
+    expect(d?.disposition).toBe("counted");
+  });
+  it("suppressed and held-status meetings advance the clock; exactly 720 suppresses", () => {
+    const start = Date.parse("2026-09-01T18:00:00Z");
+    const meetings = [0, 20, 40, 70, 101].map((days, i) =>
+      mapped({
+        id: `clock_${i}`,
+        startsAt: new Date(start + days * 86400000).toISOString(),
+        ...(i === 1 ? { status: "rescheduled", title: "Team sync" } : {}),
+      }),
+    );
+    expect(decide(meetings).map((d) => d.reason)).toEqual([
+      "counted",
+      "unknown_status",
+      "within_episode",
+      "within_episode",
+      "counted",
+    ]);
+  });
+  it("naive creation times never become candidates; naive starts cannot count", () => {
+    expect(decide([mapped({ dateCreated: "2026-10-05T18:00:00" })])).toEqual(
+      [],
+    );
+    expect(
+      decide([mapped({ startsAt: "2026-10-08T18:00:00" })])[0]?.reason,
+    ).toBe("missing_timestamp");
+  });
+});
+
+// Canonical regexes see the raw meeting title, including trailing whitespace.
+it("does not trim a title into Pearl's anchored source-title rule", () => {
+  const [d] = decide([meeting({ title: "Vendingpreneurs consultation " })], {
+    ...youtube,
+    contactUtms: [{ source: "ghl" }],
+  });
+  expect(d?.bookedBy).toBe("Marketing");
 });

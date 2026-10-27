@@ -74,12 +74,13 @@ export function BookedCallsV2Panel({
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
           One credit per qualifying Close meeting, dated by the day it was
-          created (Pacific). Lane 2 and Social DMs earn one credit per lead
-          every 30 days, timed from the credited meeting&apos;s scheduled start;
-          a no-show keeps its credit and its reschedule earns none. Booked By
-          comes from the meeting title; the lead source is shown separately and
-          never adds calls. Rule {report.ruleVersion}, meetings created up to{" "}
-          {formatPacificStampShort(report.to)}.
+          created (Pacific). Lane 2 and Social DMs earn one credit per lead only
+          after a gap greater than 720 hours from the immediately preceding
+          noncancelled scheduled meeting. Every such meeting advances the clock.
+          Marketing counts eligible activities directly, including unknown
+          sources. Booked By comes from the meeting title; the lead source is
+          shown separately and never adds calls. Rule {report.ruleVersion},
+          meetings created up to {formatPacificStampShort(report.to)}.
         </p>
       </div>
 

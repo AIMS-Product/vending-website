@@ -73,7 +73,7 @@ export function mapMeeting(
     lead_id: leadId,
     user_id: text(raw.user_id),
     user_name: text(raw.user_name),
-    title: text(raw.title),
+    title: typeof raw.title === "string" ? raw.title : null,
     status: text(raw.status),
     outcome: outcomeId ? (outcomes.get(outcomeId) ?? outcomeId) : null,
     starts_at: text(raw.starts_at),
