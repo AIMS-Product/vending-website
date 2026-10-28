@@ -202,4 +202,18 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
     expected:
       "About $450/mo moves off zero-booking broad terms; booked calls held by the phrase/exact twins",
   },
+  {
+    at: "2026-10-27 21:56",
+    kind: "campaigns",
+    entity:
+      "New VP | Side Income (test) (24410703799): 3 ad groups (Vending Side Hustle, Passive Income Vending, Side Business While Working), 26 phrase/exact keywords, 1 claim-free RSA each to /contact; $40/day from W2 (W2 $150 -> $110/day)",
+    before:
+      "0.4% of 90d search spend ($78 of $19.7k) reached side-hustle or passive-income searches; W2 negatives blocked passive income ideas/businesses",
+    after:
+      "Side Income on Maximize conversions, Google Search only, US presence, English, the same 11 shared negative lists and 11 sitelinks/callouts as W2, W2's campaign negatives minus the 4 passive terms plus 44 junk side-hustle negatives (online, apps, teens, jobs, crypto). W2 now negates side hustle, passive income, side business, side income, extra income, part time, second income so these searches route to the test",
+    evidence:
+      "Adam's call (2026-10-27): ICP is people with a day job wanting side or passive income; one atomic script run, 189 operations, read-only GAQL check after",
+    expected:
+      "Read at 2 and 4 weeks: cost per booked call vs W2's $149 baseline. W2 was already budget-constrained at $150, so watch its booked calls too",
+  },
 ];
