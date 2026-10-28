@@ -1,15 +1,6 @@
-import domRules from "@/lib/booked-calls-v2/rules.v2.6.json";
+import domRules from "@/lib/booked-calls-v2/rules.v2.6-any-meeting-clock.json";
 
-/**
- * V2 original-source resolution under Dom's v2.6 policy (handoff 2026-10-16),
- * driven by his `rules.json` vendored verbatim beside this file (SHA-256
- * 2a3343fd…942f, pinned in sources.test.ts).
- *
- * A recognised Funnel Name wins; else every contact `utm_source` must map,
- * and to one label (an unmapped or conflicting UTM leaves the source
- * unresolved). Never Resource Tag, `utm_medium`, notes, owner or title. Never
- * guessed, never written back to Close.
- */
+/** Canonical source resolution: lead funnel, then unambiguous contact UTM source. */
 
 export type OriginBasis = "funnel" | "contact_utm" | "unknown";
 export type Origin = { source: string | null; basis: OriginBasis };
@@ -45,7 +36,7 @@ export function resolveOrigin(facts: LeadOriginFacts | undefined): Origin {
   let unknownUtm = false;
   for (const contact of facts.contactUtms) {
     const source = utmSourceKey(contact.source);
-    if (!source) continue;
+    if (source === null) continue;
     const target = UTM_SOURCE_MAP[source];
     if (target) candidates.add(target);
     else unknownUtm = true;

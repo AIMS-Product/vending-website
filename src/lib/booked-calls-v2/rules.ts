@@ -1,21 +1,13 @@
-/**
- * Dom's booked-call rules, `booked_calls.v2.6-scheduled-anchor-candidate`
- * (handoff 2026-10-16), as data. Every title, caller, pattern and source
- * comes from his `rules.json` vendored verbatim beside this file (SHA-256
- * 2a3343fd…942f, pinned in sources.test.ts). Do not edit the JSON: a new rule
- * version is a new file. The few constants below are the handoff's prose
- * rules that his engine applies but `rules.json` does not carry.
- */
-
-import domRules from "@/lib/booked-calls-v2/rules.v2.6.json";
+/** Canonical MTD V2 rules pinned to AIMS-Product/mtd-funnel-dashboard@9783f9a. */
+import domRules from "@/lib/booked-calls-v2/rules.v2.6-any-meeting-clock.json";
 
 export const RULE_VERSION = domRules.version;
 /** Dom's config SHA-256 for v2.6; recorded so a screen can name what it ran. */
 export const RULE_CONFIG_SHA =
-  "2a3343fd339133c62b7accba767893c0b297d4b0be2527c95ca111c84895942f";
+  "b5c44b70f773b21ab5603d91907037f975f8669e91af23e113ea8ca5dc62bdcc";
 
 export const TIME_ZONE = domRules.timezone;
-/** Exactly 30 x 24 hours from the prior credited meeting's scheduled start. */
+/** Exactly 30 x 24 hours from the immediately preceding noncanceled scheduled meeting. */
 export const EPISODE_MS = domRules.candidate_policy.episode_days * 86_400_000;
 /** Title rules flagged `historical` apply only to meetings created before this. */
 export const HISTORICAL_CUTOFF = domRules.historical_cutoff_exclusive;
@@ -31,6 +23,7 @@ export type TitleRule = {
   /** Lead's current setter must be this person for the rule to apply. */
   requiredSetter: string | null;
   historical: boolean;
+  retiredAt: string | null;
   bookedBy: BookedBy;
 };
 
@@ -42,31 +35,22 @@ export const TITLE_MAP: readonly TitleRule[] = domRules.title_rules.map(
     setter: rule.setter_name,
     requiredSetter: rule.required_setter,
     historical: rule.historical,
+    retiredAt:
+      "retired_at_exclusive" in rule
+        ? (rule.retired_at_exclusive as string)
+        : null,
     bookedBy: rule.setter_name === SOCIAL_DM_SETTER ? "Social DMs" : "Lane 2",
   }),
 );
 
-/**
- * Pearl's Social DM leads booked onto a standard closer calendar. Applied
- * only with one of her social sources: she is the lead's setter, or a
- * contact's raw `utm_source` is one of `PEARL_SOCIAL_UTM_SOURCES`. The
- * handoff names "Pearl social-source/title patterns" but not the gate, and
- * the titles are also ordinary Marketing first calls (every webinar
- * consultation matches them).
- */
+/** Source/title fallback; setter name alone never qualifies. */
 export const PEARL_SOURCE_TITLES: readonly RegExp[] =
   domRules.pearl_source_title_patterns.map((p) => new RegExp(p, "i"));
 
-/**
- * Pearl's booking channels: her GoHighLevel link and Mike's Instagram DMs.
- * Not in `rules.json`; inferred from Dom's Oct 1-16 pull, where exactly these
- * moved 5 webinar and 1 Instagram consultation from Marketing to Social DMs
- * (and the setter user field moved none).
- */
-export const PEARL_SOCIAL_UTM_SOURCES: ReadonlySet<string> = new Set([
-  "ghl",
-  "mike-ig",
-]);
+/** Exact raw source gate from the canonical JSON; query tails are not removed here. */
+export const PEARL_SOCIAL_UTM_SOURCES: ReadonlySet<string> = new Set(
+  domRules.pearl_accepted_utm_sources,
+);
 
 /** The 12 approved new-call families an unmapped title can earn Marketing with. */
 export const FIRST_CALL_FAMILIES: readonly RegExp[] =
@@ -93,18 +77,18 @@ export const CANCEL_STATUSES: ReadonlySet<string> = new Set(
 export const CANCEL_OUTCOMES: ReadonlySet<string> = new Set(
   domRules.candidate_policy.cancellation_outcomes,
 );
-export const CANCELED_TITLE = /^cancel(?:l)?ed[\s:]?/i;
+export const CANCELED_TITLE = /^\s*(canceled|cancelled)\b/i;
 
 /** Handoff "Sales-call eligibility": follow-up / reschedule titles. */
 export const FOLLOW_UP_TITLE =
-  /follow[-\s]?up|fallow\s+up|f\/u\b|next\s+steps|reschedul/i;
+  /follow[-\s]?up|fallow\s+up|\bf\/u\b|next\s+steps|reschedul/i;
 /**
  * Handoff: non-booking and setter-only discovery titles, plus the internal
  * meetings Dom's engine calls not a sales call (not in `rules.json`; the
  * Oct 1-16 pull has 11 Webinar Actions Reviews among his 12).
  */
 export const NOT_SALES_TITLE =
-  /enrollment|silver\s+start\s*up|q\s*&\s*a|walk\s*-?through|vending\s+quick\s+discovery|route\s+planning\s+call|webinar\s+actions\s+review|setter\s+interview/i;
+  /enrollment|silver\s+start\s+up|bronze\s+enrollment|\bq\s*&\s*a\b|walkthrough/i;
 /** Any title that is not a new first call (Marketing MTD open-call filter). */
 export const NON_NEW_CALL_TITLE = new RegExp(
   `${FOLLOW_UP_TITLE.source}|${NOT_SALES_TITLE.source}`,

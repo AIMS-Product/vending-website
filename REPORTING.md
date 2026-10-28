@@ -1,3 +1,11 @@
+## 2026-10-27: shared booking production V2 feed
+
+`GET /api/reporting/call-forecast-v2` authenticates with existing REPORTING_API_KEY and returns schema 2 aggregates for today and five Pacific Monday–Sunday weeks. `?details=1` additionally returns private Close meeting decisions/names/lead links for the owner-private BTC report; no detail response is public or cacheable. Each observed day includes its Marketing channel counts, three bucket totals and coverage; future days use null values. The Mac widget can select any observed date in these five weeks without a second request or any private lead rows. Channel sums reconcile to that day’s Marketing total. The old schema 1 endpoint remains available for legacy clients and is not the adopted V2 source.
+
+Canonical rules are pinned to mtd-funnel-dashboard commit `9783f9a74a7c6cca28a8ad541f9859d75ad998f5`, with verbatim new JSON stored separately from the older immutable config. Marketing counts eligible meeting activities including unknown sources. Lane 2 and Social DMs share the rolling any-noncancelled-meeting scheduled-start clock; exactly 720 hours is suppressed. William consult retires Oct 14 Pacific. Pearl fallback requires approved raw source and title, never setter name alone. Canceled/declined meetings are excluded. Unknown channels retain credit.
+
+The service fails closed on missing facts/history, inconsistent row generations, uncompleted/failed source runs or syncs older than three hours. Request time and completed sync time are separate. Both consumers expose the rule version and/or validate its exact hash; a shared snapshot fingerprint records counted activity IDs, buckets and channels. The 125 widget target remains a local Marketing planning goal, separate from all-in calls and canonical V2 forecasts.
+
 # Reporting glossary
 
 Every reporting number in this business answers exactly one question about exactly one population.

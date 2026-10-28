@@ -12,9 +12,11 @@ const facts = (over: Partial<Parameters<typeof resolveOrigin>[0]> = {}) => ({
 
 describe("Dom's v2.6 source resolver", () => {
   it("reads Dom's rules.json byte for byte (his handoff's config SHA)", () => {
-    const bytes = readFileSync(path.join(__dirname, "rules.v2.6.json"));
+    const bytes = readFileSync(
+      path.join(__dirname, "rules.v2.6-any-meeting-clock.json"),
+    );
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(
-      "2a3343fd339133c62b7accba767893c0b297d4b0be2527c95ca111c84895942f",
+      "b5c44b70f773b21ab5603d91907037f975f8669e91af23e113ea8ca5dc62bdcc",
     );
   });
 
@@ -90,4 +92,14 @@ describe("Dom's v2.6 source resolver", () => {
   it("never falls back to anything but contact utm_source", () => {
     expect(resolveOrigin(facts())).toEqual({ source: null, basis: "unknown" });
   });
+});
+
+it("a nonempty raw UTM with an empty normalized key remains an unknown source", () => {
+  expect(
+    resolveOrigin(
+      facts({
+        contactUtms: [{ source: "youtube" }, { source: "?campaign=x" }],
+      }),
+    ),
+  ).toEqual({ source: null, basis: "unknown" });
 });
