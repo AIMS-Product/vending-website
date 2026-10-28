@@ -11,14 +11,29 @@ import {
   assertPublishedGeneration,
 } from "./booking-production-v2";
 import type { Decision } from "@/lib/booked-calls-v2/engine";
-const row = (id: string, bucket: Decision["bookedBy"], day: string) =>
-  ({
-    meetingId: id,
-    createdDay: day,
-    disposition: "counted",
-    bookedBy: bucket,
-    origin: { source: "YouTube" },
-  }) as Decision;
+import { RULE_VERSION } from "@/lib/booked-calls-v2/rules";
+const row = (
+  id: string,
+  bucket: Decision["bookedBy"],
+  day: string,
+): Decision => ({
+  meetingId: id,
+  leadId: `lead_${id}`,
+  createdDay: day,
+  scheduledDay: day,
+  disposition: "counted",
+  reason: "counted",
+  bookedBy: bucket,
+  mappedSetter: null,
+  currentSetter: null,
+  caller: null,
+  origin: { source: "YouTube", basis: "funnel" },
+  offer: null,
+  historicalException: null,
+  precedingMeetingId: null,
+  intervalDays: null,
+  ruleVersion: RULE_VERSION,
+});
 describe("shared V2 aggregate", () => {
   it("counts Sunday by creation day in all buckets; weekly marketing goal remains separate", () => {
     const r = aggregateProduction(
@@ -75,10 +90,10 @@ it("rejects mixed or unpublished generations despite an unchanged completion mar
 it("returns reconciled historical channel breakdowns without mixing days or buckets", () => {
   const unknown = row("unknown", "Marketing", "2026-10-26");
   unknown.origin.source = null;
-  const held = {
+  const held: Decision = {
     ...row("held", "Marketing", "2026-10-26"),
     disposition: "held",
-  } as Decision;
+  };
   const report = aggregateProduction(
     [
       row("yesterday", "Marketing", "2026-10-26"),
