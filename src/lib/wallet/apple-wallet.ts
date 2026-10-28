@@ -209,7 +209,9 @@ export async function applePassBuffer(
     value: joinUrl,
     attributedValue: `<a href="${joinUrl}">Tap to join</a>`,
   });
-  pass.setRelevantDate(new Date(start.getTime() - 15 * 60_000));
+  // The start itself: iOS shows the pass on the lock screen at this time, and 15 minutes early read as the
+  // start time to the team on Oct 27 ("it said 5:15").
+  pass.setRelevantDate(start);
   // Shown as expired a day after the room; the join token ends then too.
   pass.setExpirationDate(new Date(end.getTime() + 86_400_000));
   return pass.getAsBuffer();
