@@ -174,4 +174,32 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
       "Audit section 3: $958.81 / 90d, $134.77 / 30d; checked against all 310 converting terms and live keywords, 0 conflicts",
     expected: "Small: at most +1 booked/mo",
   },
+  {
+    at: "2026-10-27 17:48",
+    kind: "keywords",
+    entity:
+      "VP | Brand: every broad brand keyword paused (vendingpreneurs, vendingpreneurs cost, vendingpreneur, vendingpreneurs reviews, mike hoffman vending, mike hoffman vending machine, mike hoffman official, mike vending machine); added [vendingpreneurs] and phrase vending preneurs, vendpreneur, vendingpreneur, mike hoffman vending, mr passive",
+    before:
+      "Broad brand keywords live; 40% of Brand search-term spend ($570 of $1,434, 90d) went to non-brand searches (vending machine, vendvice, turnkey business meaning)",
+    after:
+      "Brand runs on phrase and exact only; [vending preneurs] and phrase vendingpreneurs / vendingpreneurs cost unchanged",
+    evidence:
+      "Jess's brand recommendation (2026-10-27); broad vendingpreneurs cost $419 / 90d was the largest leak; one-off script 12615075, 29 changes, all successful",
+    expected:
+      "Brand spend stays on brand searches; cost per booked call falls toward its $27-56 history",
+  },
+  {
+    at: "2026-10-27 17:46",
+    kind: "keywords",
+    entity:
+      "VP | W2 | Consideration: paused buying vending machine business (broad), license for vending machine business (broad), new vending machine cost (broad), starting a vending machine side hustle (broad), [vending machines for sale]; added 11 phrase/exact keywords across Start Action, Research General, Buy/Acquire and Cost Research",
+    before:
+      "Broad keywords at $705, $454 and $246 / 90d for 1, 0 and 0 booked calls; side hustle broad matched get-rich searches; [vending machines for sale] $53 / 14d on machine shoppers",
+    after:
+      "Phrase/exact replacements live (under review at 17:48): side hustle phrase, [vending machine business], [how to start a vending machine business], 4 Buy/Acquire route/business phrases, 3 Cost Research phrases. Phrase versions of license and brand new vending machine cost stay live",
+    evidence:
+      "Jess's non-brand recommendation (2026-10-27, Ads UI 90d booked calls); read-only GAQL check after the run confirmed every status",
+    expected:
+      "About $450/mo moves off zero-booking broad terms; booked calls held by the phrase/exact twins",
+  },
 ];
