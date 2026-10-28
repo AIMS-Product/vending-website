@@ -45,6 +45,17 @@ function coverage(rows: readonly Decision[]) {
     laneTwoExcluded: 0,
   };
 }
+function channelTotals(rows: readonly Decision[]) {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    if (row.disposition !== "counted" || row.bookedBy !== "Marketing") continue;
+    const label = row.origin.source ?? "Unknown (Needs Review)";
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([label, booked]) => ({ label, booked }));
+}
 export function aggregateProduction(rows: readonly Decision[], now: Date) {
   const day = pacificDay(now.toISOString());
   function period(dates: string[]) {
@@ -57,35 +68,21 @@ export function aggregateProduction(rows: readonly Decision[], now: Date) {
       buckets,
       coverage: coverage(r),
       days: dates.map((date) => {
-        const buckets = bucketTotals(r.filter((d) => d.createdDay === date));
+        const daily = r.filter((d) => d.createdDay === date);
+        const buckets = bucketTotals(daily);
         return {
           date,
           total: date > day ? null : buckets.Marketing,
           buckets: date > day ? null : buckets,
+          channels: date > day ? null : channelTotals(daily),
+          coverage: date > day ? null : coverage(daily),
         };
       }),
     };
   }
   const today = rows.filter((d) => d.createdDay === day);
   const buckets = bucketTotals(today);
-  const sources = [
-    ...new Set(
-      today
-        .filter(
-          (d) => d.disposition === "counted" && d.bookedBy === "Marketing",
-        )
-        .map((d) => d.origin.source ?? "Unknown (Needs Review)"),
-    ),
-  ].sort();
-  const channels = sources.map((label) => ({
-    label,
-    booked: today.filter(
-      (d) =>
-        d.disposition === "counted" &&
-        d.bookedBy === "Marketing" &&
-        (d.origin.source ?? "Unknown (Needs Review)") === label,
-    ).length,
-  }));
+  const channels = channelTotals(today);
   return {
     schemaVersion: 2,
     ok: true,

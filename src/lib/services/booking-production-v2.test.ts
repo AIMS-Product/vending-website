@@ -71,3 +71,44 @@ it("rejects mixed or unpublished generations despite an unchanged completion mar
   ])
     expect(() => assertPublishedGeneration(stamps, done)).toThrow();
 });
+
+it("returns reconciled historical channel breakdowns without mixing days or buckets", () => {
+  const unknown = row("unknown", "Marketing", "2026-10-26");
+  unknown.origin.source = null;
+  const held = {
+    ...row("held", "Marketing", "2026-10-26"),
+    disposition: "held",
+  } as Decision;
+  const report = aggregateProduction(
+    [
+      row("yesterday", "Marketing", "2026-10-26"),
+      unknown,
+      held,
+      row("lane2", "Lane 2", "2026-10-26"),
+      row("today", "Marketing", "2026-10-27"),
+      row("prior-week", "Marketing", "2026-10-25"),
+    ],
+    new Date("2026-10-27T19:00:00Z"),
+  );
+  const yesterday = report.week.days[0]!;
+  expect(yesterday.total).toBe(2);
+  expect(yesterday.channels).toEqual([
+    { label: "Unknown (Needs Review)", booked: 1 },
+    { label: "YouTube", booked: 1 },
+  ]);
+  expect(yesterday.buckets?.["Lane 2"]).toBe(1);
+  expect(yesterday.coverage?.unreviewed).toBe(1);
+  expect(report.week.days[1]?.channels).toEqual(report.channels);
+  expect(report.week.days[2]?.channels).toBeNull();
+  expect(report.week.days[2]?.coverage).toBeNull();
+  expect(report.scorecard.weeks[3]?.days[6]?.channels).toEqual([
+    { label: "YouTube", booked: 1 },
+  ]);
+  expect(report.scorecard.weeks[0]?.days[0]?.channels).toEqual([]);
+  for (const week of report.scorecard.weeks) {
+    for (const day of week.days) {
+      if (day.total !== null)
+        expect(day.channels?.reduce((n, c) => n + c.booked, 0)).toBe(day.total);
+    }
+  }
+});
