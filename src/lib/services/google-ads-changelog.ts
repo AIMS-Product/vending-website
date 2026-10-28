@@ -216,4 +216,30 @@ export const GOOGLE_ADS_CHANGES: readonly GoogleAdsChange[] = [
     expected:
       "Read at 2 and 4 weeks: cost per booked call vs W2's $149 baseline. W2 was already budget-constrained at $150, so watch its booked calls too",
   },
+  {
+    at: "2026-10-27 22:10",
+    kind: "campaigns",
+    entity:
+      "W2 audiences in observation (bid only): in-market Business Services, Business Financial Services, Investment Services, Business Loans, Real Estate; affinity Avid Investors",
+    before: "No audience data on W2",
+    after:
+      "Six segments observed, reach unchanged (targeting setting AUDIENCE bidOnly = true). A custom side-income search segment is not creatable from Ads Scripts; add it in the UI if wanted",
+    evidence:
+      "Adam's ICP call (2026-10-27): see whether investor and business-buyer audiences book cheaper before any bid change",
+    expected:
+      "Data only for 30 days; then bid up the segments that book cheaper",
+  },
+  {
+    at: "2026-10-27 22:10",
+    kind: "negatives",
+    entity:
+      'Shared list "Wasted intent 2026-10 (media buyer)": +rent to own, locations needing, twice the ice, automated convenience store. VP | Brand: +"meaning". W2: disapproved image asset 342004492122 unlinked',
+    before:
+      "12 zero-conversion terms at $233 / 90d in W2 and Brand; 4 of them (placement services, vendvice, vendscout, online franchise) were already negatives from 10-11",
+    after:
+      "The remaining wrong-intent terms blocked in every campaign using the list. buy vending machine franchise kept: vending machine franchise converts",
+    evidence:
+      "Search-term audit 2026-10-27 (W2 and Brand, 90d). The 35% of spend outside the intent buckets was converting generic vending searches ($3.7k) plus removed Competitive Conquest ($2.7k)",
+    expected: "Small: under $50/mo of waste removed",
+  },
 ];
