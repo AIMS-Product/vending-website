@@ -133,7 +133,7 @@ export const spamPolicy: LegalDoc = {
         },
         {
           kind: "p-strong",
-          text: "Vendingpreneurs — Email: support@vendingpreneurs.com — Mail: 91302 Coburg Industrial Way, Coburg, OR 97408",
+          text: "Vendingpreneurs — Email: team@modern-amenities.com — Mail: 91302 Coburg Industrial Way, Coburg, OR 97408",
         },
         {
           kind: "p",

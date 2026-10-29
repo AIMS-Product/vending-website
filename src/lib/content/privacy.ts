@@ -229,7 +229,7 @@ export const privacy: LegalDoc = {
         { kind: "h3", text: "e. Help" },
         {
           kind: "p",
-          text: "For help with our SMS program, reply HELP to any message or contact us at support@vendingpreneurs.com.",
+          text: "For help with our SMS program, reply HELP to any message or contact us at team@modern-amenities.com.",
         },
         { kind: "h3", text: "f. Carrier Disclaimer" },
         {

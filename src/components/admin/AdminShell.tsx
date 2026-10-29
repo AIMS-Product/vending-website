@@ -681,7 +681,7 @@ function AdminAccountBlock({
           this as "internal tool"; the round-2 triage re-included it.) A mailto
           keeps it dependency-free until a docs site exists. */}
       <a
-        href="mailto:support@vendingpreneurs.com?subject=SEO%20Page%20Builder%20help"
+        href="mailto:team@modern-amenities.com?subject=SEO%20Page%20Builder%20help"
         title="Help & support"
         className={clsx(
           "rounded-ui text-ui-text-muted hover:bg-ui-line/50 hover:text-ui-text mb-0.5 flex w-full items-center py-1.5 text-left text-[0.8125rem] transition",

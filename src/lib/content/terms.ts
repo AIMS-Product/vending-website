@@ -80,7 +80,7 @@ export const terms: LegalDoc = {
         { kind: "h3", text: "e. Help" },
         {
           kind: "p",
-          text: "Reply HELP or contact support@vendingpreneurs.com for assistance.",
+          text: "Reply HELP or contact team@modern-amenities.com for assistance.",
         },
         { kind: "h3", text: "f. Carrier Liability" },
         {
@@ -112,7 +112,7 @@ export const terms: LegalDoc = {
       blocks: [
         {
           kind: "p",
-          text: "Due to the digital nature of our products and immediate access to course materials and community resources, all sales are final. Refund requests will be considered on a case-by-case basis at our sole discretion. Contact support@vendingpreneurs.com within 7 days of purchase if you believe you qualify for an exception.",
+          text: "Due to the digital nature of our products and immediate access to course materials and community resources, all sales are final. Refund requests will be considered on a case-by-case basis at our sole discretion. Contact team@modern-amenities.com within 7 days of purchase if you believe you qualify for an exception.",
         },
       ],
     },
@@ -422,7 +422,7 @@ export const terms: LegalDoc = {
         },
         {
           kind: "p-strong",
-          text: "Vendingpreneurs (Membership Services) — Email: support@vendingpreneurs.com — Mail: 91302 Coburg Industrial Way, Coburg, OR 97408",
+          text: "Vendingpreneurs (Membership Services) — Email: team@modern-amenities.com — Mail: 91302 Coburg Industrial Way, Coburg, OR 97408",
         },
         {
           kind: "p-strong",
