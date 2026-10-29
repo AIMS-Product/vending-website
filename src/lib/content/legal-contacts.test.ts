@@ -59,7 +59,7 @@ describe("spam policy", () => {
     expect(textOf(spamPolicy)).toContain(address);
   });
 
-  it("routes abuse reports to a Vendingpreneurs mailbox", () => {
-    expect(textOf(spamPolicy)).toContain("support@vendingpreneurs.com");
+  it("routes abuse reports to the monitored support mailbox", () => {
+    expect(textOf(spamPolicy)).toContain("team@modern-amenities.com");
   });
 });

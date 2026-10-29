@@ -1127,7 +1127,7 @@ async function flagForTeam(
   return {
     result:
       reason === "support"
-        ? `Recorded for the support team. Tell them a teammate will ${channel} them within one business day, and that they can also reach support@vendingpreneurs.com directly. Do not keep selling.`
+        ? `Recorded for the support team. Tell them a teammate will ${channel} them within one business day, and that they can also reach team@modern-amenities.com directly. Do not keep selling.`
         : `Recorded for the team. Tell them a teammate will ${channel} them, same day on weekdays${preferredWindow ? `, aiming for ${preferredWindow}` : ""}. Say it in one or two sentences and stop asking for a booking.`,
   };
 }
