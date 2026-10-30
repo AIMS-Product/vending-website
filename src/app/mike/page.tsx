@@ -7,6 +7,8 @@ import {
   mikeBioInternalHref,
   mikeBioLinks,
 } from "@/lib/content/mike-bio";
+import { preloadGeistBio } from "../fonts";
+import "@/fonts/geist-bio.css";
 import styles from "./page.module.css";
 
 export const metadata: Metadata = {
@@ -37,6 +39,7 @@ function Arrow() {
 }
 
 export default function MikeBioPage() {
+  preloadGeistBio();
   return (
     <div className={styles.hub}>
       <header className={styles.profile}>

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../home-v2.css";
-import { anton } from "../fonts";
+import { antonFont } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { CountdownBanner } from "@/components/sections/masterclass/CountdownBanner";
 import { MasterclassStickyCta } from "@/components/sections/masterclass/MasterclassStickyCta";
@@ -41,7 +41,7 @@ export default async function QaPage() {
   const renderedAt = renderTime();
   const event = await getQaEvent(renderedAt);
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <RevealObserver />
       <CountdownBanner
         startsAt={event.startsAt}

@@ -2,7 +2,7 @@ import { TrackedClicks } from "@/components/tracking/TrackedClicks";
 import type { Metadata } from "next";
 import { cookies, headers } from "next/headers";
 import "../home-v2.css";
-import { anton } from "../fonts";
+import { antonFont } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import {
@@ -125,7 +125,7 @@ export default async function MasterclassConfirmedPage({
     walletBase && appleWalletConfig(config) ? `${walletBase}/apple` : null;
 
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <TrackedClicks />
       <StripPiiParams />
       <RegisteredTracker justRegistered={registeredAs !== undefined} />

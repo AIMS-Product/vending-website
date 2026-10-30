@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import "../../home-v2.css";
-import { anton } from "../../fonts";
+import { antonFont } from "../../fonts";
 import { StripPiiParams } from "@/components/sections/masterclass/StripPiiParams";
 import { GuideBuyButton } from "@/components/sections/playbook-guide/GuideBuyButton";
 import {
@@ -95,7 +95,7 @@ export default async function PlaybookGuidePage({
   );
 
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <StripPiiParams />
       <GuideHero buy={buy()} notice={error} />
       <GuideBenefits />

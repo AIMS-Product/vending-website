@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Anton } from "next/font/google";
+import { antonFont } from "./fonts";
 import { BrandStrip } from "@/components/sections/BrandStrip";
 import { BenefitsV2 } from "@/components/sections/home-v2/BenefitsV2";
 import { CaseStudiesStrip } from "@/components/sections/home-v2/CaseStudiesStrip";
@@ -17,12 +17,7 @@ import "./home-v2.css";
 // Display face for the v2 design. `swap` + the default size-matched fallback
 // keeps CLS near zero while guaranteeing the headline face always arrives
 // (unlike `optional`, which would strand slow first visits on the fallback).
-const anton = Anton({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-anton",
-  display: "swap",
-});
+// font-display lives in src/fonts/anton.css.
 
 export const revalidate = 300;
 
@@ -42,7 +37,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <SupabaseAuthErrorRedirect />
       <RevealObserver />
       <HeroV2 />

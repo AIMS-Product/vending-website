@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../home-v2.css";
-import { anton } from "../fonts";
+import { antonFont } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import { MasterclassHero } from "@/components/sections/masterclass/MasterclassHero";
 import { CountdownBanner } from "@/components/sections/masterclass/CountdownBanner";
@@ -72,7 +72,7 @@ export default async function MasterclassPage({
   const renderedAt = renderTime();
 
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <StripPiiParams />
       <RevealObserver />
       <CountdownBanner startsAt={event.startsAt} renderedAt={renderedAt} />

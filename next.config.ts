@@ -151,6 +151,17 @@ const nextConfig: NextConfig = {
         source: "/:path*",
         headers: [...securityHeaders],
       },
+      {
+        // Written by scripts/fonts/subset-fonts.py with a content hash in
+        // every file name, so a changed font always gets a new URL.
+        source: "/fonts/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
     ];
   },
   async redirects() {
