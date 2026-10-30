@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import "../../home-v2.css";
-import { anton } from "../../fonts";
+import { antonFont } from "../../fonts";
 import { Wordmark } from "@/components/site/Wordmark";
 import { Button } from "@/components/ui/Button";
 import { EYEBROW } from "@/components/sections/playbook/PlaybookCta";
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function PlaybookThankYouPage() {
   return (
-    <div className={`${anton.variable} bg-brand-50 min-h-screen`}>
+    <div className={`${antonFont()} bg-brand-50 min-h-screen`}>
       <PlaybookThankYouBreakout />
       <header className="border-ink border-b-2 bg-white">
         <div className="mx-auto max-w-[1240px] px-5 py-4 lg:px-10">

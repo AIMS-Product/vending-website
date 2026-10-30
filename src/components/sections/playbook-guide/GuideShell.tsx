@@ -1,5 +1,5 @@
 import { Wordmark } from "@/components/site/Wordmark";
-import { anton } from "@/app/fonts";
+import { antonFont } from "@/app/fonts";
 
 interface GuideShellProps {
   children: React.ReactNode;
@@ -10,7 +10,7 @@ interface GuideShellProps {
 /** Header + tinted canvas shared by the checkout, thank-you and access pages. */
 export function GuideShell({ children, note }: GuideShellProps) {
   return (
-    <div className={`${anton.variable} bg-brand-50 min-h-screen`}>
+    <div className={`${antonFont()} bg-brand-50 min-h-screen`}>
       <header className="border-ink border-b-2 bg-white">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-5 py-4 lg:px-10">
           <Wordmark height={34} eager />

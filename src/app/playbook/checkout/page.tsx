@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import "../../home-v2.css";
-import { anton } from "../../fonts";
+import { antonFont } from "../../fonts";
 import { Wordmark } from "@/components/site/Wordmark";
 import { CheckIcon, EYEBROW } from "@/components/sections/playbook/PlaybookCta";
 import { PlaybookCheckoutFrame } from "@/components/sections/playbook/PlaybookCheckoutFrame";
@@ -32,7 +32,7 @@ export default async function PlaybookCheckoutPage({
 }) {
   const params = await searchParams;
   return (
-    <div className={`${anton.variable} bg-brand-50 min-h-screen`}>
+    <div className={`${antonFont()} bg-brand-50 min-h-screen`}>
       <StripPiiParams />
       <header className="border-ink border-b-2 bg-white">
         <div className="mx-auto flex max-w-[1180px] items-center justify-between px-5 py-4 lg:px-10">

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "../home-v2.css";
-import { anton } from "../fonts";
+import { antonFont } from "../fonts";
 import { RevealObserver } from "@/components/sections/home-v2/RevealObserver";
 import {
   PlaybookCompare,
@@ -60,7 +60,7 @@ export default async function PlaybookPage({
 }) {
   const href = checkoutHref(await searchParams);
   return (
-    <div className={anton.variable}>
+    <div className={antonFont()}>
       <StripPiiParams />
       <RevealObserver />
       <PlaybookHero checkoutHref={href} />

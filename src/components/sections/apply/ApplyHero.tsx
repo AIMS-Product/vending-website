@@ -1,4 +1,4 @@
-import { Anton } from "next/font/google";
+import { antonFont } from "@/app/fonts";
 import {
   APPLY_QUIZ_ANCHOR,
   APPLY_VSL_ANCHOR,
@@ -12,12 +12,6 @@ import { ChevronDownIcon, PlayIcon } from "./icons";
 // Inter black, which at headline size reads as bulk rather than emphasis
 // (Adam, 2026-09-17): Anton is narrower, so the same claim fits three lines
 // instead of four and stops feeling boxed in.
-const anton = Anton({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-anton",
-  display: "swap",
-});
 
 // The claim is Kody's approved wording and is never reworded. Splitting it for
 // the highlight is presentation only: the money phrase gets the home page's
@@ -115,7 +109,7 @@ export function ApplyHero({
 } = {}) {
   return (
     <section
-      className={`${anton.variable} relative isolate overflow-hidden [&_h1]:font-[family-name:var(--font-anton),Arial_Narrow,sans-serif]`}
+      className={`${antonFont()} relative isolate overflow-hidden [&_h1]:font-[family-name:var(--font-anton),Arial_Narrow,sans-serif]`}
     >
       {/* Dotted paper-blue wash, matching the mockup hero band. */}
       <div

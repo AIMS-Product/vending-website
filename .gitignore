@@ -57,3 +57,6 @@ tmp/manychat-*/
 
 # LTF V2 paid PDF build output (never commit the product)
 scripts/playbook-guide/out/
+
+# font subsetting (scripts/fonts/subset-fonts.py) source cache
+/scripts/fonts/.cache/

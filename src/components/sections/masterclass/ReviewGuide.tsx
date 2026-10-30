@@ -3,7 +3,7 @@ import { COMMS_COPY } from "@/lib/content/masterclass-review-comms";
 import { ReviewReport } from "@/components/sections/masterclass/ReviewReport";
 import Link from "next/link";
 import { Fragment } from "react";
-import { anton } from "@/app/fonts";
+import { antonFont } from "@/app/fonts";
 import { MasterclassFooter } from "@/components/sections/masterclass/RegistrationSections";
 import { buttonClass } from "@/components/ui/Button";
 import { SENDER_EMAIL } from "@/lib/content/masterclass";
@@ -138,7 +138,7 @@ const H2 =
 /** One page the team can follow to review and sign off the site funnel. */
 export function ReviewGuide() {
   return (
-    <div className={cn(anton.variable, "bg-tint min-h-screen")}>
+    <div className={cn(antonFont(), "bg-tint min-h-screen")}>
       <div className="mx-auto max-w-[860px] px-5 pt-14 pb-20">
         <p className="text-eyebrow text-xs font-black tracking-[0.14em] uppercase">
           {reviewCopy.eyebrow}
