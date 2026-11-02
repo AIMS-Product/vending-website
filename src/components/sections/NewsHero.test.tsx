@@ -3,10 +3,10 @@ import { describe, expect, it } from "vitest";
 import { NewsHero } from "./NewsHero";
 
 describe("NewsHero", () => {
-  it("renders the hero heading as News", () => {
+  it("renders the hero heading as Vending News", () => {
     const html = renderToStaticMarkup(<NewsHero />);
 
-    expect(html).toContain(">News</h1>");
+    expect(html).toContain(">Vending News</h1>");
   });
 
   it("does not render Blog as the public hero heading", () => {
