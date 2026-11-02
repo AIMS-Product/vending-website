@@ -54,9 +54,6 @@ describe("domRulesChecks", () => {
   it("fails on any change to his rules file", async () => {
     const result = await statuses(dom({ rulesJson: `${rulesJson} ` }));
     expect(result["company-mtd-v2-rules"]).toBe("fail");
-    expect(createHash("sha256").update(rulesJson).digest("hex")).toMatch(
-      /^[0-9a-f]{64}$/,
-    );
   });
 
   it("fails on a changed roster, an unreadable one, or a new scope", async () => {
