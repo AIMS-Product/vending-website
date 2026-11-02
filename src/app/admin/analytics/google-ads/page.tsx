@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   AnalyticsDrillDown,
   drillDownParams,
   type SearchParams,
 } from "@/components/admin/dashboard/AnalyticsDrillDown";
 import { adminEyebrowClass } from "@/components/admin/AdminUi";
+import { GoogleAdsBookedPeople } from "@/components/admin/GoogleAdsBookedPeople";
 import { GoogleAdsCeoView } from "@/components/admin/GoogleAdsCeoView";
 import {
   GoogleAdsDisplayCreatives,
@@ -67,6 +69,15 @@ export default async function AnalyticsGoogleAdsPage({
         summary={ceoSummary(ads)}
       />
       <div className="mt-5 grid gap-5">
+        <Suspense
+          fallback={
+            <p className="text-ui-text-muted text-sm">
+              Loading the people booked…
+            </p>
+          }
+        >
+          <GoogleAdsBookedPeople range={range} />
+        </Suspense>
         <GoogleAdsLiveAds ads={ads.liveAds} rangeLabel={ads.rangeLabel} />
         <GoogleAdsWeekly weeks={ads.weeks} />
         <GoogleAdsTable

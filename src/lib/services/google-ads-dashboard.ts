@@ -14,7 +14,8 @@ import {
 } from "@/lib/services/admin-analytics-range";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { CHANGE_DATE } from "@/lib/services/google-ads-changelog";
-import { pacificDay } from "@/lib/services/funnel-board";
+import { pacificStartIso } from "@/lib/services/data-report";
+import { addDays, pacificDay } from "@/lib/services/funnel-board";
 import {
   beforeAfter,
   campaignHealth,
@@ -524,6 +525,42 @@ async function readHealth(
   };
 }
 
+/**
+ * The instants a range covers. A custom range is whole Pacific days: `endsAt`
+ * off the resolver is UTC end of day, and measuring back from it would pull in
+ * the day before the range (spend included) and stop at 4pm on its last day.
+ */
+export function googleAdsWindow(range: AdminAnalyticsRangeKey, now: Date) {
+  const resolved = resolveAdminAnalyticsRange(range, now);
+  // Spend before lead capture went live has no leads to join, so a range
+  // reaching past it would price booked calls on spend that could never book.
+  const liveFrom = Date.parse(`${LEADS_LIVE_FROM}T07:00:00Z`);
+  const custom =
+    resolved.startDay && resolved.endDay
+      ? {
+          wanted: Date.parse(pacificStartIso(resolved.startDay)),
+          endsAt: new Date(
+            Date.parse(pacificStartIso(addDays(resolved.endDay, 1))) - 1,
+          ),
+        }
+      : null;
+  const endsAt = custom?.endsAt ?? resolved.endsAt;
+  const wanted = custom?.wanted ?? endsAt.getTime() - resolved.days * DAY_MS;
+  const start = new Date(Math.max(wanted, liveFrom));
+  return {
+    label: resolved.label,
+    days: resolved.days,
+    wanted,
+    liveFrom,
+    start,
+    endsAt,
+    startDay: custom
+      ? pacificDay(start.toISOString())
+      : start.toISOString().slice(0, 10),
+    endDay: resolved.endDay ?? endsAt.toISOString().slice(0, 10),
+  };
+}
+
 export async function getGoogleAdsDashboard(input: {
   range: AdminAnalyticsRangeKey;
   now?: Date;
@@ -531,14 +568,8 @@ export async function getGoogleAdsDashboard(input: {
 }): Promise<GoogleAdsDashboard> {
   const client = input.client ?? (createAdminClient() as unknown as Client);
   const now = input.now ?? new Date();
-  const { label, days, endsAt } = resolveAdminAnalyticsRange(input.range, now);
-  // Spend before lead capture went live has no leads to join, so a range
-  // reaching past it would price booked calls on spend that could never book.
-  const liveFrom = Date.parse(`${LEADS_LIVE_FROM}T07:00:00Z`);
-  const wanted = endsAt.getTime() - days * DAY_MS;
-  const start = new Date(Math.max(wanted, liveFrom));
-  const startDay = start.toISOString().slice(0, 10);
-  const endDay = endsAt.toISOString().slice(0, 10);
+  const { label, wanted, liveFrom, start, endsAt, startDay, endDay } =
+    googleAdsWindow(input.range, now);
   // Before vs after always needs everything since the change, whatever the range.
   const fromDay = startDay < CHANGE_DATE ? startDay : CHANGE_DATE;
   // The change day starts at midnight Pacific (07:00 UTC in October).

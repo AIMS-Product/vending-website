@@ -355,3 +355,24 @@ describe("getGoogleAdsDashboard before the health migration", () => {
     expect(ads.bookedInAds30d).toBeNull();
   });
 });
+
+describe("googleAdsWindow", () => {
+  it("covers a custom week's whole Pacific days, across the clock change", async () => {
+    const { googleAdsWindow } = await import("./google-ads-dashboard");
+    const w = googleAdsWindow(
+      "custom:2026-10-26:2026-11-01",
+      new Date("2026-11-02T20:00:00Z"),
+    );
+    expect(w.start.toISOString()).toBe("2026-10-26T07:00:00.000Z");
+    expect(w.endsAt.toISOString()).toBe("2026-11-02T07:59:59.999Z");
+    expect([w.startDay, w.endDay]).toEqual(["2026-10-26", "2026-11-01"]);
+  });
+
+  it("keeps a preset measured back from now", async () => {
+    const { googleAdsWindow } = await import("./google-ads-dashboard");
+    const now = new Date("2026-11-02T20:00:00Z");
+    const w = googleAdsWindow("7d", now);
+    expect(w.endsAt).toEqual(now);
+    expect(w.start.toISOString()).toBe("2026-10-26T20:00:00.000Z");
+  });
+});
