@@ -277,8 +277,9 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   dashboard: [...SPINE, "close", "calendly", "site-leads", "google-ads"],
   // funnel-monthly-data.ts: leads, GA4 page views, Close
   funnels: ["site-leads", "ga4-pages", "close"],
-  // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid
-  "google-ads": ["google-ads", "site-leads"],
+  // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid;
+  // google-ads-booked-people-data.ts: Close mirror + Close meetings mirror
+  "google-ads": ["google-ads", "site-leads", "close", "close-meetings"],
   // marketing-mtd-data.ts: Close mirror first calls + meetings (open calls),
   // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events
   marketing: ["close", "close-meetings", "metricool-ads", "webinar"],

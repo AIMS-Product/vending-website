@@ -193,7 +193,7 @@ describe("tab to feed mapping matches what each loader reads", () => {
   const SCOPED_LOADERS: Record<string, readonly string[]> = {
     ...LOADERS,
     seo: ["seo-command-center", "seo-plan-data", "seo-scorecard"],
-    "google-ads": ["google-ads-dashboard"],
+    "google-ads": ["google-ads-dashboard", "google-ads-booked-people-data"],
     marketing: ["marketing-mtd-data", "booked-calls-v2-data", "close-wins"],
     credit: ["marketing-credit-data", "close-wins"],
     dashboard: [
