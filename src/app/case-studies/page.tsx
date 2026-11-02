@@ -21,9 +21,9 @@ import { pageOpenGraph } from "@/lib/site";
 
 export const revalidate = 60;
 
-const TITLE = "Case Studies";
+const TITLE = "Vending Machine Success Stories";
 const DESCRIPTION =
-  "Vendingpreneurs members share how they went from zero vending experience to a working route — video stories and written testimonials in their own words.";
+  "Vending machine success stories from Vendingpreneurs members who went from zero experience to a working route — video stories and written testimonials in their own words.";
 
 export const metadata: Metadata = {
   title: TITLE,

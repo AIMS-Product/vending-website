@@ -7,9 +7,9 @@ import { listPublishedPosts } from "@/lib/services/news";
 import { listResourceGuides } from "@/lib/services/seo-page-public";
 import { pageOpenGraph } from "@/lib/site";
 
-const TITLE = "News";
+const TITLE = "Vending News and Industry Insights";
 const DESCRIPTION =
-  "Vending industry insights, location strategies, and program updates from Vendingpreneurs.";
+  "Vending news, industry insights, location strategies, and program updates from Vendingpreneurs.";
 
 export const metadata: Metadata = {
   title: TITLE,
