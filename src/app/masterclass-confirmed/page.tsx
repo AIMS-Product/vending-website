@@ -11,6 +11,7 @@ import {
   FeaturedStories,
   NextSteps,
   PlaybookBand,
+  PlaybookLine,
 } from "@/components/sections/masterclass/ConfirmedSections";
 import { ShowUpLive } from "@/components/sections/masterclass/ShowUpLive";
 import { IntakeForm } from "@/components/sections/masterclass/IntakeForm";
@@ -140,6 +141,7 @@ export default async function MasterclassConfirmedPage({
         appleWalletHref={appleWalletHref}
         platform={platformOf(headerStore.get("user-agent"))}
         renderedAt={renderedAt}
+        offerLine={<PlaybookLine params={confirmedPlaybookParams(params)} />}
         steps={
           <NextSteps
             first={first ?? null}

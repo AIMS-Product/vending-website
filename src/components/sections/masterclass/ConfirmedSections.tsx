@@ -15,7 +15,9 @@ import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import { GuideTeaser } from "@/components/sections/playbook-guide/GuideTeaser";
-import { isGuideSwapLive } from "@/lib/ltf/assignment";
+import { GUIDE } from "@/lib/content/playbook-guide";
+import { LTF_PATHS, isGuideSwapLive } from "@/lib/ltf/assignment";
+import Link from "next/link";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
 import { buttonClass } from "@/components/ui/Button";
 import { Highlight } from "@/components/ui/Highlight";
@@ -60,8 +62,9 @@ export function ConfirmedHero({
   appleWalletHref = null,
   platform = "other",
   renderedAt,
+  offerLine,
   steps,
-}: Props & { steps?: React.ReactNode }) {
+}: Props & { offerLine?: React.ReactNode; steps?: React.ReactNode }) {
   const endsAt = masterclassLiveEnd(startsAt);
   return (
     <section
@@ -224,6 +227,7 @@ export function ConfirmedHero({
             </div>
           </UntilEnded>
         ) : null}
+        {offerLine}
         {/* Live, the date line says so; after that, nothing counts down. */}
         {startsAt && endsAt ? (
           <div className="mt-8">
@@ -465,6 +469,39 @@ export function FeaturedStories({ stories }: { stories: CaseStudyStory[] }) {
         <StoryList stories={featured} columns={3} statSize="lg" />
       </div>
     </section>
+  );
+}
+
+/**
+ * The $5 offer one line under the seat card, so it is seen without scrolling.
+ * Its own click detail compares it with the full card lower down. No prefetch:
+ * the link's route assigns a visitor, and only a real tap should do that.
+ */
+export function PlaybookLine({
+  params,
+}: {
+  /** Attribution plus the validated first_name (confirmedPlaybookParams). */
+  params: Record<string, string | string[] | undefined>;
+}) {
+  if (!isGuideSwapLive()) return null;
+  const query = new URLSearchParams(
+    Object.entries(params).flatMap(([k, v]) =>
+      k.startsWith("utm_") && typeof v === "string" ? [[k, v]] : [],
+    ),
+  ).toString();
+  return (
+    <p className="mt-4 text-[15px] text-slate-700">
+      {confirmedCopy.playbookLine}{" "}
+      <Link
+        data-track="playbook_clicked"
+        data-track-detail="confirmed_top"
+        prefetch={false}
+        href={`${LTF_PATHS.go}${query ? `?${query}` : ""}`}
+        className="text-ink font-black underline underline-offset-2"
+      >
+        {confirmedCopy.playbookLinkPrefix} {GUIDE.priceLabel}
+      </Link>
+    </p>
   );
 }
 
