@@ -204,7 +204,7 @@ export async function getProductionV2(details = false, now = new Date()) {
     from: report.from,
     to: report.to,
     source: "Close meeting activity mirror",
-    canonicalCommit: "9783f9a74a7c6cca28a8ad541f9859d75ad998f5",
+    canonicalCommit: "aabf9e83e840eb5a67db90b7b99d55da12df6e6b",
   };
   if (!details) return result;
   // Names are private display enrichment, never an eligibility/attribution input.

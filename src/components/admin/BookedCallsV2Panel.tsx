@@ -22,6 +22,7 @@ const REASON_LABEL: Record<Reason, string> = {
   canceled: "Canceled or declined",
   follow_up_title: "Follow-up or reschedule title",
   unapproved_title: "Title not an approved first call",
+  outside_booking_scope: "Lead owner is not one of the VP closers",
   within_episode: "Within 720 hours of the lead's previous noncanceled meeting",
   not_sales_call: "Not a sales call (setter-only or excluded caller)",
   source_unavailable: "Held: no supported lead source",

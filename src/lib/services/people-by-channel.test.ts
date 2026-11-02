@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Decision } from "@/lib/booked-calls-v2/engine";
-import { buildPeopleByChannel } from "./people-by-channel";
+import { buildOutsideScope, buildPeopleByChannel } from "./people-by-channel";
 
 const decision = (over: Partial<Decision>): Decision =>
   ({
@@ -99,5 +99,32 @@ describe("buildPeopleByChannel", () => {
       "No site form. Close says: Webinar Oct 6",
     );
     expect(row.people[0].closeStatus).toBe("Closed / Won");
+  });
+});
+
+describe("buildOutsideScope", () => {
+  it("lists calls the owner scope dropped, and keeps them out of the channels", () => {
+    const decisions = [
+      decision({ meetingId: "a", leadId: "1" }),
+      decision({
+        meetingId: "b",
+        leadId: "2",
+        disposition: "excluded",
+        reason: "outside_booking_scope",
+      }),
+    ];
+    const inputs = {
+      decisions,
+      meetings: [],
+      submissions: [],
+      funnel: [],
+      adDays: [],
+      campaignNames: new Map(),
+      now: new Date("2026-11-02T20:00:00Z"),
+    };
+    expect(buildPeopleByChannel(inputs)[0].booked).toBe(1);
+    expect(buildOutsideScope(inputs).map((p) => [p.leadId, p.channel])).toEqual(
+      [["2", "YouTube"]],
+    );
   });
 });

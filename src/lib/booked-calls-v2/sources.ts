@@ -1,4 +1,4 @@
-import domRules from "@/lib/booked-calls-v2/rules.v2.6-any-meeting-clock.json";
+import domRules from "@/lib/booked-calls-v2/rules.v2.7.json";
 
 /** Canonical source resolution: lead funnel, then unambiguous contact UTM source. */
 

@@ -177,8 +177,8 @@ export async function GoogleAdsBookedPeople({
       </h2>
       <p className="text-ui-text-muted mt-2 max-w-3xl text-[0.8125rem]">
         Counted the way the company MTD counts calls: by the day the call was
-        booked, on Dom&apos;s rule. {showSummary(read.counted)}. Names open in
-        Close.
+        booked, on Dom&apos;s rule, on leads owned by his nine VP closers.{" "}
+        {showSummary(read.counted)}. Names open in Close.
       </p>
       {read.counted.length === 0 ? (
         <p className="text-ui-text-subtle mt-3 text-sm">

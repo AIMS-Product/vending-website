@@ -8,7 +8,7 @@ import {
   type LeadFacts,
   type Meeting,
 } from "../src/lib/booked-calls-v2/engine";
-import rules from "../src/lib/booked-calls-v2/rules.v2.6-any-meeting-clock.json";
+import rules from "../src/lib/booked-calls-v2/rules.v2.7.json";
 type Raw = Record<string, unknown>;
 type Fixture = {
   from: string;

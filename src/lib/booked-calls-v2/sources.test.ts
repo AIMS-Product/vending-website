@@ -10,13 +10,11 @@ const facts = (over: Partial<Parameters<typeof resolveOrigin>[0]> = {}) => ({
   ...over,
 });
 
-describe("Dom's v2.6 source resolver", () => {
+describe("Dom's source resolver", () => {
   it("reads Dom's rules.json byte for byte (his handoff's config SHA)", () => {
-    const bytes = readFileSync(
-      path.join(__dirname, "rules.v2.6-any-meeting-clock.json"),
-    );
+    const bytes = readFileSync(path.join(__dirname, "rules.v2.7.json"));
     expect(createHash("sha256").update(bytes).digest("hex")).toBe(
-      "b5c44b70f773b21ab5603d91907037f975f8669e91af23e113ea8ca5dc62bdcc",
+      "3f127e3d97be6d603014543d753f0f44e4bd0c05e7a91e09b9acf185332add0a",
     );
   });
 

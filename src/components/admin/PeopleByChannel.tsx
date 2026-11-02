@@ -105,9 +105,9 @@ export async function PeopleByChannel({
       <section className={adminCardClass} aria-label={title}>
         <h2 className={adminEyebrowClass}>{title}</h2>
         <p className="text-ui-text-muted mt-2 max-w-3xl text-[0.8125rem]">
-          Counted on Dom&apos;s rule, by the day the call was booked. Click a
-          channel to see its people. Lane 2 and Social DMs can differ from the
-          company MTD by a few while his newest rule changes are reconciled.
+          Counted on Dom&apos;s rule, by the day the call was booked, on leads
+          owned by his nine VP closers. Click a channel to see its people. Calls
+          on other owners&apos; leads are listed below the table, not counted.
         </p>
         {read.channels.length === 0 ? (
           <p className="text-ui-text-subtle mt-3 text-sm">
@@ -172,6 +172,20 @@ export async function PeopleByChannel({
             showChannel={!channel}
           />
         )}
+        {read.outsideScope.length ? (
+          <details className="mt-5">
+            <summary className={`${adminEyebrowClass} cursor-pointer`}>
+              Booked, not counted: lead owner is not a VP closer (
+              {formatCount(read.outsideScope.length)})
+            </summary>
+            <PeopleTable
+              people={read.outsideScope}
+              lastColumn="Booked by"
+              adColumn="Came from"
+              showChannel
+            />
+          </details>
+        ) : null}
       </section>
     </div>
   );

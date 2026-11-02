@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyBookingScope,
   evaluate,
   summarize,
+  type Decision,
   type LeadFacts,
   type Meeting,
 } from "@/lib/booked-calls-v2/engine";
@@ -91,8 +93,8 @@ describe("title map", () => {
     ["Vendingpreneurs Pinnacle Next Steps", "Monde Janzen", "Lane 2"],
   ];
 
-  it("has exactly Dom's 35 v2.6 title rules", () => {
-    expect(TITLE_MAP).toHaveLength(35);
+  it("has exactly Dom's 38 v2.7 title rules", () => {
+    expect(TITLE_MAP).toHaveLength(38);
   });
 
   it.each(cases)("%s -> %s (%s)", (title, setter, bucket) => {
@@ -523,4 +525,50 @@ it("does not trim a title into Pearl's anchored source-title rule", () => {
     contactUtms: [{ source: "ghl" }],
   });
   expect(d?.bookedBy).toBe("Marketing");
+});
+
+describe("applyBookingScope", () => {
+  const decision = (over: Partial<Decision>): Decision =>
+    ({
+      meetingId: "m",
+      leadId: "lead",
+      disposition: "counted",
+      reason: "counted",
+      ...over,
+    }) as Decision;
+
+  it("keeps only credits on a VP closer's lead, whatever the name's case", () => {
+    const out = applyBookingScope(
+      [
+        decision({ leadId: "vp" }),
+        decision({ leadId: "other" }),
+        decision({ leadId: "oscar" }),
+        decision({ leadId: "unowned" }),
+        decision({ leadId: "no-mirror-row" }),
+      ],
+      new Map([
+        ["vp", "luke herman"],
+        ["other", "Rob Maxfield"],
+        ["oscar", "Oscar Pugh"],
+        ["unowned", null],
+      ]),
+    );
+    expect(out.map((d) => [d.leadId, d.reason])).toEqual([
+      ["vp", "counted"],
+      ["other", "outside_booking_scope"],
+      ["oscar", "outside_booking_scope"],
+      ["unowned", "outside_booking_scope"],
+      ["no-mirror-row", "outside_booking_scope"],
+    ]);
+    expect(out[1].disposition).toBe("excluded");
+  });
+
+  it("leaves uncounted decisions as they were", () => {
+    const repeat = decision({
+      leadId: "other",
+      disposition: "excluded",
+      reason: "within_episode",
+    });
+    expect(applyBookingScope([repeat], new Map())).toEqual([repeat]);
+  });
 });

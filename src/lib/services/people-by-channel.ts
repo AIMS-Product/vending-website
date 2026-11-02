@@ -57,6 +57,18 @@ export function summarizeChannel(
   return row;
 }
 
+/** Booked calls Dom's scope drops, kept visible: their lead owner is not a VP closer. */
+export function buildOutsideScope(input: PeopleInputs): BookedPerson[] {
+  const person = personBuilder(input);
+  return input.decisions
+    .filter((d) => d.reason === "outside_booking_scope")
+    .map((d) => ({
+      ...person(d.leadId, d, null),
+      channel: d.origin.source ?? UNKNOWN_CHANNEL,
+    }))
+    .sort(newestFirst);
+}
+
 /** Most booked first; Unknown always last, because it is the to-do pile. */
 export function buildPeopleByChannel(input: PeopleInputs): ChannelPeople[] {
   const person = personBuilder(input);

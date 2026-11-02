@@ -1,10 +1,30 @@
-/** Canonical MTD V2 rules pinned to AIMS-Product/mtd-funnel-dashboard@9783f9a. */
-import domRules from "@/lib/booked-calls-v2/rules.v2.6-any-meeting-clock.json";
+/** Canonical MTD V2 rules pinned to AIMS-Product/mtd-funnel-dashboard@aabf9e8. */
+import domRules from "@/lib/booked-calls-v2/rules.v2.7.json";
 
 export const RULE_VERSION = domRules.version;
-/** Dom's config SHA-256 for v2.6; recorded so a screen can name what it ran. */
+/** SHA-256 of Dom's rules.json as vendored; recorded so a screen can name what it ran. */
 export const RULE_CONFIG_SHA =
-  "b5c44b70f773b21ab5603d91907037f975f8669e91af23e113ea8ca5dc62bdcc";
+  "3f127e3d97be6d603014543d753f0f44e4bd0c05e7a91e09b9acf185332add0a";
+
+/**
+ * Dom's booking scope (`aggregates.py`, Nov 2): after the full-history decisions,
+ * a credit stays only if the lead's current Lead Owner is one of these closers.
+ * Not in `rules.json`, so a change here has to be copied by hand.
+ */
+export const BOOKING_SCOPE = "vp-closers.v1";
+export const VP_BOOKING_CLOSERS: ReadonlySet<string> = new Set(
+  [
+    "Christian Hartwell",
+    "Scott Seymour",
+    "Robin Perkins",
+    "Eric Piccione",
+    "Joe Vaughan",
+    "Shreya Bechra",
+    "Luke Herman",
+    "Ariella Irvine",
+    "Joe Dysert",
+  ].map((name) => name.toLowerCase()),
+);
 
 export const TIME_ZONE = domRules.timezone;
 /** Exactly 30 x 24 hours from the immediately preceding noncanceled scheduled meeting. */
