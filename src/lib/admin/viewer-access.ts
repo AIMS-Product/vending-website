@@ -27,6 +27,7 @@ const VIEWER_READABLE_PATHS: ReadonlySet<string> = new Set([
   "/admin/analytics/google-ads",
   "/admin/analytics/marketing",
   "/admin/analytics/months",
+  "/admin/analytics/people",
   "/admin/analytics/video",
   "/admin/analytics/youtube",
   "/admin/attribution",

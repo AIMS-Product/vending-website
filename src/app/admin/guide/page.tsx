@@ -38,6 +38,12 @@ const PAGES = [
       "Every channel from lead to closed deal, with booked calls by channel, paid ads side by side and what each channel's calls are worth.",
   },
   {
+    href: "/admin/analytics/people",
+    label: "People",
+    answers:
+      "Who booked from each channel, whether they showed, what they can invest and what brought them. Names open in Close.",
+  },
+  {
     href: "/admin/analytics/google-ads",
     label: "Google Ads",
     answers:

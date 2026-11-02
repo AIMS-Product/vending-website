@@ -28,7 +28,7 @@ const shortDay = (day: string | null) =>
       })
     : "–";
 
-function AdCell({ person }: { person: BookedPerson }) {
+export function AdCell({ person }: { person: BookedPerson }) {
   const { ad } = person;
   if (ad.note) return <span className="text-ui-text-muted">{ad.note}</span>;
   return (
@@ -53,12 +53,16 @@ function AdCell({ person }: { person: BookedPerson }) {
   );
 }
 
-function PeopleTable({
+export function PeopleTable({
   people,
   lastColumn,
+  adColumn = "Ad",
+  showChannel = false,
 }: {
   people: BookedPerson[];
   lastColumn: "Booked by" | "Why not counted";
+  adColumn?: string;
+  showChannel?: boolean;
 }) {
   return (
     <div className="mt-3 overflow-x-auto">
@@ -69,6 +73,7 @@ function PeopleTable({
           >
             {[
               "Person",
+              ...(showChannel ? ["Channel"] : []),
               "Came in",
               "Booked",
               "Call",
@@ -77,7 +82,7 @@ function PeopleTable({
               "Qualified",
               "Close status",
               lastColumn,
-              "Ad",
+              adColumn,
             ].map((c) => (
               <th key={c} className="py-2 pr-3 font-semibold">
                 {c}
@@ -102,6 +107,7 @@ function PeopleTable({
                   p.name
                 )}
               </td>
+              {showChannel ? <td className="py-2 pr-3">{p.channel}</td> : null}
               <td className="py-2 pr-3 whitespace-nowrap">
                 {shortDay(p.leadDay)}
               </td>
@@ -121,7 +127,9 @@ function PeopleTable({
               <td className="py-2 pr-3">{p.closeStatus ?? "–"}</td>
               <td className="py-2 pr-3">
                 {lastColumn === "Booked by"
-                  ? (p.bookedBy ?? "–")
+                  ? [p.bookedBy, p.bookedBy === "Marketing" ? null : p.setter]
+                      .filter(Boolean)
+                      .join(" · ") || "–"
                   : p.whyNotCounted}
               </td>
               <td className="py-2 pr-3">

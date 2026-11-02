@@ -217,6 +217,7 @@ export type TrustScope =
   | "data"
   | "seo"
   | "google-ads"
+  | "people"
   | "marketing"
   | "credit";
 
@@ -280,6 +281,8 @@ export const TAB_FEEDS: Record<TrustScope, readonly FeedKey[]> = {
   // google-ads-dashboard.ts: google_ads_* views, site leads with a gclid;
   // google-ads-booked-people-data.ts: Close mirror + Close meetings mirror
   "google-ads": ["google-ads", "site-leads", "close", "close-meetings"],
+  // people-by-channel-data.ts: the same reads, every channel
+  people: ["close-meetings", "close", "site-leads", "google-ads"],
   // marketing-mtd-data.ts: Close mirror first calls + meetings (open calls),
   // Dom's meetings for the scorecard, Close wins, spine spend, webinar_events
   marketing: ["close", "close-meetings", "metricool-ads", "webinar"],
