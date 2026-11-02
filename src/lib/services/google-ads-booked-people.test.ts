@@ -3,6 +3,7 @@ import type { Decision, Meeting } from "@/lib/booked-calls-v2/engine";
 import {
   adFor,
   buildBookedPeople,
+  closeTags,
   showOf,
   type AdDayRow,
   type FunnelRow,
@@ -91,6 +92,40 @@ describe("showOf", () => {
     expect(showOf(future, funnel({ first_call_show_up: "No" }), NOW)).toBe(
       "Upcoming",
     );
+  });
+});
+
+describe("closeTags", () => {
+  const row = (resource_tag: string | null, contact_utms: unknown) => ({
+    lead_id: "lead1",
+    resource_tag,
+    contact_utms,
+  });
+
+  it("leads with the resource tag, then contact source and medium", () => {
+    expect(
+      closeTags(
+        row("webinar-27-oct", [
+          { source: "fb", medium: "Facebook_Mobile_Reels" },
+        ]),
+      ),
+    ).toBe("webinar-27-oct · fb · Facebook_Mobile_Reels");
+  });
+
+  it("shows a repeated value once and drops Close's underscore blanks", () => {
+    expect(
+      closeTags(
+        row("internal-webinar", [
+          { source: "Internal-Webinar", medium: "_____" },
+        ]),
+      ),
+    ).toBe("Internal-Webinar");
+  });
+
+  it("is null with nothing to show, whatever shape the column holds", () => {
+    expect(closeTags(undefined)).toBeNull();
+    expect(closeTags(row(null, []))).toBeNull();
+    expect(closeTags(row(null, "not an array"))).toBeNull();
   });
 });
 

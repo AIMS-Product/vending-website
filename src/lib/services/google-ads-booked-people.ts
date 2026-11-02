@@ -80,6 +80,12 @@ export type FunnelRow = {
   lead_source?: string | null;
 };
 
+export type ContactFactsRow = {
+  lead_id: string;
+  resource_tag: string | null;
+  contact_utms: unknown;
+};
+
 export type AdDayRow = {
   day: string;
   campaign_id: string;
@@ -89,6 +95,8 @@ export type AdDayRow = {
   headlines: unknown;
   clicks: number | null;
 };
+
+const NO_LINK_TAGS = "No link tags";
 
 export const UNKNOWN_CHANNEL = "Unknown (Needs Review)";
 
@@ -166,7 +174,7 @@ export function adFor(
       ...empty,
       keyword,
       possibleAds: 0,
-      note: tags ? `Link tags: ${tags}` : "No link tags",
+      note: tags ? `Link tags: ${tags}` : NO_LINK_TAGS,
     };
   }
   const inGroup = adDays.filter(
@@ -188,6 +196,27 @@ export function adFor(
     possibleAds: ids.size,
     note: null,
   };
+}
+
+/**
+ * What Close's own tags say about a lead with no usable link tags: the resource
+ * tag (it names the webinar date), then each contact's UTM source and medium.
+ * Close fills blanks with underscores; a value repeated across fields shows once.
+ */
+export function closeTags(row: ContactFactsRow | undefined): string | null {
+  if (!row) return null;
+  const utms = Array.isArray(row.contact_utms)
+    ? (row.contact_utms as Array<Record<string, unknown>>)
+    : [];
+  const values = [
+    row.resource_tag,
+    ...utms.flatMap((utm) => [utm.source, utm.medium]),
+  ]
+    .filter((v): v is string => typeof v === "string")
+    .map((v) => v.trim())
+    .filter((v) => v && !/^_+$/.test(v));
+  const seen = new Map(values.map((v) => [v.toLowerCase(), v]));
+  return seen.size ? [...seen.values()].join(" · ") : null;
 }
 
 /** The ad-click row when a lead has several forms, else its earliest. */
@@ -217,6 +246,7 @@ export type PeopleInputs = {
   funnel: readonly FunnelRow[];
   adDays: readonly AdDayRow[];
   campaignNames: ReadonlyMap<string, string>;
+  contacts?: readonly ContactFactsRow[];
   now: Date;
 };
 
@@ -224,6 +254,7 @@ export type PeopleInputs = {
 export function personBuilder(input: PeopleInputs) {
   const meetings = new Map(input.meetings.map((m) => [m.id, m]));
   const funnel = new Map(input.funnel.map((f) => [f.lead_id, f]));
+  const contacts = new Map(input.contacts?.map((c) => [c.lead_id, c]));
   const byLead = new Map<string, SubmissionRow[]>();
   for (const s of input.submissions) {
     if (!s.close_lead_id) continue;
@@ -240,6 +271,13 @@ export function personBuilder(input: PeopleInputs) {
     const meeting = decision ? meetings.get(decision.meetingId) : undefined;
     const ad = adFor(submission, input.adDays, input.campaignNames);
     const closeSource = lead?.entry_source?.trim() || lead?.lead_source?.trim();
+    const noTags = !submission || (!ad.campaign && ad.note === NO_LINK_TAGS);
+    const tags = closeTags(contacts.get(leadId));
+    const fallback = tags
+      ? `Close tags: ${tags}`
+      : closeSource
+        ? `Close says: ${closeSource}`
+        : null;
     return {
       key: decision?.meetingId ?? leadId,
       leadId,
@@ -265,10 +303,7 @@ export function personBuilder(input: PeopleInputs) {
       // Close status labels lead with an emoji.
       closeStatus:
         lead?.status_label?.replace(/^[^\p{L}\p{N}]+/u, "").trim() || null,
-      ad:
-        !submission && closeSource
-          ? { ...ad, note: `No site form. Close says: ${closeSource}` }
-          : ad,
+      ad: noTags ? { ...ad, note: fallback ?? ad.note } : ad,
       whyNotCounted: why,
     };
   };
