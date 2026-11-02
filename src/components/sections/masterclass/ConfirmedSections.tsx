@@ -497,7 +497,7 @@ export function PlaybookLine({
         data-track-detail="confirmed_top"
         prefetch={false}
         href={`${LTF_PATHS.go}${query ? `?${query}` : ""}`}
-        className="text-ink font-black underline underline-offset-2"
+        className="text-ink mt-1 block text-[clamp(0.8rem,3.9vw,0.9375rem)] font-black whitespace-nowrap underline underline-offset-2"
       >
         {confirmedCopy.playbookLinkPrefix} {GUIDE.priceLabel}
       </Link>
