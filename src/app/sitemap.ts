@@ -6,18 +6,18 @@ import {
   processSectionIsHeldBack,
 } from "@/lib/content/process";
 import { listIndexableSolutionSlugs } from "@/lib/content/solutions";
-import { listPublishedSlugs } from "@/lib/services/news";
+import { listPublishedPostDates } from "@/lib/services/news";
 import { listPublishedCaseStudySlugs } from "@/lib/services/case-studies";
 import { listSitemapSeoPages } from "@/lib/services/seo-page-public";
 
 export const revalidate = 0;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  // lastModified only where a real edit date exists (/resources pages).
+  // lastModified only where a real edit date exists (/news, /resources pages).
   // Stamping every URL with the request time taught Google to ignore it.
   const now = new Date();
-  const [slugs, caseStudySlugs, resourcePages] = await Promise.all([
-    listPublishedSlugs(),
+  const [posts, caseStudySlugs, resourcePages] = await Promise.all([
+    listPublishedPostDates(),
     listPublishedCaseStudySlugs(),
     listSitemapSeoPages(),
   ]);
@@ -28,8 +28,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: route.changeFrequency,
       priority: route.priority,
     })),
-    ...slugs.map((slug) => ({
-      url: absoluteUrl(`/news/${slug}`),
+    {
+      url: absoluteUrl("/resources"),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    ...posts.map((post) => ({
+      url: absoluteUrl(`/news/${post.slug}`),
+      lastModified: validDateOrFallback(post.updated_at, now),
       changeFrequency: "monthly" as const,
       priority: 0.6,
     })),

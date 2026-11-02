@@ -29,7 +29,7 @@ export type NewsPostUpdate =
   Database["public"]["Tables"]["news_posts"]["Update"];
 
 const PUBLIC_FIELDS =
-  "id, slug, title, excerpt, body, cover_url, cover_alt, published_at" as const;
+  "id, slug, title, excerpt, body, cover_url, cover_alt, published_at, updated_at" as const;
 
 const ADMIN_FIELDS =
   "id, slug, title, excerpt, body, cover_url, cover_alt, status, published_at, created_at, updated_at" as const;
@@ -111,6 +111,20 @@ export async function listPublishedSlugs() {
     return [];
   }
   return (data ?? []).map((row) => row.slug);
+}
+
+export async function listPublishedPostDates() {
+  const supabase = getBuildTimeClient();
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select("slug, updated_at")
+    .eq("status", "published");
+
+  if (error) {
+    console.error("listPublishedPostDates failed", error);
+    return [];
+  }
+  return data ?? [];
 }
 
 // ---------------------------------------------------------------------------

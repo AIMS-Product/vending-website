@@ -166,6 +166,15 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // One host for search. The apex served every page as a 200 with a www
+      // canonical, and Search Console was listing apex URLs. /api and /_next
+      // stay put: webhooks and the PostHog proxy may not follow a redirect.
+      {
+        source: "/:path((?!api/|_next/).*)",
+        has: [{ type: "host", value: "vendingpreneurs.com" }],
+        destination: "https://www.vendingpreneurs.com/:path",
+        permanent: true,
+      },
       // Admin analytics consolidation (2026-10): the overview, goals page
       // and fifteen analytics tabs folded into one dashboard. A redirect
       // keeps the query, so only tabs with their own page are matched; any
