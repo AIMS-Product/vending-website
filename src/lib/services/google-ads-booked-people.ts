@@ -45,6 +45,10 @@ export type BookedPerson = {
   bookedDay: string | null;
   callDay: string | null;
   bookedBy: string | null;
+  /** The named setter on a Lane 2 or Social DMs booking. */
+  setter: string | null;
+  /** Dom's source for the booking; null when the person is not counted. */
+  channel: string | null;
   show: ShowStatus;
   capital: string | null;
   qualified: string | null;
@@ -72,6 +76,8 @@ export type FunnelRow = {
   first_call_show_up: string | null;
   qualified: string | null;
   status_label: string | null;
+  entry_source?: string | null;
+  lead_source?: string | null;
 };
 
 export type AdDayRow = {
@@ -83,6 +89,8 @@ export type AdDayRow = {
   headlines: unknown;
   clicks: number | null;
 };
+
+export const UNKNOWN_CHANNEL = "Unknown (Needs Review)";
 
 const REASONS: Partial<Record<Reason, string>> = {
   canceled: "Canceled",
@@ -147,8 +155,7 @@ export function adFor(
   campaignNames: ReadonlyMap<string, string>,
 ): PersonAd {
   const empty = { campaign: null, adGroup: null, keyword: null, headlines: [] };
-  if (!submission)
-    return { ...empty, possibleAds: 0, note: "No site form on this lead" };
+  if (!submission) return { ...empty, possibleAds: 0, note: "No site form" };
   const { utm_campaign: campaign, utm_content: group } = submission;
   const term = submission.utm_term?.trim().toLowerCase();
   const keyword = term && !term.startsWith("{") ? term : null;
@@ -158,7 +165,7 @@ export function adFor(
       ...empty,
       keyword,
       possibleAds: 0,
-      note: tags ? `Link tag, not an ad: ${tags}` : "No ad tags on this lead",
+      note: tags ? `Link tags: ${tags}` : "No link tags",
     };
   }
   const inGroup = adDays.filter(
@@ -202,22 +209,18 @@ export function whyNotCounted(decisions: readonly Decision[]): string {
   return REASONS[reason] ?? "Held for review";
 }
 
-export type BookedPeople = {
-  counted: BookedPerson[];
-  alsoInHeadline: BookedPerson[];
-};
-
-export function buildBookedPeople(input: {
+export type PeopleInputs = {
   decisions: readonly Decision[];
   meetings: readonly Meeting[];
   submissions: readonly SubmissionRow[];
   funnel: readonly FunnelRow[];
   adDays: readonly AdDayRow[];
   campaignNames: ReadonlyMap<string, string>;
-  /** Ad-click leads the headline counts: created in range, with a booked date. */
-  headlineLeads: readonly SubmissionRow[];
   now: Date;
-}): BookedPeople {
+};
+
+/** Builds one person from a lead and its meeting, joined across the sources. */
+export function personBuilder(input: PeopleInputs) {
   const meetings = new Map(input.meetings.map((m) => [m.id, m]));
   const funnel = new Map(input.funnel.map((f) => [f.lead_id, f]));
   const byLead = new Map<string, SubmissionRow[]>();
@@ -225,7 +228,7 @@ export function buildBookedPeople(input: {
     if (!s.close_lead_id) continue;
     byLead.set(s.close_lead_id, [...(byLead.get(s.close_lead_id) ?? []), s]);
   }
-  const person = (
+  return (
     leadId: string,
     decision: Decision | undefined,
     why: string | null,
@@ -234,6 +237,8 @@ export function buildBookedPeople(input: {
     const submission = pickSubmission(rows);
     const lead = funnel.get(leadId);
     const meeting = decision ? meetings.get(decision.meetingId) : undefined;
+    const ad = adFor(submission, input.adDays, input.campaignNames);
+    const closeSource = lead?.entry_source?.trim() || lead?.lead_source?.trim();
     return {
       key: decision?.meetingId ?? leadId,
       leadId,
@@ -246,6 +251,11 @@ export function buildBookedPeople(input: {
       bookedDay: decision?.createdDay ?? null,
       callDay: meeting?.startsAt ? pacificDay(meeting.startsAt) : null,
       bookedBy: decision?.bookedBy ?? null,
+      setter: decision?.mappedSetter ?? null,
+      channel:
+        decision?.disposition === "counted"
+          ? (decision.origin.source ?? UNKNOWN_CHANNEL)
+          : null,
       show: showOf(meeting, lead, input.now),
       capital:
         rows.map((r) => capitalOf(r.qualification_summary)).find(Boolean) ??
@@ -254,20 +264,37 @@ export function buildBookedPeople(input: {
       // Close status labels lead with an emoji.
       closeStatus:
         lead?.status_label?.replace(/^[^\p{L}\p{N}]+/u, "").trim() || null,
-      ad: adFor(submission, input.adDays, input.campaignNames),
+      ad:
+        !submission && closeSource
+          ? { ...ad, note: `No site form. Close says: ${closeSource}` }
+          : ad,
       whyNotCounted: why,
     };
   };
+}
+
+export type BookedPeople = {
+  counted: BookedPerson[];
+  alsoInHeadline: BookedPerson[];
+};
+
+export const newestFirst = (a: BookedPerson, b: BookedPerson) =>
+  (b.bookedDay ?? b.leadDay ?? "").localeCompare(
+    a.bookedDay ?? a.leadDay ?? "",
+  ) || a.name.localeCompare(b.name);
+
+export function buildBookedPeople(
+  input: PeopleInputs & {
+    /** Ad-click leads the headline counts: created in range, with a booked date. */
+    headlineLeads: readonly SubmissionRow[];
+  },
+): BookedPeople {
+  const person = personBuilder(input);
 
   const googleCounted = input.decisions.filter(
     (d) => d.disposition === "counted" && d.origin.source === "Google Ads",
   );
   const countedIds = new Set(googleCounted.map((d) => d.leadId));
-  const newestFirst = (a: BookedPerson, b: BookedPerson) =>
-    (b.bookedDay ?? b.leadDay ?? "").localeCompare(
-      a.bookedDay ?? a.leadDay ?? "",
-    ) || a.name.localeCompare(b.name);
-
   const seen = new Set<string>();
   const alsoInHeadline: BookedPerson[] = [];
   for (const lead of input.headlineLeads) {
@@ -282,6 +309,8 @@ export function buildBookedPeople(input: {
         bookedDay: null,
         callDay: null,
         bookedBy: null,
+        setter: null,
+        channel: null,
         show: "Not logged",
         capital: capitalOf(lead.qualification_summary),
         qualified: null,

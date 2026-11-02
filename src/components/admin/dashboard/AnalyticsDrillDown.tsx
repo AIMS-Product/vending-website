@@ -58,7 +58,14 @@ export function AnalyticsDrillDown({
 }: {
   path: string;
   /** The view key the shared range links route by. */
-  tab: "channels" | "youtube" | "video" | "months" | "marketing" | "google-ads";
+  tab:
+    | "channels"
+    | "youtube"
+    | "video"
+    | "months"
+    | "marketing"
+    | "google-ads"
+    | "people";
   title: string;
   description: string;
   user: { email?: string | null; role: string | null };

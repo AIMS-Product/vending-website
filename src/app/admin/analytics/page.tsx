@@ -41,6 +41,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const DRILL_DOWNS = [
+  { href: "/admin/analytics/people", label: "People" },
   { href: "/admin/analytics/board", label: "Funnel board" },
   { href: "/admin/analytics/channels", label: "Channels" },
   { href: "/admin/analytics/marketing", label: "Marketing MTD" },

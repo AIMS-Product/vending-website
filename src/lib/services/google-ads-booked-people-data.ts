@@ -18,8 +18,8 @@ export type BookedPeopleRead =
   | ({ ok: true; ruleVersion: string } & BookedPeople)
   | { ok: false; error: string };
 
-/** Close keeps lead facts for 70 days and a wide window is a slow read. */
-const MAX_DAYS = 90;
+/** Lead facts are kept 70 days; a window past them reads as incomplete. */
+export const MAX_PEOPLE_DAYS = 60;
 const IN_BATCH = 100;
 /** How far back an ad's clicks can still explain a lead in the window. */
 const AD_LOOKBACK_MS = 120 * 86_400_000;
@@ -38,15 +38,91 @@ function required<T>(
   return read.rows;
 }
 
+const FUNNEL_COLUMNS =
+  "lead_id, display_name, first_sales_call_booked_date, first_call_show_up, qualified, status_label, entry_source, lead_source";
+
+/** Forms, Close leads and ad names for these leads. Throws a user-safe error. */
+export async function readPeopleSources(
+  leadIds: readonly string[],
+  start: Date,
+) {
+  const db = createAdminClient();
+  const submissions: SubmissionRow[] = [];
+  const funnel: FunnelRow[] = [];
+  for (let i = 0; i < leadIds.length; i += IN_BATCH) {
+    const ids = leadIds.slice(i, i + IN_BATCH);
+    const [forms, leads] = await Promise.all([
+      readAllPages<SubmissionRow>((a, b, count) =>
+        db
+          .from("lead_submissions")
+          .select(SUBMISSION_COLUMNS, { count })
+          .in("close_lead_id", ids)
+          .order("id")
+          .range(a, b),
+      ),
+      readAllPages<FunnelRow>((a, b, count) =>
+        db
+          .from("close_lead_funnel")
+          .select(FUNNEL_COLUMNS, { count })
+          .in("lead_id", ids)
+          .order("lead_id")
+          .range(a, b),
+      ),
+    ]);
+    submissions.push(...required("site forms", forms));
+    funnel.push(...required("Close leads", leads));
+  }
+
+  // The google_ads_* views are not in the generated types.
+  const views = db as unknown as SupabaseClient;
+  const since = new Date(start.getTime() - AD_LOOKBACK_MS)
+    .toISOString()
+    .slice(0, 10);
+  const [adDays, campaignDays] = await Promise.all([
+    readAllPages<AdDayRow>((a, b, count) =>
+      views
+        .from("google_ads_ad_daily")
+        .select(
+          "day, campaign_id, ad_group_id, ad_group_name, ad_id, headlines, clicks",
+          { count },
+        )
+        .gte("day", since)
+        .order("day")
+        .order("ad_id")
+        .range(a, b),
+    ),
+    readAllPages<{ campaign_id: string; campaign_name: string | null }>(
+      (a, b, count) =>
+        views
+          .from("google_ads_campaign_daily")
+          .select("campaign_id, campaign_name", { count })
+          .gte("day", since)
+          .order("day")
+          .order("campaign_id")
+          .range(a, b),
+    ),
+  ]);
+  return {
+    submissions,
+    funnel,
+    adDays: required("ads", adDays),
+    campaignNames: new Map(
+      required("campaigns", campaignDays).flatMap((r) =>
+        r.campaign_name ? [[r.campaign_id, r.campaign_name] as const] : [],
+      ),
+    ),
+  };
+}
+
 export async function getGoogleAdsBookedPeople(
   range: AdminAnalyticsRangeKey,
   now = new Date(),
 ): Promise<BookedPeopleRead> {
   const { start, endsAt, days } = googleAdsWindow(range, now);
-  if (days > MAX_DAYS)
+  if (days > MAX_PEOPLE_DAYS)
     return {
       ok: false,
-      error: `Pick ${MAX_DAYS} days or less to see the people.`,
+      error: `Pick ${MAX_PEOPLE_DAYS} days or less to see the people.`,
     };
   const from = start.toISOString();
   const to = endsAt.toISOString();
@@ -71,7 +147,6 @@ export async function getGoogleAdsBookedPeople(
     );
     // One person per click, as the headline counts them.
     const byGclid = new Map(headline.map((r) => [r.gclid, r]));
-
     const leadIds = [
       ...new Set([
         ...report.decisions
@@ -80,80 +155,13 @@ export async function getGoogleAdsBookedPeople(
         ...headline.flatMap((r) => r.close_lead_id ?? []),
       ]),
     ];
-    const submissions: SubmissionRow[] = [];
-    const funnel: FunnelRow[] = [];
-    for (let i = 0; i < leadIds.length; i += IN_BATCH) {
-      const ids = leadIds.slice(i, i + IN_BATCH);
-      const [forms, leads] = await Promise.all([
-        readAllPages<SubmissionRow>((a, b, count) =>
-          db
-            .from("lead_submissions")
-            .select(SUBMISSION_COLUMNS, { count })
-            .in("close_lead_id", ids)
-            .order("id")
-            .range(a, b),
-        ),
-        readAllPages<FunnelRow>((a, b, count) =>
-          db
-            .from("close_lead_funnel")
-            .select(
-              "lead_id, display_name, first_sales_call_booked_date, first_call_show_up, qualified, status_label",
-              { count },
-            )
-            .in("lead_id", ids)
-            .order("lead_id")
-            .range(a, b),
-        ),
-      ]);
-      submissions.push(...required("site forms", forms));
-      funnel.push(...required("Close leads", leads));
-    }
-
-    // The google_ads_* views are not in the generated types.
-    const views = db as unknown as SupabaseClient;
-    const since = new Date(start.getTime() - AD_LOOKBACK_MS)
-      .toISOString()
-      .slice(0, 10);
-    const [adDays, campaignDays] = await Promise.all([
-      readAllPages<AdDayRow>((a, b, count) =>
-        views
-          .from("google_ads_ad_daily")
-          .select(
-            "day, campaign_id, ad_group_id, ad_group_name, ad_id, headlines, clicks",
-            { count },
-          )
-          .gte("day", since)
-          .order("day")
-          .order("ad_id")
-          .range(a, b),
-      ),
-      readAllPages<{ campaign_id: string; campaign_name: string | null }>(
-        (a, b, count) =>
-          views
-            .from("google_ads_campaign_daily")
-            .select("campaign_id, campaign_name", { count })
-            .gte("day", since)
-            .order("day")
-            .order("campaign_id")
-            .range(a, b),
-      ),
-    ]);
-    const campaignNames = new Map(
-      required("campaigns", campaignDays).flatMap((r) =>
-        r.campaign_name ? [[r.campaign_id, r.campaign_name] as const] : [],
-      ),
-    );
-
     return {
       ok: true,
       ruleVersion: report.ruleVersion,
       ...buildBookedPeople({
         decisions: report.decisions,
         meetings: report.meetings,
-        submissions,
-        funnel,
-        adDays: required("ads", adDays),
-        campaignNames,
+        ...(await readPeopleSources(leadIds, start)),
         headlineLeads: [...byGclid.values()],
         now,
       }),

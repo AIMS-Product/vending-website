@@ -68,7 +68,7 @@ export default async function AnalyticsGoogleAdsPage({
         beforeAfter={ads.beforeAfter}
         summary={ceoSummary(ads)}
       />
-      <div className="mt-5 grid gap-5">
+      <div className="mt-5 grid grid-cols-[minmax(0,1fr)] gap-5">
         <Suspense
           fallback={
             <p className="text-ui-text-muted text-sm">

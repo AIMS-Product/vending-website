@@ -138,6 +138,14 @@ const OWN_PAGE: Partial<Record<FlowChannelKey, string>> = {
   youtube: "/admin/analytics/youtube",
 };
 
+/** The People page for a flow channel, on its main Close funnel. */
+export function channelPeopleHref(key: FlowChannelKey): string {
+  const funnel = FLOW_CHANNELS.find((c) => c.key === key)?.funnels[0];
+  return funnel && key !== "reactivation"
+    ? `/admin/analytics/people?channel=${encodeURIComponent(funnel)}`
+    : "/admin/analytics/people";
+}
+
 /** Where a channel in the flow chart opens, or null when no report covers it. */
 export function channelReportHref(key: FlowChannelKey): string | null {
   const own = OWN_PAGE[key];

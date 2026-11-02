@@ -7,6 +7,7 @@ import { ChannelLogo } from "@/components/admin/ChannelLogo";
 import { cn } from "@/lib/utils";
 import {
   FLOW_STAGES,
+  channelPeopleHref,
   channelReportHref,
   stageRate,
   type ChannelFlow,
@@ -339,12 +340,20 @@ function ReportLink({
   const label = flow.bands.find((b) => b.key === pinned)?.label;
   if (!href || !label) return null;
   return (
-    <Link
-      href={href}
-      className="bg-ui-accent hover:bg-ui-accent-hover rounded-ui mt-3 inline-flex w-fit items-center px-3 py-1.5 text-[0.8125rem] font-medium text-white"
-    >
-      Open {label} report
-    </Link>
+    <div className="mt-3 flex flex-wrap items-center gap-3">
+      <Link
+        href={href}
+        className="bg-ui-accent hover:bg-ui-accent-hover rounded-ui inline-flex w-fit items-center px-3 py-1.5 text-[0.8125rem] font-medium text-white"
+      >
+        Open {label} report
+      </Link>
+      <Link
+        href={channelPeopleHref(pinned!)}
+        className="text-ui-accent text-[0.8125rem] font-medium underline underline-offset-2"
+      >
+        See who booked
+      </Link>
+    </div>
   );
 }
 
