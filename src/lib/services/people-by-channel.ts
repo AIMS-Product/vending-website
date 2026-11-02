@@ -93,3 +93,28 @@ export function buildPeopleByChannel(input: PeopleInputs): ChannelPeople[] {
         a.channel.localeCompare(b.channel),
     );
 }
+
+export type HostLogging = { host: string; held: number; notLogged: number };
+
+/**
+ * Calls whose time has passed, per person holding them, and how many have no
+ * show or no-show recorded. Worst first; hosts with none logged missing drop off.
+ */
+export function notLoggedByHost(
+  people: readonly BookedPerson[],
+): HostLogging[] {
+  const hosts = new Map<string, HostLogging>();
+  for (const p of people) {
+    if (p.show === "Upcoming") continue;
+    const host = p.host?.trim() || "No host on the meeting";
+    const row = hosts.get(host) ?? { host, held: 0, notLogged: 0 };
+    hosts.set(host, {
+      host,
+      held: row.held + 1,
+      notLogged: row.notLogged + (p.show === "Not logged" ? 1 : 0),
+    });
+  }
+  return [...hosts.values()]
+    .filter((row) => row.notLogged > 0)
+    .sort((a, b) => b.notLogged - a.notLogged || a.host.localeCompare(b.host));
+}
