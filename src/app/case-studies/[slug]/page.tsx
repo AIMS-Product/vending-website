@@ -113,7 +113,11 @@ async function resolveRelated(
   if (curated.length >= RELATED_COUNT) return curated;
 
   const seen = new Set([currentSlug, ...curated.map((item) => item.slug)]);
-  const fallback = (await listPublishedCaseStudies({ limit: 12 })).filter(
+  // Rotate from this story's own position so every story gets linked, not just
+  // the same four newest ones on every page.
+  const all = await listPublishedCaseStudies({ limit: 100 });
+  const start = all.findIndex((item) => item.slug === currentSlug) + 1;
+  const fallback = [...all.slice(start), ...all.slice(0, start)].filter(
     (item) => !seen.has(item.slug),
   );
 

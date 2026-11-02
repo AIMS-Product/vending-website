@@ -2,11 +2,15 @@ import { cache } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { NewsArticle } from "@/components/sections/NewsArticle";
+import { NewsKeepReading } from "@/components/sections/NewsKeepReading";
 import { FinalCta } from "@/components/sections/FinalCta";
 import {
   getPublishedPostBySlug,
+  listPublishedPosts,
   listPublishedSlugs,
 } from "@/lib/services/news";
+import { listResourceGuides } from "@/lib/services/seo-page-public";
+import { pickRelatedReading } from "@/lib/news/related-reading";
 import { renderMarkdown } from "@/lib/markdown";
 import { jsonLdHtml } from "@/lib/json-ld";
 import {
@@ -61,7 +65,18 @@ export default async function NewsArticlePage({
   const { slug } = await params;
   const post = await getPublishedPost(slug);
   if (!post) notFound();
-  const html = await renderMarkdown(post.body);
+  const [html, posts, guides] = await Promise.all([
+    renderMarkdown(post.body),
+    listPublishedPosts({ limit: 30 }),
+    listResourceGuides(),
+  ]);
+  const reading = pickRelatedReading(`/news/${post.slug}`, [
+    ...posts.map((item) => ({
+      href: `/news/${item.slug}`,
+      title: item.title,
+    })),
+    ...guides.map((item) => ({ href: item.route_path, title: item.title })),
+  ]);
   const structuredData = newsStructuredData(post.body);
   const breadcrumbs = breadcrumbStructuredData([
     { name: "News", path: "/news" },
@@ -87,6 +102,7 @@ export default async function NewsArticlePage({
         dangerouslySetInnerHTML={{ __html: jsonLdHtml(breadcrumbs) }}
       />
       <NewsArticle post={post} html={html} />
+      <NewsKeepReading links={reading} />
       <FinalCta />
     </>
   );

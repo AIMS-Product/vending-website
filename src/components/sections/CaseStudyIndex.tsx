@@ -214,6 +214,7 @@ function FacetRow({
             key={facet.value}
             href={hrefFor(facet.value)}
             scroll={false}
+            rel="nofollow"
             // A link cannot be "pressed"; aria-current is the correct role for
             // "this filter is the one in effect".
             aria-current={isActive ? "true" : undefined}
