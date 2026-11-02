@@ -39,4 +39,55 @@ describe("ga4Command", () => {
     expect(ga4Command({ event: "gtm.js" })).toBeNull();
     expect(ga4Command({ event: "toString" })).toBeNull();
   });
+
+  it("forwards the Playbook purchase with order, value and product only", () => {
+    expect(
+      ga4Command({
+        event: "purchase",
+        ecommerce: {
+          transaction_id: "cs_live_123",
+          value: 5,
+          currency: "USD",
+          email: "a@b.co",
+          items: [
+            {
+              item_id: "first-location-playbook",
+              item_name: "The First Location Playbook",
+              price: 5,
+              quantity: 1,
+              buyer: "x",
+            },
+          ],
+        },
+      }),
+    ).toEqual([
+      "event",
+      "purchase",
+      {
+        send_to: GA4_MEASUREMENT_ID,
+        transaction_id: "cs_live_123",
+        value: 5,
+        currency: "USD",
+        items: [
+          {
+            item_id: "first-location-playbook",
+            item_name: "The First Location Playbook",
+            price: 5,
+            quantity: 1,
+          },
+        ],
+      },
+    ]);
+  });
+
+  it("drops a purchase without an order id, value or currency", () => {
+    expect(ga4Command({ event: "purchase" })).toBeNull();
+    expect(ga4Command({ event: "purchase", ecommerce: null })).toBeNull();
+    expect(
+      ga4Command({
+        event: "purchase",
+        ecommerce: { value: 5, currency: "USD" },
+      }),
+    ).toBeNull();
+  });
 });
