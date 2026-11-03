@@ -217,6 +217,7 @@ describe("registerForMasterclass", () => {
         email: "mary@example.com",
         phone: "+15415550123",
         eventTag: "webinar-oct6",
+        webinarTime: "October 6 at 7:30 PM Central",
         attribution: {
           utm_source: "meta",
           utm_content: "120251367443830338",

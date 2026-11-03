@@ -16,6 +16,7 @@ import {
 } from "@/lib/content/masterclass";
 import {
   registerWebinarContact,
+  webinarCallTime,
   webinarEventTag,
   WebinarRegistrationError,
 } from "@/lib/ghl/webinar-registration";
@@ -216,7 +217,12 @@ export async function registerForMasterclass(
   let ownsContact: boolean;
   try {
     ({ contactId, ownsContact } = await registerWebinarContact(
-      { ...parsed.data, eventTag },
+      {
+        ...parsed.data,
+        eventTag,
+        webinarTime:
+          !stale && event.label ? webinarCallTime(event.label) : null,
+      },
       {
         token: config.GHL_WRITE_TOKEN,
         locationId: config.GHL_LOCATION_ID ?? GHL_LOCATION_ID,

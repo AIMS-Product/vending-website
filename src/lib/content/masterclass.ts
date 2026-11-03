@@ -417,7 +417,7 @@ export const masterclassTakeaways = [
 ] as const;
 
 export const SMS_CONSENT_TEXT =
-  "By checking this box, I consent to receive marketing and promotional messages from Vendingpreneurs. Frequency may vary. Message & data rates may apply. Text HELP for assistance, reply STOP to opt out.";
+  "I agree Vendingpreneurs may call and text me at this number with webinar reminders and marketing, including automated and AI-voice calls. Not a condition of purchase. Msg frequency varies; msg & data rates may apply. Reply STOP to opt out, HELP for help.";
 
 export const hostCopy = {
   eyebrow: "Your host, Anthony Kolodziej",
