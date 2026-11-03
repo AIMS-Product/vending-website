@@ -90,7 +90,7 @@ export const POPUPS: Popup[] = [
     eyebrow: null,
     headline: "Get the free vending business roadmap",
     body: "A step-by-step launch checklist covering machines, locations, and your first 90 days.",
-    primaryCta: { label: "Grab the roadmap", href: "/resources" },
+    primaryCta: { label: "Grab the roadmap", href: "/resources/roadmap" },
     secondaryCta: null,
     featuredValue: null,
     offerCode: null,

@@ -33,6 +33,7 @@ export const footerColumns: ReadonlyArray<{
       { label: "Home", href: "/" },
       { label: "About", href: "/about" },
       { label: "Resources", href: "/news" },
+      { label: "Vending Guides", href: "/resources" },
     ],
   },
   {
