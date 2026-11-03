@@ -95,9 +95,7 @@ describe("buildPeopleByChannel", () => {
     });
     expect(row).toMatchObject({ qualified: 1, won: 1 });
     expect(row.shows.Showed).toBe(1);
-    expect(row.people[0].ad.note).toBe(
-      "No site form. Close says: Webinar Oct 6",
-    );
+    expect(row.people[0].ad.note).toBe("Close says: Webinar Oct 6");
     expect(row.people[0].closeStatus).toBe("Closed / Won");
   });
 });

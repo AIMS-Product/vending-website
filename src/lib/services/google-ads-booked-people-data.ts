@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   buildBookedPeople,
   type AdDayRow,
+  type ContactFactsRow,
   type BookedPeople,
   type FunnelRow,
   type SubmissionRow,
@@ -49,9 +50,10 @@ export async function readPeopleSources(
   const db = createAdminClient();
   const submissions: SubmissionRow[] = [];
   const funnel: FunnelRow[] = [];
+  const contacts: ContactFactsRow[] = [];
   for (let i = 0; i < leadIds.length; i += IN_BATCH) {
     const ids = leadIds.slice(i, i + IN_BATCH);
-    const [forms, leads] = await Promise.all([
+    const [forms, leads, facts] = await Promise.all([
       readAllPages<SubmissionRow>((a, b, count) =>
         db
           .from("lead_submissions")
@@ -68,9 +70,18 @@ export async function readPeopleSources(
           .order("lead_id")
           .range(a, b),
       ),
+      readAllPages<ContactFactsRow>((a, b, count) =>
+        db
+          .from("close_meeting_leads")
+          .select("lead_id, resource_tag, contact_utms", { count })
+          .in("lead_id", ids)
+          .order("lead_id")
+          .range(a, b),
+      ),
     ]);
     submissions.push(...required("site forms", forms));
     funnel.push(...required("Close leads", leads));
+    contacts.push(...required("Close contact tags", facts));
   }
 
   // The google_ads_* views are not in the generated types.
@@ -105,6 +116,7 @@ export async function readPeopleSources(
   return {
     submissions,
     funnel,
+    contacts,
     adDays: required("ads", adDays),
     campaignNames: new Map(
       required("campaigns", campaignDays).flatMap((r) =>
