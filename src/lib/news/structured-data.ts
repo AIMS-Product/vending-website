@@ -70,6 +70,7 @@ export type ArticlePost = {
   excerpt: string | null;
   cover_url: string | null;
   published_at: string | null;
+  updated_at?: string | null;
 };
 
 /**
@@ -85,6 +86,11 @@ export function newsArticleStructuredData(post: ArticlePost) {
     "@id": `${url}#article`,
     headline: post.title,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    author: {
+      "@type": "Organization",
+      "@id": absoluteUrl("/#organization"),
+      name: siteName,
+    },
     publisher: {
       "@type": "Organization",
       "@id": absoluteUrl("/#organization"),
@@ -93,6 +99,9 @@ export function newsArticleStructuredData(post: ArticlePost) {
     ...(post.excerpt ? { description: post.excerpt } : {}),
     ...(post.published_at
       ? { datePublished: new Date(post.published_at).toISOString() }
+      : {}),
+    ...(post.updated_at
+      ? { dateModified: new Date(post.updated_at).toISOString() }
       : {}),
     ...(post.cover_url ? { image: [absoluteUrl(post.cover_url)] } : {}),
   };

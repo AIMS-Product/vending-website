@@ -75,7 +75,10 @@ describe("isUnknownSingleSegmentPublicPath", () => {
   it("flags dead single-segment paths", () => {
     expect(isUnknownSingleSegmentPublicPath("/zzz-does-not-exist")).toBe(true);
     expect(isUnknownSingleSegmentPublicPath("/booking")).toBe(true);
-    expect(isUnknownSingleSegmentPublicPath("/resources")).toBe(true);
+  });
+
+  it("treats the /resources hub as a real page", () => {
+    expect(isUnknownSingleSegmentPublicPath("/resources")).toBe(false);
   });
 
   it("ignores multi-segment paths and the root", () => {
