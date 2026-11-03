@@ -23,7 +23,7 @@ export const revalidate = 60;
 
 const TITLE = "Vending Machine Success Stories";
 const DESCRIPTION =
-  "Vending machine success stories from Vendingpreneurs members who went from zero experience to a working route — video stories and written testimonials in their own words.";
+  "Vending machine success stories from members who went from zero experience to a working route, in their own words.";
 
 export const metadata: Metadata = {
   title: TITLE,

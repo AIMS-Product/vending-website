@@ -20,7 +20,9 @@ export async function generateBuilderPageMetadata(
   const title = normalizeBrandedPageTitle(page.seo_title ?? page.title);
 
   return {
-    title,
+    // Absolute: seo_title is written to fit search results on its own, and the
+    // " | Vendingpreneurs" suffix pushed most of them past 60 characters.
+    title: { absolute: title },
     description: page.meta_description ?? undefined,
     robots: page.noindex ? { index: false, follow: false } : undefined,
     alternates: {

@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/news";
 import { listResourceGuides } from "@/lib/services/seo-page-public";
 import { pickRelatedReading } from "@/lib/news/related-reading";
+import { newsSeoMeta } from "@/lib/news/seo-meta";
 import { renderMarkdown } from "@/lib/markdown";
 import { jsonLdHtml } from "@/lib/json-ld";
 import {
@@ -40,15 +41,19 @@ export async function generateMetadata({
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
+  const seo = newsSeoMeta(post.slug);
+  const title = seo?.title ?? post.title;
+  const description = seo?.description ?? post.excerpt ?? undefined;
+
   return {
-    title: post.title,
-    description: post.excerpt ?? undefined,
+    title: { absolute: title },
+    description,
     alternates: {
       canonical: `/news/${post.slug}`,
     },
     openGraph: {
-      title: post.title,
-      description: post.excerpt ?? undefined,
+      title,
+      description,
       url: `/news/${post.slug}`,
       images: post.cover_url ? [post.cover_url] : [defaultOgImage],
       type: "article",
@@ -66,7 +71,7 @@ export default async function NewsArticlePage({
   const post = await getPublishedPost(slug);
   if (!post) notFound();
   const [html, posts, guides] = await Promise.all([
-    renderMarkdown(post.body),
+    renderMarkdown(post.body, { gfm: true }),
     listPublishedPosts({ limit: 30 }),
     listResourceGuides(),
   ]);

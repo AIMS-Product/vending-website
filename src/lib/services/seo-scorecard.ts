@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isMissingTable } from "@/lib/seo/db";
 import { addDays, sum, window, type DayRow } from "@/lib/seo/triggers";
+import { isOrganicSearchLead } from "@/lib/seo/organic-lead";
+import { isInternalLead } from "@/lib/services/admin-analytics-internal";
 import { readAllPages } from "@/lib/services/paged-read";
 import type { Database } from "@/types/database";
 
@@ -12,6 +14,14 @@ import type { Database } from "@/types/database";
  */
 
 type Client = Pick<SupabaseClient<Database>, "from">;
+
+type OrganicLeadRow = {
+  email: string | null;
+  full_name: string | null;
+  referrer: string | null;
+  utm_source: string | null;
+  call_booked_at: string | null;
+};
 
 export type ScorecardMetric =
   | "nonbrand_impressions_7d"
@@ -35,6 +45,7 @@ export type ScorecardMetric =
   | "indexed_urls"
   | "ga4_organic_sessions_28d"
   | "ga4_organic_key_events_28d"
+  | "organic_leads_28d"
   | "organic_booked_calls_28d";
 
 export type MetricValues = Partial<Record<ScorecardMetric, number>>;
@@ -92,10 +103,16 @@ export const SCORECARD: ScorecardRow[] = [
     note: "Now needs URL Inspection: run scripts/seo-day0.mjs --day <today>",
   },
   {
+    metric: "organic_leads_28d",
+    label: "Organic leads, 28 days",
+    targets: null,
+    note: "Search-engine referrer, no UTM tags. Undercounts: browsers can drop the referrer",
+  },
+  {
     metric: "organic_booked_calls_28d",
     label: "Organic booked calls, 28 days",
     targets: null,
-    note: "Needs the /booking-seo variant (open technical task)",
+    note: "Those leads with a booked first call",
   },
 ];
 
@@ -188,7 +205,7 @@ export async function readScorecardMetrics(
   const brandImpr = add(w28.from, (d) => d.brand_impressions);
   const brandClicks = add(w28.from, (d) => d.brand_clicks);
 
-  const [pages, queries, snaps, live] = await Promise.all([
+  const [pages, queries, snaps, live, leads] = await Promise.all([
     readAllPages<{ page: string; impressions: number }>((from, to, count) =>
       client
         .from("seo_gsc_page_daily")
@@ -233,11 +250,28 @@ export async function readScorecardMetrics(
       .select("route_path", { count: "exact", head: true })
       .eq("status", "published")
       .like("route_path", "/resources/%"),
+    readAllPages<OrganicLeadRow>((from, to, count) =>
+      client
+        .from("lead_submissions")
+        .select("email, full_name, referrer, utm_source, call_booked_at", {
+          count,
+        })
+        .gte("created_at", w28.from)
+        .is("utm_source", null)
+        .not("referrer", "is", null)
+        .order("created_at")
+        .range(from, to),
+    ),
   ]);
   check("Search Console pages", pages.error);
   check("Search Console queries", queries.error);
   check("rank snapshots", snaps.error);
   check("published /resources pages", live.error);
+  check("organic leads", leads.error);
+  const organicLeads = leads.rows.filter(
+    (lead) =>
+      isOrganicSearchLead(lead) && !isInternalLead(lead.email, lead.full_name),
+  );
 
   return {
     asOf,
@@ -262,6 +296,10 @@ export async function readScorecardMetrics(
       ),
       ...rankCounts(snaps.rows),
       resources_live: live.count ?? 0,
+      organic_leads_28d: organicLeads.length,
+      organic_booked_calls_28d: organicLeads.filter(
+        (lead) => lead.call_booked_at,
+      ).length,
     },
   };
 }
