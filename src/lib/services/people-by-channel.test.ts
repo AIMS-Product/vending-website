@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Decision } from "@/lib/booked-calls-v2/engine";
-import { buildOutsideScope, buildPeopleByChannel } from "./people-by-channel";
+import type { BookedPerson } from "./google-ads-booked-people";
+import {
+  buildOutsideScope,
+  buildPeopleByChannel,
+  notLoggedByHost,
+} from "./people-by-channel";
 
 const decision = (over: Partial<Decision>): Decision =>
   ({
@@ -124,5 +129,28 @@ describe("buildOutsideScope", () => {
     expect(buildOutsideScope(inputs).map((p) => [p.leadId, p.channel])).toEqual(
       [["2", "YouTube"]],
     );
+  });
+});
+
+describe("notLoggedByHost", () => {
+  const person = (host: string | null, show: BookedPerson["show"]) =>
+    ({ host, show }) as BookedPerson;
+
+  it("counts held calls per host, worst first, leaving out upcoming calls", () => {
+    expect(
+      notLoggedByHost([
+        person("Ana", "Not logged"),
+        person("Ana", "Showed"),
+        person("Ana", "Upcoming"),
+        person("Ben", "Not logged"),
+        person("Ben", "Not logged"),
+        person("Cal", "Showed"),
+        person(null, "Not logged"),
+      ]),
+    ).toEqual([
+      { host: "Ben", held: 2, notLogged: 2 },
+      { host: "Ana", held: 2, notLogged: 1 },
+      { host: "No host on the meeting", held: 1, notLogged: 1 },
+    ]);
   });
 });

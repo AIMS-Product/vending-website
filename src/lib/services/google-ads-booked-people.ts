@@ -47,6 +47,8 @@ export type BookedPerson = {
   bookedBy: string | null;
   /** The named setter on a Lane 2 or Social DMs booking. */
   setter: string | null;
+  /** The Close user who holds the meeting, who logs its outcome. */
+  host: string | null;
   /** Dom's source for the booking; null when the person is not counted. */
   channel: string | null;
   show: ShowStatus;
@@ -291,6 +293,7 @@ export function personBuilder(input: PeopleInputs) {
       callDay: meeting?.startsAt ? pacificDay(meeting.startsAt) : null,
       bookedBy: decision?.bookedBy ?? null,
       setter: decision?.mappedSetter ?? null,
+      host: decision?.caller ?? null,
       channel:
         decision?.disposition === "counted"
           ? (decision.origin.source ?? UNKNOWN_CHANNEL)
@@ -346,6 +349,7 @@ export function buildBookedPeople(
         callDay: null,
         bookedBy: null,
         setter: null,
+        host: null,
         channel: null,
         show: "Not logged",
         capital: capitalOf(lead.qualification_summary),

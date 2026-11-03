@@ -4,6 +4,7 @@ import { PeopleTable } from "@/components/admin/GoogleAdsBookedPeople";
 import { formatCount } from "@/lib/admin/format-number";
 import type { AdminAnalyticsRangeKey } from "@/lib/services/admin-analytics-range";
 import {
+  notLoggedByHost,
   summarizeChannel,
   type ChannelPeople,
 } from "@/lib/services/people-by-channel";
@@ -100,6 +101,7 @@ export async function PeopleByChannel({
     ? (read.channels.find((c) => c.channel === channel) ??
       summarizeChannel(channel, []))
     : total;
+  const notLogged = notLoggedByHost(everyone);
   return (
     <div className="grid grid-cols-[minmax(0,1fr)] gap-5">
       <section className={adminCardClass} aria-label={title}>
@@ -172,6 +174,45 @@ export async function PeopleByChannel({
             showChannel={!channel}
           />
         )}
+        {notLogged.length ? (
+          <details className="mt-5">
+            <summary className={`${adminEyebrowClass} cursor-pointer`}>
+              Calls with no show or no-show logged, by who held them (
+              {formatCount(
+                notLogged.reduce((sum, row) => sum + row.notLogged, 0),
+              )}
+              )
+            </summary>
+            <table className="mt-3 w-full max-w-md text-[0.8125rem]">
+              <thead>
+                <tr
+                  className={`border-ui-line border-b text-left ${adminEyebrowClass}`}
+                >
+                  <th className="py-2 pr-3 font-semibold">Held by</th>
+                  <th className="py-2 pr-3 text-right font-semibold">
+                    Not logged
+                  </th>
+                  <th className="py-2 pr-3 text-right font-semibold">
+                    Calls held
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-ui-line divide-y">
+                {notLogged.map((row) => (
+                  <tr key={row.host}>
+                    <td className="py-2 pr-3">{row.host}</td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      {formatCount(row.notLogged)}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums">
+                      {formatCount(row.held)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+        ) : null}
         {read.outsideScope.length ? (
           <details className="mt-5">
             <summary className={`${adminEyebrowClass} cursor-pointer`}>
