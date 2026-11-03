@@ -4,12 +4,17 @@ import {
   INTAKE_FIELD_IDS,
   readContactField,
   registerWebinarContact,
+  type WebinarRegistration,
   saveWebinarIntake,
   SITE_REGISTRATION_TAG,
   SMS_CONSENT_FIELD_ID,
   UTM_FIELD_IDS,
+  webinarCallTime,
   webinarEventTag,
   WebinarRegistrationError,
+  AI_CALL_CONSENT_FIELD_ID,
+  AI_CALL_CONSENT_VERSION,
+  AI_CALL_WEBINAR_TIME_FIELD_ID,
 } from "./webinar-registration";
 
 const person = {
@@ -672,5 +677,82 @@ describe("eventTagSpellings", () => {
     ]);
     expect(eventTagSpellings("webinar-sept8")).toContain("webinar-8sept");
     expect(eventTagSpellings("odd tag")).toEqual(["odd tag"]);
+  });
+});
+
+describe("webinarCallTime", () => {
+  it("reads naturally on a call and drops the year", () => {
+    expect(webinarCallTime("November 10, 2026 at 7:30 PM CST")).toBe(
+      "November 10 at 7:30 PM Central",
+    );
+    expect(webinarCallTime("October 6, 2026 at 7:30 PM CDT")).toBe(
+      "October 6 at 7:30 PM Central",
+    );
+  });
+});
+
+describe("registerWebinarContact: AI call consent", () => {
+  const callable = { ...person, webinarTime: "November 10 at 7:30 PM Central" };
+  const fieldIds = (calls: Call[]) =>
+    (upsertBody(calls) as { customFields: { id: string }[] }).customFields.map(
+      (field) => field.id,
+    );
+  const stamped = async (
+    routes: Parameters<typeof ghl>[0],
+    who: WebinarRegistration = callable,
+  ) => {
+    const { calls, fetchImpl } = ghl(routes);
+    await registerWebinarContact(who, { ...auth, fetchImpl });
+    return { calls, ids: fieldIds(calls) };
+  };
+
+  it("stamps consent with its wording version and the room on a new contact", async () => {
+    const { calls } = await stamped({});
+    const fields = (upsertBody(calls) as { customFields: unknown[] })
+      .customFields;
+    expect(fields).toContainEqual({
+      id: AI_CALL_CONSENT_FIELD_ID,
+      field_value: `Yes, vendingpreneurs.com/masterclass 2026-10-01T15:00:00.000Z ${AI_CALL_CONSENT_VERSION}`,
+    });
+    expect(fields).toContainEqual({
+      id: AI_CALL_WEBINAR_TIME_FIELD_ID,
+      field_value: "November 10 at 7:30 PM Central",
+    });
+  });
+
+  it.each([
+    ["the same number, formatted differently", "(541) 555-0123"],
+    ["no number yet", ""],
+  ])("stamps a returning contact with %s", async (_label, phone) => {
+    const { ids } = await stamped({
+      duplicate: { id: "c1", email: "mary@example.com", phone },
+    });
+    expect(ids).toContain(AI_CALL_CONSENT_FIELD_ID);
+  });
+
+  // The form never rewrites a known contact's phone, so the box ticked here
+  // says nothing about the number already on file: that person never agreed.
+  it("never stamps a contact whose stored number differs from the submitted one", async () => {
+    const { ids } = await stamped({
+      duplicate: { id: "c1", email: "mary@example.com", phone: "+15415550000" },
+    });
+    expect(ids).not.toContain(AI_CALL_CONSENT_FIELD_ID);
+    expect(ids).not.toContain(AI_CALL_WEBINAR_TIME_FIELD_ID);
+  });
+
+  it("never stamps a new contact registered without the number", async () => {
+    const { ids } = await stamped({
+      duplicateByPhone: { id: "owner", email: "other@example.com" },
+    });
+    expect(ids).not.toContain(AI_CALL_CONSENT_FIELD_ID);
+  });
+
+  it.each([
+    ["null", { ...person, webinarTime: null }],
+    ["missing", person],
+  ])("never stamps when the room time is %s", async (_label, who) => {
+    const { ids } = await stamped({}, who);
+    expect(ids).not.toContain(AI_CALL_CONSENT_FIELD_ID);
+    expect(ids).not.toContain(AI_CALL_WEBINAR_TIME_FIELD_ID);
   });
 });

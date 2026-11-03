@@ -42,6 +42,13 @@ in about one, YouTube in three — so the windows end before that).
 | Month over month: revenue  | the tab's own loader, last full month    | won deal value on those same Close leads          | 3%           |
 | Month over month: leads    | the grid's Leads cells, per channel      | `lead_submissions`, per channel                   | exact        |
 | Company MTD (5 checks)     | Months page's company view, month so far | the company MTD dashboard's `data-YYYY-MM.json`   | 1% or 1 call |
+| Dom's MTD V2 (3 checks)    | our vendored rules, roster and V2 count  | his `v2/rules.json`, `aggregates.py`, `v2/archives/data-YYYY-MM.json` | exact, exact, 1% or 1 call |
+
+**Dom's MTD V2** (`company-mtd-v2-rules|scope|booked`) fails the night his
+published rules file or VP closer roster stops matching our copy. Fix: copy the
+file into `src/lib/booked-calls-v2`, update `VP_BOOKING_CLOSERS` if needed, and
+prove it with `scripts/booked-calls-v2-validate.ts`. The count is skipped when
+his last build is over two hours old, which is normal overnight.
 
 **Company MTD** (`company-mtd-booked|showed|qualified|won|revenue`) compares
 our Close mirror, cut to MTD's Lane 1 roster and exclusions

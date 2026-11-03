@@ -91,6 +91,18 @@ describe("newsArticleStructuredData", () => {
     );
   });
 
+  it("names an author and the last edit date", () => {
+    expect(
+      newsArticleStructuredData({
+        ...post,
+        updated_at: "2026-11-02T00:00:00.000Z",
+      }),
+    ).toMatchObject({
+      author: { "@type": "Organization", name: "Vendingpreneurs" },
+      dateModified: "2026-11-02T00:00:00.000Z",
+    });
+  });
+
   it("omits optional fields instead of emitting them empty", () => {
     const graph = newsArticleStructuredData({
       ...post,
