@@ -69,6 +69,11 @@ export function eventTagSpellings(tag: string): string[] {
   return [tag, `${month}${day}-webinar`, `webinar-${day}${month}`];
 }
 
+/** "November 10, 2026 at 7:30 PM CST" -> "November 10 at 7:30 PM Central". */
+export function webinarCallTime(label: string): string {
+  return label.replace(/,\s*\d{4}/, "").replace(/\bC[DS]T\b/, "Central");
+}
+
 export type WebinarRegistration = {
   firstName: string;
   lastName: string;
@@ -77,6 +82,8 @@ export type WebinarRegistration = {
   attribution: Record<string, string>;
   /** This room's GHL tag, or null when the date could not be read. */
   eventTag: string | null;
+  /** The room as spoken on the call. Without it, this contact is never called. */
+  webinarTime?: string | null;
 };
 
 export type WebinarRegistrationStep =
@@ -104,6 +111,15 @@ export class WebinarRegistrationError extends Error {
 
 /** "SMS Consent Marketing" (TEXT). The GHL form keeps consent on the submission only. */
 export const SMS_CONSENT_FIELD_ID = "7UnFD4LUSeTwW9QlVrqh";
+
+/**
+ * "AI Call Consent" and "AI Call Webinar Time" (TEXT). The Retell campaign only
+ * enrolls contacts carrying the consent field, so a form without this wording
+ * can never lead to a call. Bump the version with SMS_CONSENT_TEXT.
+ */
+export const AI_CALL_CONSENT_FIELD_ID = "e5krbBb59PQDnbAjTDBw";
+export const AI_CALL_WEBINAR_TIME_FIELD_ID = "EK2rSMB5MnDwloDxO3fL";
+export const AI_CALL_CONSENT_VERSION = "ai-call-v1-2026-11-03";
 
 const TIMEOUT_MS = 8000;
 const ATTEMPTS = 3;
@@ -285,6 +301,12 @@ export async function registerWebinarContact(
         value && (!existing || blank(existing[key as keyof typeof profile])),
     ),
   );
+  // The form never rewrites a known contact's phone, so its checkbox only speaks
+  // for the number that ends up on the contact being the submitted one.
+  const phoneIsSubmitted = existing
+    ? blank(existing.phone) ||
+      phoneDigits(existing.phone) === phoneDigits(person.phone)
+    : !phoneOwner;
   const customFields = [
     ...Object.entries(UTM_FIELD_IDS).flatMap(([key, id]) => {
       const value = cell(person.attribution[key] ?? "");
@@ -294,6 +316,18 @@ export async function registerWebinarContact(
       id: SMS_CONSENT_FIELD_ID,
       field_value: `Yes, vendingpreneurs.com/masterclass ${now().toISOString()}`,
     },
+    ...(person.webinarTime && phoneIsSubmitted
+      ? [
+          {
+            id: AI_CALL_CONSENT_FIELD_ID,
+            field_value: `Yes, vendingpreneurs.com/masterclass ${now().toISOString()} ${AI_CALL_CONSENT_VERSION}`,
+          },
+          {
+            id: AI_CALL_WEBINAR_TIME_FIELD_ID,
+            field_value: person.webinarTime,
+          },
+        ]
+      : []),
   ];
   const saved = upsertResponse.safeParse(
     await call("upsert", "POST", "/contacts/upsert", {
