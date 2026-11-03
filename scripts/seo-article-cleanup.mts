@@ -1,6 +1,9 @@
 /**
  * One-off, Step 2 of the 2026-11-02 SEO audit:
  *  - removes unverified Eugene/Oregon content from published news posts
+ *  - removes the managed revenue-share offer to property owners, which is not
+ *    something Vendingpreneurs sells (the operator term stays: guides still
+ *    explain paying a location a share)
  *  - adds an at-a-glance table to the income article, using its own figures
  *  - relabels the cost guide's flattened table as readable list items
  *
@@ -18,11 +21,18 @@ import { stripLocalContent } from "../src/lib/news/strip-local-content";
 type Swap = readonly [string, string];
 
 const BODY_SWAPS: Readonly<Record<string, readonly Swap[]>> = {
+  "expected-costs-earnings-roi-vending-machines-2025": [
+    ["effectively (Source Name).", "effectively."],
+  ],
   "vending-machine-business-passive-income": [
     ["in Eugene's busy offices", "in busy offices"],
     [
-      "## Getting Started with Vending Preneurs in Eugene and Beyond",
-      "## Getting Started with Vending Preneurs",
+      "This article exposes those myths and reveals how Vending Preneurs' revenue-sharing model delivers true hands-off profits with no upfront costs.",
+      "This article exposes those myths and explains what the work really involves.",
+    ],
+    [
+      "However, for property owners who partner with Vending Preneurs, the answer is yes. By leveraging our fully managed service, you gain the benefits of on-site refreshments and revenue sharing without lifting a finger. That is the difference between a side hustle and a true amenity.",
+      "Treated as a real business, with strong locations, smart tech, and good systems, vending can earn well and take less of your time as you scale. If that appeals, start with [how to start a vending machine business](/resources/how-to-start-a-vending-machine-business).",
     ],
   ],
   "top-5-questions-vending-entrepreneurship-program": [
@@ -49,7 +59,10 @@ const BODY_SWAPS: Readonly<Record<string, readonly Swap[]>> = {
 
 const EXCERPT_SWAPS: Readonly<Record<string, readonly Swap[]>> = {
   "vending-machine-business-passive-income": [
-    ["property owners in Eugene true", "property owners true"],
+    [
+      " Vending Preneurs offers property owners in Eugene true hands-off profits via revenue-sharing, zero upfront costs, and full management. Gain tenant satisfaction and steady income without effort.",
+      "",
+    ],
   ],
   "vending-business-taxes-us-beginners-guide": [
     [" Oregon has no state sales tax.", ""],
@@ -77,6 +90,45 @@ const INCOME_TABLE = `
 | Single machine, average location | $100 to $500 a month in profit after expenses |
 | Snack or drink machine, high-traffic location | About $300 a week in revenue, over $1,200 a month |
 | Healthy cold food machine | $5,000 to $12,000 upfront, $6 to $12 average sale, 35% to 50% margin |`;
+
+// [slug, first text to remove, text it stops before; null means end of body].
+const SECTION_CUTS: ReadonlyArray<readonly [string, string, string | null]> = [
+  [
+    "vending-machine-business-passive-income",
+    "### Partner with Managed Services for Scalability",
+    "## Common Mistakes New Vending Operators Make",
+  ],
+  [
+    "vending-machine-business-passive-income",
+    "## The Hands-Off Path: Fully Managed Vending with Vending Preneurs",
+    "## Conclusion",
+  ],
+  [
+    "vending-machine-business-passive-income",
+    "### How does Vending Preneurs revenue sharing work?",
+    null,
+  ],
+  [
+    "expected-costs-earnings-roi-vending-machines-2025",
+    "## Modern Amenities: Zero-Cost Smart Vending with Revenue Sharing",
+    "## Traditional Snack and Beverage Machines: The Industry Standard",
+  ],
+];
+
+function cutSections(slug: string, text: string) {
+  return SECTION_CUTS.filter(([cutSlug]) => cutSlug === slug).reduce(
+    (current, [, start, end]) => {
+      const from = current.indexOf(start);
+      const to = end === null ? current.length : current.indexOf(end, from);
+      if (from === -1 || to === -1) {
+        console.warn(`NOT FOUND ${slug}: section "${start}"`);
+        return current;
+      }
+      return `${current.slice(0, from)}${current.slice(to)}`;
+    },
+    text,
+  );
+}
 
 function swapAll(text: string, swaps: readonly Swap[], label: string) {
   return swaps.reduce((current, [from, to]) => {
@@ -107,7 +159,7 @@ if (error) throw new Error(`Could not read news_posts: ${error.message}`);
 let report = "";
 const postUpdates = posts.flatMap((post) => {
   let body = swapAll(
-    post.body,
+    cutSections(post.slug, post.body),
     BODY_SWAPS[post.slug] ?? [],
     `${post.slug} body`,
   );
