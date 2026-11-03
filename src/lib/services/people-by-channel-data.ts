@@ -7,13 +7,20 @@ import {
   readPeopleSources,
 } from "@/lib/services/google-ads-booked-people-data";
 import { googleAdsWindow } from "@/lib/services/google-ads-dashboard";
+import type { BookedPerson } from "@/lib/services/google-ads-booked-people";
 import {
+  buildOutsideScope,
   buildPeopleByChannel,
   type ChannelPeople,
 } from "@/lib/services/people-by-channel";
 
 export type PeopleByChannelRead =
-  | { ok: true; ruleVersion: string; channels: ChannelPeople[] }
+  | {
+      ok: true;
+      ruleVersion: string;
+      channels: ChannelPeople[];
+      outsideScope: BookedPerson[];
+    }
   | { ok: false; error: string };
 
 export async function getPeopleByChannel(
@@ -35,19 +42,25 @@ export async function getPeopleByChannel(
     const leadIds = [
       ...new Set(
         report.decisions
-          .filter((d) => d.disposition === "counted")
+          .filter(
+            (d) =>
+              d.disposition === "counted" ||
+              d.reason === "outside_booking_scope",
+          )
           .map((d) => d.leadId),
       ),
     ];
+    const inputs = {
+      decisions: report.decisions,
+      meetings: report.meetings,
+      ...(await readPeopleSources(leadIds, start)),
+      now,
+    };
     return {
       ok: true,
       ruleVersion: report.ruleVersion,
-      channels: buildPeopleByChannel({
-        decisions: report.decisions,
-        meetings: report.meetings,
-        ...(await readPeopleSources(leadIds, start)),
-        now,
-      }),
+      channels: buildPeopleByChannel(inputs),
+      outsideScope: buildOutsideScope(inputs),
     };
   } catch (error) {
     console.error("people by channel: read failed", error);

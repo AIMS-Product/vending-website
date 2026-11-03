@@ -2,6 +2,7 @@ import "server-only";
 
 import { pacificToday } from "@/lib/admin/format-time";
 import {
+  applyBookingScope,
   evaluate,
   summarize,
   type Decision,
@@ -150,12 +151,32 @@ export async function getBookedCallsV2(
       ok: false,
       error: "Close meeting history is incomplete; totals withheld.",
     };
-  const decisions = evaluate({
+  const allOwners = evaluate({
     meetings: history.map(toMeeting),
     leads,
     from: window.from,
     to: window.to,
   });
+  // Owners come from the first-call mirror; a lead missing from it reads as no
+  // owner. close_meeting_leads does not carry the field.
+  const owners = new Map<string, string | null>();
+  const countedLeads = [
+    ...new Set(
+      allOwners.filter((d) => d.disposition === "counted").map((d) => d.leadId),
+    ),
+  ];
+  for (let i = 0; i < countedLeads.length; i += IN_BATCH) {
+    const { data, error } = await db
+      .from("close_lead_funnel")
+      .select("lead_id,lead_owner")
+      .in("lead_id", countedLeads.slice(i, i + IN_BATCH));
+    if (error) {
+      console.error("booked calls v2: lead owner read failed", error);
+      return { ok: false, error: "Could not read lead owners." };
+    }
+    for (const row of data ?? []) owners.set(row.lead_id, row.lead_owner);
+  }
+  const decisions = applyBookingScope(allOwners, owners);
   const syncedAt = candidates.rows.reduce<string | null>(
     (latest, m) => (!latest || m.synced_at > latest ? m.synced_at : latest),
     null,

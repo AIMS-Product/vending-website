@@ -15,6 +15,7 @@ import {
   PEARL_SOCIAL_UTM_SOURCES,
   TIME_ZONE,
   TITLE_MAP,
+  VP_BOOKING_CLOSERS,
   type BookedBy,
 } from "@/lib/booked-calls-v2/rules";
 import {
@@ -53,6 +54,7 @@ export type Reason =
   | "follow_up_title"
   | "unapproved_title"
   | "within_episode"
+  | "outside_booking_scope"
   | "not_sales_call"
   | "source_unavailable"
   | "unknown_status"
@@ -264,6 +266,25 @@ function decideLead(
     }
   }
   return out;
+}
+
+/**
+ * Dom's booking scope, applied after the full-history decisions so an
+ * out-of-scope meeting still moved the repeat clock. A lead with no known owner
+ * is out, as it is for him; only counted credits can change.
+ */
+export function applyBookingScope(
+  decisions: readonly Decision[],
+  ownerByLead: ReadonlyMap<string, string | null>,
+): Decision[] {
+  return decisions.map((d) =>
+    d.disposition === "counted" &&
+    !VP_BOOKING_CLOSERS.has(
+      (ownerByLead.get(d.leadId) ?? "").trim().toLowerCase(),
+    )
+      ? { ...d, disposition: "excluded", reason: "outside_booking_scope" }
+      : d,
+  );
 }
 
 export type V2Summary = {

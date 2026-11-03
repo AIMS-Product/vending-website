@@ -97,6 +97,7 @@ const REASONS: Partial<Record<Reason, string>> = {
   follow_up_title: "Follow-up call",
   unapproved_title: "Call type not counted",
   within_episode: "Repeat within 30 days",
+  outside_booking_scope: "Lead owner is not a VP closer",
   not_sales_call: "Not a sales call",
   source_unavailable: "Source unavailable",
 };
