@@ -46,7 +46,7 @@ export function ReplayVideoPlayer({
   title: string;
   loadOn?: "near" | "click";
   bare?: boolean;
-  /** Overrides the video's own poster (the hero's host still). */
+  /** Overrides the video's own poster (the hero's host still), Vidalytics or YouTube. */
   poster?: string;
   /** Extra classes on the Vidalytics root; reaches the poster `img` child. */
   posterClassName?: string;
@@ -80,7 +80,7 @@ export function ReplayVideoPlayer({
       embed={embed}
       title={title}
       className="aspect-video w-full"
-      thumbnailUrl={youtubePoster(video.id)}
+      thumbnailUrl={poster ?? youtubePoster(video.id)}
       variant={bare ? "card" : "hero"}
     />
   );
