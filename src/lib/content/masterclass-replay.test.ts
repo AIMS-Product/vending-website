@@ -28,11 +28,8 @@ describe("masterclass replay content", () => {
     }
   });
 
-  it("uses the Oct 6 Vidalytics replay on every replay page", () => {
-    expect(REPLAY_MAIN_VIDEO).toEqual({
-      kind: "vidalytics",
-      embedId: "kCZPjIsIjBmr7Z36",
-    });
+  it("uses the Nov 3 YouTube replay on every replay page", () => {
+    expect(REPLAY_MAIN_VIDEO).toEqual({ kind: "youtube", id: "8P0M2I2WIuw" });
   });
 
   it("matches the GHL booking destination per variant", () => {
@@ -119,7 +116,9 @@ describe("masterclass replay content", () => {
   it("plays every testimonial from YouTube, so plays reach YouTube history", () => {
     for (const key of KEYS) {
       expect(
-        replayVariants[key].testimonialVideos.every((v) => v.kind === "youtube"),
+        replayVariants[key].testimonialVideos.every(
+          (v) => v.kind === "youtube",
+        ),
       ).toBe(true);
     }
   });
