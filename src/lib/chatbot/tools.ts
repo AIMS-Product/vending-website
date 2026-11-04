@@ -433,17 +433,22 @@ export const DIRECT_BOOKING_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] =
       function: {
         name: "propose_call_time",
         description:
-          "Offer the visitor ONE specific open time so you can book it for them. Use it when they name a day or time, or say 'just book me'. Pass the exact ISO start time from get_available_times. It does NOT book: it shows the proposed time in the chat; then ask them to confirm. If you lack their first name or email, ask in the same message.",
+          "Offer the visitor ONE specific open time so you can book it for them. Use it whenever they name a day or time, or say 'just book me'. Pass the day and clock time exactly as get_available_times listed it, in THEIR time zone. It does NOT book: it shows the proposed time in the chat; then ask them to confirm. If you lack their first name or email, ask in the same message. Never say you are holding or locking a time without calling this.",
         parameters: {
           type: "object",
           properties: {
-            start_time: {
+            day: {
               type: "string",
               description:
-                "Exact ISO start time copied from get_available_times.",
+                "Calendar day in the visitor's time zone, YYYY-MM-DD.",
+            },
+            time: {
+              type: "string",
+              description:
+                "Start time in the visitor's time zone, 24-hour HH:MM (1:15 pm = 13:15).",
             },
           },
-          required: ["start_time"],
+          required: ["day", "time"],
           additionalProperties: false,
         },
       },
@@ -453,16 +458,11 @@ export const DIRECT_BOOKING_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] =
       function: {
         name: "book_call",
         description:
-          "Book the call for real, on the time you proposed with propose_call_time. Call it ONLY after the visitor has clearly said yes to that exact time in a later message, and you have their first name and email. Never call it in the same turn as propose_call_time. If they hesitate, change the time, or ask a question, do not call it.",
+          "Book the call for real, on the time you last proposed with propose_call_time. Call it ONLY after the visitor has clearly said yes to that time in a later message, and you have their first name and email. Never call it in the same turn as propose_call_time. If they want a different time, call propose_call_time with the new time instead. If they hesitate or ask a question, do not call it.",
         parameters: {
           type: "object",
-          properties: {
-            start_time: {
-              type: "string",
-              description: "The same ISO start time you proposed.",
-            },
-          },
-          required: ["start_time"],
+          properties: {},
+          required: [],
           additionalProperties: false,
         },
       },

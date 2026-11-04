@@ -65,7 +65,34 @@ const defaultDeps: BookCallDeps = {
   now: () => new Date(),
 };
 
-const argsSchema = z.object({ start_time: z.string().trim().min(10).max(40) });
+const proposeArgsSchema = z.object({
+  day: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/),
+  time: z
+    .string()
+    .trim()
+    .regex(/^\d{1,2}:\d{2}$/),
+});
+
+/** "2026-11-06" and "13:15" for an instant, in the visitor's zone. */
+export function localDayAndTime(iso: string, timeZone: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    day: `${get("year")}-${get("month")}-${get("day")}`,
+    time: `${get("hour")}:${get("minute")}`,
+  };
+}
 
 export function formatSlot(iso: string, timeZone: string): string {
   return new Intl.DateTimeFormat("en-US", {
@@ -79,13 +106,6 @@ export function formatSlot(iso: string, timeZone: string): string {
   }).format(new Date(iso));
 }
 
-function parseStart(args: unknown): number | null {
-  const parsed = argsSchema.safeParse(args);
-  if (!parsed.success) return null;
-  const ms = Date.parse(parsed.data.start_time);
-  return Number.isFinite(ms) ? ms : null;
-}
-
 function isBooked(transcript: ChatbotMessage[]): boolean {
   return transcript.some((m) => m.kind === "booking_confirmed");
 }
@@ -93,7 +113,7 @@ function isBooked(transcript: ChatbotMessage[]): boolean {
 const ALREADY_BOOKED =
   "They already have a call booked in this chat. Do not book another; answer their question.";
 const BAD_TIME =
-  "That start_time was not understood. Pass the exact ISO time from get_available_times.";
+  "That time was not understood. Pass day as YYYY-MM-DD and time as 24-hour HH:MM in the visitor's time zone, e.g. day 2026-11-06, time 13:15.";
 
 export async function proposeCallTime(
   args: unknown,
@@ -101,12 +121,19 @@ export async function proposeCallTime(
   deps: BookCallDeps = defaultDeps,
 ): Promise<BookCallOutcome> {
   if (isBooked(context.transcript)) return { result: ALREADY_BOOKED };
-  const startMs = parseStart(args);
-  if (startMs === null) return { result: BAD_TIME };
+  const parsed = proposeArgsSchema.safeParse(args);
+  if (!parsed.success) return { result: BAD_TIME };
+  const wanted = {
+    day: parsed.data.day,
+    time: parsed.data.time.padStart(5, "0"),
+  };
 
   const timeZone = safeTimeZone(context.timeZone);
   const { calendar, slots } = await deps.resolveCalendar({ timeZone });
-  const slot = slots.find((s) => Date.parse(s) === startMs);
+  const slot = slots.find((s) => {
+    const local = localDayAndTime(s, timeZone);
+    return local.day === wanted.day && local.time === wanted.time;
+  });
   if (!slot) {
     return {
       result:
@@ -124,7 +151,7 @@ export async function proposeCallTime(
     : "";
 
   return {
-    result: `Proposed ${label}; a line showing it is now in the chat. Ask them plainly to confirm that time (one short question). Do not say it is booked: it is NOT booked until they say yes and you call book_call with the same start_time.${ask}`,
+    result: `Proposed ${label}; a line showing it is now in the chat. Ask them plainly to confirm that time (one short question). Do not say it is booked: it is NOT booked until they say yes in their next message and you call book_call.${ask}`,
     message: {
       role: "assistant",
       content: `Proposed time: ${label}. Reply yes and it's booked.`,
@@ -150,21 +177,22 @@ function latestProposal(transcript: ChatbotMessage[]) {
 }
 
 export async function bookCall(
-  args: unknown,
+  _args: unknown,
   context: BookCallContext,
   deps: BookCallDeps = defaultDeps,
 ): Promise<BookCallOutcome> {
   if (isBooked(context.transcript)) return { result: ALREADY_BOOKED };
-  const startMs = parseStart(args);
-  if (startMs === null) return { result: BAD_TIME };
 
+  // Books the latest proposal only: a time the visitor changed to must be
+  // proposed (and confirmed) again first, so the model cannot drift.
   const proposal = latestProposal(context.transcript);
-  if (!proposal || Date.parse(proposal.startTime) !== startMs) {
+  if (!proposal) {
     return {
       result:
-        "Not booked: that exact time was never proposed in this chat. Call propose_call_time first and wait for their yes.",
+        "Not booked: no time has been proposed in this chat. Call propose_call_time first and wait for their yes.",
     };
   }
+  const startMs = Date.parse(proposal.startTime);
   if (!proposal.answered) {
     return {
       result:

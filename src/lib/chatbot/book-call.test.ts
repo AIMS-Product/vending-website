@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { bookCall, proposeCallTime, type BookCallDeps } from "./book-call";
+import { namesATime } from "./book-call-intent";
 import type { ChatbotMessage } from "./conversation-store";
 import { CalendlyApiError } from "@/lib/services/calendly-api";
 
@@ -60,7 +61,11 @@ const context = (transcript: ChatbotMessage[]) => ({
 describe("proposeCallTime", () => {
   it("proposes only a slot Calendly reports open", async () => {
     const { deps: d } = deps();
-    const ok = await proposeCallTime({ start_time: SLOT }, context([]), d);
+    const ok = await proposeCallTime(
+      { day: "2026-11-06", time: "14:00" },
+      context([]),
+      d,
+    );
     expect(ok.message?.kind).toBe("booking_proposed");
     expect(ok.message?.data).toEqual({
       start_time: SLOT,
@@ -69,7 +74,7 @@ describe("proposeCallTime", () => {
     expect(ok.message?.content).toContain("Friday, November 6");
 
     const closed = await proposeCallTime(
-      { start_time: "2026-11-06T23:00:00Z" },
+      { day: "2026-11-06", time: "17:00" },
       context([]),
       d,
     );
@@ -80,7 +85,7 @@ describe("proposeCallTime", () => {
   it("asks for missing contact details in the same message", async () => {
     const { deps: d } = deps();
     const out = await proposeCallTime(
-      { start_time: SLOT },
+      { day: "2026-11-06", time: "14:00" },
       { ...context([]), capturedEmail: null },
       d,
     );
@@ -91,11 +96,7 @@ describe("proposeCallTime", () => {
 describe("bookCall", () => {
   it("books the proposed slot after the visitor replied, tagged to the chat", async () => {
     const { deps: d, createInvitee, record } = deps();
-    const out = await bookCall(
-      { start_time: SLOT },
-      context([proposed, user("yes book it")]),
-      d,
-    );
+    const out = await bookCall({}, context([proposed, user("yes book it")]), d);
     expect(out.message?.kind).toBe("booking_confirmed");
     expect(createInvitee).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -113,13 +114,9 @@ describe("bookCall", () => {
     expect(record).toHaveBeenCalledOnce();
   });
 
-  it("refuses a time that was never proposed", async () => {
+  it("refuses when no time was proposed", async () => {
     const { deps: d, createInvitee } = deps();
-    const out = await bookCall(
-      { start_time: "2026-11-06T20:30:00Z" },
-      context([proposed, user("yes")]),
-      d,
-    );
+    const out = await bookCall({}, context([user("yes")]), d);
     expect(out.message).toBeUndefined();
     expect(createInvitee).not.toHaveBeenCalled();
   });
@@ -127,7 +124,7 @@ describe("bookCall", () => {
   it("refuses to book in the same turn it proposed", async () => {
     const { deps: d, createInvitee } = deps();
     const out = await bookCall(
-      { start_time: SLOT },
+      {},
       context([user("thursday 2pm?"), proposed]),
       d,
     );
@@ -138,7 +135,7 @@ describe("bookCall", () => {
   it("refuses without a name and email", async () => {
     const { deps: d, createInvitee } = deps();
     const out = await bookCall(
-      { start_time: SLOT },
+      {},
       { ...context([proposed, user("yes")]), capturedEmail: null },
       d,
     );
@@ -150,7 +147,7 @@ describe("bookCall", () => {
     const { deps: d, createInvitee } = deps();
     const booked: ChatbotMessage = { ...proposed, kind: "booking_confirmed" };
     await bookCall(
-      { start_time: SLOT },
+      {},
       context([proposed, user("yes"), booked, user("thanks")]),
       d,
     );
@@ -164,11 +161,7 @@ describe("bookCall", () => {
     const { deps: d, record } = deps({
       calendly: () => ({ createInvitee, getScheduledEvent: vi.fn() }) as never,
     });
-    const out = await bookCall(
-      { start_time: SLOT },
-      context([proposed, user("yes")]),
-      d,
-    );
+    const out = await bookCall({}, context([proposed, user("yes")]), d);
     expect(out.message).toBeUndefined();
     expect(out.result).toContain("show_booking_calendar");
     expect(record).not.toHaveBeenCalled();
@@ -181,11 +174,17 @@ describe("bookCall", () => {
     const { deps: d } = deps({
       calendly: () => ({ createInvitee, getScheduledEvent: vi.fn() }) as never,
     });
-    const out = await bookCall(
-      { start_time: SLOT },
-      context([proposed, user("yes")]),
-      d,
-    );
+    const out = await bookCall({}, context([proposed, user("yes")]), d);
     expect(out.result).toContain("just taken");
+  });
+});
+
+describe("namesATime", () => {
+  it("spots a named day or clock time, not a general question", () => {
+    expect(namesATime("2pm Friday works")).toBe(true);
+    expect(namesATime("can we do tomorrow?")).toBe(true);
+    expect(namesATime("13:15 is fine")).toBe(true);
+    expect(namesATime("how much does it cost")).toBe(false);
+    expect(namesATime("I want to book a call")).toBe(false);
   });
 });

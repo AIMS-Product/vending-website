@@ -40,6 +40,7 @@ import {
   chatbotToolDefinitions,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
+import { namesATime } from "@/lib/chatbot/book-call-intent";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
 import {
   chooseForcedTool,
@@ -286,12 +287,20 @@ export async function POST(request: Request) {
   // Never for a support or already-booked chat (triage.ts, whole chat).
   // Value-first (flagged) keeps that for an explicit booking ask and answers a
   // first cost question with the cost video instead.
-  const forceTool = chooseForcedTool({
+  const chosenTool = chooseForcedTool({
     valueFirst,
     hasSeenCalendar: promptInput.hasSeenCalendar ?? false,
     priorMessages,
     message,
   });
+  // When the chat can book itself, a visitor who names a time gets that time
+  // proposed, not a calendar forced on them.
+  const forceTool =
+    directBooking &&
+    chosenTool === "show_booking_calendar" &&
+    namesATime(message)
+      ? undefined
+      : chosenTool;
 
   const stream = createTurnStream({
     config,
