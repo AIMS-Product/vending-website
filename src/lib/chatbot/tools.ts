@@ -8,6 +8,7 @@ import {
   resolveBookingCalendar,
   safeTimeZone,
 } from "@/lib/chatbot/availability";
+import { bookCall, proposeCallTime } from "@/lib/chatbot/book-call";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
@@ -91,6 +92,8 @@ export type ChatbotToolContext = {
   timeZone?: string | null;
   /** CHATBOT_VALUE_FIRST is on for this conversation: the share_* tools run. */
   valueFirst?: boolean;
+  /** CHATBOT_DIRECT_BOOKING is on: propose_call_time and book_call run. */
+  directBooking?: boolean;
   /** show_booking_calendar declines this turn. See shouldHoldCalendar. */
   holdCalendar?: boolean;
 };
@@ -423,12 +426,58 @@ export const VALUE_FIRST_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
 ];
 
 /** The tool list for one turn. */
+export const DIRECT_BOOKING_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] =
+  [
+    {
+      type: "function",
+      function: {
+        name: "propose_call_time",
+        description:
+          "Offer the visitor ONE specific open time so you can book it for them. Use it when they name a day or time, or say 'just book me'. Pass the exact ISO start time from get_available_times. It does NOT book: it shows the proposed time in the chat; then ask them to confirm. If you lack their first name or email, ask in the same message.",
+        parameters: {
+          type: "object",
+          properties: {
+            start_time: {
+              type: "string",
+              description:
+                "Exact ISO start time copied from get_available_times.",
+            },
+          },
+          required: ["start_time"],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "book_call",
+        description:
+          "Book the call for real, on the time you proposed with propose_call_time. Call it ONLY after the visitor has clearly said yes to that exact time in a later message, and you have their first name and email. Never call it in the same turn as propose_call_time. If they hesitate, change the time, or ask a question, do not call it.",
+        parameters: {
+          type: "object",
+          properties: {
+            start_time: {
+              type: "string",
+              description: "The same ISO start time you proposed.",
+            },
+          },
+          required: ["start_time"],
+          additionalProperties: false,
+        },
+      },
+    },
+  ];
+
 export function chatbotToolDefinitions(
   valueFirst: boolean,
+  directBooking = false,
 ): readonly ChatbotToolDefinition[] {
-  return valueFirst
-    ? [...CHATBOT_TOOL_DEFINITIONS, ...VALUE_FIRST_TOOL_DEFINITIONS]
-    : CHATBOT_TOOL_DEFINITIONS;
+  return [
+    ...CHATBOT_TOOL_DEFINITIONS,
+    ...(valueFirst ? VALUE_FIRST_TOOL_DEFINITIONS : []),
+    ...(directBooking ? DIRECT_BOOKING_TOOL_DEFINITIONS : []),
+  ];
 }
 
 /**
@@ -471,6 +520,14 @@ export async function runChatbotTool(
       case "share_resource":
         return context.valueFirst
           ? shareResource(args, context)
+          : unknownTool(name);
+      case "propose_call_time":
+        return context.directBooking
+          ? await proposeCallTime(args, context)
+          : unknownTool(name);
+      case "book_call":
+        return context.directBooking
+          ? await bookCall(args, context)
           : unknownTool(name);
       default:
         return unknownTool(name);

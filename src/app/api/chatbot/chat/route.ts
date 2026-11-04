@@ -207,8 +207,10 @@ export async function POST(request: Request) {
     conversation.id,
     envConfig.CHATBOT_VALUE_FIRST,
   );
+  const directBooking = envConfig.CHATBOT_DIRECT_BOOKING === "on";
   const promptInput: ChatbotPromptInput = {
     valueFirst,
+    directBooking,
     personaName: config.personaName,
     knowledgeBase: config.knowledgeBase,
     userTurnCount,
@@ -264,6 +266,7 @@ export async function POST(request: Request) {
     client,
     timeZone: timeZone ?? null,
     valueFirst,
+    directBooking,
     holdCalendar: shouldHoldCalendar({
       valueFirst,
       visitorMessages: historyForModel
@@ -297,7 +300,7 @@ export async function POST(request: Request) {
     captured,
     toolContext,
     forceTool,
-    tools: chatbotToolDefinitions(valueFirst),
+    tools: chatbotToolDefinitions(valueFirst, directBooking),
   });
 
   after(async () => {

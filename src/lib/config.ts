@@ -224,6 +224,12 @@ const envSchema = z.object({
    * chat) or "split" (half, by conversation id). See chatbot/value-first.ts.
    */
   CHATBOT_VALUE_FIRST: optionalTrimmedOptionalEnv,
+  /**
+   * "on" lets the chat book a call itself (propose_call_time + book_call via
+   * Calendly POST /invitees). Needs a token with scheduled_events:write.
+   * OFF unless exactly "on". See chatbot/book-call.ts.
+   */
+  CHATBOT_DIRECT_BOOKING: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_VP_SESSION_ID_FIELD_ID: optionalTrimmedOptionalEnv,
@@ -381,6 +387,7 @@ const parsed = envSchema.safeParse({
   SELF_BOOK_FOLLOWUP_ENABLED: process.env.SELF_BOOK_FOLLOWUP_ENABLED,
   COMPANY_MAILING_ADDRESS: process.env.COMPANY_MAILING_ADDRESS,
   CHATBOT_VALUE_FIRST: process.env.CHATBOT_VALUE_FIRST,
+  CHATBOT_DIRECT_BOOKING: process.env.CHATBOT_DIRECT_BOOKING,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
     process.env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,
