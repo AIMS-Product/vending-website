@@ -119,7 +119,7 @@ export const SMS_CONSENT_FIELD_ID = "7UnFD4LUSeTwW9QlVrqh";
  */
 export const AI_CALL_CONSENT_FIELD_ID = "e5krbBb59PQDnbAjTDBw";
 export const AI_CALL_WEBINAR_TIME_FIELD_ID = "EK2rSMB5MnDwloDxO3fL";
-export const AI_CALL_CONSENT_VERSION = "ai-call-v1-2026-11-03";
+export const AI_CALL_CONSENT_VERSION = "ai-call-v2-2026-11-04";
 
 const TIMEOUT_MS = 8000;
 const ATTEMPTS = 3;

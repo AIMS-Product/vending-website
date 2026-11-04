@@ -15,7 +15,6 @@ import Image from "next/image";
 import { Wordmark } from "@/components/site/Wordmark";
 import { PlaybookTeaser } from "@/components/sections/playbook/PlaybookTeaser";
 import { GuideTeaser } from "@/components/sections/playbook-guide/GuideTeaser";
-import { GUIDE } from "@/lib/content/playbook-guide";
 import { LTF_PATHS, isGuideSwapLive } from "@/lib/ltf/assignment";
 import Link from "next/link";
 import type { CaseStudyStory } from "@/lib/services/case-studies";
@@ -499,7 +498,7 @@ export function PlaybookLine({
         href={`${LTF_PATHS.go}${query ? `?${query}` : ""}`}
         className="text-ink mt-1 block text-[clamp(0.8rem,3.9vw,0.9375rem)] font-black whitespace-nowrap underline underline-offset-2"
       >
-        {confirmedCopy.playbookLinkPrefix} {GUIDE.priceLabel}
+        {confirmedCopy.playbookLink}
       </Link>
     </p>
   );
