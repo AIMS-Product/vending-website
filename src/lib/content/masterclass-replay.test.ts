@@ -29,7 +29,7 @@ describe("masterclass replay content", () => {
   });
 
   it("uses the Nov 3 YouTube replay on every replay page", () => {
-    expect(REPLAY_MAIN_VIDEO).toEqual({ kind: "youtube", id: "1XBiha4BAHE" });
+    expect(REPLAY_MAIN_VIDEO).toEqual({ kind: "youtube", id: "8P0M2I2WIuw" });
   });
 
   it("matches the GHL booking destination per variant", () => {

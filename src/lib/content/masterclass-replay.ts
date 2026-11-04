@@ -115,7 +115,7 @@ export const REPLAY_ADVISORY_CALENDLY =
  */
 export const REPLAY_MAIN_VIDEO: ReplayVideo = {
   kind: "youtube",
-  id: "1XBiha4BAHE",
+  id: "8P0M2I2WIuw",
 };
 
 /** UI label over the Calendly booking heading (adnb); not offer copy. */
