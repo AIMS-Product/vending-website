@@ -417,7 +417,7 @@ export const masterclassTakeaways = [
 ] as const;
 
 export const SMS_CONSENT_TEXT =
-  "I agree Vendingpreneurs may call and text me at this number with webinar reminders and marketing, including automated and AI-voice calls. Not a condition of purchase. Msg frequency varies; msg & data rates may apply. Reply STOP to opt out, HELP for help.";
+  "I agree Vendingpreneurs may call and text this number, including automated and AI-voice calls, with reminders and offers. Not a condition of purchase. Msg frequency varies; rates may apply. Reply STOP to opt out, HELP for help.";
 
 export const hostCopy = {
   eyebrow: "Your host, Anthony Kolodziej",
@@ -519,7 +519,7 @@ export const CONFIRMED_VIDEO_POSTER =
 export const confirmedCopy = {
   eyebrow: "Seat confirmed",
   playbookLine: "Want to show up ahead of the room?",
-  playbookLinkPrefix: "Get Mike's First Location Playbook for",
+  playbookLink: "Get Mike's First Location Playbook",
   /** Every site registrant ticked SMS consent; GHL texts the link at T-15m and T-0. */
   zoomTextLine: "We'll also text it to you before we go live.",
   calendarTitle: "Vendingpreneurs Live Masterclass with Anthony",

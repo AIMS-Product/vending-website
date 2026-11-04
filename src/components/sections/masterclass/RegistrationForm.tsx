@@ -196,7 +196,7 @@ export function RegistrationForm({
 
       <label
         htmlFor="mc-smsConsent"
-        className="mt-2 flex cursor-pointer items-start gap-2.5 text-xs leading-snug text-slate-600 lg:mt-4 lg:py-1 lg:leading-relaxed"
+        className="mt-2 flex cursor-pointer items-start gap-2 text-[11px] leading-snug text-slate-500 lg:mt-3"
       >
         <input
           id="mc-smsConsent"
