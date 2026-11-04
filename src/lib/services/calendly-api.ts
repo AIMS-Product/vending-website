@@ -322,6 +322,11 @@ export function createCalendlyApiClient({
       email: string;
       timeZone: string;
       tracking: Record<string, string | null>;
+      questionsAndAnswers?: Array<{
+        question: string;
+        answer: string;
+        position: number;
+      }>;
     }): Promise<CalendlyInvitee | null> {
       const data: { resource?: CalendlyInvitee } = await request("/invitees", {
         event_type: input.eventTypeUri,
@@ -332,8 +337,38 @@ export function createCalendlyApiClient({
           timezone: input.timeZone,
         },
         tracking: input.tracking,
+        ...(input.questionsAndAnswers?.length
+          ? { questions_and_answers: input.questionsAndAnswers }
+          : {}),
       });
       return data.resource ?? null;
+    },
+
+    /** Required booking questions of an event type (answered on POST /invitees). */
+    async getEventTypeQuestions(
+      eventTypeUri: string,
+    ): Promise<
+      Array<{ name: string; type: string; required: boolean; position: number }>
+    > {
+      const data: {
+        resource?: {
+          custom_questions?: Array<{
+            name?: string;
+            type?: string;
+            required?: boolean;
+            enabled?: boolean;
+            position?: number;
+          }>;
+        };
+      } = await request(eventTypeUri);
+      return (data.resource?.custom_questions ?? [])
+        .filter((q) => q.enabled !== false && typeof q.name === "string")
+        .map((q) => ({
+          name: q.name as string,
+          type: q.type ?? "string",
+          required: q.required === true,
+          position: q.position ?? 0,
+        }));
     },
 
     /** One organization member by user URI or uuid: the name behind a scheduled_by. */

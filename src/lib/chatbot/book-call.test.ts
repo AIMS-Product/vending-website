@@ -19,6 +19,16 @@ function deps(overrides: Partial<BookCallDeps> = {}) {
     name: "Vendingpreneurs Consultation Call",
     start_time: SLOT,
   });
+  const getEventTypeQuestions = vi
+    .fn()
+    .mockResolvedValue([
+      {
+        name: "What's your phone number?",
+        type: "phone_number",
+        required: true,
+        position: 0,
+      },
+    ]);
   const record = vi.fn().mockResolvedValue(undefined);
   const full: BookCallDeps = {
     resolveCalendar: vi.fn().mockResolvedValue({
@@ -29,12 +39,13 @@ function deps(overrides: Partial<BookCallDeps> = {}) {
       },
       slots: [SLOT, "2026-11-06T20:30:00Z"],
     }),
-    calendly: () => ({ createInvitee, getScheduledEvent }) as never,
+    calendly: () =>
+      ({ createInvitee, getScheduledEvent, getEventTypeQuestions }) as never,
     record,
     now: () => NOW,
     ...overrides,
   };
-  return { deps: full, createInvitee, record };
+  return { deps: full, createInvitee, record, getEventTypeQuestions };
 }
 
 const proposed: ChatbotMessage = {
@@ -54,6 +65,7 @@ const context = (transcript: ChatbotMessage[]) => ({
   conversationId: "conv-1",
   capturedName: "Adam",
   capturedEmail: "adam@example.com",
+  capturedPhone: "(503) 555-0142",
   transcript,
   timeZone: "America/Chicago",
 });
@@ -104,6 +116,13 @@ describe("bookCall", () => {
         startTime: new Date(SLOT).toISOString(),
         email: "adam@example.com",
         timeZone: "America/Chicago",
+        questionsAndAnswers: [
+          {
+            question: "What's your phone number?",
+            answer: "+15035550142",
+            position: 0,
+          },
+        ],
         tracking: expect.objectContaining({
           utm_source: "chatbot",
           utm_medium: "site_chat",
@@ -143,6 +162,32 @@ describe("bookCall", () => {
     expect(createInvitee).not.toHaveBeenCalled();
   });
 
+  it("asks for the phone when the event type requires it", async () => {
+    const { deps: d, createInvitee } = deps();
+    const out = await bookCall(
+      {},
+      { ...context([proposed, user("yes")]), capturedPhone: null },
+      d,
+    );
+    expect(out.result).toContain("phone number");
+    expect(createInvitee).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the calendar on a required question it cannot answer", async () => {
+    const { deps: d, createInvitee, getEventTypeQuestions } = deps();
+    getEventTypeQuestions.mockResolvedValue([
+      {
+        name: "What's your budget?",
+        type: "string",
+        required: true,
+        position: 1,
+      },
+    ]);
+    const out = await bookCall({}, context([proposed, user("yes")]), d);
+    expect(out.result).toContain("show_booking_calendar");
+    expect(createInvitee).not.toHaveBeenCalled();
+  });
+
   it("never books twice in one chat", async () => {
     const { deps: d, createInvitee } = deps();
     const booked: ChatbotMessage = { ...proposed, kind: "booking_confirmed" };
@@ -159,7 +204,12 @@ describe("bookCall", () => {
       .fn()
       .mockRejectedValue(new CalendlyApiError(403, "insufficient scope"));
     const { deps: d, record } = deps({
-      calendly: () => ({ createInvitee, getScheduledEvent: vi.fn() }) as never,
+      calendly: () =>
+        ({
+          createInvitee,
+          getScheduledEvent: vi.fn(),
+          getEventTypeQuestions: vi.fn().mockResolvedValue([]),
+        }) as never,
     });
     const out = await bookCall({}, context([proposed, user("yes")]), d);
     expect(out.message).toBeUndefined();
@@ -170,9 +220,19 @@ describe("bookCall", () => {
   it("offers another time when the slot was just taken", async () => {
     const createInvitee = vi
       .fn()
-      .mockRejectedValue(new CalendlyApiError(400, "slot unavailable"));
+      .mockRejectedValue(
+        new CalendlyApiError(
+          400,
+          "Calendly API request failed with 400: The selected time is no longer available",
+        ),
+      );
     const { deps: d } = deps({
-      calendly: () => ({ createInvitee, getScheduledEvent: vi.fn() }) as never,
+      calendly: () =>
+        ({
+          createInvitee,
+          getScheduledEvent: vi.fn(),
+          getEventTypeQuestions: vi.fn().mockResolvedValue([]),
+        }) as never,
     });
     const out = await bookCall({}, context([proposed, user("yes")]), d);
     expect(out.result).toContain("just taken");

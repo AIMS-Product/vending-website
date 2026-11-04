@@ -15,6 +15,7 @@ import {
   recordChatbotBooking,
 } from "@/lib/chatbot/record-booking";
 import { config } from "@/lib/config";
+import { normalizePhone } from "@/lib/phone";
 import {
   CalendlyApiError,
   createCalendlyApiClient,
@@ -35,6 +36,7 @@ export type BookCallContext = {
   conversationId: string;
   capturedName: string | null;
   capturedEmail: string | null;
+  capturedPhone?: string | null;
   transcript: ChatbotMessage[];
   timeZone?: string | null;
 };
@@ -43,7 +45,7 @@ export type BookCallOutcome = { result: string; message?: ChatbotMessage };
 
 type Calendly = Pick<
   ReturnType<typeof createCalendlyApiClient>,
-  "createInvitee" | "getScheduledEvent"
+  "createInvitee" | "getScheduledEvent" | "getEventTypeQuestions"
 >;
 
 export type BookCallDeps = {
@@ -110,6 +112,8 @@ function isBooked(transcript: ChatbotMessage[]): boolean {
   return transcript.some((m) => m.kind === "booking_confirmed");
 }
 
+const CALENDAR_FALLBACK =
+  "Booking from the chat is not working right now. Do not say it is booked. Call show_booking_calendar so they can take the time themselves.";
 const ALREADY_BOOKED =
   "They already have a call booked in this chat. Do not book another; answer their question.";
 const BAD_TIME =
@@ -145,9 +149,12 @@ export async function proposeCallTime(
   const missing = [
     context.capturedName ? null : "first name",
     context.capturedEmail ? null : "email",
+    context.capturedPhone && normalizePhone(context.capturedPhone)
+      ? null
+      : "phone number",
   ].filter(Boolean);
   const ask = missing.length
-    ? ` You still need their ${missing.join(" and ")} to book: ask for ${missing.length > 1 ? "them" : "it"} in this same message.`
+    ? ` You still need their ${missing.join(" and ")} to book: ask for ${missing.length > 1 ? "them" : "it"} in this same message (the consultant calls them, so the phone is needed).`
     : "";
 
   return {
@@ -214,6 +221,46 @@ export async function bookCall(
 
   const timeZone = safeTimeZone(context.timeZone);
   const calendly = deps.calendly();
+
+  // The consultation event types require "What's your phone number?". Answer
+  // every required phone question with the captured number; any other required
+  // question we cannot answer means the visitor books on the calendar instead.
+  const phone = context.capturedPhone
+    ? normalizePhone(context.capturedPhone)
+    : "";
+  let questions: Awaited<ReturnType<Calendly["getEventTypeQuestions"]>>;
+  try {
+    questions = await calendly.getEventTypeQuestions(proposal.eventTypeUri);
+  } catch (error) {
+    console.warn("chatbot book_call: could not read event type questions", {
+      conversationId: context.conversationId,
+      name: error instanceof Error ? error.name : "UnknownError",
+    });
+    return { result: CALENDAR_FALLBACK };
+  }
+  const required = questions.filter((q) => q.required);
+  if (required.some((q) => q.type === "phone_number") && !phone) {
+    return {
+      result:
+        "Not booked yet: the consultant calls them, so you need their phone number first. Ask for it; the time is still proposed. When they give it, call capture_contact with it, then book_call.",
+    };
+  }
+  if (required.some((q) => q.type !== "phone_number")) {
+    console.warn(
+      "chatbot book_call: event type has a required question we cannot answer",
+      {
+        conversationId: context.conversationId,
+        questions: required.map((q) => q.name),
+      },
+    );
+    return { result: CALENDAR_FALLBACK };
+  }
+  const questionsAndAnswers = required.map((q) => ({
+    question: q.name,
+    answer: phone,
+    position: q.position,
+  }));
+
   let invitee;
   try {
     invitee = await calendly.createInvitee({
@@ -230,15 +277,23 @@ export async function bookCall(
         utm_term: null,
         salesforce_uuid: null,
       },
+      questionsAndAnswers,
     });
   } catch (error) {
     const status = error instanceof CalendlyApiError ? error.status : 0;
+    // CalendlyApiError messages are already token-sanitized.
+    const detail =
+      error instanceof Error ? error.message.slice(0, 300) : "unknown";
     console.warn("chatbot book_call: Calendly refused", {
       conversationId: context.conversationId,
       status,
-      name: error instanceof Error ? error.name : "UnknownError",
+      detail,
     });
-    if (status === 400 || status === 409) {
+    if (
+      status === 409 ||
+      (status === 400 &&
+        /unavailable|not available|taken|no longer/i.test(detail))
+    ) {
       return {
         result:
           "Not booked: Calendly says that slot was just taken. Apologise briefly, call get_available_times, and propose the nearest open time.",
@@ -246,10 +301,7 @@ export async function bookCall(
     }
     // 401/403 (token lacks scheduled_events:write), timeouts, outages. A
     // timeout may still have booked; the webhook records it if so.
-    return {
-      result:
-        "Booking from the chat is not working right now. Do not say it is booked. Call show_booking_calendar so they can take the time themselves.",
-    };
+    return { result: CALENDAR_FALLBACK };
   }
   if (!invitee) {
     return {

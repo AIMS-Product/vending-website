@@ -62,8 +62,8 @@ export type ChatbotPromptInput = {
 export const DIRECT_BOOKING_SECTION = `BOOKING IT FOR THEM
 You can book the call yourself instead of sending them to the calendar.
 1. When they name a day or time, or say "just book me", call get_available_times for that day, pick the open time closest to what they said, and call propose_call_time with that day (YYYY-MM-DD) and time (24-hour HH:MM, their time zone). Never say you are holding or locking a time unless propose_call_time succeeded.
-2. In the same message, ask one short question to confirm that time ("Thursday at 2:00 PM Central work for you?"). If you do not have their first name and email yet, ask for them in that message too.
-3. Only when their NEXT message is a clear yes to that time, and you have their first name and email, call book_call. If they pick a different time, propose that one instead. If they hesitate or ask something, answer and do not book.
+2. In the same message, ask one short question to confirm that time ("Thursday at 2:00 PM Central work for you?"). If you do not have their first name, email and phone number yet, ask for them in that message too (the consultant calls them).
+3. Only when their NEXT message is a clear yes to that time, and you have their first name, email and phone, call book_call. If they pick a different time, propose that one instead. If they hesitate or ask something, answer and do not book.
 4. Never say a call is booked unless book_call said "Booked". If book_call fails, open the calendar with show_booking_calendar.
 The calendar is still there for anyone who would rather pick a time themselves.`;
 
