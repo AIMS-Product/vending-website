@@ -36,7 +36,7 @@ import {
 import { listCaseStudyStories } from "@/lib/services/case-studies";
 import { getMasterclassEvent } from "@/lib/services/masterclass-event";
 import { appleWalletConfig } from "@/lib/wallet/apple-wallet";
-import { inWalletRollout, walletConfig } from "@/lib/wallet/google-wallet";
+import { walletConfig } from "@/lib/wallet/google-wallet";
 
 export const revalidate = 300;
 
@@ -113,12 +113,9 @@ export default async function MasterclassConfirmedPage({
       ? personalCalendarLinks(calendarToken)
       : calendarLinks(masterclassCalendarEvent(new Date(event.startsAt)));
 
-  // Wallet passes: rollout share by contact, or ?wallet=1 for the team to test.
+  // Wallet passes for every registrant with a session (Adam, 2026-11-04: maximum reach, no rollout).
   const walletBase =
-    calendarToken &&
-    sessionContactId &&
-    (params.wallet === "1" ||
-      inWalletRollout(sessionContactId, config.GOOGLE_WALLET_ROLLOUT_PERCENT))
+    calendarToken && sessionContactId
       ? `/masterclass/wallet/${calendarToken}`
       : null;
   const walletHref = walletBase && walletConfig(config) ? walletBase : null;
