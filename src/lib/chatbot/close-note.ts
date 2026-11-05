@@ -94,12 +94,13 @@ export async function writeLeadNoteOnce(
 
     await closeClient.createNote({
       lead_id: leadId,
-      note_html: input.buildHtml(input.marker),
+      note_html: asNoteDocument(input.buildHtml(input.marker)),
     });
     return "written";
   } catch (error) {
     console.warn("chatbot: could not write Close lead note", {
       name: error instanceof Error ? error.name : "UnknownError",
+      status: (error as { status?: unknown } | null)?.status,
     });
     return "failed";
   }
@@ -138,6 +139,21 @@ async function hasExistingNote(
   return (result.data ?? []).some(
     (note) => note.note_html?.includes(marker) || note.note?.includes(marker),
   );
+}
+
+/**
+ * Close parses note_html as one XML document: sibling top-level tags
+ * (`<p>..</p><p>..</p>`) answer 400 "Extra content at the end of the
+ * document", and a bare `<br>` answers "Element 'br': Character content is
+ * not allowed", and any `style` attribute answers "The attribute 'style' is
+ * not allowed". Wrap in a single <body> unless the builder already did,
+ * self-close line breaks, drop inline styles.
+ */
+export function asNoteDocument(html: string): string {
+  const xml = html
+    .replace(/<br\s*>/gi, "<br/>")
+    .replace(/\s+style="[^"]*"/gi, "");
+  return xml.trimStart().startsWith("<body") ? xml : `<body>${xml}</body>`;
 }
 
 export function escapeHtml(value: string): string {
