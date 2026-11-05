@@ -360,7 +360,9 @@ export async function followUpCandidates(
   const quietSince = new Date(now.getTime() - input.minAgeMinutes * 60_000);
   const { data, error } = await client
     .from("chatbot_conversations")
-    .select("id,captured_email,call_booked_at,messages,last_message_at")
+    .select(
+      "id,captured_email,call_booked_at,messages,last_message_at,lead_submission_id",
+    )
     .not("captured_email", "is", null)
     .is("call_booked_at", null)
     .lte("last_message_at", quietSince.toISOString())
@@ -372,7 +374,14 @@ export async function followUpCandidates(
     .limit(200);
   if (error)
     throw new Error(`chatbot email agent: candidates: ${error.message}`);
+  const booked = await bookedLeadSubmissions(
+    client,
+    (data ?? []).map((row) => row.lead_submission_id),
+  );
   return (data ?? [])
+    .filter(
+      (row) => !row.lead_submission_id || !booked.has(row.lead_submission_id),
+    )
     .filter((row) =>
       isAllowedRecipient(
         row.captured_email ?? "",
@@ -388,6 +397,27 @@ export async function followUpCandidates(
     })
     .slice(0, input.limit)
     .map((row) => row.id);
+}
+
+/**
+ * Lead rows whose Close "First Sales Call Booked Date" mirror is set. The Close
+ * check would skip them anyway; dropping them here keeps them from taking a
+ * candidate slot (and a Close lookup) every minute.
+ */
+async function bookedLeadSubmissions(
+  client: AdminClient,
+  ids: readonly (string | null)[],
+): Promise<Set<string>> {
+  const wanted = [...new Set(ids.filter((id): id is string => Boolean(id)))];
+  if (wanted.length === 0) return new Set();
+  const { data, error } = await client
+    .from("lead_submissions")
+    .select("id")
+    .in("id", wanted)
+    .not("call_booked_at", "is", null);
+  if (error)
+    throw new Error(`chatbot email agent: booked leads: ${error.message}`);
+  return new Set((data ?? []).map((row) => row.id));
 }
 
 // ---------------------------------------------------------------------------

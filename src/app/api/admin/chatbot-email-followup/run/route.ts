@@ -58,9 +58,15 @@ export async function GET(request: Request) {
     Math.max(1, Number(url.searchParams.get("limit") ?? 5) || 5),
   );
 
-  const ids = await followUpCandidates({ minAgeMinutes, limit });
+  // Fetch past `limit`: a chat the Close check skips leaves no trace, so a
+  // fixed top-5 would be re-picked every minute and block everyone behind it.
+  // ponytail: skipped chats are re-checked each run (bounded by MAX_CHECKS and
+  // the 7-day window); a persistent skip stamp column if Close load matters.
+  const MAX_CHECKS = 20;
+  const ids = await followUpCandidates({ minAgeMinutes, limit: MAX_CHECKS });
   const results: FollowUpResult[] = [];
   for (const id of ids) {
+    if (results.filter((r) => r.sent).length >= limit) break;
     try {
       results.push(await sendFollowUp(id));
     } catch (error) {
