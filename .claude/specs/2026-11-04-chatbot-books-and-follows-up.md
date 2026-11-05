@@ -4,7 +4,16 @@ Why: of 334 chats, 61 saw the calendar and did not book, 45 left contact
 details and never booked, 155 left with nothing. The bot could only open the
 Calendly embed; nobody followed up.
 
-## Slice 1 — the chat books the call itself (BUILT, branch feat/chatbot-books-calls)
+## Slice 1 — the chat books the call itself (BUILT + PROVEN ON PREVIEW 2026-11-04, branch feat/chatbot-books-calls)
+
+Proof: preview chat 004bf099 → propose {day 2026-11-06, time 16:30} → yes →
+Calendly event 7b3e7d08 (Consultation Call, round robin → Joseph Vaughan,
+utm_source chatbot, utm_content = conversation id, phone question answered),
+then cancelled. Lessons: tools take day + local HH:MM (model never sees ISO);
+the event types REQUIRE "What's your phone number?" (400 without it); the model
+claimed "Locked in" with nothing booked, so a named time now forces
+propose_call_time, a plain yes forces book_call, and any unconfirmed booking
+claim is replaced (`claimsBooking`).
 
 - `propose_call_time(start_time)` → only a slot `resolveBookingCalendar` reports
   open; writes a `booking_proposed` message (start_time + event_type_uri).
