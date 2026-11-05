@@ -80,5 +80,22 @@ export async function GET(request: Request) {
       error: error instanceof Error ? error.message : "unknown error",
     });
   }
+  if (ids.length > 0 || inbound.length > 0) {
+    // Counts only, no addresses: what each run did, readable in Vercel logs.
+    const tally = (reasons: string[]) =>
+      reasons.reduce<Record<string, number>>(
+        (acc, r) => ({ ...acc, [r]: (acc[r] ?? 0) + 1 }),
+        {},
+      );
+    console.info("chatbot email agent: run", {
+      candidates: ids.length,
+      followUps: tally(results.map((r) => (r.sent ? "sent" : r.reason))),
+      inbound: tally(
+        inbound.map((r) =>
+          "reason" in r && r.reason ? String(r.reason) : "handled",
+        ),
+      ),
+    });
+  }
   return Response.json({ ok: true, inbound, results });
 }
