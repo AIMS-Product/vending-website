@@ -61,9 +61,16 @@ export function isAllowedRecipient(
 export function stripQuotedReply(text: string): string {
   const lines = text.replace(/\r\n/g, "\n").split("\n");
   const kept: string[] = [];
-  for (const line of lines) {
+  for (const [index, line] of lines.entries()) {
     if (/^\s*>/.test(line)) break;
-    if (/^On .{4,200}wrote:\s*$/i.test(line.trim())) break;
+    // Gmail wraps "On Wed, Nov 4 ... <x@y.com> wrote:" across two lines; the
+    // header's day and time were read as a new time request (2026-11-04).
+    if (
+      /^On\s/i.test(line.trim()) &&
+      /\bwrote:/i.test(lines.slice(index, index + 3).join(" "))
+    ) {
+      break;
+    }
     if (/^-{2,}\s*(Original Message|Forwarded message)/i.test(line.trim()))
       break;
     if (/^From:\s.+/i.test(line.trim()) && kept.length > 0) break;

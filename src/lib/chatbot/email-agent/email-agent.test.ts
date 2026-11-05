@@ -46,6 +46,12 @@ describe("signed reply address", () => {
     expect(sameMailbox("eve@gmail.com", "adam@gmail.com")).toBe(false);
   });
 
+  it("cuts Gmail's two-line quote header (its day and time are not a request)", () => {
+    const text =
+      "Yes! That works\n\nOn Wed, Nov 4, 2026 at 6:12 PM Mia at Vendingpreneurs <\nhello@vendingpreneurs.com> wrote:\n\n> Hi Adam,";
+    expect(stripQuotedReply(text)).toBe("Yes! That works");
+  });
+
   it("keeps only the new text of a reply", () => {
     const text =
       "Thursday 2pm works\n\nOn Wed, Nov 4, 2026 at 5:00 PM Mia <x@y.com> wrote:\n> Hi Adam";
@@ -192,5 +198,32 @@ describe("Close check before email", () => {
       now,
     });
     expect(down).toEqual({ send: false, reason: "Close could not be checked" });
+  });
+});
+
+describe("email format", () => {
+  it("links a slot straight to Calendly's details form, prefilled", async () => {
+    const { slotBookingUrl, slotLabel, boldDates } = await import("./format");
+    const url = slotBookingUrl({
+      baseUrl:
+        "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call",
+      slotIso: "2026-11-05T17:00:00Z",
+      timeZone: "America/Los_Angeles",
+      name: "Adam Demo",
+      email: "adam+demo3@gmail.com",
+      phone: "+15035550177",
+      conversationId: ID,
+    });
+    expect(url).toContain(
+      "/vendingpreneurs-consultation-call/2026-11-05T09:00:00-08:00?",
+    );
+    expect(url).toContain("a1=%2B15035550177");
+    expect(url).toContain(`utm_content=${ID}`);
+    expect(slotLabel("2026-11-05T17:00:00Z", "America/Los_Angeles")).toBe(
+      "Thursday, Nov 5 at 9:00 AM",
+    );
+    expect(boldDates("Does Thursday, Nov 5 at 9:00 AM PT work?")).toBe(
+      "Does <b>Thursday, Nov 5 at 9:00 AM PT</b> work?",
+    );
   });
 });

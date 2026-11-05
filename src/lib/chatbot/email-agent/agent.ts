@@ -1,7 +1,7 @@
 import "server-only";
 
 import { z } from "zod";
-import { formatSlot, localDayAndTime } from "@/lib/chatbot/book-call";
+import { localDayAndTime } from "@/lib/chatbot/book-call";
 import { directBookingForcedTool } from "@/lib/chatbot/book-call-intent";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import {
@@ -30,6 +30,7 @@ import {
   userTurnsSinceCalendar,
 } from "@/lib/chatbot/turn-helpers";
 import { config } from "@/lib/config";
+import { normalizePhone } from "@/lib/phone";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   conversationFromRecipients,
@@ -40,6 +41,12 @@ import {
   stripQuotedReply,
 } from "./address";
 import { checkCloseBeforeEmail } from "./close-gate";
+import {
+  renderEmail,
+  slotBookingUrl,
+  slotLabel,
+  type EmailBlock,
+} from "./format";
 
 /**
  * The email agent: one follow-up to a chat that left an email and no booking,
@@ -64,7 +71,10 @@ const EMAIL_TOOLS = new Set([
 ]);
 
 const EMAIL_CHANNEL_SECTION = `EMAIL MODE
-You are answering by EMAIL a person who chatted with you on the website earlier and gave their email. Their latest email is the last user message. Write the body of a short reply: two to four plain sentences, no greeting line and no sign-off (both are added for you), no markdown, no links unless a tool gave you one. There is no chat window or calendar card in email, so never mention one. Your goal is to get the free call booked by email: when they name a day or time, propose it; when they say yes to a proposed time, book it. If they want to stop hearing from us, say you will not email again.`;
+You are replying by EMAIL to someone who chatted with you on the website earlier. Their latest email is the last user message. Write like a friendly person sending a quick note from their phone: one or two short sentences, warm and casual, no greeting and no sign-off (both are added for you), no markdown, no links. Never say "proposed time", "reply yes", "I have you down" or anything that sounds like a system; never mention a chat window or calendar card.
+When they name a day or time, propose it and ask in plain words, naming the day, date and time, e.g. "Perfect! Does Thursday, Nov 5 at 9:00 AM PT work for you?"
+When they say yes to the time you asked about, book it, then confirm in one line, e.g. "You're all set for Thursday, Nov 5 at 9:00 AM PT! The calendar invite is on its way."
+If they want to stop hearing from us, say you won't email again.`;
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
@@ -123,10 +133,6 @@ export function pickOfferSlots(
   return picked;
 }
 
-function signOff(persona: string) {
-  return `${persona}\nVendingpreneurs\n\nReply STOP and I won't email you again.`;
-}
-
 async function loadConversation(client: AdminClient, id: string) {
   const { data, error } = await client
     .from("chatbot_conversations")
@@ -178,36 +184,54 @@ export async function sendFollowUp(
 
   const chatConfig = await loadChatbotConfig();
   const timeZone = DEFAULT_TIME_ZONE;
-  const { slots } = await resolveBookingCalendar({ timeZone });
+  const { calendar, slots } = await resolveBookingCalendar({ timeZone });
   const offers = pickOfferSlots(slots, timeZone, now);
-  const name = firstName(conversation.captured_name);
-  const firstQuestion = messages.find((m) => m.role === "user")?.content;
-  const topic = firstQuestion
-    ? ` You asked "${firstQuestion.slice(0, 120)}${firstQuestion.length > 120 ? "..." : ""}"`
-    : "";
-  const link = chatbotBookingUrl({
-    conversationId,
-    name: conversation.captured_name,
-    email,
+  const phone = conversation.captured_phone
+    ? normalizePhone(conversation.captured_phone) || null
+    : null;
+  const email_ = renderEmail({
+    greetingName: firstName(conversation.captured_name),
+    persona: chatConfig.personaName,
+    blocks: [
+      {
+        kind: "p",
+        text: offers.length
+          ? "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Tap a time and it's yours (Pacific time):"
+          : "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Just reply with a day and time that works and I'll set it up.",
+      },
+      ...(offers.length
+        ? [
+            {
+              kind: "slots" as const,
+              slots: offers.map((slot) => ({
+                label: slotLabel(slot, timeZone),
+                url: slotBookingUrl({
+                  baseUrl: calendar.url,
+                  slotIso: slot,
+                  timeZone,
+                  name: conversation.captured_name,
+                  email,
+                  phone,
+                  conversationId,
+                }),
+              })),
+            },
+            {
+              kind: "p" as const,
+              text: "None of those work? Just reply with a better time and I'll book it for you.",
+            },
+          ]
+        : []),
+    ],
   });
-
-  const body = [
-    `Hi${name ? ` ${name}` : ""},`,
-    `It's ${chatConfig.personaName} from Vendingpreneurs, from the chat on our site.${topic}, and the best next step is a free call with one of our vending consultants. They'll look at your situation and map out what a first route could look like.`,
-    offers.length
-      ? `These times are open (Pacific time):\n${offers.map((s) => `- ${formatSlot(s, timeZone)}`).join("\n")}`
-      : "",
-    `Just reply with the one that works, or any other day and time, and I'll book it for you.${link ? ` If you'd rather pick yourself: ${link}` : ""}`,
-    signOff(chatConfig.personaName),
-  ]
-    .filter(Boolean)
-    .join("\n\n");
+  const body = email_.text;
 
   const subject = "Your free Vendingpreneurs call";
   const result = await sendResend(
     {
       subject,
       text: body,
+      html: email_.html,
       to: [email],
       fromName: `${chatConfig.personaName} at Vendingpreneurs`,
       replyTo: [
@@ -398,15 +422,17 @@ export async function handleInboundEmail(
     client,
   });
 
-  const body = composeReply(turn.sink, {
+  const reply = composeReply(turn.sink, {
     name: firstName(turn.captured.name),
     persona: turn.persona,
+    timeZone,
     link: chatbotBookingUrl({
       conversationId,
       name: turn.captured.name,
-      email: sender,
+      email: conversation.captured_email,
     }),
   });
+  const body = reply.text;
   const subject = email.subject?.match(/^re:/i)
     ? email.subject
     : `Re: ${email.subject ?? "Your free Vendingpreneurs call"}`;
@@ -414,6 +440,7 @@ export async function handleInboundEmail(
     {
       subject,
       text: body,
+      html: reply.html,
       to: [sender],
       fromName: `${turn.persona} at Vendingpreneurs`,
       replyTo: [
@@ -545,8 +572,13 @@ async function runEmailTurn(input: {
 
 function composeReply(
   sink: { messages: ChatbotMessage[] },
-  input: { name: string; persona: string; link: string | null },
-): string {
+  input: {
+    name: string;
+    persona: string;
+    timeZone: string;
+    link: string | null;
+  },
+): { text: string; html: string } {
   const replies = sink.messages
     .filter((m) => m.role === "assistant" && !m.kind)
     .map((m) => m.content.trim())
@@ -555,20 +587,35 @@ function composeReply(
   const booked = sink.messages.some((m) => m.kind === "booking_confirmed");
   const calendar = sink.messages.some((m) => m.kind === "calendar");
 
-  const lines = [
-    `Hi${input.name ? ` ${input.name}` : ""},`,
-    replies.join("\n\n") ||
-      "Thanks for the reply. What day and time suits you for the free call?",
-    proposal && !booked ? proposal.content : "",
-    booked
-      ? "Calendly is sending the calendar invite to this address now, with the call details."
-      : "",
-    calendar && !booked && input.link
-      ? `Or pick any open time yourself: ${input.link}`
-      : "",
-    signOff(input.persona),
+  const blocks: EmailBlock[] = [
+    {
+      kind: "p",
+      text:
+        replies.join("\n\n") ||
+        "Thanks for getting back to me! What day and time works for a quick call?",
+    },
   ];
-  return lines.filter(Boolean).join("\n\n");
+  // The model is asked to name the time itself; if it did not, ask plainly.
+  const start = proposal?.data?.start_time;
+  if (proposal && !booked && typeof start === "string") {
+    const label = slotLabel(start, input.timeZone);
+    const weekday = label.split(",")[0];
+    if (!replies.join(" ").includes(weekday)) {
+      blocks.push({ kind: "p", text: `Does ${label} PT work for you?` });
+    }
+  }
+  if (calendar && !booked && input.link) {
+    blocks.push({
+      kind: "link",
+      text: "Or pick any open time here",
+      url: input.link,
+    });
+  }
+  return renderEmail({
+    greetingName: input.name,
+    persona: input.persona,
+    blocks,
+  });
 }
 
 // ---------------------------------------------------------------------------
