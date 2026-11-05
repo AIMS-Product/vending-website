@@ -41,6 +41,7 @@ import {
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
 import { directBookingForcedTool } from "@/lib/chatbot/book-call-intent";
+import { safeTimeZone } from "@/lib/chatbot/availability";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
 import {
   trimToBudget,
@@ -179,6 +180,10 @@ export async function POST(request: Request) {
     role: "user",
     content: message,
     ts: new Date().toISOString(),
+    // So a follow-up email can speak the visitor's own time zone.
+    ...(timeZone && safeTimeZone(timeZone) === timeZone
+      ? { data: { time_zone: timeZone } }
+      : {}),
   };
   const historyForModel = [...priorMessages, userMessage];
 

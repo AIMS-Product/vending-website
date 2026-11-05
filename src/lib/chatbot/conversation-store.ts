@@ -269,10 +269,13 @@ export function toChatbotMessages(value: Json | null): ChatbotMessage[] {
         kind !== "text"
       ) {
         message.kind = kind as ChatbotMessageKind;
-        const data = (entry as Record<string, unknown>).data;
-        if (data && typeof data === "object" && !Array.isArray(data)) {
-          message.data = data as Record<string, Json>;
-        }
+      }
+      // Kept on plain messages too: a visitor turn carries its browser's time
+      // zone (data.time_zone) for the email agent. Renderers only read data
+      // on rich kinds, so it never shows.
+      const data = (entry as Record<string, unknown>).data;
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        message.data = data as Record<string, Json>;
       }
       messages.push(message);
     }

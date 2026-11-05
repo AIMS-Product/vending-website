@@ -85,7 +85,11 @@ export function slotLabel(iso: string, timeZone: string): string {
     hour: "numeric",
     minute: "2-digit",
   }).format(date);
-  return `${day} at ${time}`;
+  const zone =
+    new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "shortGeneric" })
+      .formatToParts(date)
+      .find((p) => p.type === "timeZoneName")?.value ?? "";
+  return `${day} at ${time}${zone ? ` ${zone}` : ""}`;
 }
 
 /**

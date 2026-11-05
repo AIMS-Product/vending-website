@@ -158,10 +158,11 @@ export async function proposeCallTime(
     : "";
 
   return {
-    result: `Proposed ${label}; a line showing it is now in the chat. Ask them plainly to confirm that time (one short question). Do not say it is booked: it is NOT booked until they say yes in their next message and you call book_call.${ask}`,
+    result: `Proposed ${label}; a chip showing it is now in the chat. In your own words ask if that time works, naming the day and time (one short, friendly question, e.g. "Does Thursday at 9:00 AM work for you?"). Do not say it is booked: it is NOT booked until they say yes in their next message and you call book_call.${ask}`,
     message: {
       role: "assistant",
-      content: `Proposed time: ${label}. Reply yes and it's booked.`,
+      // Shown as a time chip in the widget; the model asks the question.
+      content: `Offered ${label}.`,
       ts: deps.now().toISOString(),
       kind: "booking_proposed",
       data: { start_time: slot, event_type_uri: calendar.eventTypeUri },

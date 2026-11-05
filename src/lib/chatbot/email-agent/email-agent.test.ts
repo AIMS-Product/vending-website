@@ -220,10 +220,49 @@ describe("email format", () => {
     expect(url).toContain("a1=%2B15035550177");
     expect(url).toContain(`utm_content=${ID}`);
     expect(slotLabel("2026-11-05T17:00:00Z", "America/Los_Angeles")).toBe(
-      "Thursday, Nov 5 at 9:00 AM",
+      "Thursday, Nov 5 at 9:00 AM PT",
     );
     expect(boldDates("Does Thursday, Nov 5 at 9:00 AM PT work?")).toBe(
       "Does <b>Thursday, Nov 5 at 9:00 AM PT</b> work?",
     );
+  });
+});
+
+describe("follow-up sequence", () => {
+  const at = (iso: string) => new Date(iso);
+  const sent = (step: string, ts: string) =>
+    ({
+      role: "assistant",
+      content: "x",
+      ts,
+      kind: "email_sent",
+      data: { step },
+    }) as never;
+
+  it("follow-up, then a nudge after a day, then a final after two more, then nothing", async () => {
+    const { nextSequenceStep } = await import("./sequence");
+    expect(nextSequenceStep([], at("2026-11-05T00:00:00Z"))).toBe("follow_up");
+    const one = [sent("follow_up", "2026-11-05T00:00:00Z")];
+    expect(nextSequenceStep(one, at("2026-11-05T12:00:00Z"))).toBeNull();
+    expect(nextSequenceStep(one, at("2026-11-06T01:00:00Z"))).toBe("nudge");
+    const two = [...one, sent("nudge", "2026-11-06T01:00:00Z")];
+    expect(nextSequenceStep(two, at("2026-11-07T01:00:00Z"))).toBeNull();
+    expect(nextSequenceStep(two, at("2026-11-08T02:00:00Z"))).toBe("final");
+    const three = [...two, sent("final", "2026-11-08T02:00:00Z")];
+    expect(nextSequenceStep(three, at("2026-11-20T00:00:00Z"))).toBeNull();
+  });
+
+  it("any reply ends the automatic sequence", async () => {
+    const { nextSequenceStep } = await import("./sequence");
+    const replied = [
+      sent("follow_up", "2026-11-05T00:00:00Z"),
+      {
+        role: "user",
+        content: "maybe",
+        ts: "2026-11-05T02:00:00Z",
+        kind: "email_received",
+      } as never,
+    ];
+    expect(nextSequenceStep(replied, at("2026-11-09T00:00:00Z"))).toBeNull();
   });
 });

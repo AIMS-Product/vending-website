@@ -36,6 +36,7 @@ import {
 } from "@/lib/chatbot/booking-credit";
 import {
   askedAboutCost,
+  emailAgentState,
   deriveConversationOutcome,
   type ChatbotConversationOutcome,
 } from "@/lib/chatbot/outcomes";
@@ -89,6 +90,8 @@ export type AdminChatbotConversationListItem = {
   outcome: ChatbotConversationOutcome;
   /** True when the visitor asked what it costs — the site's most common question. */
   askedAboutCost: boolean;
+  /** The email agent followed up ("emailed") or they answered ("replied"). */
+  emailAgent: "replied" | "emailed" | null;
   flags: ChatbotFlag[];
   /**
    * First and last touch, for a booked chat only (null otherwise). Same rules
@@ -259,6 +262,7 @@ export async function adminListConversations(
       createdAt: row.created_at,
     }),
     askedAboutCost: askedAboutCost(row.messages),
+    emailAgent: emailAgentState(row.messages),
     flags: flagsByConversation.get(row.id) ?? [],
     touch: touches.get(row.id) ?? null,
   }));

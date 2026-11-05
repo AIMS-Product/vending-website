@@ -27,6 +27,14 @@ export function ChatRichMessage({
       return <CaseStudyCard message={message} brandColor={brandColor} />;
     case "booking_confirmed":
       return <BookingConfirmedCard message={message} brandColor={brandColor} />;
+    case "booking_proposed":
+      return <ProposedTimeChip message={message} />;
+    // The email thread is not replayed in the widget; a returning visitor
+    // sees one quiet line per email instead of the whole message.
+    case "email_sent":
+      return <FallbackLine content="Sent you a follow-up by email." />;
+    case "email_received":
+      return <FallbackLine content="You replied by email." />;
     default:
       return <FallbackLine content={message.content} />;
   }
@@ -229,6 +237,32 @@ function BookingConfirmedCard({
       <p className="px-3 py-2.5 text-[15px] leading-snug text-[#111111]">
         {formatStartsAt(startsAt) ?? message.content}
       </p>
+    </div>
+  );
+}
+
+/**
+ * The time the bot just offered, as a quiet chip under its question. The bot
+ * asks in its own words; this only shows the exact slot it will book.
+ */
+function ProposedTimeChip({ message }: { message: ChatDisplayMessage }) {
+  const startsAt = readString(message.data, "start_time");
+  const date = startsAt ? new Date(startsAt) : null;
+  if (!date || Number.isNaN(date.getTime())) {
+    return <FallbackLine content={message.content} />;
+  }
+  const label = date.toLocaleString(undefined, {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  });
+  return (
+    <div className="inline-flex max-w-[92%] items-center gap-2 rounded-full border-2 border-[#111111] bg-white px-3 py-1.5 text-[14px] font-bold text-[#111111]">
+      <CalendarIcon />
+      <span>{label}</span>
     </div>
   );
 }
