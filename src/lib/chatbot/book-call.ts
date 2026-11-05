@@ -6,6 +6,7 @@ import {
   CHATBOT_BOOKING_UTM_SOURCE,
 } from "@/lib/chatbot/booking";
 import {
+  describeAvailability,
   resolveBookingCalendar,
   safeTimeZone,
 } from "@/lib/chatbot/availability";
@@ -140,8 +141,7 @@ export async function proposeCallTime(
   });
   if (!slot) {
     return {
-      result:
-        "That time is not open. Nothing was proposed. Call get_available_times and offer a time from its list.",
+      result: `That time is not open, so nothing was proposed. Do not say it is booked or held. Offer the closest of these real open times and ask which they want:\n${describeAvailability(slots, timeZone, { day: wanted.day })}`,
     };
   }
 

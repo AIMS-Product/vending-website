@@ -19,16 +19,14 @@ function deps(overrides: Partial<BookCallDeps> = {}) {
     name: "Vendingpreneurs Consultation Call",
     start_time: SLOT,
   });
-  const getEventTypeQuestions = vi
-    .fn()
-    .mockResolvedValue([
-      {
-        name: "What's your phone number?",
-        type: "phone_number",
-        required: true,
-        position: 0,
-      },
-    ]);
+  const getEventTypeQuestions = vi.fn().mockResolvedValue([
+    {
+      name: "What's your phone number?",
+      type: "phone_number",
+      required: true,
+      position: 0,
+    },
+  ]);
   const record = vi.fn().mockResolvedValue(undefined);
   const full: BookCallDeps = {
     resolveCalendar: vi.fn().mockResolvedValue({
@@ -246,5 +244,51 @@ describe("namesATime", () => {
     expect(namesATime("13:15 is fine")).toBe(true);
     expect(namesATime("how much does it cost")).toBe(false);
     expect(namesATime("I want to book a call")).toBe(false);
+  });
+});
+
+describe("direct booking guards", () => {
+  it("forces a proposal on a named time and a booking on a plain yes", async () => {
+    const { directBookingForcedTool } = await import("./book-call-intent");
+    const base = { chosenTool: undefined, booked: false };
+    expect(
+      directBookingForcedTool({
+        ...base,
+        message: "4:30 Friday please",
+        priorMessages: [],
+      }),
+    ).toBe("propose_call_time");
+    expect(
+      directBookingForcedTool({
+        ...base,
+        message: "Yes, that works.",
+        priorMessages: [proposed],
+      }),
+    ).toBe("book_call");
+    // A yes with no pending proposal books nothing.
+    expect(
+      directBookingForcedTool({ ...base, message: "yes", priorMessages: [] }),
+    ).toBeUndefined();
+    // Already answered proposal: a later yes is not auto-booked.
+    expect(
+      directBookingForcedTool({
+        ...base,
+        message: "yes",
+        priorMessages: [proposed, user("hmm maybe")],
+      }),
+    ).toBeUndefined();
+  });
+
+  it("flags false booking claims, not conditional offers", async () => {
+    const { claimsBooking } = await import("./book-call-intent");
+    expect(
+      claimsBooking("Locked in, I'll reserve you for Friday at 4:30 PM."),
+    ).toBe(true);
+    expect(claimsBooking("You're all set for Friday.")).toBe(true);
+    expect(claimsBooking("I'll reserve that for you now.")).toBe(true);
+    expect(
+      claimsBooking("Does Friday at 4:30 PM work? Say yes and I'll book it."),
+    ).toBe(false);
+    expect(claimsBooking("Friday has 2:00 and 4:00 open.")).toBe(false);
   });
 });

@@ -522,13 +522,20 @@ export async function runChatbotTool(
           ? shareResource(args, context)
           : unknownTool(name);
       case "propose_call_time":
-        return context.directBooking
-          ? await proposeCallTime(args, context)
-          : unknownTool(name);
-      case "book_call":
-        return context.directBooking
-          ? await bookCall(args, context)
-          : unknownTool(name);
+      case "book_call": {
+        if (!context.directBooking) return unknownTool(name);
+        const outcome =
+          name === "book_call"
+            ? await bookCall(args, context)
+            : await proposeCallTime(args, context);
+        console.info("chatbot: direct booking tool", {
+          tool: name,
+          conversationId: context.conversationId,
+          args: rawArguments.slice(0, 120),
+          outcome: outcome.message?.kind ?? outcome.result.slice(0, 80),
+        });
+        return outcome;
+      }
       default:
         return unknownTool(name);
     }

@@ -40,7 +40,7 @@ import {
   chatbotToolDefinitions,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
-import { namesATime } from "@/lib/chatbot/book-call-intent";
+import { directBookingForcedTool } from "@/lib/chatbot/book-call-intent";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
 import {
   chooseForcedTool,
@@ -295,12 +295,14 @@ export async function POST(request: Request) {
   });
   // When the chat can book itself, a visitor who names a time gets that time
   // proposed, not a calendar forced on them.
-  const forceTool =
-    directBooking &&
-    chosenTool === "show_booking_calendar" &&
-    namesATime(message)
-      ? undefined
-      : chosenTool;
+  const forceTool = directBooking
+    ? directBookingForcedTool({
+        message,
+        priorMessages,
+        chosenTool,
+        booked: promptInput.hasConfirmedBooking ?? false,
+      })
+    : chosenTool;
 
   const stream = createTurnStream({
     config,
