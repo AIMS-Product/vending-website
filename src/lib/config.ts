@@ -238,6 +238,8 @@ const envSchema = z.object({
   CHATBOT_EMAIL_REPLY_SECRET: optionalTrimmedOptionalEnv,
   /** Bearer secret for /api/admin/chatbot-email-followup/run besides CRON_SECRET. */
   CHATBOT_EMAIL_RUN_SECRET: optionalTrimmedOptionalEnv,
+  /** Minutes a chat must be quiet before its follow-up email (default 60). */
+  CHATBOT_EMAIL_FOLLOWUP_MINUTES: optionalTrimmedOptionalEnv,
   /** Resend (Svix) signing secret of the email.received webhook, whsec_... */
   RESEND_INBOUND_WEBHOOK_SECRET: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
@@ -402,6 +404,7 @@ const parsed = envSchema.safeParse({
   CHATBOT_EMAIL_ALLOWLIST: process.env.CHATBOT_EMAIL_ALLOWLIST,
   CHATBOT_EMAIL_REPLY_SECRET: process.env.CHATBOT_EMAIL_REPLY_SECRET,
   CHATBOT_EMAIL_RUN_SECRET: process.env.CHATBOT_EMAIL_RUN_SECRET,
+  CHATBOT_EMAIL_FOLLOWUP_MINUTES: process.env.CHATBOT_EMAIL_FOLLOWUP_MINUTES,
   RESEND_INBOUND_WEBHOOK_SECRET: process.env.RESEND_INBOUND_WEBHOOK_SECRET,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
