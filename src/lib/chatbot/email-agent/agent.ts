@@ -570,3 +570,59 @@ function composeReply(
   ];
   return lines.filter(Boolean).join("\n\n");
 }
+
+// ---------------------------------------------------------------------------
+// Inbound polling (no webhook needed: works behind Vercel preview protection
+// and cannot miss a delivery; handleInboundEmail dedupes on email_id)
+// ---------------------------------------------------------------------------
+
+const receivedListSchema = z.object({
+  data: z
+    .array(
+      z.object({
+        id: z.string(),
+        to: z.array(z.string()).default([]),
+        created_at: z.string().optional(),
+      }),
+    )
+    .default([]),
+});
+
+export async function pollInboundEmails(
+  deps: { fetchImpl?: typeof fetch; now?: () => Date } = {},
+): Promise<Array<{ emailId: string } & InboundResult>> {
+  if (!emailAgentEnabled()) return [];
+  const fetchImpl = deps.fetchImpl ?? fetch;
+  const now = (deps.now ?? (() => new Date()))();
+  const response = await fetchImpl(
+    "https://api.resend.com/emails/receiving?limit=50",
+    { headers: { Authorization: `Bearer ${config.RESEND_API_KEY}` } },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `chatbot email agent: could not list received emails (${response.status})`,
+    );
+  }
+  const list = receivedListSchema.parse(await response.json());
+  const secret = config.CHATBOT_EMAIL_REPLY_SECRET as string;
+  const since = now.getTime() - 3 * 86_400_000;
+  const results: Array<{ emailId: string } & InboundResult> = [];
+  for (const item of list.data) {
+    const at = item.created_at ? Date.parse(item.created_at) : now.getTime();
+    if (at < since) continue;
+    if (!conversationFromRecipients(item.to, secret)) continue;
+    try {
+      results.push({
+        emailId: item.id,
+        ...(await handleInboundEmail(item.id, deps)),
+      });
+    } catch (error) {
+      console.error("chatbot email agent: inbound failed", {
+        emailId: item.id,
+        error: error instanceof Error ? error.message : "unknown error",
+      });
+      results.push({ emailId: item.id, handled: false, reason: "error" });
+    }
+  }
+  return results.filter((r) => r.reason !== "already handled");
+}
