@@ -44,17 +44,19 @@ export function conversationFromRecipients(
   return null;
 }
 
-/** Comma-separated allowlist; empty means nobody (fail closed). */
+/** Comma-separated allowlist; `*` means everyone; empty means nobody (fail closed). */
 export function isAllowedRecipient(
   email: string,
   allowlist: string | undefined,
 ): boolean {
   const wanted = email.trim().toLowerCase();
-  return (allowlist ?? "")
+  const entries = (allowlist ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
-    .filter(Boolean)
-    .includes(wanted);
+    .filter(Boolean);
+  return entries.includes("*")
+    ? wanted.includes("@")
+    : entries.includes(wanted);
 }
 
 /** The new text of a reply, without the quoted thread under it. */

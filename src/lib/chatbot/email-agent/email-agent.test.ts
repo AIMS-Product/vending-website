@@ -41,6 +41,12 @@ describe("signed reply address", () => {
     expect(isAllowedRecipient("adam@example.com", undefined)).toBe(false);
   });
 
+  it("allowlist * means every real address", () => {
+    expect(isAllowedRecipient("anyone@example.com", "*")).toBe(true);
+    expect(isAllowedRecipient("anyone@example.com", " * ")).toBe(true);
+    expect(isAllowedRecipient("", "*")).toBe(false);
+  });
+
   it("treats a +tag reply as the same mailbox", () => {
     expect(sameMailbox("Adam@gmail.com", "adam+demo3@gmail.com")).toBe(true);
     expect(sameMailbox("eve@gmail.com", "adam@gmail.com")).toBe(false);
