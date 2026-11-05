@@ -105,6 +105,21 @@ describe("Close check before email", () => {
   });
   const input = { conversationId: ID, email: "adam@example.com" };
 
+  it("an open new funnel deal does not block", async () => {
+    const out = await checkCloseBeforeEmail(input, {
+      close: close({
+        getLead: vi.fn().mockResolvedValue({
+          id: "lead_1",
+          custom: {},
+          opportunities: [{ status_type: "active", status_label: "New Lead" }],
+        }),
+      }) as never,
+      resolveLeadId: async () => "lead_1",
+      now,
+    });
+    expect(out.send).toBe(true);
+  });
+
   it("sends when nobody on the team has the lead", async () => {
     const out = await checkCloseBeforeEmail(input, {
       close: close() as never,
@@ -151,9 +166,13 @@ describe("Close check before email", () => {
     expect(booked.send).toBe(false);
     const opp = await checkCloseBeforeEmail(input, {
       close: close({
-        getLead: vi
-          .fn()
-          .mockResolvedValue({ id: "lead_1", custom: {}, opportunities: [{}] }),
+        getLead: vi.fn().mockResolvedValue({
+          id: "lead_1",
+          custom: {},
+          opportunities: [
+            { status_type: "active", status_label: "Call Booked" },
+          ],
+        }),
       }) as never,
       resolveLeadId: async () => "lead_1",
       now,

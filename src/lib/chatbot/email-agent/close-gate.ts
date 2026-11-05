@@ -59,8 +59,21 @@ export async function checkCloseBeforeEmail(
 
     const lead = await close.getLead(leadId);
     if (!lead) return { send: true, leadId: null };
-    if ((lead.opportunities ?? []).length > 0) {
-      return { send: false, reason: "lead has an opportunity in Close" };
+    // Every lead in this org gets a funnel deal opportunity on creation, so
+    // an open one means nothing. Won / lost, or a stage past "new", does.
+    const worked = (lead.opportunities ?? []).find(
+      (o) =>
+        o.status_type === "won" ||
+        o.status_type === "lost" ||
+        /book|set\b|show|closed|won|lost|enrol|member|signed/i.test(
+          o.status_label ?? "",
+        ),
+    );
+    if (worked) {
+      return {
+        send: false,
+        reason: `Close opportunity is "${worked.status_label ?? worked.status_type}"`,
+      };
     }
     const bookedField = Object.entries(lead.custom ?? {}).find(
       ([key, value]) => /booked/i.test(key) && value != null && value !== "",
