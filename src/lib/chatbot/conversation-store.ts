@@ -22,7 +22,9 @@ export type ChatbotMessageKind =
   /** A member story picked by the server-side matcher. See share_case_study. */
   | "case_study_card"
   | "booking_confirmed"
-  | "booking_proposed";
+  | "booking_proposed"
+  | "email_sent"
+  | "email_received";
 
 export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
   "text",
@@ -32,6 +34,8 @@ export const CHATBOT_MESSAGE_KINDS: readonly ChatbotMessageKind[] = [
   "case_study_card",
   "booking_confirmed",
   "booking_proposed",
+  "email_sent",
+  "email_received",
 ];
 
 export type ChatbotMessage = {

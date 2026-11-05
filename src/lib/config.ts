@@ -230,6 +230,16 @@ const envSchema = z.object({
    * OFF unless exactly "on". See chatbot/book-call.ts.
    */
   CHATBOT_DIRECT_BOOKING: optionalTrimmedOptionalEnv,
+  /** "on" runs the email follow-up agent (chatbot/email-agent). OFF otherwise. */
+  CHATBOT_EMAIL_AGENT: optionalTrimmedOptionalEnv,
+  /** Comma-separated emails the agent may write to. Empty = nobody (fail closed). */
+  CHATBOT_EMAIL_ALLOWLIST: optionalTrimmedOptionalEnv,
+  /** HMAC key for the signed reply-to address (c-<id>-<sig>@reply.vendingpreneurs.com). */
+  CHATBOT_EMAIL_REPLY_SECRET: optionalTrimmedOptionalEnv,
+  /** Bearer secret for /api/admin/chatbot-email-followup/run besides CRON_SECRET. */
+  CHATBOT_EMAIL_RUN_SECRET: optionalTrimmedOptionalEnv,
+  /** Resend (Svix) signing secret of the email.received webhook, whsec_... */
+  RESEND_INBOUND_WEBHOOK_SECRET: optionalTrimmedOptionalEnv,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: optionalTrimmedOptionalEnv,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID: optionalTrimmedOptionalEnv,
   CLOSE_VP_SESSION_ID_FIELD_ID: optionalTrimmedOptionalEnv,
@@ -388,6 +398,11 @@ const parsed = envSchema.safeParse({
   COMPANY_MAILING_ADDRESS: process.env.COMPANY_MAILING_ADDRESS,
   CHATBOT_VALUE_FIRST: process.env.CHATBOT_VALUE_FIRST,
   CHATBOT_DIRECT_BOOKING: process.env.CHATBOT_DIRECT_BOOKING,
+  CHATBOT_EMAIL_AGENT: process.env.CHATBOT_EMAIL_AGENT,
+  CHATBOT_EMAIL_ALLOWLIST: process.env.CHATBOT_EMAIL_ALLOWLIST,
+  CHATBOT_EMAIL_REPLY_SECRET: process.env.CHATBOT_EMAIL_REPLY_SECRET,
+  CHATBOT_EMAIL_RUN_SECRET: process.env.CHATBOT_EMAIL_RUN_SECRET,
+  RESEND_INBOUND_WEBHOOK_SECRET: process.env.RESEND_INBOUND_WEBHOOK_SECRET,
   CLOSE_FOLLOW_UP_ASSIGNED_TO: process.env.CLOSE_FOLLOW_UP_ASSIGNED_TO,
   CLOSE_QUALIFICATION_STATUS_FIELD_ID:
     process.env.CLOSE_QUALIFICATION_STATUS_FIELD_ID,
