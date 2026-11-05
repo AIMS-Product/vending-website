@@ -60,6 +60,16 @@ export function askedAboutCost(messages: unknown): boolean {
   );
 }
 
+/** Where the email agent got to with this chat: replied beats emailed. */
+export function emailAgentState(
+  messages: unknown,
+): "replied" | "emailed" | null {
+  const list = messageList(messages) as Array<{ kind?: unknown }>;
+  if (list.some((m) => m.kind === "email_received")) return "replied";
+  if (list.some((m) => m.kind === "email_sent")) return "emailed";
+  return null;
+}
+
 /** The visitor's first message, for grouping "everyone asked the same thing". */
 export function openingQuestion(messages: unknown): string | null {
   const first = messageList(messages).find(

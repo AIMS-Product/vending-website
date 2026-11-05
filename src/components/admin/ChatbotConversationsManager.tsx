@@ -325,6 +325,11 @@ function ConversationRow({
             </span>
           ) : null}
           {showOutcome ? <OutcomeBadge outcome={item.outcome} /> : null}
+          {item.emailAgent ? (
+            <span className="rounded-ui bg-ui-line text-ui-text-muted inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium">
+              {item.emailAgent === "replied" ? "Replied by email" : "Emailed"}
+            </span>
+          ) : null}
           {item.askedAboutCost ? (
             <span className="rounded-ui bg-ui-line text-ui-text-muted inline-flex items-center px-1.5 py-0.5 text-[0.6875rem] font-medium">
               Asked cost

@@ -40,7 +40,9 @@ import {
   sameMailbox,
   stripQuotedReply,
 } from "./address";
+import { escapeHtml, writeLeadNoteOnce } from "@/lib/chatbot/close-note";
 import { checkCloseBeforeEmail } from "./close-gate";
+import { nextSequenceStep, type SequenceStep } from "./sequence";
 import {
   renderEmail,
   slotBookingUrl,
@@ -58,9 +60,7 @@ import {
  * date, no meeting, no human call/SMS/email in 72h). Any failure = no email.
  */
 
-// ponytail: the chat does not store the visitor's zone, so emails speak
-// Pacific and say so. Persist the widget's zone on the conversation when the
-// sequence goes beyond the demo.
+// Chats from before 2026-11-05 carry no zone; those emails speak Pacific.
 const DEFAULT_TIME_ZONE = "America/Los_Angeles";
 const EMAIL_TOOLS = new Set([
   "get_available_times",
@@ -106,9 +106,12 @@ function firstName(name: string | null) {
   return name?.trim().split(/\s+/)[0] ?? "";
 }
 
+/** The zone the visitor's browser reported in chat, else Pacific. */
 function threadTimeZone(messages: ChatbotMessage[]): string {
-  const sent = messages.findLast((m) => m.kind === "email_sent");
-  const zone = sent?.data?.time_zone;
+  const withZone = messages.findLast(
+    (m) => typeof m.data?.time_zone === "string",
+  );
+  const zone = withZone?.data?.time_zone;
   return safeTimeZone(typeof zone === "string" ? zone : DEFAULT_TIME_ZONE);
 }
 
@@ -175,54 +178,42 @@ export async function sendFollowUp(
   const messages = toChatbotMessages(conversation.messages);
   if (isBooked(conversation, messages)) return skip("already booked");
   if (saidStop(messages)) return skip("they asked us to stop");
-  if (messages.some((m) => m.kind === "email_sent")) {
-    return skip("follow-up already sent");
-  }
+  const step = nextSequenceStep(messages, now);
+  if (!step) return skip("no email due");
 
   const gate = await checkCloseBeforeEmail({ conversationId, email });
   if (!gate.send) return skip(gate.reason);
 
   const chatConfig = await loadChatbotConfig();
-  const timeZone = DEFAULT_TIME_ZONE;
+  const timeZone = threadTimeZone(messages);
   const { calendar, slots } = await resolveBookingCalendar({ timeZone });
   const offers = pickOfferSlots(slots, timeZone, now);
   const phone = conversation.captured_phone
     ? normalizePhone(conversation.captured_phone) || null
     : null;
+  const slotBlock: EmailBlock[] = offers.length
+    ? [
+        {
+          kind: "slots",
+          slots: offers.map((slot) => ({
+            label: slotLabel(slot, timeZone),
+            url: slotBookingUrl({
+              baseUrl: calendar.url,
+              slotIso: slot,
+              timeZone,
+              name: conversation.captured_name,
+              email,
+              phone,
+              conversationId,
+            }),
+          })),
+        },
+      ]
+    : [];
   const email_ = renderEmail({
     greetingName: firstName(conversation.captured_name),
     persona: chatConfig.personaName,
-    blocks: [
-      {
-        kind: "p",
-        text: offers.length
-          ? "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Tap a time and it's yours (Pacific time):"
-          : "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Just reply with a day and time that works and I'll set it up.",
-      },
-      ...(offers.length
-        ? [
-            {
-              kind: "slots" as const,
-              slots: offers.map((slot) => ({
-                label: slotLabel(slot, timeZone),
-                url: slotBookingUrl({
-                  baseUrl: calendar.url,
-                  slotIso: slot,
-                  timeZone,
-                  name: conversation.captured_name,
-                  email,
-                  phone,
-                  conversationId,
-                }),
-              })),
-            },
-            {
-              kind: "p" as const,
-              text: "None of those work? Just reply with a better time and I'll book it for you.",
-            },
-          ]
-        : []),
-    ],
+    blocks: sequenceBlocks(step, slotBlock),
   });
   const body = email_.text;
 
@@ -260,13 +251,103 @@ export async function sendFollowUp(
           content: body,
           ts: now.toISOString(),
           kind: "email_sent",
-          data: { subject, time_zone: timeZone, step: "follow_up" },
+          data: { subject, time_zone: timeZone, step },
         },
       ],
     },
     { client },
   );
+  await noteEmailOnClose({
+    conversationId,
+    closeLeadId: gate.leadId,
+    direction: "sent",
+    label: step.replace("_", " "),
+    text: body,
+    ts: now.toISOString(),
+  });
   return { sent: true, conversationId, to: email };
+}
+
+function sequenceBlocks(step: SequenceStep, slots: EmailBlock[]): EmailBlock[] {
+  const has = slots.length > 0;
+  if (step === "nudge") {
+    return [
+      {
+        kind: "p",
+        text: has
+          ? "Just bumping this in case it got buried. A few more openings for the free call:"
+          : "Just bumping this in case it got buried. Still happy to set up your free call, just reply with a day and time.",
+      },
+      ...slots,
+      ...(has
+        ? [
+            {
+              kind: "p" as const,
+              text: "Or reply with a time that suits you better.",
+            },
+          ]
+        : []),
+    ];
+  }
+  if (step === "final") {
+    return [
+      {
+        kind: "p",
+        text: has
+          ? "Last one from me so I don't crowd your inbox. If you'd still like the free call, here are a couple of times:"
+          : "Last one from me so I don't crowd your inbox. If you'd still like the free call, just reply with a time.",
+      },
+      ...slots,
+      {
+        kind: "p",
+        text: "Otherwise no worries at all, and good luck with the vending plans!",
+      },
+    ];
+  }
+  return [
+    {
+      kind: "p",
+      text: has
+        ? "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Tap a time and it's yours:"
+        : "Thanks for chatting with us earlier! Want to grab a free call with one of our vending consultants? Just reply with a day and time that works and I'll set it up.",
+    },
+    ...slots,
+    ...(has
+      ? [
+          {
+            kind: "p" as const,
+            text: "None of those work? Just reply with a better time and I'll book it for you.",
+          },
+        ]
+      : []),
+  ];
+}
+
+/**
+ * Mirrors each agent email onto the Close lead as a note, so a setter opening
+ * the lead sees the thread. A note (not an email activity) on purpose: the
+ * Close check counts human calls / SMS / emails, and the agent must never
+ * read its own emails as a setter's touch. Fail-soft (writeLeadNoteOnce).
+ */
+async function noteEmailOnClose(input: {
+  conversationId: string;
+  closeLeadId: string | null;
+  direction: "sent" | "received";
+  label: string;
+  text: string;
+  ts: string;
+}) {
+  await writeLeadNoteOnce({
+    conversationId: input.conversationId,
+    closeLeadId: input.closeLeadId,
+    marker: `chatbot-email-ref:${input.conversationId}:${input.ts}`,
+    buildHtml: (marker) =>
+      [
+        `<p><b>${input.direction === "sent" ? "Chatbot email agent sent" : "Lead replied by email"}</b> (${escapeHtml(input.label)})</p>`,
+        `<p>${escapeHtml(input.text).replace(/\n/g, "<br>")}</p>`,
+        `<p style="color:#999">${escapeHtml(marker)}</p>`,
+      ].join(""),
+  });
 }
 
 /** Recent chats eligible for a follow-up (allowlisted, emailed nothing yet, quiet for minAgeMinutes). */
@@ -301,7 +382,7 @@ export async function followUpCandidates(
     .filter((row) => {
       const messages = toChatbotMessages(row.messages);
       return (
-        !messages.some((m) => m.kind === "email_sent") &&
+        nextSequenceStep(messages, now) !== null &&
         !messages.some((m) => m.kind === "booking_confirmed")
       );
     })
@@ -475,9 +556,25 @@ export async function handleInboundEmail(
     },
     { client },
   );
+  await noteEmailOnClose({
+    conversationId,
+    closeLeadId: gate.leadId,
+    direction: "received",
+    label: "reply",
+    text: inbound.content,
+    ts: inbound.ts,
+  });
   if (!result.ok) {
     throw new Error(`chatbot email agent: reply send failed: ${result.error}`);
   }
+  await noteEmailOnClose({
+    conversationId,
+    closeLeadId: gate.leadId,
+    direction: "sent",
+    label: "answer",
+    text: body,
+    ts: new Date().toISOString(),
+  });
   return { handled: true, reason: "replied" };
 }
 
@@ -601,7 +698,7 @@ function composeReply(
     const label = slotLabel(start, input.timeZone);
     const weekday = label.split(",")[0];
     if (!replies.join(" ").includes(weekday)) {
-      blocks.push({ kind: "p", text: `Does ${label} PT work for you?` });
+      blocks.push({ kind: "p", text: `Does ${label} work for you?` });
     }
   }
   if (calendar && !booked && input.link) {
