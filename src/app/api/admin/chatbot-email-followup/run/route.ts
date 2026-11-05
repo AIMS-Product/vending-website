@@ -43,9 +43,15 @@ export async function GET(request: Request) {
     return Response.json({ ok: true, skipped: "email agent is off" });
   }
   const url = new URL(request.url);
+  // How long a chat must be quiet before its follow-up: ?minAgeMinutes=, else
+  // CHATBOT_EMAIL_FOLLOWUP_MINUTES, else 60.
   const minAgeMinutes = Math.max(
     0,
-    Number(url.searchParams.get("minAgeMinutes") ?? 60) || 0,
+    Number(
+      url.searchParams.get("minAgeMinutes") ??
+        config.CHATBOT_EMAIL_FOLLOWUP_MINUTES ??
+        60,
+    ) || 0,
   );
   const limit = Math.min(
     20,
