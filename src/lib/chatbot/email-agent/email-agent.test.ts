@@ -4,6 +4,7 @@ import {
   conversationFromRecipients,
   isAllowedRecipient,
   replyAddress,
+  sameMailbox,
   stripQuotedReply,
 } from "./address";
 import { verifySvixSignature } from "./svix";
@@ -38,6 +39,11 @@ describe("signed reply address", () => {
       false,
     );
     expect(isAllowedRecipient("adam@example.com", undefined)).toBe(false);
+  });
+
+  it("treats a +tag reply as the same mailbox", () => {
+    expect(sameMailbox("Adam@gmail.com", "adam+demo3@gmail.com")).toBe(true);
+    expect(sameMailbox("eve@gmail.com", "adam@gmail.com")).toBe(false);
   });
 
   it("keeps only the new text of a reply", () => {

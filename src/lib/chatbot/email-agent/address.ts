@@ -85,3 +85,13 @@ export function htmlToText(html: string): string {
     .replace(/&quot;/g, '"')
     .replace(/\n{3,}/g, "\n\n");
 }
+
+/** Same mailbox? Ignores case and a "+tag" (Gmail replies from the base address). */
+export function sameMailbox(a: string, b: string): boolean {
+  const base = (email: string) =>
+    email
+      .trim()
+      .toLowerCase()
+      .replace(/\+[^@]*@/, "@");
+  return base(a) === base(b);
+}

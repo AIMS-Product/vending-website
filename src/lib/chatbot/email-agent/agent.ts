@@ -36,6 +36,7 @@ import {
   htmlToText,
   isAllowedRecipient,
   replyAddress,
+  sameMailbox,
   stripQuotedReply,
 } from "./address";
 import { checkCloseBeforeEmail } from "./close-gate";
@@ -339,7 +340,7 @@ export async function handleInboundEmail(
   const sender = (email.from.match(/<([^>]+)>/)?.[1] ?? email.from)
     .trim()
     .toLowerCase();
-  if (sender !== conversation.captured_email.trim().toLowerCase()) {
+  if (!sameMailbox(sender, conversation.captured_email)) {
     // Only the person who chatted can drive their own thread.
     return { handled: false, reason: "sender is not the chat's email" };
   }
@@ -368,7 +369,13 @@ export async function handleInboundEmail(
     await record([inbound]);
     return { handled: true, reason: stop ? "stopped" : "empty" };
   }
-  if (!isAllowedRecipient(sender, config.CHATBOT_EMAIL_ALLOWLIST)) {
+  if (
+    !isAllowedRecipient(sender, config.CHATBOT_EMAIL_ALLOWLIST) &&
+    !isAllowedRecipient(
+      conversation.captured_email,
+      config.CHATBOT_EMAIL_ALLOWLIST,
+    )
+  ) {
     await record([inbound]);
     return { handled: false, reason: "sender not on the allowlist" };
   }
