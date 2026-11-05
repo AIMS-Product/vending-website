@@ -1,5 +1,7 @@
 import "server-only";
 
+import { claimsBooking, NOT_BOOKED_LINE } from "@/lib/chatbot/book-call-intent";
+
 import {
   ChatbotOpenAiError,
   streamChatbotReply,
@@ -292,6 +294,12 @@ async function guardReply(
   const booked = input.toolContext.transcript.some(
     (m) => m.kind === "booking_confirmed",
   );
+  if (input.toolContext.directBooking && !booked && claimsBooking(text)) {
+    console.warn("chatbot: replaced a booking claim with nothing booked", {
+      conversationId: input.toolContext.conversationId,
+    });
+    return NOT_BOOKED_LINE;
+  }
   if (booked || !mentionsAvailability(text)) return text;
 
   // resolveBookingCalendar never throws and is cached for 60s, so this is

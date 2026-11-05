@@ -147,7 +147,10 @@ export function createCalendlyApiClient({
   const normalizedBaseUrl = baseUrl.replace(/\/+$/, "");
   let requestCount = 0;
 
-  async function request<T>(pathOrUrl: string): Promise<T> {
+  async function request<T>(
+    pathOrUrl: string,
+    body?: Record<string, unknown>,
+  ): Promise<T> {
     requestCount += 1;
     if (requestCount > maxRequests) {
       throw new CalendlyApiError(0, "Calendly sweep exceeded its request cap.");
@@ -167,6 +170,7 @@ export function createCalendlyApiClient({
         fetchImpl,
         url,
         {
+          ...(body ? { method: "POST", body: JSON.stringify(body) } : {}),
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -303,6 +307,68 @@ export function createCalendlyApiClient({
     async getInvitee(inviteeUri: string): Promise<CalendlyInvitee | null> {
       const data: { resource?: CalendlyInvitee } = await request(inviteeUri);
       return data.resource ?? null;
+    },
+
+    /**
+     * Books a slot on an event type (POST /invitees, scope
+     * `scheduled_events:write`). Calendly runs its normal confirmation emails,
+     * calendar invites and round-robin host choice as if booked in its UI.
+     * Round-robin event types reject a `location`, so none is sent.
+     */
+    async createInvitee(input: {
+      eventTypeUri: string;
+      startTime: string;
+      name: string;
+      email: string;
+      timeZone: string;
+      tracking: Record<string, string | null>;
+      questionsAndAnswers?: Array<{
+        question: string;
+        answer: string;
+        position: number;
+      }>;
+    }): Promise<CalendlyInvitee | null> {
+      const data: { resource?: CalendlyInvitee } = await request("/invitees", {
+        event_type: input.eventTypeUri,
+        start_time: input.startTime,
+        invitee: {
+          name: input.name,
+          email: input.email,
+          timezone: input.timeZone,
+        },
+        tracking: input.tracking,
+        ...(input.questionsAndAnswers?.length
+          ? { questions_and_answers: input.questionsAndAnswers }
+          : {}),
+      });
+      return data.resource ?? null;
+    },
+
+    /** Required booking questions of an event type (answered on POST /invitees). */
+    async getEventTypeQuestions(
+      eventTypeUri: string,
+    ): Promise<
+      Array<{ name: string; type: string; required: boolean; position: number }>
+    > {
+      const data: {
+        resource?: {
+          custom_questions?: Array<{
+            name?: string;
+            type?: string;
+            required?: boolean;
+            enabled?: boolean;
+            position?: number;
+          }>;
+        };
+      } = await request(eventTypeUri);
+      return (data.resource?.custom_questions ?? [])
+        .filter((q) => q.enabled !== false && typeof q.name === "string")
+        .map((q) => ({
+          name: q.name as string,
+          type: q.type ?? "string",
+          required: q.required === true,
+          position: q.position ?? 0,
+        }));
     },
 
     /** One organization member by user URI or uuid: the name behind a scheduled_by. */

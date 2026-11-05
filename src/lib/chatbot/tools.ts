@@ -8,6 +8,7 @@ import {
   resolveBookingCalendar,
   safeTimeZone,
 } from "@/lib/chatbot/availability";
+import { bookCall, proposeCallTime } from "@/lib/chatbot/book-call";
 import { chatbotBookingUrl } from "@/lib/chatbot/booking";
 import { writeChatbotHandoffsToClose } from "@/lib/chatbot/close-handoff";
 import type { ChatbotConfig } from "@/lib/chatbot/config";
@@ -91,6 +92,8 @@ export type ChatbotToolContext = {
   timeZone?: string | null;
   /** CHATBOT_VALUE_FIRST is on for this conversation: the share_* tools run. */
   valueFirst?: boolean;
+  /** CHATBOT_DIRECT_BOOKING is on: propose_call_time and book_call run. */
+  directBooking?: boolean;
   /** show_booking_calendar declines this turn. See shouldHoldCalendar. */
   holdCalendar?: boolean;
 };
@@ -423,12 +426,58 @@ export const VALUE_FIRST_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] = [
 ];
 
 /** The tool list for one turn. */
+export const DIRECT_BOOKING_TOOL_DEFINITIONS: readonly ChatbotToolDefinition[] =
+  [
+    {
+      type: "function",
+      function: {
+        name: "propose_call_time",
+        description:
+          "Offer the visitor ONE specific open time so you can book it for them. Use it whenever they name a day or time, or say 'just book me'. Pass the day and clock time exactly as get_available_times listed it, in THEIR time zone. It does NOT book: it shows the proposed time in the chat; then ask them to confirm. If you lack their first name, email or phone number, ask in the same message. Never say you are holding or locking a time without calling this.",
+        parameters: {
+          type: "object",
+          properties: {
+            day: {
+              type: "string",
+              description:
+                "Calendar day in the visitor's time zone, YYYY-MM-DD.",
+            },
+            time: {
+              type: "string",
+              description:
+                "Start time in the visitor's time zone, 24-hour HH:MM (1:15 pm = 13:15).",
+            },
+          },
+          required: ["day", "time"],
+          additionalProperties: false,
+        },
+      },
+    },
+    {
+      type: "function",
+      function: {
+        name: "book_call",
+        description:
+          "Book the call for real, on the time you last proposed with propose_call_time. Call it ONLY after the visitor has clearly said yes to that time in a later message, and you have their first name, email and phone number. Never call it in the same turn as propose_call_time. If they want a different time, call propose_call_time with the new time instead. If they hesitate or ask a question, do not call it.",
+        parameters: {
+          type: "object",
+          properties: {},
+          required: [],
+          additionalProperties: false,
+        },
+      },
+    },
+  ];
+
 export function chatbotToolDefinitions(
   valueFirst: boolean,
+  directBooking = false,
 ): readonly ChatbotToolDefinition[] {
-  return valueFirst
-    ? [...CHATBOT_TOOL_DEFINITIONS, ...VALUE_FIRST_TOOL_DEFINITIONS]
-    : CHATBOT_TOOL_DEFINITIONS;
+  return [
+    ...CHATBOT_TOOL_DEFINITIONS,
+    ...(valueFirst ? VALUE_FIRST_TOOL_DEFINITIONS : []),
+    ...(directBooking ? DIRECT_BOOKING_TOOL_DEFINITIONS : []),
+  ];
 }
 
 /**
@@ -472,6 +521,21 @@ export async function runChatbotTool(
         return context.valueFirst
           ? shareResource(args, context)
           : unknownTool(name);
+      case "propose_call_time":
+      case "book_call": {
+        if (!context.directBooking) return unknownTool(name);
+        const outcome =
+          name === "book_call"
+            ? await bookCall(args, context)
+            : await proposeCallTime(args, context);
+        console.info("chatbot: direct booking tool", {
+          tool: name,
+          conversationId: context.conversationId,
+          args: rawArguments.slice(0, 120),
+          outcome: outcome.message?.kind ?? outcome.result.slice(0, 80),
+        });
+        return outcome;
+      }
       default:
         return unknownTool(name);
     }

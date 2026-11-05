@@ -40,7 +40,12 @@ import {
   chatbotToolDefinitions,
   type ChatbotToolContext,
 } from "@/lib/chatbot/tools";
+import { directBookingForcedTool } from "@/lib/chatbot/book-call-intent";
 import { createTurnStream } from "@/lib/chatbot/turn-stream";
+import {
+  trimToBudget,
+  userTurnsSinceCalendar,
+} from "@/lib/chatbot/turn-helpers";
 import {
   chooseForcedTool,
   isValueFirstConversation,
@@ -207,8 +212,10 @@ export async function POST(request: Request) {
     conversation.id,
     envConfig.CHATBOT_VALUE_FIRST,
   );
+  const directBooking = envConfig.CHATBOT_DIRECT_BOOKING === "on";
   const promptInput: ChatbotPromptInput = {
     valueFirst,
+    directBooking,
     personaName: config.personaName,
     knowledgeBase: config.knowledgeBase,
     userTurnCount,
@@ -264,6 +271,7 @@ export async function POST(request: Request) {
     client,
     timeZone: timeZone ?? null,
     valueFirst,
+    directBooking,
     holdCalendar: shouldHoldCalendar({
       valueFirst,
       visitorMessages: historyForModel
@@ -283,12 +291,22 @@ export async function POST(request: Request) {
   // Never for a support or already-booked chat (triage.ts, whole chat).
   // Value-first (flagged) keeps that for an explicit booking ask and answers a
   // first cost question with the cost video instead.
-  const forceTool = chooseForcedTool({
+  const chosenTool = chooseForcedTool({
     valueFirst,
     hasSeenCalendar: promptInput.hasSeenCalendar ?? false,
     priorMessages,
     message,
   });
+  // When the chat can book itself, a visitor who names a time gets that time
+  // proposed, not a calendar forced on them.
+  const forceTool = directBooking
+    ? directBookingForcedTool({
+        message,
+        priorMessages,
+        chosenTool,
+        booked: promptInput.hasConfirmedBooking ?? false,
+      })
+    : chosenTool;
 
   const stream = createTurnStream({
     config,
@@ -297,7 +315,7 @@ export async function POST(request: Request) {
     captured,
     toolContext,
     forceTool,
-    tools: chatbotToolDefinitions(valueFirst),
+    tools: chatbotToolDefinitions(valueFirst, directBooking),
   });
 
   after(async () => {
@@ -388,39 +406,6 @@ export async function POST(request: Request) {
       "Cache-Control": "no-store",
     },
   });
-}
-
-// Aggregate-chars trim only — checkChatbotInputBudget already rejected the
-// request outright if it exceeded the hard ceiling. This is a second, softer
-// pass that keeps the most recent turns when a long-but-under-the-limit
-// history would otherwise push the OpenAI request needlessly large.
-function trimToBudget(messages: ChatbotMessage[]): ChatbotMessage[] {
-  let total = 0;
-  const kept: ChatbotMessage[] = [];
-  for (let i = messages.length - 1; i >= 0; i -= 1) {
-    total += messages[i].content.length;
-    if (total > CHATBOT_INPUT_LIMITS.maxAggregateChars && kept.length > 0)
-      break;
-    kept.unshift(messages[i]);
-  }
-  return kept;
-}
-
-/**
- * Visitor turns taken since the in-chat calendar last appeared, or null if it
- * never has. Drives the one-time "did you find a time?" nudge in the system
- * prompt; see bookingFollowThroughSection.
- */
-function userTurnsSinceCalendar(
-  priorMessages: readonly ChatbotMessage[],
-): number | null {
-  const lastCalendarIndex = priorMessages.findLastIndex(
-    (m) => m.kind === "calendar",
-  );
-  if (lastCalendarIndex === -1) return null;
-  return priorMessages
-    .slice(lastCalendarIndex + 1)
-    .filter((m) => m.role === "user").length;
 }
 
 /**

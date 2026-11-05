@@ -1,8 +1,10 @@
 import "server-only";
 
 import { z } from "zod";
-import { applyChatbotBookingAttribution } from "@/lib/chatbot/booking-attribution";
-import { stampChatbotBookingOnCloseLead } from "@/lib/chatbot/close-booking-note";
+import {
+  chatbotInviteeEvent,
+  recordChatbotBooking,
+} from "@/lib/chatbot/record-booking";
 import { chatbotUnavailableResponse } from "@/lib/chatbot/db-unavailable";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import { config } from "@/lib/config";
@@ -12,7 +14,6 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from "@/lib/public-rate-limit";
 import { createCalendlyApiClient } from "@/lib/services/calendly-api";
-import { recordCalendlyBooking } from "@/lib/services/calendly-bookings";
 import type { CalendlyWebhookEvent } from "@/lib/services/calendly-webhook";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -92,40 +93,7 @@ export async function POST(request: Request) {
       ? await calendly.getScheduledEvent(invitee.event)
       : null;
 
-    event = {
-      eventKind: "invitee.created",
-      inviteeUri: invitee.uri,
-      inviteeName: invitee.name ?? null,
-      inviteeEmail: invitee.email ?? null,
-      cancelReason: null,
-      utmSource: invitee.tracking?.utm_source ?? null,
-      utmMedium: invitee.tracking?.utm_medium ?? null,
-      utmCampaign: invitee.tracking?.utm_campaign ?? null,
-      utmTerm: invitee.tracking?.utm_term ?? null,
-      utmContent: invitee.tracking?.utm_content ?? null,
-      scheduledEventUri: invitee.event ?? null,
-      scheduledEventName: scheduled?.name ?? null,
-      eventTypeUri: scheduled?.event_type ?? null,
-      eventStartAt: scheduled?.start_time ?? null,
-      eventEndAt: scheduled?.end_time ?? null,
-      inviteeCreatedAt: invitee.created_at ?? null,
-      // The same shape the live webhook and the backfill sweep store, so
-      // every reader of raw_payload reads this row exactly like a live one.
-      // The old shape ({ source, inviteeUri, scheduled_event }) had no
-      // `payload`, so `payload -> created_at` was null and these bookings
-      // silently left every daily pace number. scheduled_event is kept nested
-      // so the admin transcript can still say who the call is with
-      // (event_memberships) without another Calendly round trip.
-      rawPayload: {
-        event: "invitee.created",
-        created_by: "embed_postmessage",
-        payload: {
-          ...invitee,
-          invitee_scheduled_by: invitee.scheduled_by ?? null,
-          scheduled_event: scheduled ?? null,
-        },
-      },
-    };
+    event = chatbotInviteeEvent(invitee, scheduled, "embed_postmessage");
   } catch (error) {
     console.error("chatbot booked: calendly lookup failed", {
       name: error instanceof Error ? error.name : "UnknownError",
@@ -133,31 +101,7 @@ export async function POST(request: Request) {
     return Response.json({ message: "Could not verify." }, { status: 502 });
   }
 
-  try {
-    await recordCalendlyBooking(client, event);
-  } catch (error) {
-    // The conversation stamp below is what the visitor sees; the bookings
-    // ledger also gets this event from the webhook and the daily reconcile.
-    console.warn("chatbot booked: could not record booking", {
-      name: error instanceof Error ? error.name : "UnknownError",
-    });
-  }
-
-  try {
-    const attribution = await applyChatbotBookingAttribution(client, event);
-    if (attribution.matched && attribution.action === "booked") {
-      await stampChatbotBookingOnCloseLead({
-        conversationId: attribution.conversationId,
-        attributionSource: attribution.attributionSource,
-        scheduledEventName: event.scheduledEventName,
-        eventStartAt: event.eventStartAt,
-      });
-    }
-  } catch (error) {
-    console.warn("chatbot booked: attribution failed", {
-      name: error instanceof Error ? error.name : "UnknownError",
-    });
-  }
+  await recordChatbotBooking(client, event, "chatbot booked");
 
   const message: ChatbotMessage = {
     role: "assistant",
