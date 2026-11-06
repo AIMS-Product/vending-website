@@ -92,11 +92,24 @@ export async function writeChatbotHandoffsToClose(
         { client, closeClient },
       );
       if (result === "written") {
+        // Fail-soft: the note is already written, so a failed owner lookup
+        // must not cost the task (the note's marker would block a retry).
+        const owner = await routeToSetter(
+          closeClient,
+          leadId,
+          task.reason_summary,
+        ).catch((error: unknown) => {
+          console.warn("chatbot: could not route hand-off to setter", {
+            name: error instanceof Error ? error.name : "UnknownError",
+          });
+          return null;
+        });
         await closeClient.createTask({
           _type: "lead",
           lead_id: leadId,
           text: taskText(task.reason_summary),
           date: new Date().toISOString().slice(0, 10),
+          ...(owner ? { assigned_to: owner } : {}),
         });
       }
       if (result === "written" || result === "duplicate") {
@@ -114,6 +127,42 @@ export async function writeChatbotHandoffsToClose(
     });
     return none;
   }
+}
+
+/** Close lead custom field ids (org-specific, stable). */
+const RECAPTURE_STATE_FIELD = "cf_hKcyx4tQSMvHd7llfLX363bx3LGXMxVEmFHEtjpR5C2";
+/** Reasons that are a sales hand-raise, not a support or access request. */
+const HOT_REASONS = new Set(["callback", "email_quiet"]);
+const NEVER_RESTAMP = new Set(["Booked", "Suppressed", "Hot-Inbound"]);
+
+/**
+ * The setter who should get the task, and the hot list. Close assigns an
+ * unassigned task to the API user, not the setter, so read "Lead Owner".
+ * A sales hand-raise on a lead that has never had a call is re-stamped
+ * Recapture State = Hot-Inbound, which is what the L2 Hot Inbound Smart
+ * Views list (the same re-engagement arrow a form fill or reply triggers).
+ */
+async function routeToSetter(
+  closeClient: CloseClient,
+  leadId: string,
+  reasonSummary: string,
+): Promise<string | null> {
+  const lead = await closeClient.getLead(leadId);
+  const custom = lead?.custom ?? {};
+  const owner = custom["Lead Owner"];
+  const reason = reasonSummary.match(/^\[(\w+)\]/)?.[1] ?? "";
+  const state = custom["Recapture State"];
+  if (
+    lead &&
+    HOT_REASONS.has(reason) &&
+    custom["Ever Had Call"] !== "Yes" &&
+    !NEVER_RESTAMP.has(String(state ?? ""))
+  ) {
+    await closeClient.updateLead(leadId, {
+      [`custom.${RECAPTURE_STATE_FIELD}`]: "Hot-Inbound",
+    });
+  }
+  return typeof owner === "string" && owner.startsWith("user_") ? owner : null;
 }
 
 async function conversationIdForLead(
@@ -136,11 +185,13 @@ export function taskText(reasonSummary: string): string {
   const label =
     reason === "callback"
       ? "Chatbot callback requested"
-      : reason === "support"
-        ? "Chatbot: existing member needs support"
-        : reason === "accessibility"
-          ? "Chatbot: continue by text or email (no phone call)"
-          : "Chatbot hand-off";
+      : reason === "email_quiet"
+        ? "Hot: chatbot email lead went quiet, call them"
+        : reason === "support"
+          ? "Chatbot: existing member needs support"
+          : reason === "accessibility"
+            ? "Chatbot: continue by text or email (no phone call)"
+            : "Chatbot hand-off";
   const body = reasonSummary.replace(/^\[\w+\]\s*/, "");
   return `${label}: ${body}`.slice(0, 1000);
 }
