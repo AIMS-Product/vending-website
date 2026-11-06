@@ -157,3 +157,63 @@ describe("writeChatbotHandoffsToClose", () => {
     );
   });
 });
+
+describe("routing a hand-off to the setter", () => {
+  beforeEach(() => vi.spyOn(console, "warn").mockImplementation(() => {}));
+  afterEach(() => vi.restoreAllMocks());
+
+  function closeWithLead(custom: Record<string, unknown>) {
+    const base = buildClose();
+    const getLead = vi.fn(async () => ({ id: "lead_close_1", custom }));
+    const updateLead = vi.fn(async () => ({}));
+    Object.assign(base.closeClient, { getLead, updateLead });
+    return { ...base, updateLead };
+  }
+  const QUIET = {
+    ...TASK,
+    reason_summary: "[email_quiet] Mia emailed them 3 times, no reply.",
+    dedupe_key: "flag_for_team:conv-1:email_quiet",
+  };
+
+  it("assigns the task to the Lead Owner and puts a never-called lead back on the hot list", async () => {
+    const { client } = buildSupabase({ tasks: [QUIET] });
+    const close = closeWithLead({
+      "Lead Owner": "user_setter",
+      "Ever Had Call": "No",
+      "Recapture State": "Active-Nurture",
+    });
+    await writeChatbotHandoffsToClose(
+      { conversationId: "conv-1" },
+      { client, closeClient: close.closeClient },
+    );
+    expect(close.createTask).toHaveBeenCalledWith(
+      expect.objectContaining({
+        assigned_to: "user_setter",
+        text: expect.stringContaining("Hot: chatbot email lead went quiet"),
+      }),
+    );
+    expect(close.updateLead).toHaveBeenCalledWith("lead_close_1", {
+      "custom.cf_hKcyx4tQSMvHd7llfLX363bx3LGXMxVEmFHEtjpR5C2": "Hot-Inbound",
+    });
+  });
+
+  it("never re-stamps a lead that has had a call, or a support hand-off", async () => {
+    const quiet = buildSupabase({ tasks: [QUIET] });
+    const called = closeWithLead({ "Ever Had Call": "Yes" });
+    await writeChatbotHandoffsToClose(
+      { conversationId: "conv-1" },
+      { client: quiet.client, closeClient: called.closeClient },
+    );
+    expect(called.updateLead).not.toHaveBeenCalled();
+
+    const support = buildSupabase({
+      tasks: [{ ...TASK, reason_summary: "[support] Can't log in." }],
+    });
+    const fresh = closeWithLead({ "Ever Had Call": "No" });
+    await writeChatbotHandoffsToClose(
+      { conversationId: "conv-1" },
+      { client: support.client, closeClient: fresh.closeClient },
+    );
+    expect(fresh.updateLead).not.toHaveBeenCalled();
+  });
+});

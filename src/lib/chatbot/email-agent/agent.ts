@@ -43,6 +43,11 @@ import {
 import { escapeHtml, writeLeadNoteOnce } from "@/lib/chatbot/close-note";
 import { checkCloseBeforeEmail } from "./close-gate";
 import { nextSequenceStep, type SequenceStep } from "./sequence";
+import { wentQuiet, type QuietKind } from "./quiet";
+import {
+  HANDOFF_DEDUPE_PREFIX,
+  writeChatbotHandoffsToClose,
+} from "@/lib/chatbot/close-handoff";
 import {
   renderEmail,
   slotBookingUrl,
@@ -397,6 +402,117 @@ export async function followUpCandidates(
     })
     .slice(0, input.limit)
     .map((row) => row.id);
+}
+
+// ---------------------------------------------------------------------------
+// Quiet threads -> setter
+// ---------------------------------------------------------------------------
+
+const QUIET_SUMMARY: Record<QuietKind, string> = {
+  no_reply:
+    "Mia emailed them 3 times after the website chat (follow-up, nudge, last note) and got no reply. Call them.",
+  replied_then_quiet:
+    "They emailed back and forth with Mia but stopped answering before booking. Call them to close it out.",
+};
+
+/**
+ * Hands every email thread that ended without a booking to the lead's setter:
+ * one flag_for_team row per chat (dedupe key, so once ever), pushed to Close
+ * as a note + a call task for the lead owner, and back onto the hot list when
+ * they have never had a call (close-handoff.ts).
+ */
+export async function handOffQuietLeads(
+  input: { limit: number },
+  deps: { client?: AdminClient; now?: () => Date } = {},
+): Promise<Array<{ conversationId: string; kind: QuietKind }>> {
+  const client = deps.client ?? createAdminClient();
+  const now = (deps.now ?? (() => new Date()))();
+  const { data, error } = await client
+    .from("chatbot_conversations")
+    .select(
+      "id,captured_email,captured_phone,call_booked_at,messages,lead_submission_id",
+    )
+    .not("captured_email", "is", null)
+    .is("call_booked_at", null)
+    .lte(
+      "last_message_at",
+      new Date(now.getTime() - 24 * 3_600_000).toISOString(),
+    )
+    .gte(
+      "last_message_at",
+      new Date(now.getTime() - 14 * 86_400_000).toISOString(),
+    )
+    .order("last_message_at", { ascending: false })
+    .limit(200);
+  if (error) throw new Error(`chatbot email agent: quiet: ${error.message}`);
+
+  const booked = await bookedLeadSubmissions(
+    client,
+    (data ?? []).map((row) => row.lead_submission_id),
+  );
+  const quiet = (data ?? []).flatMap((row) => {
+    if (row.lead_submission_id && booked.has(row.lead_submission_id)) return [];
+    const kind = wentQuiet(toChatbotMessages(row.messages), now);
+    return kind ? [{ row, kind }] : [];
+  });
+  if (quiet.length === 0) return [];
+
+  const keys = quiet.map(({ row }) => quietDedupeKey(row.id));
+  const { data: existing, error: existingError } = await client
+    .from("chatbot_follow_up_tasks")
+    .select("dedupe_key,status")
+    .in("dedupe_key", keys);
+  if (existingError)
+    throw new Error(`chatbot email agent: quiet: ${existingError.message}`);
+  // "open" = row written but not yet in Close (outage, no Close lead yet):
+  // retry it. Anything else already reached the setter.
+  const status = new Map(
+    (existing ?? []).map((r) => [r.dedupe_key, r.status] as const),
+  );
+
+  const handed: Array<{ conversationId: string; kind: QuietKind }> = [];
+  for (const { row, kind } of quiet) {
+    if (handed.length >= input.limit) break;
+    const current = status.get(quietDedupeKey(row.id));
+    if (current && current !== "open") continue;
+    if (!current) {
+      const { error: insertError } = await client
+        .from("chatbot_follow_up_tasks")
+        .insert({
+          conversation_id: row.id,
+          task_type: "invite_to_call",
+          priority: 1,
+          channel: row.captured_phone ? "phone" : "email",
+          reason_summary: [
+            `[email_quiet] ${QUIET_SUMMARY[kind]}`,
+            row.captured_phone ? `Phone: ${row.captured_phone}` : null,
+            row.captured_email ? `Email: ${row.captured_email}` : null,
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          dedupe_key: quietDedupeKey(row.id),
+          due_at: now.toISOString(),
+        });
+      if (insertError) {
+        console.error("chatbot email agent: quiet hand-off insert failed", {
+          conversationId: row.id,
+          error: insertError.message,
+        });
+        continue;
+      }
+    }
+    // Idempotent (note marker), so a retry never doubles the task.
+    const pushed = await writeChatbotHandoffsToClose(
+      { conversationId: row.id },
+      { client },
+    );
+    if (pushed.sent > 0) handed.push({ conversationId: row.id, kind });
+  }
+  return handed;
+}
+
+function quietDedupeKey(conversationId: string) {
+  return `${HANDOFF_DEDUPE_PREFIX}${conversationId}:email_quiet`;
 }
 
 /**

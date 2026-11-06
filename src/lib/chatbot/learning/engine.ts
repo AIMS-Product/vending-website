@@ -1,6 +1,7 @@
 import "server-only";
 
 import { chatbotBookingUrl, CHATBOT_BOOKING_URL } from "@/lib/chatbot/booking";
+import { wentQuiet } from "@/lib/chatbot/email-agent/quiet";
 import type { ChatbotFlag } from "@/lib/services/chatbot-admin";
 import type { ChatbotMessage } from "@/lib/chatbot/conversation-store";
 import type { ProspectProfile } from "@/lib/chatbot/extract-prospect-profile";
@@ -203,7 +204,10 @@ export function runLearningEngine(
     now,
   );
   const knowledgeSuggestions = buildKnowledgeSuggestions(cases);
-  const insights = buildInsights(conversations, topicByConversationId);
+  const insights = [
+    ...buildInsights(conversations, topicByConversationId),
+    ...buildEmailAgentInsight(conversations, now),
+  ];
   const siteRecommendations = buildSiteRecommendations(insights);
 
   return {
@@ -490,6 +494,76 @@ const INSIGHT_TYPE_BY_TOPIC: Record<Exclude<LearningTopic, "other">, string> = {
   resources: "resource_gap",
   skepticism: "objection",
 };
+
+const EMAIL_WINDOW_DAYS = 7;
+
+/**
+ * What the email agent did this week and how people answered, refreshed each
+ * daily pass (one row, same dedupe key): emailed, replied, booked, went quiet
+ * (handed to a setter), asked to stop, plus their actual replies so the
+ * follow-up copy and timing can be tuned from real answers.
+ */
+function buildEmailAgentInsight(
+  conversations: LearningConversationInput[],
+  now: Date,
+): InsightOutput[] {
+  const since = now.getTime() - EMAIL_WINDOW_DAYS * 86_400_000;
+  const emailed = conversations.filter((c) =>
+    c.messages.some(
+      (m) => m.kind === "email_sent" && Date.parse(m.ts) >= since,
+    ),
+  );
+  if (emailed.length === 0) return [];
+  const received = (c: LearningConversationInput) =>
+    c.messages.filter((m) => m.kind === "email_received");
+  const replied = emailed.filter((c) => received(c).length > 0);
+  const stopped = replied.filter((c) =>
+    received(c).some((m) => m.data?.stop === true),
+  );
+  const booked = emailed.filter((c) => c.booked);
+  const quiet = emailed.filter((c) => !c.booked && wentQuiet(c.messages, now));
+  const handed = quiet.filter((c) => c.handedOff);
+  const replies = replied
+    .flatMap((c) =>
+      received(c).map((m) => ({
+        conversationId: c.id,
+        at: m.ts,
+        text: m.content.slice(0, 280),
+      })),
+    )
+    .sort((a, b) => b.at.localeCompare(a.at))
+    .slice(0, 15);
+  const pct = (n: number) => Math.round((n / emailed.length) * 100);
+
+  return [
+    {
+      insightType: "call_friction",
+      title: `Email agent, last ${EMAIL_WINDOW_DAYS} days: ${emailed.length} emailed, ${replied.length} replied, ${booked.length} booked`,
+      summary: [
+        `${emailed.length} chat leads got Mia's follow-up emails.`,
+        `${replied.length} replied (${pct(replied.length)}%), ${booked.length} booked (${pct(booked.length)}%), ${stopped.length} asked to stop.`,
+        `${quiet.length} went quiet: ${handed.length} handed to their setter as a hot call task, ${quiet.length - handed.length} still waiting to reach Close.`,
+        replied.length === 0
+          ? "No one has replied yet: test a shorter first email or a different subject."
+          : "Read the replies in the evidence to tune the follow-up copy.",
+      ].join(" "),
+      affectedCount: emailed.length,
+      impactScore: quiet.length * 3 + emailed.length - booked.length,
+      evidence: {
+        windowDays: EMAIL_WINDOW_DAYS,
+        emailed: emailed.length,
+        replied: replied.length,
+        booked: booked.length,
+        stopped: stopped.length,
+        wentQuiet: quiet.length,
+        handedToSetter: handed.length,
+        quietConversationIds: quiet.slice(0, 20).map((c) => c.id),
+        replies,
+      },
+      dedupeKey: "insight:email_agent",
+    },
+  ];
+}
 
 function buildInsights(
   conversations: LearningConversationInput[],

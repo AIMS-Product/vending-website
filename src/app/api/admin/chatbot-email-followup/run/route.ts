@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import {
   emailAgentEnabled,
   followUpCandidates,
+  handOffQuietLeads,
   pollInboundEmails,
   sendFollowUp,
   type FollowUpResult,
@@ -86,7 +87,16 @@ export async function GET(request: Request) {
       error: error instanceof Error ? error.message : "unknown error",
     });
   }
-  if (ids.length > 0 || inbound.length > 0) {
+  // Threads that ended without a booking go to the lead's setter (hot list + task).
+  let handedOff: Awaited<ReturnType<typeof handOffQuietLeads>> = [];
+  try {
+    handedOff = await handOffQuietLeads({ limit: 5 });
+  } catch (error) {
+    console.error("chatbot email agent: quiet hand-off failed", {
+      error: error instanceof Error ? error.message : "unknown error",
+    });
+  }
+  if (ids.length > 0 || inbound.length > 0 || handedOff.length > 0) {
     // Counts only, no addresses: what each run did, readable in Vercel logs.
     const tally = (reasons: string[]) =>
       reasons.reduce<Record<string, number>>(
@@ -101,7 +111,8 @@ export async function GET(request: Request) {
           "reason" in r && r.reason ? String(r.reason) : "handled",
         ),
       ),
+      handedToSetter: tally(handedOff.map((h) => h.kind)),
     });
   }
-  return Response.json({ ok: true, inbound, results });
+  return Response.json({ ok: true, inbound, results, handedOff });
 }
