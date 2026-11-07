@@ -144,6 +144,9 @@ export function ChatWidget() {
   // try/catch absorbs the ReferenceError from a missing `window`.
   const [open, setOpenState] = useState(() => readSessionFlag(OPEN_KEY));
   const [showTeaser, setShowTeaser] = useState(false);
+  // Phones: the compact bubble while the hero is on screen, the full greeting
+  // once they scroll past it (it can no longer cover the headline then).
+  const [pastHero, setPastHero] = useState(false);
   const [messages, setMessages] = useState<ChatDisplayMessage[]>([]);
   const [streamingText, setStreamingText] = useState<string | null>(null);
   const [isWaiting, setIsWaiting] = useState(false);
@@ -272,6 +275,16 @@ export function ChatWidget() {
     );
     return () => clearTimeout(timer);
   }, [enabled, config, open, suppressIdleTeaser]);
+
+  useEffect(() => {
+    if (!showTeaser || pastHero) return;
+    const onScroll = () => {
+      if (window.scrollY > window.innerHeight * 0.8) setPastHero(true);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [showTeaser, pastHero]);
 
   // Separate from the key handler below: rotating a phone across 640px flips
   // isMobile, and re-focusing the panel then would pull focus out of the input.
@@ -915,6 +928,7 @@ export function ChatWidget() {
         // Phones get a compact bubble (first question, two lines, 230px, no avatar) so it
         // sits beside the launcher instead of over the hero copy. Hiding it
         // outright on 2026-10-11 (#148) cut phone chats from ~28 to ~8 a week.
+        // Past the hero, phones get the full greeting too (2026-11-06).
         // CSS-only switch, so no hydration mismatch.
         <>
           {[true, false].map((compact) => (
@@ -923,7 +937,7 @@ export function ChatWidget() {
               className={compact ? "sm:hidden" : "hidden sm:block"}
             >
               <TeaserBubble
-                compact={compact}
+                compact={compact && !pastHero}
                 text={teaserMessage}
                 avatarUrl={config.avatarUrl}
                 onOpen={() => {
