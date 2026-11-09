@@ -180,6 +180,12 @@ const nextConfig: NextConfig = {
       // keeps the query, so only tabs with their own page are matched; any
       // other ?tab= simply lands on the dashboard, which ignores it.
       ...ADMIN_ANALYTICS_REDIRECTS,
+      // Member surname is Dix; keep the old shared link working.
+      {
+        source: "/case-studies/matt-dicks",
+        destination: "/case-studies/matt-dix",
+        permanent: true,
+      },
       // The $5 First Location Playbook replaces the GHL course offer once
       // PLAYBOOK_GUIDE_LIVE=on (read at build; flipping it needs a redeploy,
       // like every Vercel env change). Temporary, so turning it off restores

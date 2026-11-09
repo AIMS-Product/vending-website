@@ -101,8 +101,8 @@ function check(label, fn) {
     ["A", branchA],
   ]) {
     check(`branch ${name} prompt includes the case-study index`, () => {
-      assert.match(prompt, /Matt Dicks/);
-      assert.match(prompt, /\/case-studies\/matt-dicks/);
+      assert.match(prompt, /Matt Dix/);
+      assert.match(prompt, /\/case-studies\/matt-dix/);
     });
     check(`branch ${name} prompt includes collateral offers`, () => {
       assert.match(prompt, /\/resources\/roadmap/);
