@@ -27,7 +27,7 @@ import lane200kPerYear from "../../../data/case-studies/lane-200k-per-year.json"
 import madison6Locations from "../../../data/case-studies/madison-6-locations.json";
 import mallerieRouch from "../../../data/case-studies/mallerie-rouch.json";
 import manuelDuval from "../../../data/case-studies/manuel-duval.json";
-import mattDicks from "../../../data/case-studies/matt-dicks.json";
+import mattDix from "../../../data/case-studies/matt-dix.json";
 import mattMorrison from "../../../data/case-studies/matt-morrison.json";
 import michaelD600kPerYear from "../../../data/case-studies/michael-d-600k-per-year.json";
 import musaSadi from "../../../data/case-studies/musa-sadi.json";
@@ -54,7 +54,7 @@ const CASE_STUDY_FILES: unknown[] = [
   madison6Locations,
   mallerieRouch,
   manuelDuval,
-  mattDicks,
+  mattDix,
   mattMorrison,
   michaelD600kPerYear,
   musaSadi,

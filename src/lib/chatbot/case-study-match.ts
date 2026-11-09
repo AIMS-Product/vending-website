@@ -162,7 +162,7 @@ const FEATURED_SLUGS = new Set([
   "andy-consulman",
   "lane-200k-per-year",
   "shan-25k-per-month",
-  "matt-dicks",
+  "matt-dix",
   "manuel-duval",
   "madison-6-locations",
   "michael-d-600k-per-year",
