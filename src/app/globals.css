@@ -455,6 +455,26 @@ html[data-motion="paused"] .v2-float {
 .public-news-prose > * + * {
   margin-top: 1.35rem;
 }
+.public-news-prose table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.public-news-prose th,
+.public-news-prose td {
+  border: 2px solid #bfeeff;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  vertical-align: top;
+}
+.public-news-prose th {
+  background: #eaf8ff;
+  color: #111111;
+  font-weight: 800;
+}
 .public-news-prose h2 {
   margin-top: 3.25rem;
   border-top: 2px solid #bfeeff;

@@ -118,7 +118,7 @@ fbq('track', 'PageView');`}
       <Script
         id="idpixel"
         src="https://cdn.idpixel.app/v1/idp-analytics-6a289e9683e9dbc113e83182.min.js"
-        strategy="afterInteractive"
+        strategy="lazyOnload"
       />
 
       {/* HubSpot — forms/chat loader; nothing on the page blocks on it, so it
@@ -136,7 +136,7 @@ fbq('track', 'PageView');`}
           (see PreCallResourcesPage's VSL SWAP note). */}
 
       {/* RightMessage — personalization */}
-      <Script id="rightmessage" strategy="afterInteractive">
+      <Script id="rightmessage" strategy="lazyOnload">
         {`(function(p, a, n, d, o, b, c) {
   window.RM = window.RM || [];
   o = n.createElement('script'); o.type = 'text/javascript'; o.async = true; o.src = 'https://t.rightmessage.com/'+p+'.js';
