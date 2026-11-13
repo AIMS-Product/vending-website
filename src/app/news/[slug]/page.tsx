@@ -66,7 +66,9 @@ export default async function NewsArticlePage({
   const post = await getPublishedPost(slug);
   if (!post) notFound();
   const [html, posts, guides] = await Promise.all([
-    renderMarkdown(post.body),
+    // GFM so posts can carry comparison tables. Checked 2026-11-13: GFM
+    // renders every published post byte-identical to the plain pipeline.
+    renderMarkdown(post.body, { gfm: true }),
     listPublishedPosts({ limit: 30 }),
     listResourceGuides(),
   ]);

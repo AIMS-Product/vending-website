@@ -1,0 +1,154 @@
+{
+  "_about": "Blog queue for vendingpreneurs.com news. Source: reports/content-funnel-2026-10-18/CONTENT-FUNNEL-PLAN.md (volumes are US monthly, DataForSEO 2026-10-18). The drafter takes the first 'queued' topic whose slug has no news_posts row yet. 'vendhub' = owned by the VendHub blog (default split 2026-11-13: VP owns profit/worth-it, business plan, coaching, financing; VendHub owns machines, contracts, licenses, locations data). Volumes from the seo_keywords table and Search Console (seo_gsc_query_daily).",
+  "topics": [
+    {
+      "slug": "buy-vs-build-vending-route",
+      "title": "Buy a vending route vs build one",
+      "keyword": "buy a vending route",
+      "angle": "Decision guide: buying an existing route vs building from zero. Chart compares the two on time to income, upfront cost drivers, risk and control. Cards cover the route types members built. Proof: Joe, Lane, members who built.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-machine-business-plan",
+      "title": "Vending machine business plan",
+      "keyword": "vending machine business plan",
+      "angle": "Section-by-section business plan (locations, machines, product, route, money) using member examples; point to the free blueprint. 3,600/mo + template/sample variants.",
+      "status": "queued"
+    },
+    {
+      "slug": "how-to-run-a-vending-machine-business",
+      "title": "How to run a vending machine business",
+      "keyword": "how to run a vending machine business",
+      "angle": "Week-to-week operations once machines are placed: restocking, route planning, product rotation, cash and card sales, bookkeeping, keeping location managers happy. 5,400/mo.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-machine-success-stories",
+      "title": "Vending machine success stories",
+      "keyword": "vending machine success stories",
+      "angle": "Roundup of member routes grouped by starting point (W2 job, retiree, real estate, couple, stay-at-home parent), each linking its case study. GSC: 434 impressions/90d at position 24, no dedicated page.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-financing",
+      "title": "How to finance a vending business",
+      "keyword": "financing vending machines",
+      "angle": "Ways operators fund machines and routes: savings, equipment financing, SBA loans, seller financing on a bought route, reinvesting profits. Words only for terms; no rates unless in source. 1,300/mo + 480 \"business financing\", $10 CPC.",
+      "status": "queued"
+    },
+    {
+      "slug": "is-vending-business-worth-it",
+      "title": "Is a vending business worth it? Real member numbers",
+      "keyword": "is vending machine a profitable business",
+      "angle": "Honest answer: pros, cons and the slow months, with member routes as proof. Seo_keywords: 480/mo plus \"worth it\" and \"pros and cons\" variants.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-franchise-vs-independent",
+      "title": "Vending franchise vs independent route",
+      "keyword": "vending franchise",
+      "angle": "Franchise vs independent route vs independent with coaching. Chart compares ownership of accounts, fees structure, flexibility, support. Proof from case studies only; no competitor fee numbers unless in source data.",
+      "status": "queued"
+    },
+    {
+      "slug": "what-is-a-vending-route",
+      "title": "What is a vending route and how does it work?",
+      "keyword": "vending machine route",
+      "angle": "Plain explanation: locations, machines, restock schedule, how a route earns and grows, and how routes get valued. 880/mo.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-with-full-time-job",
+      "title": "Starting a vending business with a full-time job",
+      "keyword": "vending machine side hustle",
+      "angle": "Building a route while employed: what to do in evenings and weekends, which locations fit. Members by prior occupation (case_studies.prior_occupation). 140/mo + reddit variants.",
+      "status": "queued"
+    },
+    {
+      "slug": "start-vending-business-with-no-money",
+      "title": "Starting a vending business with little money",
+      "keyword": "how to start a vending machine business with no money",
+      "angle": "Low-capital paths: one machine first, placement-first selling, financing, reinvesting. Honest about what it really takes. Hub 6 keywords.",
+      "status": "queued"
+    },
+    {
+      "slug": "how-to-scale-a-vending-business",
+      "title": "How to scale a vending business",
+      "keyword": "how to scale a vending machine business",
+      "angle": "From 1-5 machines to a real route: systems, hiring a restocker, micro markets for big accounts, reinvesting. Proof: Anthony, Tim Barnes, DJ, Jason.",
+      "status": "queued"
+    },
+    {
+      "slug": "llc-for-vending-machine-business",
+      "title": "Do you need an LLC for a vending machine business?",
+      "keyword": "llc for vending machine business",
+      "angle": "Why operators form an LLC, when to do it, how it fits contracts and insurance; tell readers to confirm with an accountant or attorney. No state fees or legal specifics unless in source. 140+140+50/mo.",
+      "status": "queued"
+    },
+    {
+      "slug": "best-vending-coaching-programs",
+      "title": "How to choose a vending coaching program",
+      "keyword": "vending machine course",
+      "angle": "What to look for in a vending course or coaching program (location help, community, support, proof), red flags, and questions to ask. Do NOT name or describe other programs.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-real-estate-agents",
+      "title": "Vending for real estate agents and property owners",
+      "keyword": "vending business for real estate agents",
+      "angle": "Agents and property owners already know apartment managers. Proof: John Newcombe, Anthony Kolodziej, John and Lauren Sanchez.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-retirees",
+      "title": "A vending business for retirees",
+      "keyword": "vending business for retirees",
+      "angle": "Why retirees pick vending, which location types fit a part-time schedule. Proof: Joe (retiree route) and others in case studies.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-couples",
+      "title": "Running a vending business as a couple",
+      "keyword": "vending business couple",
+      "angle": "Splitting roles (sales, restocking, books). Proof: Graham and Katie Parker, John and Lauren Sanchez, Sandy and Joe.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-stay-at-home-parents",
+      "title": "A vending business for stay-at-home parents",
+      "keyword": "vending business for stay at home moms",
+      "angle": "Flexible schedule, locations near home and school hours. Proof: Madison, John and Lauren Sanchez, Graham and Katie Parker.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-veterans-first-responders",
+      "title": "A vending business for veterans and first responders",
+      "keyword": "vending business for veterans",
+      "angle": "Shift schedules, discipline and local networks. Proof: Manuel Duval (detective sergeant), Michael D (Air Force, construction, mail carrier).",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-fitness-professionals",
+      "title": "A vending business for trainers and gym owners",
+      "keyword": "vending machine for gym owners",
+      "angle": "Gyms as locations and trainers as operators. Proof: Kyle (personal trainer), John Sanchez, Musa Sadi (22 gym locations), Andy Kunselman.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-location-contract",
+      "title": "Vending location contracts and placement agreements",
+      "keyword": "vending machine location contract",
+      "angle": "What goes in a placement agreement; gated template.",
+      "status": "vendhub",
+      "overlaps": "VendHub queue 1.14 Location contracts & commissions -> owned by VendHub (default 2026-11-13)"
+    },
+    {
+      "slug": "vending-business-license-insurance",
+      "title": "Vending business licenses and insurance",
+      "keyword": "vending machine business license",
+      "angle": "What to check by state; insurance basics.",
+      "status": "vendhub",
+      "overlaps": "VendHub queue 2.7 Licenses, permits, taxes & insurance -> owned by VendHub (default 2026-11-13)"
+    }
+  ]
+}
