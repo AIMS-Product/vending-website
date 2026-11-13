@@ -1,0 +1,87 @@
+{
+  "_about": "Blog queue for vendingpreneurs.com news. Source: reports/content-funnel-2026-10-18/CONTENT-FUNNEL-PLAN.md (volumes are US monthly, DataForSEO 2026-10-18). The drafter takes the first 'queued' topic whose slug has no news_posts row yet. 'held' = overlaps a VendHub blog topic; Adam decides which brand owns it.",
+  "topics": [
+    {
+      "slug": "buy-vs-build-vending-route",
+      "title": "Buy a vending route vs build one",
+      "keyword": "buy a vending route",
+      "angle": "Decision guide: buying an existing route vs building from zero. Chart compares the two on time to income, upfront cost drivers, risk and control. Cards cover the route types members built. Proof: Joe, Lane, members who built.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-franchise-vs-independent",
+      "title": "Vending franchise vs independent route",
+      "keyword": "vending franchise",
+      "angle": "Franchise vs independent route vs independent with coaching. Chart compares ownership of accounts, fees structure, flexibility, support. Proof from case studies only; no competitor fee numbers unless in source data.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-with-full-time-job",
+      "title": "Starting a vending business with a full-time job",
+      "keyword": "vending business with a full time job",
+      "angle": "Members who built a route while employed. Chart: time per week by stage. Cards: members by prior occupation (case_studies.prior_occupation).",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-retirees",
+      "title": "A vending business for retirees",
+      "keyword": "vending business for retirees",
+      "angle": "Why retirees pick vending, which location types fit a part-time schedule. Proof: Joe (retiree route) and others in case studies.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-real-estate-agents",
+      "title": "Vending for real estate agents and property owners",
+      "keyword": "vending business for real estate agents",
+      "angle": "Agents and property owners already know apartment managers. Proof: John Newcombe, Anthony Kolodziej, John and Lauren Sanchez.",
+      "status": "queued"
+    },
+    {
+      "slug": "vending-business-for-couples",
+      "title": "Running a vending business as a couple",
+      "keyword": "vending business couple",
+      "angle": "Splitting roles (sales, restocking, books). Proof: Graham and Katie Parker, John and Lauren Sanchez, Sandy and Joe.",
+      "status": "queued"
+    },
+    {
+      "slug": "is-vending-business-worth-it",
+      "title": "Is a vending business worth it? Real member numbers",
+      "keyword": "is vending profitable",
+      "angle": "Honest answer with member routes and the slow months.",
+      "status": "held",
+      "overlaps": "VendHub queue 2.9 Profit & income (are vending machines profitable)"
+    },
+    {
+      "slug": "vending-machine-business-plan",
+      "title": "Vending machine business plan",
+      "keyword": "vending machine business plan",
+      "angle": "Business plan walkthrough tied to the finance template lead magnet.",
+      "status": "held",
+      "overlaps": "VendHub queue 2.5 How to start, business plans & ideas"
+    },
+    {
+      "slug": "vending-location-contract",
+      "title": "Vending location contracts and placement agreements",
+      "keyword": "vending machine location contract",
+      "angle": "What goes in a placement agreement; gated template.",
+      "status": "held",
+      "overlaps": "VendHub queue 1.14 Location contracts & commissions"
+    },
+    {
+      "slug": "vending-business-license-insurance",
+      "title": "Vending business licenses and insurance",
+      "keyword": "vending machine business license",
+      "angle": "What to check by state; insurance basics.",
+      "status": "held",
+      "overlaps": "VendHub queue 2.7 Licenses, permits, taxes & insurance"
+    },
+    {
+      "slug": "best-vending-coaching-programs",
+      "title": "Best vending coaching programs compared",
+      "keyword": "vending machine course",
+      "angle": "Honest roundup with 'pick X if...' verdicts.",
+      "status": "held",
+      "overlaps": "VendHub queue 2.12 Education/coaching brands (keyword: vendingpreneurs)"
+    }
+  ]
+}

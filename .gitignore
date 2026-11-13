@@ -60,3 +60,4 @@ scripts/playbook-guide/out/
 
 # font subsetting (scripts/fonts/subset-fonts.py) source cache
 /scripts/fonts/.cache/
+.claude/blog-drafts/
