@@ -106,7 +106,7 @@ function nextTopic() {
     ? queue.filter((t) => t.slug === topicArg)
     : queue.filter((t) => t.status === "queued");
   for (const t of candidates) {
-    if (taken.has(t.slug)) continue;
+    if (taken.has(t.slug) && !topicArg) continue;
     const clash = posts.find(
       (p) =>
         p.status === "published" &&
@@ -256,20 +256,17 @@ if (!save) {
 // The news page shows the title as H1, so the body starts after it.
 const h1 = /^# (.+)$/m.exec(draft.markdown)?.[1] ?? topic.title;
 const body = draft.markdown.replace(/^# .+\n+/, "");
-const row = must(
-  await db
-    .from("news_posts")
-    .insert({
-      slug: topic.slug,
-      title: h1,
-      excerpt: draft.metaDescription,
-      body,
-      status: "draft",
-    })
-    .select("id, slug, status, published_at")
-    .single(),
-  "news_posts insert",
-);
+const fields = { title: h1, excerpt: draft.metaDescription, body };
+const existing = posts.find((p) => p.slug === topic.slug);
+if (existing && existing.status !== "draft") {
+  // A published or archived post is never overwritten by the drafter.
+  console.log(`/news/${topic.slug} exists with status ${existing.status}; not touching it.`);
+  process.exit(3);
+}
+const write = existing
+  ? db.from("news_posts").update(fields).eq("slug", topic.slug).eq("status", "draft")
+  : db.from("news_posts").insert({ slug: topic.slug, status: "draft", ...fields });
+const row = must(await write.select("id, slug, status, published_at").single(), "news_posts write");
 console.log(
   `Saved DRAFT ${row.id} (${row.status}, published_at ${row.published_at}) slug ${row.slug}. Not published.`,
 );
