@@ -48,3 +48,12 @@ describe("hasKeyword", () => {
     expect(hasKeyword("How to buy a vending route", "buy a vending route")).toBe(true);
   });
 });
+
+describe("unlock rule", () => {
+  it("allows a literal door and flags the marketing phrase", () => {
+    const tells = (extra: string) =>
+      checkPost({ markdown: `# X\n\n${extra}`, keyword: "x", seoTitle: "x", metaDescription: "x", groundingText: "" }).failures.join("\n");
+    expect(tells("Tap to unlock the door.")).not.toMatch(/unlock/);
+    expect(tells("Unlock your potential.")).toMatch(/unlock/);
+  });
+});

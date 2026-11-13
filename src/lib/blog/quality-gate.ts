@@ -36,7 +36,8 @@ const AI_TELLS: ReadonlyArray<[string, RegExp]> = [
   ],
   ['"in today\'s ..."', /\bin today'?s\b/i],
   ["delve", /\bdelv(e|es|ing)\b/i],
-  ["unlock", /\bunlock(s|ing)?\b/i],
+  // Literal unlocking (a cooler door) is fine; "unlock your potential" is not.
+  ["unlock (figurative)", /\bunlock(s|ing)? (your|the (full|true|real)|new|growth|potential|opportunit|success|freedom)/i],
   ["elevate", /\belevat(e|es|ing)\b/i],
   ["landscape", /\blandscape\b/i],
   ["navigate the", /\bnavigat(e|ing) the\b/i],
