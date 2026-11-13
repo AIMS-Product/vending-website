@@ -15,3 +15,4 @@ node --env-file=.env.local scripts/blog/draft-next.mjs --topic X # a specific to
 - Gate: `src/lib/blog/quality-gate.ts`. A failing draft gets one rewrite with the failures listed, then exits 2 without saving.
 - Schedule: the launchd plist in this folder is **not loaded**. Loading it runs `run-scheduled.sh` daily at 06:15; the script only drafts on its own day parity so the two sites alternate (VendHub even days, Vendingpreneurs odd days).
 - Queue: `topics.json` (first `queued` topic with no `news_posts` row). `held` topics overlap the VendHub blog queue and wait for a decision on which brand owns them.
+- `refresh-post.mjs <slug> "<keyword>" [--save]`: rebuilds an existing article in the frame as a separate `<slug>-v2-draft` row; the live post is never touched. After review, copy title/excerpt/body onto the live row and delete the draft.
