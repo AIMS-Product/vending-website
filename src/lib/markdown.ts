@@ -77,10 +77,48 @@ function rehypeOptimizeImages() {
   return (tree: HastNode) => visit(tree);
 }
 
+/** Lowercase kebab-case fragment for a heading's text. */
+export function headingId(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function textOf(node: HastNode & { value?: string }): string {
+  if (typeof node.value === "string") return node.value;
+  return (node.children ?? []).map(textOf).join("");
+}
+
+/**
+ * Give every h2/h3 an id from its text so a chart row or a shared link can
+ * jump to that section. Runs after sanitisation (which would otherwise
+ * prefix or strip ids); the ids are derived here, never from the source.
+ */
+function rehypeHeadingIds() {
+  return (tree: HastNode) => {
+    const seen = new Map<string, number>();
+    const visit = (node: HastNode) => {
+      if ((node.tagName === "h2" || node.tagName === "h3") && node.properties) {
+        const base = headingId(textOf(node));
+        if (base) {
+          const n = seen.get(base) ?? 0;
+          seen.set(base, n + 1);
+          node.properties.id = n === 0 ? base : `${base}-${n + 1}`;
+        }
+      }
+      for (const child of node.children ?? []) visit(child);
+    };
+    visit(tree);
+  };
+}
+
 const processor = unified()
   .use(remarkParse)
   .use(remarkRehype)
   .use(rehypeSanitize, schema)
+  .use(rehypeHeadingIds)
   .use(rehypeOptimizeImages)
   .use(rehypeStringify);
 
@@ -99,6 +137,7 @@ const gfmProcessor = unified()
   .use(remarkGfm)
   .use(remarkRehype)
   .use(rehypeSanitize, schema)
+  .use(rehypeHeadingIds)
   .use(rehypeOptimizeImages)
   .use(rehypeStringify);
 
