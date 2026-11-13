@@ -30,6 +30,9 @@ const topicArg = args.includes("--topic")
 // --from <file>: gate and save a draft written earlier (e.g. a dry run you edited) instead of writing a new one.
 const fromArg = args.includes("--from") ? args[args.indexOf("--from") + 1] : null;
 const OUT_DIR = path.join(ROOT, ".claude/blog-drafts");
+// Topics whose draft failed the gate; a batch run moves past them.
+const FAILED_FILE = path.join(OUT_DIR, "failed.txt");
+const failedSlugs = new Set(fs.existsSync(FAILED_FILE) ? fs.readFileSync(FAILED_FILE, "utf8").split("\n").filter(Boolean) : []);
 // Live, indexable core pages (checked 2026-11-13). /solutions and /process are noindex.
 const CORE_PAGES = [
   { title: "Book a strategy call", url: "/contact" },
@@ -106,7 +109,7 @@ function nextTopic() {
     ? queue.filter((t) => t.slug === topicArg)
     : queue.filter((t) => t.status === "queued");
   for (const t of candidates) {
-    if (taken.has(t.slug) && !topicArg) continue;
+    if ((taken.has(t.slug) || failedSlugs.has(t.slug)) && !topicArg) continue;
     const clash = posts.find(
       (p) =>
         p.status === "published" &&
@@ -173,7 +176,7 @@ function parseDraft(text) {
 const topic = nextTopic();
 if (!topic) {
   console.log("Queue empty: no queued topic left without a news_posts row.");
-  process.exit(0);
+  process.exit(4); // the batch runner stops on 4
 }
 console.log(`topic ${topic.slug} ("${topic.keyword}")`);
 
@@ -245,7 +248,10 @@ console.log(
 if (!result.ok) console.log(`failures: ${result.failures.join("; ")}`);
 console.log(`markdown: ${path.relative(ROOT, file)}`);
 
-if (!result.ok) process.exit(2);
+if (!result.ok) {
+  if (save) fs.appendFileSync(FAILED_FILE, `${topic.slug}\n`);
+  process.exit(2);
+}
 if (!save) {
   console.log(
     "Dry run: nothing saved. Re-run with --save to create the draft row.",

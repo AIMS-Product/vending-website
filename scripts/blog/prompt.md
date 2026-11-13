@@ -25,6 +25,7 @@ Use ONLY the facts in the SOURCE DATA below. If a fact is not in it, leave it ou
 - At least 6 internal links, only to URLs in SOURCE DATA (paths starting with /).
 - Member results are individual and vary: after the first member figure, add one sentence saying results vary and depend on location, effort and market.
 - No guarantees, no "passive income" promises, no speed promises ("in 90 days").
+- Say nothing about another company (a competitor, a coaching program, a franchise brand, a vendor) beyond what SOURCE DATA states. Never name other coaching programs or franchises.
 - Banned words and phrasing: seamless, robust, empower, leverage, game-changer, unlock, elevate, delve, landscape, "navigate the", "in today's", "look no further". Never write "it's not X, it's Y" or "no X, no Y, no Z". At most 2 em dashes in the whole post.
 - No placeholders, no TODO, no VERIFY.
 
