@@ -24,6 +24,7 @@ import {
   getRoadmap,
   getSeoTasks,
 } from "@/lib/services/seo-plan-data";
+import { SeoStartHereTab } from "@/components/admin/seo/StartHereTab";
 import { AiVisibilityPanel } from "@/components/admin/seo/AiVisibilityPanel";
 import { getSeoScorecard } from "@/lib/services/seo-scorecard";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -40,6 +41,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const TABS = [
+  { key: "start", label: "Start here" },
   { key: "overview", label: "Overview" },
   { key: "pages", label: "Pages" },
   { key: "keywords", label: "Keywords & AEO" },
@@ -110,6 +112,8 @@ async function TabBody({
 }) {
   const today = pacificToday();
   switch (tab) {
+    case "start":
+      return <SeoStartHereTab />;
     case "overview": {
       const [data, scorecard] = await Promise.all([
         getSeoOverview(),

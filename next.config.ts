@@ -263,6 +263,35 @@ const nextConfig: NextConfig = {
         destination: "/news/best-vending-locations",
         permanent: true,
       })),
+      // One-segment URLs Google still showed as 404 in Nov 2026. They live here
+      // because the prod `redirects` table still has the old two-segment source
+      // CHECK (migration 20260727220000 not applied), so Studio cannot save them.
+      // Members' course URLs go to the Learning Portal; the rest to the closest page.
+      ...[
+        "/all-courses",
+        "/courses",
+        "/lesson",
+        "/sign-in",
+        "/forgot-password",
+      ].map((source) => ({
+        source,
+        destination: `https://courses.vendingpreneurs.com${source}`,
+        permanent: true,
+      })),
+      ...[
+        ["/terms-of-service", "/terms"],
+        ["/terms-service", "/terms"],
+        ["/home", "/"],
+        ["/checkout-lt", "/"],
+        ["/checkout-page", "/"],
+        ["/ak-bio-live-training", "/masterclass"],
+        ["/masterclass-thankyou-3", "/masterclass"],
+        ["/get-my-checklist-01-6065", "/resources/roadmap"],
+      ].map(([source, destination]) => ({
+        source,
+        destination,
+        permanent: true,
+      })),
       ...legacyLeadRedirects.map(({ source, destination }) => ({
         source,
         destination,
