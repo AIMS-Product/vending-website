@@ -44,7 +44,8 @@ The session identifies a browser; named leads are known only after capture.
 ## Release verification
 
 Check `/mike` on the Vercel preview before merging. Verify route HTTP 200,
-mobile/desktop layout, exactly one link (the booking card), no video, newsletter,
+mobile/desktop layout, exactly one booking action (the booking card; the accessible
+skip-to-content link is allowed), no video, newsletter,
 stories or other exits, no navigation/popup/chat distractions, the booking
 link's five tags, session/source handoff, and that the existing booking form
 renders. Do not submit a fake lead or booking. GitHub CI covers typecheck, lint and tests; Vercel supplies
