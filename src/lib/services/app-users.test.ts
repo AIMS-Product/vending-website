@@ -10,6 +10,11 @@ import {
   removeAppUserAccess,
 } from "./app-users";
 import type { AdminContext } from "@/lib/supabase/auth";
+
+const { sendPasswordSetupEmail } = vi.hoisted(() => ({
+  sendPasswordSetupEmail: vi.fn().mockResolvedValue(undefined),
+}));
+vi.mock("@/lib/supabase/password-email", () => ({ sendPasswordSetupEmail }));
 import type { Database } from "@/types/database";
 
 const actor: AdminContext = {
@@ -289,7 +294,11 @@ describe("app user service", () => {
         role: "admin",
       }),
     );
-    expect(fake.resetPasswordForEmail).toHaveBeenCalled();
+    expect(sendPasswordSetupEmail).toHaveBeenCalledWith(
+      fake.client,
+      "new.admin@example.com",
+      "https://vending-website.vercel.app",
+    );
     expect(fake.state.events).toContainEqual(
       expect.objectContaining({
         event_type: "invited",

@@ -2,10 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
-import {
-  buildPasswordResetRedirectUrl,
-  resolveAuthEmailOrigin,
-} from "@/lib/supabase/auth-redirects";
+import { resolveAuthEmailOrigin } from "@/lib/supabase/auth-redirects";
 import { publicConfig } from "@/lib/config";
 import {
   checkPublicRateLimit,
@@ -13,7 +10,7 @@ import {
   TOO_MANY_REQUESTS_MESSAGE,
 } from "@/lib/public-rate-limit";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { createClient } from "@/lib/supabase/server";
+import { sendPasswordSetupEmail } from "@/lib/supabase/password-email";
 
 export type PasswordResetState =
   | { status: "idle" }
@@ -51,17 +48,18 @@ export async function requestPasswordReset(
 
   const hasAccess = await hasAdminEmailAccess(parsed.data);
   if (hasAccess) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.resetPasswordForEmail(parsed.data, {
-      redirectTo: buildPasswordResetRedirectUrl(
-        await originFromHeaders(),
+    try {
+      await sendPasswordSetupEmail(
+        createAdminClient(),
         parsed.data,
-      ),
-    });
-
-    if (error) {
-      // No address in the log: it is PII and the error carries the cause.
-      console.error("requestPasswordReset failed", { error: error.message });
+        await originFromHeaders(),
+      );
+    } catch (error) {
+      // Logged, not surfaced: the reply must not reveal which emails have
+      // accounts. No address in the log: it is PII and the error carries the cause.
+      console.error("requestPasswordReset failed", {
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

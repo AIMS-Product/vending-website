@@ -2,20 +2,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { requestPasswordReset } from "./actions";
 
 const mocks = vi.hoisted(() => {
-  const resetPasswordForEmail = vi.fn();
+  const sendPasswordSetupEmail = vi.fn();
   const maybeSingle = vi.fn();
   const eq = vi.fn(() => ({ maybeSingle }));
   const select = vi.fn(() => ({ eq }));
   const from = vi.fn(() => ({ select }));
 
   return {
-    createServerClient: vi.fn(() => ({
-      auth: { resetPasswordForEmail },
-    })),
     createAdminClient: vi.fn(() => ({ from })),
     headers: vi.fn(),
     checkPublicRateLimit: vi.fn(),
-    resetPasswordForEmail,
+    sendPasswordSetupEmail,
     maybeSingle,
     eq,
     select,
@@ -23,8 +20,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: mocks.createServerClient,
+vi.mock("@/lib/supabase/password-email", () => ({
+  sendPasswordSetupEmail: mocks.sendPasswordSetupEmail,
 }));
 
 vi.mock("@/lib/supabase/admin", () => ({
@@ -60,7 +57,7 @@ describe("requestPasswordReset", () => {
       }),
     );
     mocks.checkPublicRateLimit.mockResolvedValue(true);
-    mocks.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null });
+    mocks.sendPasswordSetupEmail.mockResolvedValue(undefined);
     mocks.maybeSingle.mockResolvedValue({
       data: { email: "admin@example.com", role: "admin" },
       error: null,
@@ -77,14 +74,11 @@ describe("requestPasswordReset", () => {
       status: "sent",
       email: "admin@example.com",
     });
-    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+    expect(mocks.sendPasswordSetupEmail).toHaveBeenCalledWith(
+      expect.anything(),
       "admin@example.com",
-      {
-        redirectTo:
-          "https://vending-website.vercel.app/auth/callback?next=%2Fadmin%2Freset-password%3Femail%3Dadmin%2540example.com&email=admin%40example.com",
-      },
+      "https://vending-website.vercel.app",
     );
-    expect(mocks.createServerClient).toHaveBeenCalledOnce();
   });
 
   it("ignores a forged x-forwarded-host when building the reset link", async () => {
@@ -103,16 +97,11 @@ describe("requestPasswordReset", () => {
       formData("admin@example.com"),
     );
 
-    expect(mocks.resetPasswordForEmail).toHaveBeenCalledWith(
+    expect(mocks.sendPasswordSetupEmail).toHaveBeenCalledWith(
+      expect.anything(),
       "admin@example.com",
-      {
-        redirectTo: expect.stringContaining(
-          "https://www.vendingpreneurs.com/auth/callback",
-        ),
-      },
+      "https://www.vendingpreneurs.com",
     );
-    const [, options] = mocks.resetPasswordForEmail.mock.calls[0] ?? [];
-    expect(options?.redirectTo).not.toContain("evil.tld");
   });
 
   it("does not send reset emails to non-admin addresses but returns generic sent state", async () => {
@@ -127,7 +116,7 @@ describe("requestPasswordReset", () => {
       status: "sent",
       email: "outsider@example.com",
     });
-    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(mocks.sendPasswordSetupEmail).not.toHaveBeenCalled();
   });
 
   it("rejects invalid email before looking up access", async () => {
@@ -141,7 +130,7 @@ describe("requestPasswordReset", () => {
       message: "Enter a valid email address.",
     });
     expect(mocks.from).not.toHaveBeenCalled();
-    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(mocks.sendPasswordSetupEmail).not.toHaveBeenCalled();
   });
   it("refuses a throttled request before the allowlist lookup", async () => {
     mocks.checkPublicRateLimit.mockResolvedValue(false);
@@ -161,21 +150,20 @@ describe("requestPasswordReset", () => {
       { ip: null },
     );
     expect(mocks.from).not.toHaveBeenCalled();
-    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(mocks.sendPasswordSetupEmail).not.toHaveBeenCalled();
   });
 
   it("never logs the address when the reset email fails", async () => {
     const spy = vi.spyOn(console, "error").mockImplementation(() => {});
-    mocks.resetPasswordForEmail.mockResolvedValue({
-      data: null,
-      error: { message: "smtp down" },
-    });
+    mocks.sendPasswordSetupEmail.mockRejectedValue(new Error("smtp down"));
 
-    await requestPasswordReset(
+    const result = await requestPasswordReset(
       { status: "idle" },
       formData("admin@example.com"),
     );
 
+    expect(result).toEqual({ status: "sent", email: "admin@example.com" });
+    expect(JSON.stringify(spy.mock.calls)).toContain("smtp down");
     expect(JSON.stringify(spy.mock.calls)).not.toContain("admin@example.com");
     spy.mockRestore();
   });
@@ -194,6 +182,6 @@ describe("requestPasswordReset", () => {
       "admin_password_reset_email",
       { ip: null, email: "admin@example.com" },
     );
-    expect(mocks.resetPasswordForEmail).not.toHaveBeenCalled();
+    expect(mocks.sendPasswordSetupEmail).not.toHaveBeenCalled();
   });
 });

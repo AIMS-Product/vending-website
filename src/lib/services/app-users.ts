@@ -1,8 +1,8 @@
 import "server-only";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
-import { buildPasswordResetRedirectUrl } from "@/lib/supabase/auth-redirects";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { AdminContext, AdminRole } from "@/lib/supabase/auth";
+import { sendPasswordSetupEmail } from "@/lib/supabase/password-email";
 import type { Database, Json } from "@/types/database";
 
 export type AppUserRole = AdminRole;
@@ -452,10 +452,13 @@ async function sendPasswordEmail(
 ) {
   if (!origin) return;
 
-  const { error } = await client.auth.resetPasswordForEmail(email, {
-    redirectTo: buildPasswordResetRedirectUrl(origin),
-  });
-  if (error) throw new AppUserServiceError(error.message);
+  try {
+    await sendPasswordSetupEmail(client, email, origin);
+  } catch (error) {
+    throw new AppUserServiceError(
+      error instanceof Error ? error.message : "Could not send the email.",
+    );
+  }
 }
 
 async function logAppUserEvent(
