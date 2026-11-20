@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/news";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
 import { createSignedImageStorageUpload } from "@/lib/supabase/signed-upload";
+import { META_DESCRIPTION_MAX, SEO_TITLE_MAX } from "@/lib/news/seo-meta";
 import { normalizeNewsSlug } from "./news-slug";
 
 export type EditorActionState =
@@ -42,6 +43,17 @@ const postSchema = z.object({
   body: z.string().trim().min(1, "Body is required."),
   cover_url: z.string().trim(),
   cover_alt: z.string().trim().max(180, "Alt text is too long."),
+  seo_title: z
+    .string()
+    .trim()
+    .max(SEO_TITLE_MAX, `Keep the SEO title to ${SEO_TITLE_MAX} characters.`),
+  meta_description: z
+    .string()
+    .trim()
+    .max(
+      META_DESCRIPTION_MAX,
+      `Keep the meta description to ${META_DESCRIPTION_MAX} characters.`,
+    ),
   intent: z.enum(["save", "publish", "unpublish", "archive"]),
 });
 
@@ -57,12 +69,15 @@ const autosaveSchema = z.object({
   body: z.string(),
   cover_url: z.string().trim(),
   cover_alt: z.string().trim().max(180),
+  seo_title: z.string().trim().max(SEO_TITLE_MAX),
+  meta_description: z.string().trim().max(META_DESCRIPTION_MAX),
 });
 
 export type NewsAutosaveResult =
   | { status: "saved"; savedAt: string }
   | { status: "skipped"; message: string }
-  | { status: "error"; message: string };
+  // `final`: retrying cannot help (e.g. the slug is taken); show the message.
+  | { status: "error"; message: string; final?: true };
 
 const PUBLIC_NEWS_PATH = "/news";
 
@@ -127,6 +142,8 @@ export async function savePost(
     body: formData.get("body"),
     cover_url: formData.get("cover_url") ?? "",
     cover_alt: formData.get("cover_alt") ?? "",
+    seo_title: formData.get("seo_title") ?? "",
+    meta_description: formData.get("meta_description") ?? "",
     intent: formData.get("intent") ?? "save",
   });
 
@@ -156,6 +173,8 @@ export async function savePost(
         body: post.body,
         cover_url: nullable(post.cover_url),
         cover_alt: nullable(post.cover_alt),
+        seo_title: nullable(post.seo_title),
+        meta_description: nullable(post.meta_description),
         status: post.intent === "publish" ? "published" : "draft",
         published_at:
           post.intent === "publish" ? new Date().toISOString() : null,
@@ -175,6 +194,8 @@ export async function savePost(
         body: post.body,
         cover_url: nullable(post.cover_url),
         cover_alt: nullable(post.cover_alt),
+        seo_title: nullable(post.seo_title),
+        meta_description: nullable(post.meta_description),
         status:
           post.intent === "archive"
             ? "archived"
@@ -229,6 +250,8 @@ export async function autosaveNewsDraft(
     body: formData.get("body") ?? "",
     cover_url: formData.get("cover_url") ?? "",
     cover_alt: formData.get("cover_alt") ?? "",
+    seo_title: formData.get("seo_title") ?? "",
+    meta_description: formData.get("meta_description") ?? "",
   });
 
   if (!parsed.success) {
@@ -268,6 +291,8 @@ export async function autosaveNewsDraft(
       body: draft.body,
       cover_url: nullable(draft.cover_url),
       cover_alt: nullable(draft.cover_alt),
+      seo_title: nullable(draft.seo_title),
+      meta_description: nullable(draft.meta_description),
     });
 
     revalidatePath("/admin/news");
@@ -275,7 +300,7 @@ export async function autosaveNewsDraft(
   } catch (error) {
     if (isSlugTaken(error)) {
       const conflict = await slugConflictState(draft.slug);
-      return { status: "error", message: conflict.message };
+      return { status: "error", message: conflict.message, final: true };
     }
     console.error("news draft autosave failed", error);
     return {

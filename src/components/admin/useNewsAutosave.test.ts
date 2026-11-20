@@ -22,6 +22,8 @@ const base: NewsAutosaveInput = {
   body: "Body copy.",
   coverUrl: "https://cdn.example.com/x.jpg",
   coverAlt: "Cover alt",
+  seoTitle: "",
+  metaDescription: "",
 };
 
 describe("newsAutosaveEnabled (I5)", () => {

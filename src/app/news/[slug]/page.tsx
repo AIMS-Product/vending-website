@@ -13,6 +13,7 @@ import { listResourceGuides } from "@/lib/services/seo-page-public";
 import { pickRelatedReading } from "@/lib/news/related-reading";
 import { renderMarkdown } from "@/lib/markdown";
 import { jsonLdHtml } from "@/lib/json-ld";
+import { newsMetaDescription, newsSeoTitle } from "@/lib/news/seo-meta";
 import {
   newsArticleStructuredData,
   newsStructuredData,
@@ -40,15 +41,18 @@ export async function generateMetadata({
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
+  const title = newsSeoTitle(post);
+  const description = newsMetaDescription(post);
   return {
-    title: post.title,
-    description: post.excerpt ?? undefined,
+    title,
+    description,
     alternates: {
       canonical: `/news/${post.slug}`,
     },
+    twitter: { card: "summary_large_image", title, description },
     openGraph: {
-      title: post.title,
-      description: post.excerpt ?? undefined,
+      title,
+      description,
       url: `/news/${post.slug}`,
       images: post.cover_url ? [post.cover_url] : [defaultOgImage],
       type: "article",

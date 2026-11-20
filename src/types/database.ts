@@ -2308,8 +2308,10 @@ export type Database = {
           cover_url: string | null;
           created_at: string;
           excerpt: string | null;
+          meta_description: string | null;
           id: string;
           published_at: string | null;
+          seo_title: string | null;
           slug: string;
           status: string;
           title: string;
@@ -2321,8 +2323,10 @@ export type Database = {
           cover_url?: string | null;
           created_at?: string;
           excerpt?: string | null;
+          meta_description?: string | null;
           id?: string;
           published_at?: string | null;
+          seo_title?: string | null;
           slug: string;
           status?: string;
           title: string;
@@ -2334,8 +2338,10 @@ export type Database = {
           cover_url?: string | null;
           created_at?: string;
           excerpt?: string | null;
+          meta_description?: string | null;
           id?: string;
           published_at?: string | null;
+          seo_title?: string | null;
           slug?: string;
           status?: string;
           title?: string;

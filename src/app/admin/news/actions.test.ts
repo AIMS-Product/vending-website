@@ -328,3 +328,42 @@ describe("duplicate slug", () => {
     );
   });
 });
+
+describe("SEO fields", () => {
+  const base = {
+    id: POST_ID,
+    title: "Launch Day",
+    slug: "launch-day",
+    excerpt: "",
+    body: "Body.",
+    cover_url: "",
+    cover_alt: "",
+    intent: "save",
+  };
+
+  it("saves the SEO title and meta description, and clears empty ones to null", async () => {
+    await savePost(
+      idle,
+      formData({ ...base, seo_title: "Short title", meta_description: "" }),
+    );
+    expect(mocks.adminUpdatePost).toHaveBeenCalledWith(
+      POST_ID,
+      expect.objectContaining({
+        seo_title: "Short title",
+        meta_description: null,
+      }),
+    );
+  });
+
+  it("rejects an SEO title over 60 characters", async () => {
+    const result = await savePost(
+      idle,
+      formData({ ...base, seo_title: "x".repeat(61), meta_description: "" }),
+    );
+    expect(result).toMatchObject({
+      status: "error",
+      message: "Keep the SEO title to 60 characters.",
+    });
+    expect(mocks.adminUpdatePost).not.toHaveBeenCalled();
+  });
+});

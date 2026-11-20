@@ -32,6 +32,8 @@ export type NewsAutosaveInput = {
   body: string;
   coverUrl: string;
   coverAlt: string;
+  seoTitle: string;
+  metaDescription: string;
 };
 
 export type NewsAutosaveState = NewsAutosaveResult | null;
@@ -61,6 +63,8 @@ export function buildNewsAutosaveFormData(input: NewsAutosaveInput): FormData {
   formData.set("body", input.body);
   formData.set("cover_url", input.coverUrl);
   formData.set("cover_alt", input.coverAlt);
+  formData.set("seo_title", input.seoTitle);
+  formData.set("meta_description", input.metaDescription);
   return formData;
 }
 
@@ -96,8 +100,18 @@ export function useNewsAutosave(input: NewsAutosaveInput): {
     setAutosave(null);
   }, []);
 
-  const { postId, status, title, slug, excerpt, body, coverUrl, coverAlt } =
-    input;
+  const {
+    postId,
+    status,
+    title,
+    slug,
+    excerpt,
+    body,
+    coverUrl,
+    coverAlt,
+    seoTitle,
+    metaDescription,
+  } = input;
 
   useEffect(() => {
     if (!newsAutosaveEnabled({ postId, status })) return;
@@ -122,6 +136,10 @@ export function useNewsAutosave(input: NewsAutosaveInput): {
         )
         .then((result) => {
           if (cancelled) return;
+          if (result.status === "error" && result.final) {
+            setAutosave(result);
+            return;
+          }
           if (result.status === "error") {
             scheduleRetryOrRest();
             return;
@@ -162,7 +180,18 @@ export function useNewsAutosave(input: NewsAutosaveInput): {
       cancelled = true;
       for (const id of timers) window.clearTimeout(id);
     };
-  }, [postId, status, title, slug, excerpt, body, coverUrl, coverAlt]);
+  }, [
+    postId,
+    status,
+    title,
+    slug,
+    excerpt,
+    body,
+    coverUrl,
+    coverAlt,
+    seoTitle,
+    metaDescription,
+  ]);
 
   return { autosave, clearAutosave };
 }
