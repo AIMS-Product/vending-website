@@ -212,7 +212,7 @@ export const applyMembers = {
       name: "Musa Sadi",
       image: "/apply/stories/moosa.png",
       youtubeId: "kb8ryBm6g9k",
-      alt: "Success story — Musa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffman on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story.",
+      alt: "Success story — Musa Sadi: after losing his mother and younger brother and burning out of a hospitality career, he quit his job, found Mike Hoffmann on YouTube, and rebuilt — 22 locations, 2 employees running his routes, a $41K single best month in about a year. “I genuinely feel freedom. At the end of the day, I do it for my mom and my brother.” Watch his story.",
     },
   ] satisfies SuccessStoryCard[],
 } as const;
