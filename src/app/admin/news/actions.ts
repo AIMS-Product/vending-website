@@ -6,6 +6,7 @@ import { z } from "zod";
 import {
   adminCreatePost,
   adminGetPostById,
+  adminGetPostBySlug,
   adminUpdatePost,
 } from "@/lib/services/news";
 import { requireAdmin as requireAuth } from "@/lib/supabase/auth";
@@ -15,7 +16,7 @@ import { normalizeNewsSlug } from "./news-slug";
 export type EditorActionState =
   | { status: "idle"; message?: string }
   | { status: "saved"; message: string }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; conflictPostId?: string };
 
 // I13: authoritative server-side slug guard. The client slugifies on every
 // keystroke, but paste/edge paths (and any non-browser caller) can still submit
@@ -76,6 +77,32 @@ function revalidateNewsPaths(slug: string, previousSlug?: string) {
   if (previousSlug && previousSlug !== slug) {
     revalidatePath(`${PUBLIC_NEWS_PATH}/${previousSlug}`);
   }
+}
+
+function isSlugTaken(error: unknown) {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    error.code === "23505"
+  );
+}
+
+// The slug column is unique. Name the post that already holds it so the editor
+// can open that post instead of retrying a save that can never succeed.
+async function slugConflictState(
+  slug: string,
+): Promise<Extract<EditorActionState, { status: "error" }>> {
+  const holder = await adminGetPostBySlug(slug).catch((error: unknown) => {
+    console.error("news slug conflict lookup failed", error);
+    return null;
+  });
+  const label = holder ? ` ("${holder.title}", ${holder.status})` : "";
+  return {
+    status: "error",
+    message: `Another post${label} already uses the slug "${slug}". Open that post to edit it, or change the slug here.`,
+    conflictPostId: holder?.id,
+  };
 }
 
 function errorState(error: unknown): EditorActionState {
@@ -169,6 +196,7 @@ export async function savePost(
       return { status: "saved", message: "Post saved." };
     }
   } catch (error) {
+    if (isSlugTaken(error)) return slugConflictState(post.slug);
     return errorState(error);
   }
 
@@ -245,6 +273,10 @@ export async function autosaveNewsDraft(
     revalidatePath("/admin/news");
     return { status: "saved", savedAt: new Date().toISOString() };
   } catch (error) {
+    if (isSlugTaken(error)) {
+      const conflict = await slugConflictState(draft.slug);
+      return { status: "error", message: conflict.message };
+    }
     console.error("news draft autosave failed", error);
     return {
       status: "error",

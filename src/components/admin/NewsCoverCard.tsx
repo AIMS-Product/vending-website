@@ -1,13 +1,15 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createSignedImageUpload } from "@/app/admin/news/actions";
 import { adminCardClass, adminInputClass } from "@/components/admin/AdminUi";
 import {
   MediaLibrarySelectButton,
   useMediaPicker,
 } from "@/components/admin/MediaPickerProvider";
-import { createClient } from "@/lib/supabase/client";
+import {
+  uploadErrorMessage,
+  uploadNewsImage,
+} from "@/components/admin/news-image-upload";
 import type { EditorMediaAsset } from "@/lib/media/editor-asset";
 
 // Cover fields extracted from NewsEditorForm to keep that component under the
@@ -35,22 +37,10 @@ export function NewsCoverCard({
     setUploadMessage(null);
     startUploadTransition(async () => {
       try {
-        const request = new FormData();
-        request.set("filename", file.name);
-        const signed = await createSignedImageUpload(request);
-        const supabase = createClient();
-        const { error } = await supabase.storage
-          .from("news-images")
-          .uploadToSignedUrl(signed.path, signed.token, file, {
-            contentType: file.type || "image/jpeg",
-            upsert: false,
-          });
-        if (error) throw error;
-        onCoverUrlChange(signed.publicUrl);
-        setUploadMessage("Cover image uploaded.");
+        onCoverUrlChange(await uploadNewsImage(file));
+        setUploadMessage("Cover image uploaded. Save to keep it.");
       } catch (error) {
-        console.error("cover upload failed", error);
-        setUploadMessage("Could not upload the image.");
+        setUploadMessage(uploadErrorMessage("cover upload failed", error));
       }
     });
   }
