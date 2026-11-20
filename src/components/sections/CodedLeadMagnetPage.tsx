@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata-titles";
 import { ResourcePageRenderer } from "@/components/sections/ResourcePageRenderer";
 import {
   buildLeadAttribution,
@@ -37,7 +38,7 @@ export async function CodedLeadMagnetPage({
 
 export function leadMagnetMetadata(page: PublishedSeoPage): Metadata {
   return {
-    title: page.seo_title ?? page.title,
+    title: pageTitle(page.seo_title ?? page.title),
     description: page.meta_description ?? undefined,
     alternates: { canonical: page.route_path },
     robots: page.noindex ? { index: false, follow: false } : undefined,

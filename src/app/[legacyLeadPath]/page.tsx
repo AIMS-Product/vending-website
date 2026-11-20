@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata-titles";
 import { randomUUID } from "node:crypto";
 import { notFound } from "next/navigation";
 import { submitApplicationLead } from "@/app/apply/actions";
@@ -32,7 +33,7 @@ export async function generateMetadata({
   if (!route) return {};
 
   return {
-    title: route.metadataTitle,
+    title: pageTitle(route.metadataTitle),
     description:
       "Apply to the Vending Accelerator Program with source attribution preserved for this legacy Vendingpreneurs route.",
     robots: route.indexable ? undefined : { index: false, follow: false },

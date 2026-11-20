@@ -7,7 +7,7 @@ import {
   buildLeadAttribution,
   type LeadSearchParams,
 } from "@/lib/lead-attribution";
-import { normalizeBrandedPageTitle } from "@/lib/metadata-titles";
+import { normalizeBrandedPageTitle, pageTitle } from "@/lib/metadata-titles";
 import { resolveDefaultQualificationFormVersion } from "@/lib/services/qualification-forms";
 import { getPublishedSeoPageByPathOnce } from "@/lib/page-builder/request-cache";
 
@@ -20,7 +20,7 @@ export async function generateBuilderPageMetadata(
   const title = normalizeBrandedPageTitle(page.seo_title ?? page.title);
 
   return {
-    title,
+    title: pageTitle(title),
     description: page.meta_description ?? undefined,
     robots: page.noindex ? { index: false, follow: false } : undefined,
     alternates: {

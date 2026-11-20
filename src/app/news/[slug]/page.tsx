@@ -13,6 +13,7 @@ import { listResourceGuides } from "@/lib/services/seo-page-public";
 import { pickRelatedReading } from "@/lib/news/related-reading";
 import { renderMarkdown } from "@/lib/markdown";
 import { jsonLdHtml } from "@/lib/json-ld";
+import { pageTitle } from "@/lib/metadata-titles";
 import { newsMetaDescription, newsSeoTitle } from "@/lib/news/seo-meta";
 import {
   newsArticleStructuredData,
@@ -44,7 +45,7 @@ export async function generateMetadata({
   const title = newsSeoTitle(post);
   const description = newsMetaDescription(post);
   return {
-    title,
+    title: pageTitle(title),
     description,
     alternates: {
       canonical: `/news/${post.slug}`,

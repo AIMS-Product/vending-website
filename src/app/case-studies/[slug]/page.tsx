@@ -1,5 +1,6 @@
 import { cache } from "react";
 import type { Metadata } from "next";
+import { pageTitle } from "@/lib/metadata-titles";
 import { notFound } from "next/navigation";
 import { CaseStudyArticle } from "@/components/sections/CaseStudyArticle";
 import { FinalCta } from "@/components/sections/FinalCta";
@@ -44,12 +45,13 @@ export async function generateMetadata({
       ? `https://i.ytimg.com/vi/${caseStudy.youtube_video_id}/maxresdefault.jpg`
       : undefined);
 
+  const title = `${caseStudy.member_name}: ${caseStudy.title}`;
   return {
-    title: `${caseStudy.member_name}: ${caseStudy.title}`,
+    title: pageTitle(title),
     description: caseStudy.excerpt ?? undefined,
     alternates: { canonical: `/case-studies/${caseStudy.slug}` },
     openGraph: {
-      title: `${caseStudy.member_name}: ${caseStudy.title}`,
+      title,
       description: caseStudy.excerpt ?? undefined,
       images: ogImage ? [ogImage] : undefined,
       type: "article",
