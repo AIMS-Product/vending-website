@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   }),
   requireAdmin: vi.fn(),
   adminGetPostById: vi.fn(),
+  adminGetPostBySlug: vi.fn(),
   adminCreatePost: vi.fn(),
   adminUpdatePost: vi.fn(),
 }));
@@ -28,6 +29,7 @@ vi.mock("@/lib/supabase/signed-upload", () => ({
 }));
 vi.mock("@/lib/services/news", () => ({
   adminGetPostById: mocks.adminGetPostById,
+  adminGetPostBySlug: mocks.adminGetPostBySlug,
   adminCreatePost: mocks.adminCreatePost,
   adminUpdatePost: mocks.adminUpdatePost,
 }));
@@ -263,5 +265,66 @@ describe("autosaveNewsDraft (I5)", () => {
       // imply success.
       expect(result.message.toLowerCase()).toContain("not saved");
     }
+  });
+});
+
+// Nov 2026: a new post whose slug an existing draft already held failed ~20
+// times in production with only "Could not save the post".
+describe("duplicate slug", () => {
+  const taken = Object.assign(new Error("duplicate key"), { code: "23505" });
+  const holder = {
+    id: "22222222-2222-4222-8222-222222222222",
+    title: "Business Plan",
+    status: "draft",
+  };
+
+  it("names the post holding the slug and links to it on create", async () => {
+    mocks.adminCreatePost.mockRejectedValue(taken);
+    mocks.adminGetPostBySlug.mockResolvedValue(holder);
+    const result = await savePost(
+      idle,
+      formData({
+        title: "Business Plan",
+        slug: "vending-machine-business-plan",
+        excerpt: "",
+        body: "Body.",
+        cover_url: "",
+        cover_alt: "",
+        intent: "publish",
+      }),
+    );
+    expect(mocks.adminGetPostBySlug).toHaveBeenCalledWith(
+      "vending-machine-business-plan",
+    );
+    expect(result).toMatchObject({
+      status: "error",
+      conflictPostId: holder.id,
+    });
+    expect(result.status === "error" && result.message).toContain(
+      '"Business Plan", draft',
+    );
+  });
+
+  it("explains the conflict from autosave instead of a generic failure", async () => {
+    mocks.adminGetPostById.mockResolvedValue(
+      existingDraft({ status: "draft" }),
+    );
+    mocks.adminUpdatePost.mockRejectedValue(taken);
+    mocks.adminGetPostBySlug.mockResolvedValue(holder);
+    const result = await autosaveNewsDraft(
+      formData({
+        id: POST_ID,
+        title: "T",
+        slug: "vending-machine-business-plan",
+        excerpt: "",
+        body: "B",
+        cover_url: "",
+        cover_alt: "",
+      }),
+    );
+    expect(result.status).toBe("error");
+    expect(result.status === "error" && result.message).toContain(
+      "already uses the slug",
+    );
   });
 });

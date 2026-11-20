@@ -156,6 +156,17 @@ export async function adminGetPostById(id: string) {
   return data;
 }
 
+export async function adminGetPostBySlug(slug: string) {
+  const supabase = createAdminClient();
+  const { data, error } = await supabase
+    .from("news_posts")
+    .select("id, title, status")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 export async function adminCreatePost(post: NewsPostInsert) {
   const supabase = createAdminClient();
   const { data, error } = await supabase

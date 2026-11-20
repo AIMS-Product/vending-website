@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { renderMarkdown } from "@/lib/markdown";
 import { savePost, type EditorActionState } from "@/app/admin/news/actions";
@@ -14,6 +14,7 @@ import {
   adminTextareaClass,
 } from "@/components/admin/AdminUi";
 import { MediaPickerProvider } from "@/components/admin/MediaPickerProvider";
+import { NewsBodyImageTools } from "@/components/admin/NewsBodyImageTools";
 import { NewsCoverCard } from "@/components/admin/NewsCoverCard";
 import { NewsMobileSaveBar } from "@/components/admin/NewsMobileSaveBar";
 import { NewsPublishButton } from "@/components/admin/NewsPublishButton";
@@ -53,6 +54,8 @@ export function NewsEditorForm({
   const [slugTouched, setSlugTouched] = useState(Boolean(post?.slug));
   const [excerpt, setExcerpt] = useState(post?.excerpt ?? "");
   const [body, setBody] = useState(post?.body ?? "");
+  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const cursorRef = useRef<number | null>(null);
   const [previewHtml, setPreviewHtml] = useState("");
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [coverUrl, setCoverUrl] = useState(post?.cover_url ?? "");
@@ -85,6 +88,22 @@ export function NewsEditorForm({
     if (submitter instanceof HTMLButtonElement && submitter.name === "intent") {
       clearAutosave();
     }
+  }
+
+  // Insert on its own paragraph at the cursor (end of the body in Preview).
+  function insertIntoBody(markdown: string) {
+    const at = cursorRef.current ?? body.length;
+    const before = body.slice(0, at).replace(/\s*$/, "");
+    const after = body.slice(at).replace(/^\s*/, "");
+    const block = `${before ? "\n\n" : ""}${markdown}\n\n`;
+    setBody(`${before}${block}${after}`);
+    setActiveTab("write");
+    const caret = before.length + block.length;
+    cursorRef.current = caret;
+    requestAnimationFrame(() => {
+      bodyRef.current?.focus();
+      bodyRef.current?.setSelectionRange(caret, caret);
+    });
   }
 
   useEffect(() => {
@@ -199,8 +218,13 @@ export function NewsEditorForm({
                 Preview
               </button>
             </div>
+            <NewsBodyImageTools onInsert={insertIntoBody} />
             {activeTab === "write" ? (
               <textarea
+                ref={bodyRef}
+                onSelect={(event) => {
+                  cursorRef.current = event.currentTarget.selectionStart;
+                }}
                 name="body"
                 aria-label="Body"
                 value={body}
@@ -237,6 +261,14 @@ export function NewsEditorForm({
                 }`}
               >
                 {state.message ?? "Post saved."}
+                {state.status === "error" && state.conflictPostId && (
+                  <Link
+                    href={`/admin/news/${state.conflictPostId}`}
+                    className="mt-2 block font-semibold underline"
+                  >
+                    Open the existing post
+                  </Link>
+                )}
               </p>
             )}
             {/* I5: quiet autosave indicator, mirroring the SEO page editor. The
