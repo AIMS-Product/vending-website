@@ -6,9 +6,11 @@ import { preCallMeta } from "@/lib/content/pre-call-resources";
 export const metadata: Metadata = {
   title: preCallMeta.title,
   description: preCallMeta.description,
+  // noindex keeps it out of search; follow lets the footer-linked page pass
+  // link value on to the pages it links to.
   robots: {
     index: false,
-    follow: false,
+    follow: true,
   },
 };
 

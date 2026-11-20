@@ -33,6 +33,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8,
     },
+    // Coded pages outside staticRoutes (which also feeds the chatbot route map).
+    {
+      url: absoluteUrl("/resources/roadmap"),
+      changeFrequency: "monthly" as const,
+      priority: 0.8,
+    },
+    {
+      url: absoluteUrl("/newsletter"),
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    },
     ...posts.map((post) => ({
       url: absoluteUrl(`/news/${post.slug}`),
       lastModified: validDateOrFallback(post.updated_at, now),
