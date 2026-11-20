@@ -1,4 +1,5 @@
 import { absoluteUrl, siteName } from "@/lib/site";
+import { newsMetaDescription } from "@/lib/news/seo-meta";
 
 /**
  * FAQPage and Article markup for news posts.
@@ -68,6 +69,7 @@ export type ArticlePost = {
   slug: string;
   title: string;
   excerpt: string | null;
+  meta_description?: string | null;
   cover_url: string | null;
   published_at: string | null;
   updated_at?: string | null;
@@ -80,6 +82,7 @@ export type ArticlePost = {
  */
 export function newsArticleStructuredData(post: ArticlePost) {
   const url = absoluteUrl(`/news/${post.slug}`);
+  const description = newsMetaDescription(post);
   return {
     "@context": "https://schema.org",
     "@type": "Article",
@@ -96,7 +99,7 @@ export function newsArticleStructuredData(post: ArticlePost) {
       "@id": absoluteUrl("/#organization"),
       name: siteName,
     },
-    ...(post.excerpt ? { description: post.excerpt } : {}),
+    ...(description ? { description } : {}),
     ...(post.published_at
       ? { datePublished: new Date(post.published_at).toISOString() }
       : {}),

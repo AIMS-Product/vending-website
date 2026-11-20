@@ -16,6 +16,7 @@ import {
 import { MediaPickerProvider } from "@/components/admin/MediaPickerProvider";
 import { NewsBodyImageTools } from "@/components/admin/NewsBodyImageTools";
 import { NewsCoverCard } from "@/components/admin/NewsCoverCard";
+import { NewsSeoCard } from "@/components/admin/NewsSeoCard";
 import { NewsMobileSaveBar } from "@/components/admin/NewsMobileSaveBar";
 import { NewsPublishButton } from "@/components/admin/NewsPublishButton";
 import { formatDate, tabClass } from "@/components/admin/news-editor-helpers";
@@ -34,6 +35,8 @@ type NewsEditorFormProps = {
     | "body"
     | "cover_url"
     | "cover_alt"
+    | "seo_title"
+    | "meta_description"
     | "status"
     | "published_at"
   >;
@@ -60,6 +63,10 @@ export function NewsEditorForm({
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
   const [coverUrl, setCoverUrl] = useState(post?.cover_url ?? "");
   const [coverAlt, setCoverAlt] = useState(post?.cover_alt ?? "");
+  const [seoTitle, setSeoTitle] = useState(post?.seo_title ?? "");
+  const [metaDescription, setMetaDescription] = useState(
+    post?.meta_description ?? "",
+  );
 
   const status = post?.status ?? "draft";
   const canUnpublish = status === "published";
@@ -79,6 +86,8 @@ export function NewsEditorForm({
     body,
     coverUrl,
     coverAlt,
+    seoTitle,
+    metaDescription,
   });
 
   // A manual Save draft / Publish persists the whole row, so drop any pending
@@ -322,6 +331,15 @@ export function NewsEditorForm({
             coverAlt={coverAlt}
             onCoverUrlChange={setCoverUrl}
             onCoverAltChange={setCoverAlt}
+          />
+
+          <NewsSeoCard
+            title={title}
+            excerpt={excerpt}
+            seoTitle={seoTitle}
+            metaDescription={metaDescription}
+            onSeoTitleChange={setSeoTitle}
+            onMetaDescriptionChange={setMetaDescription}
           />
         </div>
       </form>

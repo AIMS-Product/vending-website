@@ -13,6 +13,8 @@ const baseNewsPost: NewsListPost = {
   body: "Body",
   cover_url: null,
   cover_alt: null,
+  seo_title: null,
+  meta_description: null,
   status: "published",
   published_at: "2026-06-01T00:00:00.000Z",
   created_at: "2026-06-01T00:00:00.000Z",
