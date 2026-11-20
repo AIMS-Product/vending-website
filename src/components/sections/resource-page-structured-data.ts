@@ -1,7 +1,8 @@
 import { flattenBlocks } from "@/lib/page-builder/blocks";
 import { parseStructuredDataSettings } from "@/lib/page-builder/structured-data-settings";
 import { pagePathForSlug } from "@/lib/page-builder/page-paths";
-import { absoluteUrl } from "@/lib/site";
+import { absoluteUrl, siteName } from "@/lib/site";
+import { articleAuthor } from "@/lib/news/structured-data";
 import type { PublishedSeoPage } from "@/lib/services/seo-page-public";
 
 export function buildResourcePageStructuredDataGraphs(page: PublishedSeoPage) {
@@ -15,6 +16,31 @@ export function buildResourcePageStructuredDataGraphs(page: PublishedSeoPage) {
       : [],
   );
   const graphs: unknown[] = [];
+
+  // Published /resources guides are articles. Coded lead magnets (roadmap,
+  // finance templates) have no published_at and other prefixes are landing
+  // pages, so neither gets Article markup.
+  if (routePrefix === "/resources" && page.published_at) {
+    const url = absoluteUrl(routePath);
+    graphs.push({
+      "@context": "https://schema.org",
+      "@type": "Article",
+      "@id": `${url}#article`,
+      headline: page.title,
+      mainEntityOfPage: { "@type": "WebPage", "@id": url },
+      author: articleAuthor,
+      publisher: {
+        "@type": "Organization",
+        "@id": absoluteUrl("/#organization"),
+        name: siteName,
+      },
+      ...(page.meta_description ? { description: page.meta_description } : {}),
+      datePublished: new Date(page.published_at).toISOString(),
+      ...(page.updated_at
+        ? { dateModified: new Date(page.updated_at).toISOString() }
+        : {}),
+    });
+  }
 
   if (settings.breadcrumb) {
     graphs.push({

@@ -110,6 +110,49 @@ describe("buildResourcePageStructuredDataGraphs", () => {
     expect(faq?.mainEntity).toHaveLength(1);
   });
 
+  it("marks /resources guides up as an Article by Mike Hoffmann", () => {
+    const article = buildResourcePageStructuredDataGraphs(page).find(
+      (graph) => (graph as { "@type"?: string })["@type"] === "Article",
+    );
+
+    expect(article).toMatchObject({
+      headline: "Z Test One",
+      description: "A page.",
+      author: { "@type": "Person", name: "Mike Hoffmann" },
+      publisher: { "@type": "Organization" },
+      datePublished: "2026-05-06T00:00:00.000Z",
+      dateModified: "2026-05-06T00:00:00.000Z",
+    });
+  });
+
+  it("emits no Article for coded lead magnets, which have no publish date", () => {
+    const graphs = buildResourcePageStructuredDataGraphs({
+      ...page,
+      published_at: null,
+      updated_at: "",
+    });
+
+    expect(
+      graphs.some(
+        (graph) => (graph as { "@type"?: string })["@type"] === "Article",
+      ),
+    ).toBe(false);
+  });
+
+  it("emits no Article for builder pages outside /resources", () => {
+    const graphs = buildResourcePageStructuredDataGraphs({
+      ...page,
+      route_prefix: "/landing",
+      route_path: "/landing/ztest1",
+    });
+
+    expect(
+      graphs.some(
+        (graph) => (graph as { "@type"?: string })["@type"] === "Article",
+      ),
+    ).toBe(false);
+  });
+
   it("honors explicit structured-data settings", () => {
     const graphs = buildResourcePageStructuredDataGraphs({
       ...page,

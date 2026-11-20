@@ -131,7 +131,7 @@ export const preCallOperators = {
       youtubeId: "kb8ryBm6g9k",
       vidalyticsId: "TVEcsYOkteZsDDSK",
       blurb:
-        "Musa Sadi was a burned-out hospitality manager who tragically lost his mother and brother in 2025. He binged every video on our founder Mike Hoffman\u2019s YouTube channel in one overnight sitting and less than a year after joining Vendingpreneurs, he hit $41,000 a month.",
+        "Musa Sadi was a burned-out hospitality manager who tragically lost his mother and brother in 2025. He binged every video on our founder Mike Hoffmann\u2019s YouTube channel in one overnight sitting and less than a year after joining Vendingpreneurs, he hit $41,000 a month.",
     },
     {
       id: "graham-katie-parker",

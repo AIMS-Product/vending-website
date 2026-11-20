@@ -147,7 +147,7 @@ export function SeoOverviewTab({
           Google impressions
         </h2>
         <p className="text-ui-text-subtle mt-1 text-xs">
-          Branded = searches for Vendingpreneurs, Mike Hoffman and their
+          Branded = searches for Vendingpreneurs, Mike Hoffmann and their
           misspellings; non-branded includes queries Google anonymizes. Dashed
           lines mark the Webflow to Next.js cutover (2026-07-27) and each
           /resources publish.

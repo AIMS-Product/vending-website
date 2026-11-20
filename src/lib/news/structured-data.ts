@@ -65,6 +65,13 @@ function stripMarkdown(text: string): string {
     .trim();
 }
 
+/** Named expert author for Article markup (news posts and /resources guides). */
+export const articleAuthor = {
+  "@type": "Person",
+  name: "Mike Hoffmann",
+  url: absoluteUrl("/about"),
+} as const;
+
 export type ArticlePost = {
   slug: string;
   title: string;
@@ -89,11 +96,7 @@ export function newsArticleStructuredData(post: ArticlePost) {
     "@id": `${url}#article`,
     headline: post.title,
     mainEntityOfPage: { "@type": "WebPage", "@id": url },
-    author: {
-      "@type": "Organization",
-      "@id": absoluteUrl("/#organization"),
-      name: siteName,
-    },
+    author: articleAuthor,
     publisher: {
       "@type": "Organization",
       "@id": absoluteUrl("/#organization"),
