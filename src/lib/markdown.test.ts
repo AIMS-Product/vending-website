@@ -125,3 +125,23 @@ describe("renderMarkdown GitHub-flavoured option", () => {
     expect(html).not.toContain("alert(1)");
   });
 });
+
+describe("renderMarkdown heading ids", () => {
+  it("gives h2 and h3 a kebab-case id from their text", async () => {
+    const html = await renderMarkdown("## Why location matters\n\n### 1. Apartments & condos\n");
+    expect(html).toContain('<h2 id="why-location-matters">');
+    expect(html).toContain('<h3 id="1-apartments-and-condos">');
+  });
+
+  it("numbers repeated headings so ids stay unique", async () => {
+    const html = await renderMarkdown("## Tips\n\n## Tips\n");
+    expect(html).toContain('id="tips"');
+    expect(html).toContain('id="tips-2"');
+  });
+
+  it("ignores ids written in the source", async () => {
+    const html = await renderMarkdown('<h2 id="evil">Real</h2>\n\n## Real heading\n');
+    expect(html).not.toContain('id="evil"');
+    expect(html).toContain('id="real-heading"');
+  });
+});
