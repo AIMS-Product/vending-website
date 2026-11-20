@@ -456,6 +456,8 @@ html[data-motion="paused"] .v2-float {
   margin-top: 1.35rem;
 }
 .public-news-prose h2 {
+  /* Table-of-contents jumps land below the sticky header. */
+  scroll-margin-top: 8rem;
   margin-top: 3.25rem;
   border-top: 2px solid #bfeeff;
   padding-top: 2rem;
