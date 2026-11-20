@@ -3,6 +3,10 @@ import Link from "next/link";
 import { ArticleShareRail } from "@/components/sections/ArticleShareRail";
 import { Button } from "@/components/ui/Button";
 import type { NewsPost } from "@/lib/services/news";
+import {
+  addHeadingAnchors,
+  type ArticleHeading,
+} from "@/lib/news/heading-anchors";
 import { siteUrl } from "@/lib/site";
 
 type NewsArticleProps = {
@@ -15,7 +19,7 @@ type NewsArticleProps = {
 };
 
 export function NewsArticle({ post, html }: NewsArticleProps) {
-  const headings = extractArticleHeadings(html);
+  const { html: anchoredHtml, headings } = addHeadingAnchors(html);
   const readingTime = getReadingTime(html);
   const articleUrl = new URL(`/news/${post.slug}`, siteUrl).toString();
   const category = getCategoryLabel(post.title);
@@ -80,7 +84,7 @@ export function NewsArticle({ post, html }: NewsArticleProps) {
 
           <div
             className="public-news-prose mt-14"
-            dangerouslySetInnerHTML={{ __html: html }}
+            dangerouslySetInnerHTML={{ __html: anchoredHtml }}
           />
         </article>
 
@@ -122,61 +126,53 @@ function Byline({
   );
 }
 
-function ArticleSidebar({ headings }: { headings: string[] }) {
-  const items = headings.length
-    ? headings.slice(0, 6)
-    : [
-        "Route selection",
-        "Machine economics",
-        "Launch checklist",
-        "Scaling next steps",
-      ];
-
+function ArticleSidebar({ headings }: { headings: ArticleHeading[] }) {
   return (
     // Same shell as CaseStudyArticle: the outline scrolls away with the top
     // of the article and only the call to action stays in view. Sticking the
     // whole ~950px stack cut the call to action off on a laptop screen.
     <aside className="hidden lg:flex lg:flex-col lg:gap-10">
-      <section className="rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[7px_7px_0_#55b8e8]">
-        <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
-          In this article
-        </p>
-        <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
-          {items.map((heading, index) => (
-            <li key={`${heading}-${index}`} className="flex gap-3">
-              <span>{index + 1}.</span>
-              <span>{heading}</span>
-            </li>
-          ))}
-        </ol>
-      </section>
+      {headings.length > 0 && (
+        <nav
+          aria-label="In this article"
+          className="rounded-[12px] border-2 border-[#111111] bg-white p-7 shadow-[7px_7px_0_#55b8e8]"
+        >
+          <p className="inline-flex rounded-[5px] border border-[#9fe6ff] bg-[#d6f4ff] px-3 py-2 text-xs font-black text-[#111111] uppercase">
+            In this article
+          </p>
+          <ol className="mt-6 space-y-4 text-lg font-semibold text-[#066a99]">
+            {headings.map((heading, index) => (
+              <li key={heading.id} className="flex gap-3">
+                <span>{index + 1}.</span>
+                <a
+                  href={`#${heading.id}`}
+                  className="rounded-[4px] transition hover:text-[#2d9fd6] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:outline-none"
+                >
+                  {heading.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )}
 
       <section className="sticky top-28 rounded-[12px] border-2 border-[#111111] bg-[#111111] p-8 text-white shadow-[7px_7px_0_#55b8e8]">
         <h2 className="text-3xl leading-tight font-black uppercase">
           Build your route today.
         </h2>
         <p className="mt-5 text-lg leading-7 font-semibold text-white">
-          Get the complete A-Z blueprint to passive income.
+          Get the free 90-Day Roadmap.
         </p>
         <Button
-          href="/contact"
+          href="/resources/roadmap"
           variant="onInk"
           size="lg"
           className="mt-8 w-full"
         >
-          Step inside
+          Get the roadmap
         </Button>
       </section>
     </aside>
-  );
-}
-
-function extractArticleHeadings(html: string): string[] {
-  return [...html.matchAll(/<h2(?:\s[^>]*)?>(.*?)<\/h2>/gi)].flatMap(
-    (match) => {
-      const heading = decodeHtmlEntities(stripTags(match[1]).trim());
-      return heading ? [heading] : [];
-    },
   );
 }
 
@@ -196,13 +192,4 @@ function getCategoryLabel(title: string): string {
 
 function stripTags(value: string): string {
   return value.replace(/<[^>]+>/g, " ");
-}
-
-function decodeHtmlEntities(value: string): string {
-  return value
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'");
 }

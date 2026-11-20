@@ -26,6 +26,12 @@ export function Header() {
   // page group, and these stay "legacy_lead" there.
   if (isLegacyLeadPath(pathname)) return null;
 
+  // Resources and News can share an href; only one item may be the current
+  // page, so the last match (News on /news) wins.
+  const activeLabel = primaryNav.findLast((item) =>
+    navItemMatches(item, pathname),
+  )?.label;
+
   return (
     <>
       <CohortBanner />
@@ -47,7 +53,7 @@ export function Header() {
               <HeaderNavLink
                 key={item.label}
                 item={item}
-                pathname={pathname}
+                isActive={item.label === activeLabel}
                 className="-my-3 py-3 text-sm"
               />
             ))}
@@ -109,7 +115,7 @@ export function Header() {
               <HeaderNavLink
                 key={item.label}
                 item={item}
-                pathname={pathname}
+                isActive={item.label === activeLabel}
                 className="rounded-[8px] px-2 py-3 text-base hover:bg-white"
                 onClick={() => setMenuOpen(false)}
               />
@@ -128,22 +134,24 @@ export function Header() {
   );
 }
 
+function navItemMatches(item: NavItem, pathname: string) {
+  if (item.external) return false;
+  return item.href === "/"
+    ? pathname === item.href
+    : pathname === item.href || pathname.startsWith(`${item.href}/`);
+}
+
 function HeaderNavLink({
   item,
-  pathname,
+  isActive,
   className,
   onClick,
 }: {
   item: NavItem;
-  pathname: string;
+  isActive: boolean;
   className?: string;
   onClick?: () => void;
 }) {
-  const isActive =
-    !item.external &&
-    (item.href === "/"
-      ? pathname === item.href
-      : pathname === item.href || pathname.startsWith(`${item.href}/`));
   const classes = cn(
     "rounded-[6px] text-sm font-black text-[#111111] uppercase transition hover:text-[#066a99] focus-visible:ring-2 focus-visible:ring-[#066a99] focus-visible:ring-offset-2 focus-visible:outline-none",
     isActive && "text-[#066a99]",
