@@ -115,3 +115,40 @@ describe("buildCalendlySrc fallback tags", () => {
     expect(url.searchParams.get("utm_campaign")).toBe("spring");
   });
 });
+
+describe("buildCalendlySrc fallback tags, one field at a time", () => {
+  const fallbackUtms = {
+    utm_source: "instagram",
+    utm_medium: "organic",
+    utm_campaign: "booking-ig",
+  };
+
+  it("fills only the missing source and keeps an incoming medium and campaign", () => {
+    const url = new URL(
+      buildCalendlySrc(
+        "https://calendly.com/team/intro",
+        {
+          utm_medium: "paid_social",
+          utm_campaign: "spring",
+        } as LeadAttribution,
+        { fallbackUtms },
+      ),
+    );
+    expect(url.searchParams.get("utm_source")).toBe("instagram");
+    expect(url.searchParams.get("utm_medium")).toBe("paid_social");
+    expect(url.searchParams.get("utm_campaign")).toBe("spring");
+  });
+
+  it("fills a missing medium and campaign beside an incoming source", () => {
+    const url = new URL(
+      buildCalendlySrc(
+        "https://calendly.com/team/intro",
+        { utm_source: "youtube" } as LeadAttribution,
+        { fallbackUtms },
+      ),
+    );
+    expect(url.searchParams.get("utm_source")).toBe("youtube");
+    expect(url.searchParams.get("utm_medium")).toBe("organic");
+    expect(url.searchParams.get("utm_campaign")).toBe("booking-ig");
+  });
+});

@@ -9,10 +9,11 @@ export type LeadEmbed = {
   kind: "calendly";
   url: string;
   /**
-   * Tags sent to Calendly when the visitor arrived with no utm_source of their
-   * own. Marketing books into one calendar, so the calendar's name no longer
+   * Tags sent to Calendly for whichever of source, medium and campaign the
+   * visitor arrived without. Each is filled on its own. Marketing books into one calendar, so the calendar's name no longer
    * says where a call came from; an untagged visit to a channel's own page is
-   * credited to that page's channel instead. Never overrides a real tag.
+   * credited to that page's channel instead. Never overrides a tag the visitor
+   * arrived with.
    */
   fallbackUtms?: FallbackUtms;
 };
@@ -76,9 +77,11 @@ export function buildCalendlySrc(
       target.searchParams.set(key, value);
     }
   }
-  if (options?.fallbackUtms && !attribution?.utm_source) {
+  if (options?.fallbackUtms) {
+    // Field by field: a visitor who arrived with a medium or campaign but no
+    // source keeps both, and only the missing source is filled in.
     for (const [key, value] of Object.entries(options.fallbackUtms)) {
-      target.searchParams.set(key, value);
+      if (!target.searchParams.has(key)) target.searchParams.set(key, value);
     }
   }
   return target.toString();
