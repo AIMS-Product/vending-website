@@ -161,6 +161,7 @@ export function LegacyLeadPageContent({
             {route.embed ? (
               <CalendlyEmbed
                 attribution={attribution}
+                fallbackUtms={route.embed.fallbackUtms}
                 title={`${route.metadataTitle} — scheduler`}
                 url={route.embed.url}
               />

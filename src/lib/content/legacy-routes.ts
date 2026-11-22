@@ -49,7 +49,18 @@ const journeyDescription =
 type RouteOptions = { indexable?: boolean; embed?: LeadEmbed };
 
 /** Calendly embed shorthand. */
-const calendly = (url: string): LeadEmbed => ({ kind: "calendly", url });
+const calendly = (
+  url: string,
+  fallbackUtms?: LeadEmbed["fallbackUtms"],
+): LeadEmbed => ({ kind: "calendly", url, fallbackUtms });
+
+/**
+ * The one marketing calendar (Dom, 2026-11-22): every marketing page books
+ * "Vendingpreneurs Consultation Call" and the source is read from the UTMs on
+ * the booking, never from which calendar it landed on.
+ */
+const CONSULTATION_CALL =
+  "https://calendly.com/d/cvr6-cfd-zgd/vendingpreneurs-consultation-call";
 
 function route(
   slug: string,
@@ -131,11 +142,15 @@ export const legacyLeadRoutes = [
   // redirect sheet's retired URLs now 301 from next.config (funnel-redirects.ts)
   // and must not keep an entry here, which would never be reached.
   // booking-ig / booking-insta-b5: Action = "Redirects to Calendly only" —
-  // embed the Calendly scheduler as the primary CTA.
+  // embed the Calendly scheduler as the primary CTA. Booked its own calendar
+  // ("Consultation Session", d/dv5d-5zj-g8b) until 2026-11-22; an untagged
+  // visit is now credited to Instagram by tag instead of by calendar name.
   advisory("booking-ig", undefined, {
-    embed: calendly(
-      "https://calendly.com/d/dv5d-5zj-g8b/vendingpreneurs-consultation-session",
-    ),
+    embed: calendly(CONSULTATION_CALL, {
+      utm_source: "instagram",
+      utm_medium: "organic",
+      utm_campaign: "booking-ig",
+    }),
   }),
   advisory("booking-x"),
   advisory(
@@ -197,8 +212,17 @@ export const legacyLeadRoutes = [
     "Turn the webinar into a concrete route plan with the next step, the right market, and the right support.",
     "webinar",
     {
+      // Still the webinar's own calendar: the webinar board counts a room's
+      // bookings by this event type (vp-webinars booked-people.ts), so it moves
+      // to CONSULTATION_CALL only after that rule reads the tag instead. The
+      // fallback tag is the first half of that move.
       embed: calendly(
         "https://calendly.com/d/cxwj-zxk-2z4/vending-route-advisory-call",
+        {
+          utm_source: "internal-webinar",
+          utm_medium: "owned",
+          utm_campaign: "start",
+        },
       ),
     },
   ),

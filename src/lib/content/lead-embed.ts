@@ -5,7 +5,23 @@ import type { LeadAttribution } from "@/lib/lead-attribution";
  * conversion pages use the native lead form (which captures the lead in our
  * database with full UTM/source attribution). See docs/migration/conversion-pages.md.
  */
-export type LeadEmbed = { kind: "calendly"; url: string };
+export type LeadEmbed = {
+  kind: "calendly";
+  url: string;
+  /**
+   * Tags sent to Calendly when the visitor arrived with no utm_source of their
+   * own. Marketing books into one calendar, so the calendar's name no longer
+   * says where a call came from; an untagged visit to a channel's own page is
+   * credited to that page's channel instead. Never overrides a real tag.
+   */
+  fallbackUtms?: FallbackUtms;
+};
+
+export type FallbackUtms = {
+  utm_source: string;
+  utm_medium: string;
+  utm_campaign: string;
+};
 
 /**
  * The host Calendly uses for embed attribution + resize postMessage. Rendering
@@ -44,6 +60,8 @@ export function buildCalendlySrc(
      *  straight on the date picker — for surfaces whose own copy already
      *  frames the call. */
     hideDetails?: boolean;
+    /** See LeadEmbed.fallbackUtms. */
+    fallbackUtms?: FallbackUtms;
   },
 ): string {
   const target = new URL(url);
@@ -55,6 +73,11 @@ export function buildCalendlySrc(
   }
   if (attribution) {
     for (const [key, value] of utmPairs(attribution)) {
+      target.searchParams.set(key, value);
+    }
+  }
+  if (options?.fallbackUtms && !attribution?.utm_source) {
+    for (const [key, value] of Object.entries(options.fallbackUtms)) {
       target.searchParams.set(key, value);
     }
   }

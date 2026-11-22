@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildCalendlyBookingUrl,
+  buildCalendlySrc,
   isCalendlyUrl,
 } from "@/lib/content/lead-embed";
 import type { LeadAttribution } from "@/lib/lead-attribution";
@@ -79,5 +80,38 @@ describe("isCalendlyUrl", () => {
     expect(isCalendlyUrl("https://notcalendly.com/team")).toBe(false);
     expect(isCalendlyUrl("calendly.com/team")).toBe(false);
     expect(isCalendlyUrl("")).toBe(false);
+  });
+});
+
+describe("buildCalendlySrc fallback tags", () => {
+  const fallbackUtms = {
+    utm_source: "instagram",
+    utm_medium: "organic",
+    utm_campaign: "booking-ig",
+  };
+
+  it("tags an untagged visit with the page's own channel", () => {
+    const url = new URL(
+      buildCalendlySrc(
+        "https://calendly.com/team/intro",
+        {} as LeadAttribution,
+        {
+          fallbackUtms,
+        },
+      ),
+    );
+    expect(url.searchParams.get("utm_source")).toBe("instagram");
+    expect(url.searchParams.get("utm_campaign")).toBe("booking-ig");
+  });
+
+  it("never overrides the tags a visitor arrived with", () => {
+    const url = new URL(
+      buildCalendlySrc("https://calendly.com/team/intro", attribution, {
+        fallbackUtms,
+      }),
+    );
+    expect(url.searchParams.get("utm_source")).toBe("youtube");
+    expect(url.searchParams.get("utm_medium")).toBe("video");
+    expect(url.searchParams.get("utm_campaign")).toBe("spring");
   });
 });
