@@ -8,7 +8,7 @@ type CalendlyEmbedProps = {
   url: string;
   /** Omit on surfaces with no lead/session context (e.g. /thank-you). */
   attribution?: LeadAttribution;
-  /** Tags for whichever of source, medium and campaign the visitor lacks. */
+  /** Page defaults for a visit that arrived with no utm_source. */
   fallbackUtms?: FallbackUtms;
   /**
    * Open straight on the date picker (hides Calendly's event-details block).

@@ -87,7 +87,7 @@ describe("buildCalendlySrc fallback tags", () => {
   const fallbackUtms = {
     utm_source: "instagram",
     utm_medium: "organic",
-    utm_campaign: "booking-ig",
+    utm_campaign: "untagged-booking-ig",
   };
 
   it("tags an untagged visit with the page's own channel", () => {
@@ -101,7 +101,7 @@ describe("buildCalendlySrc fallback tags", () => {
       ),
     );
     expect(url.searchParams.get("utm_source")).toBe("instagram");
-    expect(url.searchParams.get("utm_campaign")).toBe("booking-ig");
+    expect(url.searchParams.get("utm_campaign")).toBe("untagged-booking-ig");
   });
 
   it("never overrides the tags a visitor arrived with", () => {
@@ -120,7 +120,7 @@ describe("buildCalendlySrc fallback tags, one field at a time", () => {
   const fallbackUtms = {
     utm_source: "instagram",
     utm_medium: "organic",
-    utm_campaign: "booking-ig",
+    utm_campaign: "untagged-booking-ig",
   };
 
   it("fills only the missing source and keeps an incoming medium and campaign", () => {
@@ -139,7 +139,7 @@ describe("buildCalendlySrc fallback tags, one field at a time", () => {
     expect(url.searchParams.get("utm_campaign")).toBe("spring");
   });
 
-  it("fills a missing medium and campaign beside an incoming source", () => {
+  it("adds nothing beside an incoming source (no page default posing as the link's own)", () => {
     const url = new URL(
       buildCalendlySrc(
         "https://calendly.com/team/intro",
@@ -148,7 +148,7 @@ describe("buildCalendlySrc fallback tags, one field at a time", () => {
       ),
     );
     expect(url.searchParams.get("utm_source")).toBe("youtube");
-    expect(url.searchParams.get("utm_medium")).toBe("organic");
-    expect(url.searchParams.get("utm_campaign")).toBe("booking-ig");
+    expect(url.searchParams.has("utm_medium")).toBe(false);
+    expect(url.searchParams.has("utm_campaign")).toBe(false);
   });
 });

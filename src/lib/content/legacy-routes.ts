@@ -149,7 +149,7 @@ export const legacyLeadRoutes = [
     embed: calendly(CONSULTATION_CALL, {
       utm_source: "instagram",
       utm_medium: "organic",
-      utm_campaign: "booking-ig",
+      utm_campaign: "untagged-booking-ig",
     }),
   }),
   advisory("booking-x"),
@@ -221,7 +221,7 @@ export const legacyLeadRoutes = [
         {
           utm_source: "internal-webinar",
           utm_medium: "owned",
-          utm_campaign: "start",
+          utm_campaign: "untagged-start",
         },
       ),
     },

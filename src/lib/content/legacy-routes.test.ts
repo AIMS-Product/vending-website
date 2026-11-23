@@ -6,6 +6,7 @@ import {
 } from "@/lib/content/legacy-routes";
 import { buildCalendlySrc } from "@/lib/content/lead-embed";
 import { buildLeadAttribution } from "@/lib/lead-attribution";
+import { isFirstCallCalendar } from "@/lib/services/team-report";
 import { CONTACT_CLONE_SLUGS } from "@/lib/content/contact-clone-pages";
 import { APP_TOP_LEVEL_PAGE_SEGMENTS } from "@/lib/routing/single-segment-routes";
 
@@ -138,16 +139,56 @@ describe("booking page tags with partial UTMs", () => {
     });
   });
 
+  // PR #274 review 2: `?utm_source=youtube` on /booking-ig came through as
+  // youtube / organic / booking-ig, and the spine files a booking under its
+  // medium and campaign, so the page defaults read as the link's own.
+  it("a source-only link is passed through with no page default added", () => {
+    for (const slug of ["booking-ig", "start"]) {
+      expect(bookingTags(slug, { utm_source: "youtube" })).toMatchObject({
+        source: "youtube",
+        medium: null,
+        campaign: null,
+      });
+      expect(bookingTags(slug, { utm_source: "meta_ads" })).toMatchObject({
+        source: "meta_ads",
+        medium: null,
+      });
+    }
+  });
+
+  it("a page-default campaign is always marked untagged-", () => {
+    for (const route of legacyLeadRoutes) {
+      if (route.embed?.fallbackUtms) {
+        expect(route.embed.fallbackUtms.utm_campaign).toBe(
+          `untagged-${route.slug}`,
+        );
+      }
+    }
+  });
+
   it("an untagged visit gets every page default", () => {
     expect(bookingTags("booking-ig", {})).toMatchObject({
       source: "instagram",
       medium: "organic",
-      campaign: "booking-ig",
+      campaign: "untagged-booking-ig",
     });
     expect(bookingTags("start", {})).toMatchObject({
       source: "internal-webinar",
       medium: "owned",
-      campaign: "start",
+      campaign: "untagged-start",
     });
+  });
+});
+
+// /booking-ig left the Consultation Session calendar on 2026-11-22. Links to
+// that calendar already sent out still book it, so its title must keep counting
+// as a first sales call alongside the calendar the page books now.
+describe("calendar titles after the Instagram page moved", () => {
+  it("still counts the old and the new calendar as first sales calls", () => {
+    expect(isFirstCallCalendar("Vendingpreneurs Consultation Session")).toBe(
+      true,
+    );
+    expect(isFirstCallCalendar("Vendingpreneurs Consultation Call")).toBe(true);
+    expect(isFirstCallCalendar("Vending Route Advisory Call")).toBe(true);
   });
 });

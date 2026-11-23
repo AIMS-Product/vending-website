@@ -9,11 +9,13 @@ export type LeadEmbed = {
   kind: "calendly";
   url: string;
   /**
-   * Tags sent to Calendly for whichever of source, medium and campaign the
-   * visitor arrived without. Each is filled on its own. Marketing books into one calendar, so the calendar's name no longer
-   * says where a call came from; an untagged visit to a channel's own page is
-   * credited to that page's channel instead. Never overrides a tag the visitor
-   * arrived with.
+   * Page defaults sent to Calendly for a visit that arrived with no utm_source.
+   * Marketing books into one calendar, so the calendar's name no longer says
+   * where a call came from; an untagged visit to a channel's own page is
+   * credited to that page's channel instead. Applied only when the source is
+   * missing, each field only where missing; a visit with its own source is
+   * passed through exactly as it arrived. The campaign starts `untagged-` so a
+   * page default can never be read as a real campaign.
    */
   fallbackUtms?: FallbackUtms;
 };
@@ -77,9 +79,13 @@ export function buildCalendlySrc(
       target.searchParams.set(key, value);
     }
   }
-  if (options?.fallbackUtms) {
-    // Field by field: a visitor who arrived with a medium or campaign but no
-    // source keeps both, and only the missing source is filled in.
+  if (options?.fallbackUtms && !target.searchParams.has("utm_source")) {
+    // Page defaults describe a visit that arrived with no source of its own.
+    // Each is filled only where missing, so an incoming medium or campaign
+    // survives. A visitor who did arrive with a source gets nothing added:
+    // inventing a medium or campaign beside a real source would put a page
+    // default on the dashboard as if it were the link's own (a source-only paid
+    // link would read as organic).
     for (const [key, value] of Object.entries(options.fallbackUtms)) {
       if (!target.searchParams.has(key)) target.searchParams.set(key, value);
     }
