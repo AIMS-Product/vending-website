@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseAttributionSession } from "@/lib/attribution-session";
 import { submitLead } from "@/lib/services/leads";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type { Database } from "@/types/database";
@@ -47,7 +48,73 @@ export type ChatbotLeadCaptureInput = {
   email: string | null;
   phone: string | null;
   pageUrl: string | null;
+  /** The browser's stored attribution session (`vp_attr`), unvalidated. */
+  attribution?: unknown;
 };
+
+/**
+ * submitLead field, attribution-session key, and the length submitLead's
+ * schema allows (lead-source-fields.ts). A longer value is cut, not rejected:
+ * an over-long UTM must never cost the lead.
+ */
+const ATTRIBUTION_FIELDS = [
+  ["vpSessionId", "vp_session_id", 160],
+  ["firstLandingUrl", "first_landing_url", 1200],
+  ["firstLandingPath", "first_landing_path", 500],
+  ["firstReferrer", "first_referrer", 1000],
+  ["firstTouchAt", "first_touch_at", 80],
+  ["latestLandingUrl", "latest_landing_url", 1200],
+  ["latestLandingPath", "latest_landing_path", 500],
+  ["latestReferrer", "latest_referrer", 1000],
+  ["latestTouchAt", "latest_touch_at", 80],
+  ["utmSource", "utm_source", 160],
+  ["utmMedium", "utm_medium", 160],
+  ["utmCampaign", "utm_campaign", 200],
+  ["utmTerm", "utm_term", 200],
+  ["utmContent", "utm_content", 200],
+  ["gclid", "gclid", 300],
+  ["fbclid", "fbclid", 500],
+  ["gbraid", "gbraid", 300],
+  ["wbraid", "wbraid", 300],
+  ["campaignId", "campaign_id", 200],
+  ["campaignName", "campaign_name", 300],
+  ["adsetId", "adset_id", 200],
+  ["adGroupId", "ad_group_id", 200],
+  ["adId", "ad_id", 200],
+] as const;
+
+/**
+ * The visitor's UTMs, click ids and first/latest touch, as submitLead fields.
+ *
+ * Until 2026-11-24 a chatbot lead carried none of this: the widget sent only
+ * its own chat session id, so every chatbot lead reached Close with blank UTMs
+ * (19 of 19 in November) and read as Unknown in the journey report, even when
+ * the visitor arrived on a tagged link.
+ */
+export function chatbotAttributionFields(
+  raw: unknown,
+): Partial<
+  Record<(typeof ATTRIBUTION_FIELDS)[number][0] | "referrer", string>
+> {
+  let session;
+  try {
+    session = parseAttributionSession(
+      typeof raw === "string" ? raw : JSON.stringify(raw ?? null),
+    );
+  } catch {
+    return {};
+  }
+  if (!session) return {};
+
+  const fields: Record<string, string> = {};
+  for (const [field, key, max] of ATTRIBUTION_FIELDS) {
+    const value = session[key]?.trim().slice(0, max);
+    if (value) fields[field] = value;
+  }
+  const referrer = fields.latestReferrer || fields.firstReferrer;
+  if (referrer) fields.referrer = referrer;
+  return fields;
+}
 
 /**
  * Called on a NEW capture (the turn where an email/phone first appears in a
@@ -78,7 +145,10 @@ export async function handleChatbotLeadCaptured(
         phone: input.phone,
         sourcePath: input.pageUrl,
         landingPath: input.pageUrl,
+        // The chat session id is the fallback only: the attribution session
+        // id below is the one page views and bookings are keyed on.
         vpSessionId: input.sessionId,
+        ...chatbotAttributionFields(input.attribution),
         message: "Captured by the site chatbot.",
         metadata: {
           source: CHATBOT_LEAD_SOURCE,

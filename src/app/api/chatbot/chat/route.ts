@@ -71,6 +71,9 @@ const chatRequestSchema = z.object({
   sessionId: z.string().trim().min(8).max(200),
   message: z.string().trim().min(1).max(CHATBOT_INPUT_LIMITS.maxMessageChars),
   pageUrl: z.string().trim().max(2000).nullable().optional(),
+  // The browser's stored attribution session. Never a reason to reject the
+  // request: chatbotAttributionFields validates and cuts it.
+  attribution: z.unknown().optional(),
   timeZone: z.string().trim().max(64).nullable().optional(),
 });
 
@@ -114,7 +117,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { sessionId, message, pageUrl, timeZone } = parsed.data;
+  const { sessionId, message, pageUrl, attribution, timeZone } = parsed.data;
 
   if (!(await isUnderChatbotDailyCap())) {
     return Response.json(
@@ -387,6 +390,7 @@ export async function POST(request: Request) {
         email: captured.email,
         phone: captured.phone,
         pageUrl: pageUrl ?? null,
+        attribution,
       },
       { client },
     );

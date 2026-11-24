@@ -7,6 +7,7 @@ import {
   suppressesChatTeaser,
 } from "@/lib/content/booking-funnel-routes";
 import { cn } from "@/lib/utils";
+import { readStoredAttributionSession } from "@/lib/attribution-client";
 import { trapTabKey } from "@/lib/a11y/focus-trap";
 import { useIsMobileViewport } from "@/lib/a11y/use-mobile-viewport";
 import { captureAggressivenessThreshold } from "@/lib/chatbot/capture-thresholds";
@@ -682,6 +683,7 @@ export function ChatWidget() {
             sessionId,
             message: text,
             pageUrl: window.location.pathname,
+            attribution: readStoredAttributionSession(),
             timeZone: browserTimeZone(),
           }),
         });
@@ -890,6 +892,7 @@ export function ChatWidget() {
           email: values.email,
           phone: values.phone || null,
           pageUrl: window.location.pathname,
+          attribution: readStoredAttributionSession(),
         }),
       });
       if (!response.ok) return false;
