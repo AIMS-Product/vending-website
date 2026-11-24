@@ -29,6 +29,9 @@ const leadRequestSchema = z.object({
   email: z.email().max(320),
   phone: z.string().trim().max(60).nullable().optional(),
   pageUrl: z.string().trim().max(2000).nullable().optional(),
+  // The browser's stored attribution session. Never a reason to reject the
+  // request: chatbotAttributionFields validates and cuts it.
+  attribution: z.unknown().optional(),
 });
 
 export async function POST(request: Request) {
@@ -58,7 +61,7 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const { sessionId, name, email, phone, pageUrl } = parsed.data;
+  const { sessionId, name, email, phone, pageUrl, attribution } = parsed.data;
 
   const allowed = await checkPublicRateLimit("chatbot_lead", { ip, email });
   if (!allowed) {
@@ -128,6 +131,7 @@ export async function POST(request: Request) {
         email,
         phone: capturedPhone,
         pageUrl: pageUrl ?? null,
+        attribution,
       },
       { client },
     );
