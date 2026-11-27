@@ -1,4 +1,4 @@
-import { buildCalendlySrc } from "@/lib/content/lead-embed";
+import { buildCalendlySrc, type FallbackUtms } from "@/lib/content/lead-embed";
 import { CalendlyBookingRedirect } from "./CalendlyBookingRedirect";
 import { CalendlyFrame } from "./CalendlyFrame";
 import type { LeadAttribution } from "@/lib/lead-attribution";
@@ -8,6 +8,8 @@ type CalendlyEmbedProps = {
   url: string;
   /** Omit on surfaces with no lead/session context (e.g. /thank-you). */
   attribution?: LeadAttribution;
+  /** Page defaults for a visit that arrived with no utm_source. */
+  fallbackUtms?: FallbackUtms;
   /**
    * Open straight on the date picker (hides Calendly's event-details block).
    * "phone" hides it only below md: at md+ the two-column scheduler keeps the
@@ -37,6 +39,7 @@ type CalendlyEmbedProps = {
 export function CalendlyEmbed({
   url,
   attribution,
+  fallbackUtms,
   hideDetails = false,
   title = "Book your Vendingpreneurs call",
   heightClassName = "h-[720px]",
@@ -44,10 +47,11 @@ export function CalendlyEmbed({
 }: CalendlyEmbedProps) {
   const src = buildCalendlySrc(url, attribution, {
     hideDetails: hideDetails === true,
+    fallbackUtms,
   });
   const phoneSrc =
     hideDetails === "phone"
-      ? buildCalendlySrc(url, attribution, { hideDetails: true })
+      ? buildCalendlySrc(url, attribution, { hideDetails: true, fallbackUtms })
       : undefined;
 
   return (
